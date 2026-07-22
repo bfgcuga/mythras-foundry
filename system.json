@@ -1,0 +1,15 @@
+{
+  "id": "mythras-foundry",
+  "title": "Mythras Foundry",
+  "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
+  "version": "0.0.1",
+  "compatibility": {
+    "minimum": 13,
+    "verified": 13
+  },
+  "authors": [
+    {
+      "name": "Aitor"
+    }
+  ]
+}
