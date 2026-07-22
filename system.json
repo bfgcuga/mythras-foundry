@@ -3,6 +3,8 @@
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
   "version": "0.0.1",
+  "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.1/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
