@@ -1,0 +1,1 @@
+console.log("Mythras Foundry | Archivo principal cargado");

@@ -11,5 +11,8 @@
     {
       "name": "Aitor"
     }
+  ],
+  "esmodules": [
+    "scripts/mythras-foundry.js"
   ]
 }
