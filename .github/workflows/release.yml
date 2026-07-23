@@ -1,0 +1,41 @@
+name: Publicar sistema
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Crear paquete ZIP
+        shell: bash
+        run: |
+          elementos=(system.json scripts templates styles lang README.md .gitignore)
+          existentes=()
+
+          for elemento in "${elementos[@]}"; do
+            if [ -e "$elemento" ]; then
+              existentes+=("$elemento")
+            fi
+          done
+
+          zip -r mythras-foundry.zip "${existentes[@]}"
+
+      - name: Crear release y adjuntar archivos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            system.json \
+            mythras-foundry.zip \
+            --title "Versión ${{ github.ref_name }}" \
+            --generate-notes
