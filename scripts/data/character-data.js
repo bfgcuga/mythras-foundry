@@ -7,7 +7,7 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
       characteristicsGenerated: new BooleanField({
         required: true,
         nullable: false,
-        initial: falseva
+        initial: false
       }),
 
       strength: new NumberField({
