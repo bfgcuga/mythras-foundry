@@ -68,4 +68,14 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
     };
   }
 
+  prepareDerivedData() {
+  super.prepareDerivedData();
+
+  this.attributes = {
+    initiative: Math.ceil(
+      (this.dexterity + this.intelligence) / 2
+    )
+  };
+}
+
 }

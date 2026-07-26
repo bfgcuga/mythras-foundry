@@ -8,9 +8,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     tag: "form",
 
+    window: {
+      resizable: true
+    },
+
     position: {
       width: 600,
-      height: 400
+      height: 500
     },
 
     form: {
@@ -22,7 +26,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   static PARTS = {
     main: {
-      template: "systems/mythras-foundry/templates/actor/character-sheet.hbs"
+      template: "systems/mythras-foundry/templates/actor/character-sheet.hbs",
+      scrollable: [""]
     }
   };
 
