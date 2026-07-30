@@ -30,6 +30,8 @@ export class SkillData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
       slug: textField(),
+      templateSlug: textField(),
+      specialization: textField(),
       category: new StringField({
         required: true,
         nullable: false,
@@ -74,6 +76,39 @@ export class SkillData extends foundry.abstract.TypeDataModel {
         nullable: false,
         initial: false
       }),
+      description: descriptionField()
+    };
+  }
+}
+
+export class CombatStyleData extends SkillData {
+  static defineSchema() {
+    return {
+      ...super.defineSchema(),
+      category: new StringField({
+        required: true,
+        nullable: false,
+        initial: "professional",
+        choices: ["professional"]
+      }),
+      group: new StringField({
+        required: true,
+        nullable: false,
+        initial: "combat",
+        choices: ["combat"]
+      }),
+      weapons: textField(),
+      traits: textField(),
+      sourceType: textField()
+    };
+  }
+}
+
+export class BackgroundData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      key: textField(),
+      rules: textField("{}"),
       description: descriptionField()
     };
   }

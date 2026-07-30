@@ -55,6 +55,8 @@ export const PROFESSIONAL_SKILL_SOURCES = PROFESSIONAL_SKILLS.map(([
   },
   system: {
     slug,
+    templateSlug: slug,
+    specialization: "",
     category: "professional",
     group: slug === "idioma" ? "language" : "professional",
     characteristic1,

@@ -59,6 +59,22 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         blank: true,
         choices: ["", "random", "randomSwap", "points"]
       }),
+      backgroundComplete: new BooleanField({
+        required: true,
+        nullable: false,
+        initial: false
+      }),
+      backgroundCreationEnabled: new BooleanField({
+        required: true,
+        nullable: false,
+        initial: false
+      }),
+      backgroundDraft: new StringField({
+        required: true,
+        nullable: false,
+        initial: "",
+        blank: true
+      }),
       ...characteristics,
       identity: new SchemaField({
         playerName: textField(),

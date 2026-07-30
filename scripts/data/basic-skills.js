@@ -64,6 +64,8 @@ export const BASIC_SKILL_SOURCES = BASIC_SKILLS.map(([
   },
   system: {
     slug,
+    templateSlug: slug,
+    specialization: "",
     category: "basic",
     group: slug === "lengua-materna"
       ? "language"
@@ -93,6 +95,7 @@ export async function ensureBasicSkills(actor) {
       .filter(Boolean)
   );
   const missing = BASIC_SKILL_SOURCES
+    .filter((source) => source.system.slug !== "estilo-de-combate")
     .filter((source) => !existing.has(source.system.slug))
     .map((source) => foundry.utils.deepClone(source));
 

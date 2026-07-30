@@ -36,6 +36,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       item: this.item,
       editable: this.isEditable,
       isSkill: this.item.type === "skill",
+      isSkillLike: ["skill", "combatStyle"].includes(this.item.type),
+      isCombatStyle: this.item.type === "combatStyle",
+      isBackground: ["culture", "profession"].includes(this.item.type),
       isPassion: this.item.type === "passion",
       isEquipment: this.item.type === "equipment",
       isWeapon: this.item.type === "weapon",
@@ -45,7 +48,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ["professional", "MYTHRASF.Skill.GroupProfessional"],
         ["resistance", "MYTHRASF.Skill.GroupResistance"],
         ["magic", "MYTHRASF.Skill.GroupMagic"],
-        ["language", "MYTHRASF.Skill.GroupLanguage"]
+        ["language", "MYTHRASF.Skill.GroupLanguage"],
+        ["combat", "MYTHRASF.Skill.GroupCombat"]
       ].map(([value, key]) => ({
         value,
         label: game.i18n.localize(key)

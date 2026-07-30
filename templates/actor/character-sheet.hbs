@@ -35,20 +35,23 @@
 
     <main class="sheet-body">
       <section class="tab-panel active" data-tab-content="character">
+        {{#if editable}}
+          <div class="sheet-edit-management">
+            <button type="button" class="sheet-edit-toggle {{#if editMode}}active{{/if}}"
+              data-action="toggle-edit-mode" aria-pressed="{{editMode}}">
+              <i class="fas {{#if editMode}}fa-check{{else}}fa-pen{{/if}}" aria-hidden="true"></i>
+              {{#if editMode}}
+                {{localize "MYTHRASF.EditMode.Finish"}}
+              {{else}}
+                {{localize "MYTHRASF.EditMode.Start"}}
+              {{/if}}
+            </button>
+          </div>
+        {{/if}}
         <section class="paper-stat-block">
           <fieldset class="paper-characteristics">
             <legend>
               <span>{{localize "MYTHRASF.Characteristics"}}</span>
-              {{#if actor.system.characteristicsGenerated}}
-                {{#if editable}}
-                  <button type="button" class="characteristics-edit-toggle {{#if characteristicsEditing}}active{{/if}}"
-                    data-action="toggle-characteristics-edit"
-                    aria-pressed="{{characteristicsEditing}}"
-                    title="{{#if characteristicsEditing}}{{localize "MYTHRASF.Character.FinishEdit"}}{{else}}{{localize "MYTHRASF.Character.Edit"}}{{/if}}">
-                    <i class="fas {{#if characteristicsEditing}}fa-check{{else}}fa-pen{{/if}}" aria-hidden="true"></i>
-                  </button>
-                {{/if}}
-              {{/if}}
             </legend>
             {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
             {{#unless actor.system.characteristicsGenerated}}
@@ -143,29 +146,20 @@
           </fieldset>
         </section>
 
-        {{#if editable}}
-          <div class="skills-management">
-            <button type="button" class="skills-edit-toggle {{#if skillsEditing}}active{{/if}}"
-              data-action="toggle-skills-edit" aria-pressed="{{skillsEditing}}"
-              title="{{#if skillsEditing}}{{localize "MYTHRASF.Skill.FinishEdit"}}{{else}}{{localize "MYTHRASF.Skill.EditMode"}}{{/if}}">
-              <i class="fas {{#if skillsEditing}}fa-check{{else}}fa-pen{{/if}}" aria-hidden="true"></i>
-              {{#if skillsEditing}}
-                {{localize "MYTHRASF.Skill.FinishEdit"}}
-              {{else}}
-                {{localize "MYTHRASF.Skill.EditMode"}}
-              {{/if}}
-            </button>
-          </div>
+        {{#if backgroundWizard}}
+          {{> "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs"
+            wizard=backgroundWizard}}
         {{/if}}
-        <section class="paper-skill-columns {{#if skillsEditing}}skills-editing{{/if}}">
+
+        <section class="paper-skill-columns {{#if editMode}}skills-editing{{/if}}">
           <div class="paper-skill-column paper-skill-column-basic">
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-              group=basicSkillGroup editable=editable skillsEditing=skillsEditing}}
+              group=basicSkillGroup editable=editable skillsEditing=editMode}}
           </div>
           <div class="paper-skill-column paper-skill-column-secondary">
             {{#each secondarySkillGroups as |group|}}
               {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-                group=group editable=../editable skillsEditing=../skillsEditing}}
+                group=group editable=../editable skillsEditing=../editMode}}
             {{/each}}
 
           <fieldset class="paper-passions">

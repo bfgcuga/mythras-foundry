@@ -1,5 +1,28 @@
 import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
 import {
+  CULTURES,
+  PROFESSIONS,
+  getCulture,
+  getProfession
+} from "../data/backgrounds.js";
+import { BASIC_SKILL_SOURCES } from "../data/basic-skills.js";
+import { PROFESSIONAL_SKILL_SOURCES } from "../data/professional-skills.js";
+import {
+  BACKGROUND_BUDGETS,
+  allocationRemaining as backgroundAllocationRemaining,
+  createBackgroundDraft,
+  freeSkillNeedsSpecialization,
+  getAllAcquiredAbilities,
+  getFreeAbilities,
+  getPhaseAbilities,
+  parseBackgroundDraft,
+  serializeBackgroundDraft,
+  setAllocation,
+  skillAbilityKey,
+  validateBackgroundSelection,
+  validateFreePhase
+} from "../rules/background-generation.js";
+import {
   CHARACTERISTIC_MINIMUMS,
   adjustPointAllocation,
   calculateAllocationRemaining,
@@ -16,8 +39,23 @@ const SKILL_GROUP_LABELS = {
   professional: "MYTHRASF.Skill.GroupProfessional",
   resistance: "MYTHRASF.Skill.GroupResistance",
   magic: "MYTHRASF.Skill.GroupMagic",
-  language: "MYTHRASF.Skill.GroupLanguage"
+  language: "MYTHRASF.Skill.GroupLanguage",
+  combat: "MYTHRASF.Skill.GroupCombat"
 };
+
+const BASIC_SKILLS_BY_SLUG = new Map(
+  BASIC_SKILL_SOURCES.map((source) => [source.system.slug, source])
+);
+const PROFESSIONAL_SKILLS_BY_SLUG = new Map(
+  PROFESSIONAL_SKILL_SOURCES.map((source) => [source.system.slug, source])
+);
+const SKILL_NAMES = new Map([
+  ...BASIC_SKILL_SOURCES,
+  ...PROFESSIONAL_SKILL_SOURCES
+].map((source) => [source.system.slug, source.name]));
+const CORE_BASIC_SLUGS = BASIC_SKILL_SOURCES
+  .map((source) => source.system.slug)
+  .filter((slug) => slug !== "estilo-de-combate");
 
 export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -51,7 +89,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const items = [...this.actor.items];
-    const skills = items.filter((item) => item.type === "skill");
+    const skills = items.filter((item) => ["skill", "combatStyle"].includes(item.type));
     const skillGroups = Object.entries(SKILL_GROUP_LABELS).map(([key, label]) => ({
       key,
       label,
@@ -79,23 +117,28 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       label: game.i18n.localize(`MYTHRASF.Character.Method.${key}`),
       active: generationMethod === key
     }));
+    const backgroundWizard = this.actor.system.characteristicsGenerated
+      && this.actor.system.backgroundCreationEnabled
+      && !this.actor.system.backgroundComplete
+      ? this.#prepareBackgroundWizard()
+      : null;
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
       editable: this.isEditable,
       characteristicRows,
-      characteristicsEditing: Boolean(this._characteristicsEditing),
-      skillsEditing: Boolean(this._skillsEditing),
+      editMode: Boolean(this._editMode),
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
       allocationRemaining: calculateAllocationRemaining(this.actor.system),
       showCharacteristicAdjustments: this.isEditable && (
         (!characteristicsGenerated && generationMethod === "points")
-        || (characteristicsGenerated && this._characteristicsEditing)
+        || (characteristicsGenerated && this._editMode)
       ),
       showCharacteristicSwaps: this.isEditable
         && !characteristicsGenerated
         && generationMethod === "randomSwap",
+      backgroundWizard,
       skillGroups,
       basicSkillGroup,
       secondarySkillGroups,
@@ -124,16 +167,43 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-generation-method]").forEach((button) => {
       button.addEventListener("click", (event) => this.#selectGenerationMethod(event));
     });
-    this.element.querySelector("[data-action='toggle-characteristics-edit']")
-      ?.addEventListener("click", () => this.#toggleCharacteristicsEdit());
-    this.element.querySelector("[data-action='toggle-skills-edit']")
-      ?.addEventListener("click", () => this.#toggleSkillsEdit());
+    this.element.querySelector("[data-action='toggle-edit-mode']")
+      ?.addEventListener("click", () => this.#toggleEditMode());
     this.element.querySelectorAll("[data-action='adjust-characteristic']").forEach((button) => {
       button.addEventListener("click", (event) => this.#adjustCharacteristic(event));
     });
     this.element.querySelectorAll("[data-swap-characteristic]").forEach((select) => {
       select.addEventListener("change", (event) => this.#swapCharacteristic(event));
     });
+    this.element.querySelectorAll("[data-background-select]").forEach((select) => {
+      select.addEventListener("change", (event) => this.#selectBackground(event));
+    });
+    this.element.querySelectorAll("[data-background-choice]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#toggleBackgroundChoice(event));
+    });
+    this.element.querySelectorAll("[data-background-professional]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#toggleBackgroundProfessional(event));
+    });
+    this.element.querySelectorAll("[data-background-specialization]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateBackgroundSpecialization(event));
+    });
+    this.element.querySelectorAll("[data-background-style-field]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateBackgroundStyle(event));
+    });
+    this.element.querySelectorAll("[data-background-free-field]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateFreeSkill(event));
+    });
+    this.element.querySelectorAll("[data-background-points]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateBackgroundPoints(event));
+    });
+    this.element.querySelectorAll("[data-background-points-action]").forEach((button) => {
+      button.addEventListener("click", (event) => this.#adjustBackgroundPoints(event));
+    });
+    this.element.querySelectorAll("[data-background-navigation]").forEach((button) => {
+      button.addEventListener("click", (event) => this.#navigateBackground(event));
+    });
+    this.element.querySelector("[data-action='confirm-background']")
+      ?.addEventListener("click", () => this.#confirmBackground());
     this.element.querySelectorAll("[data-action='create-item']").forEach((button) => {
       button.addEventListener("click", (event) => this.#createItem(event));
     });
@@ -187,7 +257,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     const { attributes } = this.actor.system;
-    this._characteristicsEditing = false;
+    this._editMode = false;
     await this.actor.update({
       "system.characteristicsGenerated": true,
       "system.resources.actionPoints.value": attributes.actionPointsMax,
@@ -230,15 +300,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.actor.update(update);
   }
 
-  async #toggleCharacteristicsEdit() {
+  async #toggleEditMode() {
     if (!this.isEditable) return;
-    this._characteristicsEditing = !this._characteristicsEditing;
-    await this.render({ force: true });
-  }
-
-  async #toggleSkillsEdit() {
-    if (!this.isEditable) return;
-    this._skillsEditing = !this._skillsEditing;
+    this._editMode = !this._editMode;
     await this.render({ force: true });
   }
 
@@ -253,7 +317,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (!generated && this.actor.system.generationMethod === "points") {
       value = adjustPointAllocation(this.actor.system, key, delta);
-    } else if (generated && this._characteristicsEditing) {
+    } else if (generated && this._editMode) {
       value = Math.max(CHARACTERISTIC_MINIMUMS[key], value + delta);
     } else {
       return;
@@ -273,6 +337,414 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       [`system.${first}`]: this.actor.system[second],
       [`system.${second}`]: this.actor.system[first]
     });
+  }
+
+  #prepareBackgroundWizard() {
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    const stage = draft.stage;
+    const phase = ["culture", "profession"].includes(stage) ? stage : null;
+    const selectedBackground = phase === "culture" ? culture : profession;
+    const selectedProfessionals = new Set(
+      phase === "culture"
+        ? draft.cultureProfessionals
+        : draft.professionProfessionals
+    );
+    const selectedChoices = phase === "culture"
+      ? draft.cultureChoices
+      : draft.professionChoices;
+    const phaseAbilities = phase
+      ? getPhaseAbilities(selectedBackground, draft, phase)
+      : [];
+    const freeAbilities = getFreeAbilities(
+      culture,
+      profession,
+      draft,
+      CORE_BASIC_SLUGS
+    );
+    const acquiredBeforeFree = new Set(
+      getAllAcquiredAbilities(culture, profession, draft, { includeFree: false })
+        .map((ability) => ability.key)
+    );
+    const allocationPhase = phase ?? (stage === "free" ? "free" : null);
+    const allocationAbilities = allocationPhase === "free" ? freeAbilities : phaseAbilities;
+    const allocation = allocationPhase ? draft.allocations[allocationPhase] : {};
+    const allocationRows = allocationAbilities
+      .filter((ability) => ability.key && ability.key !== "style:")
+      .map((ability) => ({
+        ...ability,
+        phase: allocationPhase,
+        label: this.#abilityLabel(ability),
+        points: Number(allocation[ability.key] ?? 0)
+      }))
+      .sort((left, right) => left.label.localeCompare(right.label, game.i18n.lang));
+    const reviewAbilities = freeAbilities.map((ability) => {
+      const culturePoints = Number(draft.allocations.culture[ability.key] ?? 0);
+      const professionPoints = Number(draft.allocations.profession[ability.key] ?? 0);
+      const freePoints = Number(draft.allocations.free[ability.key] ?? 0);
+      return {
+        ...ability,
+        label: this.#abilityLabel(ability),
+        culturePoints,
+        professionPoints,
+        freePoints,
+        totalPoints: culturePoints + professionPoints + freePoints
+      };
+    }).sort((left, right) => left.label.localeCompare(right.label, game.i18n.lang));
+
+    return {
+      stage,
+      isCulture: stage === "culture",
+      isProfession: stage === "profession",
+      isFree: stage === "free",
+      isReview: stage === "review",
+      cultureName: culture?.name ?? "",
+      professionName: profession?.name ?? "",
+      cultures: CULTURES.map((entry) => ({
+        key: entry.key,
+        name: entry.name,
+        selected: entry.key === draft.cultureKey
+      })),
+      professions: PROFESSIONS.map((entry) => ({
+        key: entry.key,
+        name: entry.name,
+        selected: entry.key === draft.professionKey
+      })),
+      selected: selectedBackground
+        ? {
+          ...selectedBackground,
+          choices: selectedBackground.choices.map((choice) => ({
+            ...choice,
+            options: choice.options.map((entry) => ({
+              ...entry,
+              phase,
+              groupId: choice.id,
+              checked: (selectedChoices[choice.id] ?? []).includes(entry.slug)
+            }))
+          })),
+          professional: selectedBackground.professional.map((entry) => ({
+            ...entry,
+            phase,
+            checked: selectedProfessionals.has(entry.id),
+            specialization: draft.specializations[`${phase}:${entry.id}`] ?? ""
+          })),
+          styles: selectedBackground.styles.map((prompt, index) => ({
+            id: `${phase}:${index}`,
+            prompt,
+            ...(draft.styles[`${phase}:${index}`] ?? {})
+          }))
+        }
+        : null,
+      selectedProfessionalCount: selectedProfessionals.size,
+      freeProfessionalOptions: PROFESSIONAL_SKILL_SOURCES.map((source) => ({
+        slug: source.system.slug,
+        name: source.name,
+        selected: source.system.slug === draft.freeProfessional.slug,
+        available: freeSkillNeedsSpecialization(source.system.slug)
+          || !acquiredBeforeFree.has(skillAbilityKey(source.system.slug))
+      })).filter((entry) => entry.available || entry.selected),
+      freeProfessional: draft.freeProfessional,
+      freeSpecializationRequired: freeSkillNeedsSpecialization(
+        draft.freeProfessional.slug
+      ),
+      allocationPhase,
+      allocationRows,
+      allocationRemaining: allocationPhase
+        ? backgroundAllocationRemaining(allocationPhase, allocation)
+        : 0,
+      allocationBudget: allocationPhase ? BACKGROUND_BUDGETS[allocationPhase] : 0,
+      reviewAbilities
+    };
+  }
+
+  #abilityLabel(ability) {
+    if (ability.type === "combatStyle") return ability.name || ability.prompt;
+    const name = SKILL_NAMES.get(ability.slug) ?? ability.slug;
+    return ability.specialization ? `${name} (${ability.specialization})` : name;
+  }
+
+  async #saveBackgroundDraft(draft) {
+    await this.actor.update({
+      "system.backgroundDraft": serializeBackgroundDraft(draft)
+    });
+  }
+
+  async #selectBackground(event) {
+    if (!this.isEditable) return;
+    const type = event.currentTarget.dataset.backgroundSelect;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    if (type === "culture") {
+      Object.assign(draft, createBackgroundDraft(), {
+        cultureKey: event.currentTarget.value
+      });
+    } else {
+      draft.professionKey = event.currentTarget.value;
+      draft.professionChoices = {};
+      draft.professionProfessionals = [];
+      draft.allocations.profession = {};
+      draft.allocations.free = {};
+      draft.freeProfessional = { slug: "", specialization: "" };
+      for (const key of Object.keys(draft.specializations)) {
+        if (key.startsWith("profession:")) delete draft.specializations[key];
+      }
+      for (const key of Object.keys(draft.styles)) {
+        if (key.startsWith("profession:")) delete draft.styles[key];
+      }
+    }
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #toggleBackgroundChoice(event) {
+    if (!this.isEditable) return;
+    const { phase, group, slug } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const background = phase === "culture"
+      ? getCulture(draft.cultureKey)
+      : getProfession(draft.professionKey);
+    const rule = background?.choices.find((choice) => choice.id === group);
+    if (!rule) return;
+    const target = phase === "culture" ? draft.cultureChoices : draft.professionChoices;
+    const selected = new Set(target[group] ?? []);
+    if (event.currentTarget.checked) {
+      if (selected.size >= rule.count) {
+        ui.notifications.warn(game.i18n.format("MYTHRASF.Background.ChoiceLimit", {
+          count: rule.count
+        }));
+        await this.render({ force: true });
+        return;
+      }
+      selected.add(slug);
+    } else {
+      selected.delete(slug);
+    }
+    target[group] = [...selected];
+    draft.allocations[phase] = {};
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #toggleBackgroundProfessional(event) {
+    if (!this.isEditable) return;
+    const { phase, option } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const target = phase === "culture"
+      ? draft.cultureProfessionals
+      : draft.professionProfessionals;
+    const selected = new Set(target);
+    if (event.currentTarget.checked) {
+      if (selected.size >= 3) {
+        ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.ThreeSkills"));
+        await this.render({ force: true });
+        return;
+      }
+      selected.add(option);
+    } else {
+      selected.delete(option);
+    }
+    if (phase === "culture") draft.cultureProfessionals = [...selected];
+    else draft.professionProfessionals = [...selected];
+    draft.allocations[phase] = {};
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #updateBackgroundSpecialization(event) {
+    const { phase, option } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    draft.specializations[`${phase}:${option}`] = event.currentTarget.value.trim();
+    draft.allocations[phase] = {};
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #updateBackgroundStyle(event) {
+    const { style, backgroundStyleField: field } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    draft.styles[style] = {
+      ...(draft.styles[style] ?? {}),
+      [field]: event.currentTarget.value.trim()
+    };
+    if (field === "name") {
+      const phase = style.split(":")[0];
+      draft.allocations[phase] = {};
+    }
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #updateFreeSkill(event) {
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const field = event.currentTarget.dataset.backgroundFreeField;
+    draft.freeProfessional[field] = event.currentTarget.value.trim();
+    draft.allocations.free = {};
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #updateBackgroundPoints(event) {
+    const { phase, ability } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    draft.allocations[phase] = setAllocation(
+      draft.allocations[phase],
+      ability,
+      event.currentTarget.value,
+      BACKGROUND_BUDGETS[phase]
+    );
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #adjustBackgroundPoints(event) {
+    event.preventDefault();
+    const { phase, ability, delta } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const current = Number(draft.allocations[phase][ability] ?? 0);
+    draft.allocations[phase] = setAllocation(
+      draft.allocations[phase],
+      ability,
+      current + Number(delta),
+      BACKGROUND_BUDGETS[phase]
+    );
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #navigateBackground(event) {
+    event.preventDefault();
+    const direction = event.currentTarget.dataset.backgroundNavigation;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    if (direction === "back") {
+      draft.stage = {
+        profession: "culture",
+        free: "profession",
+        review: "free"
+      }[draft.stage] ?? "culture";
+      await this.#saveBackgroundDraft(draft);
+      return;
+    }
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    const validation = draft.stage === "culture"
+      ? validateBackgroundSelection(culture, draft, "culture")
+      : draft.stage === "profession"
+        ? validateBackgroundSelection(profession, draft, "profession")
+        : validateFreePhase(culture, profession, draft, CORE_BASIC_SLUGS);
+    if (!validation.valid) {
+      ui.notifications.warn(game.i18n.localize(
+        `MYTHRASF.Background.Validation.${validation.reason}`
+      ));
+      return;
+    }
+    draft.stage = { culture: "profession", profession: "free", free: "review" }[draft.stage];
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #confirmBackground() {
+    if (!this.isEditable) return;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    if (
+      !validateBackgroundSelection(culture, draft, "culture").valid
+      || !validateBackgroundSelection(profession, draft, "profession").valid
+      || !validateFreePhase(culture, profession, draft, CORE_BASIC_SLUGS).valid
+    ) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.Validation.incomplete"));
+      return;
+    }
+
+    const abilities = getFreeAbilities(culture, profession, draft, CORE_BASIC_SLUGS);
+    const updates = [];
+    const creations = [];
+    for (const ability of abilities) {
+      const points = {
+        culturePoints: Number(draft.allocations.culture[ability.key] ?? 0),
+        professionPoints: Number(draft.allocations.profession[ability.key] ?? 0),
+        freePoints: Number(draft.allocations.free[ability.key] ?? 0)
+      };
+      if (ability.type === "combatStyle") {
+        creations.push({
+          name: ability.name,
+          type: "combatStyle",
+          img: "icons/svg/sword.svg",
+          system: {
+            slug: ability.key.slice(6),
+            templateSlug: "estilo-de-combate",
+            specialization: ability.name,
+            category: "professional",
+            group: "combat",
+            characteristic1: "strength",
+            characteristic2: "dexterity",
+            baseBonus: 0,
+            bonus: 0,
+            ...points,
+            experiencePoints: 0,
+            trained: false,
+            fumbled: false,
+            weapons: ability.weapons,
+            traits: ability.traits,
+            sourceType: "background",
+            description: ability.prompt
+          },
+          flags: { "mythras-foundry": { backgroundAbility: ability.key } }
+        });
+        continue;
+      }
+
+      const basic = BASIC_SKILLS_BY_SLUG.get(ability.slug);
+      if (basic && ability.specialization === "") {
+        const item = this.actor.items.find((candidate) => (
+          candidate.type === "skill" && candidate.system.slug === ability.slug
+        ));
+        if (item) updates.push({ _id: item.id, ...Object.fromEntries(
+          Object.entries(points).map(([key, value]) => [`system.${key}`, value])
+        ) });
+        continue;
+      }
+
+      const source = PROFESSIONAL_SKILLS_BY_SLUG.get(ability.slug);
+      if (!source) continue;
+      const data = foundry.utils.deepClone(source);
+      data.name = ability.specialization
+        ? `${source.name} (${ability.specialization})`
+        : source.name;
+      data.system.slug = ability.specialization
+        ? `${ability.slug}-${ability.key.split(":").at(-1)}`
+        : ability.slug;
+      data.system.templateSlug = ability.slug;
+      data.system.specialization = ability.specialization;
+      Object.assign(data.system, points);
+      data.flags = {
+        ...(data.flags ?? {}),
+        "mythras-foundry": {
+          ...(data.flags?.["mythras-foundry"] ?? {}),
+          backgroundAbility: ability.key
+        }
+      };
+      creations.push(data);
+    }
+
+    if (creations.length > 0) {
+      await this.actor.createEmbeddedDocuments("Item", creations);
+    }
+    if (updates.length > 0) {
+      await this.actor.updateEmbeddedDocuments("Item", updates);
+    }
+    const [cultureDocument, professionDocument] = await Promise.all([
+      this.#getBackgroundDocument("cultures", culture.key),
+      this.#getBackgroundDocument("professions", profession.key)
+    ]);
+    await this.actor.update({
+      "system.identity.culture.name": culture.name,
+      "system.identity.culture.sourceUuid": cultureDocument?.uuid ?? "",
+      "system.identity.profession.name": profession.name,
+      "system.identity.profession.sourceUuid": professionDocument?.uuid ?? "",
+      "system.backgroundComplete": true,
+      "system.backgroundCreationEnabled": false,
+      "system.backgroundDraft": ""
+    });
+    ui.notifications.info(game.i18n.localize("MYTHRASF.Background.Completed"));
+  }
+
+  async #getBackgroundDocument(packName, key) {
+    const pack = game.packs.get(`mythras-foundry.${packName}`);
+    if (!pack) return null;
+    const documents = await pack.getDocuments();
+    return documents.find((item) => item.system.key === key) ?? null;
   }
 
   async #createItem(event) {
@@ -327,7 +799,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const documents = await pack.getDocuments({ type: "skill" });
     const available = documents
       .filter((item) => (item.system.group || item.system.category) === group)
-      .filter((item) => !existingSlugs.has(item.system.slug))
+      .filter((item) => (
+        item.system.category === "professional"
+        || !existingSlugs.has(item.system.slug)
+      ))
       .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
 
     if (available.length === 0) {
@@ -366,6 +841,30 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       delete sourceData._id;
       delete sourceData._key;
       delete sourceData.folder;
+      if (freeSkillNeedsSpecialization(source.system.templateSlug || source.system.slug)) {
+        const specialization = await DialogV2.input({
+          window: { title: game.i18n.localize("MYTHRASF.Background.Specialization") },
+          content: `
+            <label class="skill-pack-picker">
+              <span>${game.i18n.localize("MYTHRASF.Background.Specialization")}</span>
+              <input type="text" name="specialization" autofocus required>
+            </label>
+          `,
+          ok: {
+            label: game.i18n.localize("MYTHRASF.Add"),
+            callback: (dialogEvent, button) => (
+              button.form.elements.specialization.value.trim()
+            )
+          }
+        });
+        if (!specialization) return;
+        sourceData.name = `${source.name} (${specialization})`;
+        sourceData.system.templateSlug = source.system.slug;
+        sourceData.system.specialization = specialization;
+        sourceData.system.slug = `${source.system.slug}-${
+          skillAbilityKey(source.system.slug, specialization).split(":").at(-1)
+        }`;
+      }
       await this.actor.createEmbeddedDocuments("Item", [sourceData]);
       await this.render({ force: true });
       ui.notifications.info(game.i18n.format("MYTHRASF.Skill.Added", {

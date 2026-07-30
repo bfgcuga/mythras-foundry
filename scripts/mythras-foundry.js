@@ -1,6 +1,8 @@
 import { CharacterData } from "./data/character-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
 import {
+  BackgroundData,
+  CombatStyleData,
   EquipmentData,
   PassionData,
   SkillData,
@@ -12,6 +14,7 @@ import { CharacterSheet } from "./sheets/character-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 
 const PARTIALS = [
+  "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
   "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
   "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
@@ -23,6 +26,9 @@ Hooks.once("init", async () => {
   CONFIG.Actor.dataModels.character = CharacterData;
   CONFIG.Item.documentClass = MythrasItem;
   CONFIG.Item.dataModels.skill = SkillData;
+  CONFIG.Item.dataModels.combatStyle = CombatStyleData;
+  CONFIG.Item.dataModels.culture = BackgroundData;
+  CONFIG.Item.dataModels.profession = BackgroundData;
   CONFIG.Item.dataModels.equipment = EquipmentData;
   CONFIG.Item.dataModels.passion = PassionData;
   CONFIG.Item.dataModels.weapon = WeaponData;
@@ -41,7 +47,7 @@ Hooks.once("init", async () => {
     "mythras-foundry",
     MythrasItemSheet,
     {
-      types: ["skill", "passion", "equipment", "weapon"],
+      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon"],
       makeDefault: true,
       label: "MYTHRASF.Sheet.Item"
     }
@@ -69,6 +75,9 @@ Hooks.on("preUpdateActor", (actor, changed) => {
 Hooks.on("createActor", async (actor, options, userId) => {
   if (userId !== game.user.id) return;
   await ensureBasicSkills(actor);
+  if (actor.type === "character") {
+    await actor.update({ "system.backgroundCreationEnabled": true });
+  }
 });
 
 Hooks.once("ready", async () => {

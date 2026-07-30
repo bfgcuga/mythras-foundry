@@ -4,7 +4,7 @@ export class MythrasItem extends Item {
   prepareDerivedData() {
     super.prepareDerivedData();
 
-    if (this.type !== "skill") return;
+    if (!["skill", "combatStyle"].includes(this.type)) return;
 
     this.system.isBasic = ["basic", "standard"].includes(this.system.category);
     this.system.isProfessional = this.system.category === "professional";
@@ -17,7 +17,7 @@ export class MythrasItem extends Item {
   }
 
   async rollSkill({ difficulty = "standard" } = {}) {
-    if (this.type !== "skill") return;
+    if (!["skill", "combatStyle"].includes(this.type)) return;
 
     const multipliers = {
       automatic: null,

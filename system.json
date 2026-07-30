@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.19/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.20/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -15,6 +15,9 @@
     },
     "Item": {
       "skill": {},
+      "combatStyle": {},
+      "culture": {},
+      "profession": {},
       "passion": {},
       "equipment": {},
       "weapon": {}
@@ -48,6 +51,20 @@
       "name": "skills",
       "label": "Habilidades de Mythras Imperativo",
       "path": "packs/skills",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "cultures",
+      "label": "Culturas de Mythras Imperativo",
+      "path": "packs/cultures",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "professions",
+      "label": "Profesiones de Mythras Imperativo",
+      "path": "packs/professions",
       "type": "Item",
       "system": "mythras-foundry"
     }
