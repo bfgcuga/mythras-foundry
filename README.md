@@ -15,9 +15,21 @@ La primera fase incluye:
 - habilidades reutilizables y tiradas porcentuales;
 - equipo y armas como tipos de Item independientes;
 - interfaz en español.
+- compendio de habilidades generado desde fuentes legibles.
 
 Las fórmulas y tablas deben contrastarse con la edición de Mythras Imperativo
 elegida antes de considerar estable una release.
+
+## Perfiles de reglas pendientes
+
+La implementación actual usa Mythras Imperativo. Las diferencias conocidas
+respecto a Mythras completo se marcan en el código con `RULESET DIFFERENCE` y
+los puntos de extensión previstos con `TODO(rules-profile)`.
+
+La primera diferencia registrada son los Puntos de Acción: Imperativo concede
+siempre 2, mientras que Mythras completo los deriva de INT y DES. En una fase
+posterior se podrá introducir un perfil de reglas para seleccionar el
+comportamiento sin duplicar hojas, macros ni modelos de datos.
 
 ## Desarrollo
 
@@ -30,6 +42,10 @@ npm run check
 
 `npm run check` valida la sintaxis, los archivos declarados en el manifiesto y
 la coherencia entre la versión y la URL de descarga.
+
+`npm run build:packs` usa la CLI oficial de Foundry para compilar las fuentes
+de habilidades en un compendio LevelDB compatible con V13. Las descripciones
+del catálogo son resúmenes originales, no copias literales del manual.
 
 ## Publicación
 

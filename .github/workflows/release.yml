@@ -16,15 +16,23 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Instalar herramientas de desarrollo
+        run: npm install --no-audit --no-fund
+
       - name: Validar proyecto y etiqueta
         run: |
           npm test
-          npm run check -- "${{ github.ref_name }}"
+
+      - name: Construir compendios
+        run: npm run build:packs
+
+      - name: Validar manifiesto y paquete
+        run: npm run check -- "${{ github.ref_name }}"
 
       - name: Crear paquete ZIP
         shell: bash
         run: |
-          elementos=(system.json scripts templates styles lang README.md)
+          elementos=(system.json scripts templates styles lang packs README.md)
           zip -r mythras-foundry.zip "${elementos[@]}"
 
       - name: Crear release y adjuntar archivos

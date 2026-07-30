@@ -29,19 +29,43 @@ const descriptionField = () => new HTMLField({
 export class SkillData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
+      slug: textField(),
       category: new StringField({
         required: true,
         nullable: false,
-        initial: "standard",
-        choices: ["standard", "professional"]
+        initial: "basic",
+        // "standard" is retained temporarily so actors created by v0.0.10 can
+        // load safely before the ready-hook migration renames it to "basic".
+        choices: ["basic", "standard", "professional"]
       }),
       characteristic1: textField("strength"),
       characteristic2: textField("dexterity"),
+      // Legacy v0.0.10 field. Migrated to freePoints during the ready hook.
       bonus: new NumberField({
         required: true,
         nullable: false,
         integer: true,
         initial: 0
+      }),
+      baseBonus: new NumberField({
+        required: true,
+        nullable: false,
+        integer: true,
+        initial: 0
+      }),
+      culturePoints: nonNegativeNumber(0, true),
+      professionPoints: nonNegativeNumber(0, true),
+      freePoints: nonNegativeNumber(0, true),
+      experiencePoints: nonNegativeNumber(0, true),
+      trained: new BooleanField({
+        required: true,
+        nullable: false,
+        initial: false
+      }),
+      used: new BooleanField({
+        required: true,
+        nullable: false,
+        initial: false
       }),
       description: descriptionField()
     };

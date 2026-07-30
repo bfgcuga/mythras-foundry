@@ -20,6 +20,13 @@ for (const language of manifest.languages ?? []) {
   JSON.parse(await readFile(new URL(language.path, root), "utf8"));
 }
 
+for (const pack of manifest.packs ?? []) {
+  const entries = await readdir(new URL(`${pack.path}/`, root));
+  if (entries.length === 0) {
+    throw new Error(`El compendio ${pack.name} está vacío.`);
+  }
+}
+
 const javascriptFiles = await collectJavaScriptFiles(new URL("scripts/", root));
 for (const file of javascriptFiles) {
   const result = spawnSync(process.execPath, ["--check", file], {

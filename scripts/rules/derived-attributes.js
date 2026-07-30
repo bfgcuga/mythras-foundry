@@ -13,6 +13,14 @@ function steppedValue(value, firstLimit, firstValue, step) {
   return firstValue + Math.ceil((value - firstLimit) / step);
 }
 
+/**
+ * RULESET DIFFERENCE: Mythras Imperativo (p. 7) grants every character
+ * exactly 2 Action Points. Full Mythras derives this value from INT + DEX.
+ *
+ * TODO(rules-profile): accept the character/rules profile here when the system
+ * supports both "imperative" and "full" rules, rather than branching in sheets
+ * or macros.
+ */
 export function calculateActionPoints() {
   return 2;
 }

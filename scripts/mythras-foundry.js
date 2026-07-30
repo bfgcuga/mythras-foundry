@@ -1,4 +1,5 @@
 import { CharacterData } from "./data/character-data.js";
+import { ensureBasicSkills } from "./data/basic-skills.js";
 import {
   EquipmentData,
   SkillData,
@@ -61,6 +62,72 @@ Hooks.on("preUpdateActor", (actor, changed) => {
   clampResource(changed, candidate, "luckPoints", attributes.luckPointsMax);
   clampResource(changed, candidate, "magicPoints", attributes.magicPointsMax);
 });
+
+Hooks.on("createActor", async (actor, options, userId) => {
+  if (userId !== game.user.id) return;
+  await ensureBasicSkills(actor);
+});
+
+Hooks.once("ready", async () => {
+  if (!isPrimaryActiveGM()) return;
+
+  const legacyWorldSkills = game.items.filter(
+    (item) => item.type === "skill"
+  );
+  for (const item of legacyWorldSkills) {
+    await migrateLegacySkill(item);
+  }
+
+  for (const actor of game.actors.filter((candidate) => candidate.type === "character")) {
+    const legacyEmbeddedSkills = actor.items.filter(
+      (item) => item.type === "skill"
+    );
+    const legacyUpdates = legacyEmbeddedSkills
+      .map(getLegacySkillUpdate)
+      .filter(Boolean);
+    if (legacyUpdates.length > 0) {
+      await actor.updateEmbeddedDocuments("Item", legacyUpdates);
+    }
+    await ensureBasicSkills(actor);
+  }
+});
+
+function isPrimaryActiveGM() {
+  const primaryGM = game.users
+    .filter((user) => user.active && user.isGM)
+    .sort((left, right) => left.id.localeCompare(right.id))[0];
+  return primaryGM?.id === game.user.id;
+}
+
+async function migrateLegacySkill(item) {
+  const update = getLegacySkillUpdate(item);
+  if (update) await item.update(update);
+}
+
+function getLegacySkillUpdate(item) {
+  const update = { _id: item.id };
+  let changed = false;
+
+  if (item.system.category === "standard") {
+    update["system.category"] = "basic";
+    changed = true;
+  }
+
+  const legacyBonus = Number(item.system.bonus ?? 0);
+  const assignedPoints = [
+    item.system.culturePoints,
+    item.system.professionPoints,
+    item.system.freePoints,
+    item.system.experiencePoints
+  ].reduce((total, value) => total + Number(value ?? 0), 0);
+  if (legacyBonus !== 0 && assignedPoints === 0) {
+    update["system.freePoints"] = Math.max(0, legacyBonus);
+    update["system.bonus"] = 0;
+    changed = true;
+  }
+
+  return changed ? update : null;
+}
 
 function clampResource(changed, candidate, key, maximum) {
   const current = Number(candidate.resources?.[key]?.value ?? 0);

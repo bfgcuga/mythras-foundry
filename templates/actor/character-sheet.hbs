@@ -93,7 +93,9 @@
           {{#each skills as |item|}}
             <li data-item-id="{{item.id}}">
               <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
-              <span>{{item.system.total}}%</span>
+              <span class="skill-value">
+                {{item.system.base}} + {{item.system.allocatedBonus}} = <strong>{{item.system.total}}%</strong>
+              </span>
               <select data-difficulty>
                 <option value="automatic">{{localize "MYTHRASF.Difficulty.automatic"}}</option>
                 <option value="veryEasy">{{localize "MYTHRASF.Difficulty.veryEasy"}}</option>

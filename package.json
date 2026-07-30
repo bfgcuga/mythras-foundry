@@ -3,7 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:packs": "node scripts/dev/build-packs.mjs",
     "check": "node scripts/dev/validate-project.mjs",
     "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "@foundryvtt/foundryvtt-cli": "3.0.4"
   }
 }

@@ -7,8 +7,8 @@
   {{#if isSkill}}
     <label>{{localize "MYTHRASF.Item.Category"}}</label>
     <select name="system.category">
-      <option value="standard" {{#if item.system.isStandard}}selected{{/if}}>
-        {{localize "MYTHRASF.Skill.Standard"}}
+      <option value="basic" {{#if item.system.isBasic}}selected{{/if}}>
+        {{localize "MYTHRASF.Skill.Basic"}}
       </option>
       <option value="professional" {{#if item.system.isProfessional}}selected{{/if}}>
         {{localize "MYTHRASF.Skill.Professional"}}
@@ -25,8 +25,24 @@
       {{selectOptions characteristicChoices selected=item.system.characteristic2
         labelAttr="label" valueAttr="value"}}
     </select>
-    <label>{{localize "MYTHRASF.Item.Bonus"}}</label>
-    <input type="number" name="system.bonus" value="{{item.system.bonus}}">
+    <label>{{localize "MYTHRASF.Skill.BaseBonus"}}</label>
+    <input type="number" name="system.baseBonus" value="{{item.system.baseBonus}}">
+    <label>{{localize "MYTHRASF.Skill.CulturePoints"}}</label>
+    <input type="number" min="0" name="system.culturePoints" value="{{item.system.culturePoints}}">
+    <label>{{localize "MYTHRASF.Skill.ProfessionPoints"}}</label>
+    <input type="number" min="0" name="system.professionPoints" value="{{item.system.professionPoints}}">
+    <label>{{localize "MYTHRASF.Skill.FreePoints"}}</label>
+    <input type="number" min="0" name="system.freePoints" value="{{item.system.freePoints}}">
+    <label>{{localize "MYTHRASF.Skill.ExperiencePoints"}}</label>
+    <input type="number" min="0" name="system.experiencePoints" value="{{item.system.experiencePoints}}">
+    <label class="checkbox">
+      <input type="checkbox" name="system.trained" {{checked item.system.trained}}>
+      {{localize "MYTHRASF.Skill.Trained"}}
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" name="system.used" {{checked item.system.used}}>
+      {{localize "MYTHRASF.Skill.Used"}}
+    </label>
   {{else}}
     <label>{{localize "MYTHRASF.Item.Quantity"}}</label>
     <input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">

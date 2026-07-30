@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.10/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.11/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -35,6 +35,15 @@
       "lang": "es",
       "name": "Español",
       "path": "lang/es.json"
+    }
+  ],
+  "packs": [
+    {
+      "name": "skills",
+      "label": "Habilidades de Mythras Imperativo",
+      "path": "packs/skills",
+      "type": "Item",
+      "system": "mythras-foundry"
     }
   ]
 }

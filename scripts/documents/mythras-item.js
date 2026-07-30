@@ -1,21 +1,18 @@
+import { calculateSkillValues } from "../rules/skills.js";
+
 export class MythrasItem extends Item {
   prepareDerivedData() {
     super.prepareDerivedData();
 
     if (this.type !== "skill") return;
 
-    this.system.isStandard = this.system.category === "standard";
+    this.system.isBasic = ["basic", "standard"].includes(this.system.category);
     this.system.isProfessional = this.system.category === "professional";
 
-    const actor = this.actor;
-    if (!actor) {
-      this.system.total = this.system.bonus;
-      return;
-    }
-
-    const first = Number(actor.system[this.system.characteristic1] ?? 0);
-    const second = Number(actor.system[this.system.characteristic2] ?? 0);
-    this.system.total = first + second + Number(this.system.bonus ?? 0);
+    const values = calculateSkillValues(this.system, this.actor?.system);
+    this.system.base = values.base;
+    this.system.allocatedBonus = values.bonus;
+    this.system.total = values.total;
   }
 
   async rollSkill({ difficulty = "standard" } = {}) {
@@ -58,6 +55,10 @@ export class MythrasItem extends Item {
         (${target}%): ${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}
       `
     });
+
+    if (!this.system.used) {
+      await this.update({ "system.used": true });
+    }
   }
 }
 
