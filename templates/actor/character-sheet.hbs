@@ -50,14 +50,9 @@
                 {{/if}}
               {{/if}}
             </legend>
+            {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
             {{#unless actor.system.characteristicsGenerated}}
               <div class="character-generation">
-                <div class="generation-methods">
-                  {{#each generationMethods as |method|}}
-                    <button type="button" class="{{#if method.active}}active{{/if}}"
-                      data-generation-method="{{method.key}}">{{method.label}}</button>
-                  {{/each}}
-                </div>
                 {{#if isPointAllocation}}
                   <p class="allocation-remaining">
                     {{localize "MYTHRASF.Character.PointsRemaining" points=allocationRemaining}}
@@ -70,9 +65,14 @@
                     {{localize "MYTHRASF.Character.Confirm"}}
                   </button>
                 {{/if}}
+                <div class="generation-methods">
+                  {{#each generationMethods as |method|}}
+                    <button type="button" class="{{#if method.active}}active{{/if}}"
+                      data-generation-method="{{method.key}}">{{method.label}}</button>
+                  {{/each}}
+                </div>
               </div>
             {{/unless}}
-            {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
           </fieldset>
 
           <fieldset class="paper-attributes">

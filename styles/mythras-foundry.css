@@ -174,6 +174,7 @@
 
 .mythras-foundry .paper-characteristics .characteristics-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   padding: 0;
   border: 0;
   background: transparent;
@@ -248,7 +249,9 @@
 .mythras-foundry .character-generation {
   display: grid;
   gap: 0.45rem;
-  margin-bottom: 0.65rem;
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--mythras-border);
 }
 
 .mythras-foundry .generation-methods {
@@ -258,9 +261,10 @@
 }
 
 .mythras-foundry .generation-methods button {
-  min-height: 2.5rem;
-  padding: 0.25rem;
+  min-height: 1.8rem;
+  padding: 0.15rem 0.25rem;
   line-height: 1.1;
+  font-size: 0.75rem;
 }
 
 .mythras-foundry .allocation-remaining {
