@@ -68,8 +68,23 @@
           <fieldset class="paper-attributes">
             <legend>{{localize "MYTHRASF.Attributes"}}</legend>
             <div class="paper-attribute-list">
-              <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span>
-                <output>{{actor.system.attributes.actionPointsMax}}</output></label>
+              <label class="resource-attribute">
+                <span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span>
+                <div class="resource-control">
+                  <output class="resource-value">
+                    <span>{{actor.system.resources.actionPoints.value}}</span>
+                    <b>/ {{actor.system.attributes.actionPointsMax}}</b>
+                  </output>
+                  <button type="button" data-resource="actionPoints"
+                    data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}">−</button>
+                  <button type="button" data-resource="actionPoints"
+                    data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}">+</button>
+                  <button type="button" data-resource="actionPoints"
+                    data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}">
+                    <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </label>
               <label><span>{{localize "MYTHRASF.Attribute.DamageModifier"}}</span>
                 <output>{{actor.system.attributes.damageModifier.label}}</output></label>
               <label><span>{{localize "MYTHRASF.Attribute.ExperienceModifier"}}</span>
@@ -78,47 +93,44 @@
                 <output>{{actor.system.attributes.healingRate}}</output></label>
               <label><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
                 <output>{{actor.system.attributes.initiative}}</output></label>
-              <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>
-                <output>{{actor.system.attributes.luckPointsMax}}</output></label>
+              <label class="resource-attribute">
+                <span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>
+                <div class="resource-control">
+                  <output class="resource-value">
+                    <span>{{actor.system.resources.luckPoints.value}}</span>
+                    <b>/ {{actor.system.attributes.luckPointsMax}}</b>
+                  </output>
+                  <button type="button" data-resource="luckPoints"
+                    data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}">−</button>
+                  <button type="button" data-resource="luckPoints"
+                    data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}">+</button>
+                  <button type="button" data-resource="luckPoints"
+                    data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}">
+                    <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </label>
+              <label class="resource-attribute">
+                <span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span>
+                <div class="resource-control">
+                  <output class="resource-value">
+                    <span>{{actor.system.resources.magicPoints.value}}</span>
+                    <b>/ {{actor.system.attributes.magicPointsMax}}</b>
+                  </output>
+                  <button type="button" data-resource="magicPoints"
+                    data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}">−</button>
+                  <button type="button" data-resource="magicPoints"
+                    data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}">+</button>
+                  <button type="button" data-resource="magicPoints"
+                    data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}">
+                    <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </label>
               <label><span>{{localize "MYTHRASF.Attribute.MovementRate"}}</span>
                 <output>{{actor.system.attributes.movementRate}}</output></label>
             </div>
           </fieldset>
-        </section>
-
-        <section class="paper-resource-row">
-          <fieldset class="paper-resources">
-            <legend>{{localize "MYTHRASF.Resources"}}</legend>
-            <section class="resource-grid">
-              <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
-              <input type="number" min="0" max="{{actor.system.attributes.actionPointsMax}}"
-                name="system.resources.actionPoints.value"
-                value="{{actor.system.resources.actionPoints.value}}">
-              <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
-              <input type="number" min="0" max="{{actor.system.attributes.luckPointsMax}}"
-                name="system.resources.luckPoints.value"
-                value="{{actor.system.resources.luckPoints.value}}">
-            </section>
-          </fieldset>
-
-          <fieldset class="paper-magic-points">
-            <legend>{{localize "MYTHRASF.Attribute.MagicPoints"}}</legend>
-            <div class="magic-point-scale" aria-label="{{localize "MYTHRASF.MagicPoints.Scale"}}">
-              {{#each magicPointScale as |point|}}
-                <span class="{{#if point.available}}available{{/if}} {{#if point.current}}current{{/if}}">
-                  {{point.value}}
-                </span>
-              {{/each}}
-            </div>
-            <label class="magic-points-current">
-              <span>{{localize "MYTHRASF.MagicPoints.Current"}}</span>
-              <input type="number" min="0" max="{{actor.system.attributes.magicPointsMax}}"
-                name="system.resources.magicPoints.value"
-                value="{{actor.system.resources.magicPoints.value}}">
-              <output>/ {{actor.system.attributes.magicPointsMax}}</output>
-            </label>
-          </fieldset>
-
         </section>
 
         <section class="paper-skill-columns">

@@ -1,3 +1,5 @@
+import { calculateResourceValue } from "../rules/resources.js";
+
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -51,20 +53,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }));
     const basicSkillGroup = skillGroups.find((group) => group.key === "basic");
     const secondarySkillGroups = skillGroups.filter((group) => group.key !== "basic");
-    const magicMaximum = Number(this.actor.system.attributes.magicPointsMax);
-    const magicCurrent = Number(this.actor.system.resources.magicPoints.value);
-
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
       editable: this.isEditable,
       skillGroups,
       basicSkillGroup,
       secondarySkillGroups,
-      magicPointScale: Array.from({ length: 31 }, (_, value) => ({
-        value,
-        available: value <= magicMaximum,
-        current: value === magicCurrent
-      })),
       passions: items.filter((item) => item.type === "passion"),
       equipment: items.filter((item) => item.type === "equipment"),
       weapons: items.filter((item) => item.type === "weapon")
@@ -76,7 +70,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (!this.isEditable) {
       this.element.querySelectorAll(
-        "input[name], textarea[name], select[name], [data-skill-field], [data-passion-field]"
+        "input[name], textarea[name], select[name], [data-skill-field], "
+        + "[data-passion-field], [data-resource-action]"
       )
         .forEach((field) => { field.disabled = true; });
     }
@@ -104,6 +99,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='add-skill-from-pack']").forEach((button) => {
       button.addEventListener("click", (event) => this.#addSkillFromPack(event));
+    });
+    this.element.querySelectorAll("[data-resource-action]").forEach((button) => {
+      button.addEventListener("click", (event) => this.#adjustResource(event));
     });
     this.element.querySelectorAll("[data-skill-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateSkillField(event));
@@ -227,7 +225,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const options = available.map((item) => (
       `<option value="${item.id}">${foundry.utils.escapeHTML(item.name)}</option>`
     )).join("");
-    const formData = await DialogV2.input({
+    const skillId = await DialogV2.input({
       window: {
         title: game.i18n.format("MYTHRASF.Skill.AddDialogTitle", {
           group: game.i18n.localize(SKILL_GROUP_LABELS[group])
@@ -241,20 +239,44 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       `,
       ok: {
         label: game.i18n.localize("MYTHRASF.Add"),
-        icon: "fas fa-plus"
+        icon: "fas fa-plus",
+        callback: (event, button) => button.form.elements.skillId.value
       }
     });
-    if (!formData) return;
+    if (!skillId) return;
 
-    const skillId = formData.get?.("skillId") ?? formData.object?.skillId;
     const source = available.find((item) => item.id === skillId);
     if (!source) return;
 
-    const sourceData = source.toObject();
-    delete sourceData._id;
-    delete sourceData._key;
-    delete sourceData.folder;
-    await this.actor.createEmbeddedDocuments("Item", [sourceData]);
+    try {
+      const sourceData = source.toObject();
+      delete sourceData._id;
+      delete sourceData._key;
+      delete sourceData.folder;
+      await this.actor.createEmbeddedDocuments("Item", [sourceData]);
+      await this.render({ force: true });
+      ui.notifications.info(game.i18n.format("MYTHRASF.Skill.Added", {
+        name: source.name
+      }));
+    } catch (error) {
+      console.error("Mythras Foundry | Error adding skill from compendium", error);
+      ui.notifications.error(game.i18n.localize("MYTHRASF.Skill.AddFailed"));
+    }
+  }
+
+  async #adjustResource(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+
+    const button = event.currentTarget;
+    const key = button.dataset.resource;
+    const action = button.dataset.resourceAction;
+    const resource = this.actor.system.resources[key];
+    const maximum = this.actor.system.attributes[`${key}Max`];
+    if (!resource || maximum === undefined) return;
+
+    const value = calculateResourceValue(resource.value, maximum, action);
+    await this.actor.update({ [`system.resources.${key}.value`]: value });
   }
 
   async #updateSkillField(event) {
