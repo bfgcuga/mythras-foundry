@@ -65,6 +65,11 @@ export const BASIC_SKILL_SOURCES = BASIC_SKILLS.map(([
   system: {
     slug,
     category: "basic",
+    group: slug === "lengua-materna"
+      ? "language"
+      : ["aguante", "evadir", "musculo", "voluntad"].includes(slug)
+        ? "resistance"
+        : "basic",
     characteristic1,
     characteristic2,
     baseBonus,
@@ -73,7 +78,7 @@ export const BASIC_SKILL_SOURCES = BASIC_SKILLS.map(([
     freePoints: 0,
     experiencePoints: 0,
     trained: false,
-    used: false,
+    fumbled: false,
     description
   }
 }));

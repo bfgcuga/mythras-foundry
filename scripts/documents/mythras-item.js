@@ -13,6 +13,7 @@ export class MythrasItem extends Item {
     this.system.base = values.base;
     this.system.allocatedBonus = values.bonus;
     this.system.total = values.total;
+    this.system.experienceImprovementBonus = values.experienceImprovementBonus;
   }
 
   async rollSkill({ difficulty = "standard" } = {}) {
@@ -56,8 +57,8 @@ export class MythrasItem extends Item {
       `
     });
 
-    if (!this.system.used) {
-      await this.update({ "system.used": true });
+    if (result === "fumble" && !this.system.fumbled) {
+      await this.update({ "system.fumbled": true });
     }
   }
 }

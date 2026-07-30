@@ -6,8 +6,21 @@ import {
 const {
   BooleanField,
   NumberField,
-  SchemaField
+  SchemaField,
+  StringField
 } = foundry.data.fields;
+
+const textField = () => new StringField({
+  required: true,
+  nullable: false,
+  initial: "",
+  blank: true
+});
+
+const backgroundSelectionField = () => new SchemaField({
+  name: textField(),
+  sourceUuid: textField()
+});
 
 const characteristicField = () => new NumberField({
   required: true,
@@ -40,6 +53,11 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         initial: false
       }),
       ...characteristics,
+      identity: new SchemaField({
+        playerName: textField(),
+        culture: backgroundSelectionField(),
+        profession: backgroundSelectionField()
+      }),
       resources: new SchemaField({
         actionPoints: resourceField(),
         luckPoints: resourceField(),

@@ -56,6 +56,7 @@ export const PROFESSIONAL_SKILL_SOURCES = PROFESSIONAL_SKILLS.map(([
   system: {
     slug,
     category: "professional",
+    group: slug === "idioma" ? "language" : "professional",
     characteristic1,
     characteristic2,
     baseBonus: 0,
@@ -64,7 +65,7 @@ export const PROFESSIONAL_SKILL_SOURCES = PROFESSIONAL_SKILLS.map(([
     freePoints: 0,
     experiencePoints: 0,
     trained: false,
-    used: false,
+    fumbled: false,
     description
   }
 }));

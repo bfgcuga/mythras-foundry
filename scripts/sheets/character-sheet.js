@@ -9,8 +9,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       resizable: true
     },
     position: {
-      width: 720,
-      height: 640
+      width: 960,
+      height: 760
     },
     form: {
       handler: CharacterSheet._onSubmitForm,
@@ -33,11 +33,33 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const items = [...this.actor.items];
+    const skills = items.filter((item) => item.type === "skill");
+    const skillGroups = [
+      ["basic", "MYTHRASF.Skill.GroupBasic"],
+      ["professional", "MYTHRASF.Skill.GroupProfessional"],
+      ["resistance", "MYTHRASF.Skill.GroupResistance"],
+      ["magic", "MYTHRASF.Skill.GroupMagic"],
+      ["language", "MYTHRASF.Skill.GroupLanguage"]
+    ].map(([key, label]) => ({
+      key,
+      label,
+      skills: skills.filter((item) => (
+        item.system.group || item.system.category
+      ) === key)
+    }));
+    const magicMaximum = Number(this.actor.system.attributes.magicPointsMax);
+    const magicCurrent = Number(this.actor.system.resources.magicPoints.value);
 
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
       editable: this.isEditable,
-      skills: items.filter((item) => item.type === "skill"),
+      skillGroups,
+      magicPointScale: Array.from({ length: 31 }, (_, value) => ({
+        value,
+        available: value <= magicMaximum,
+        current: value === magicCurrent
+      })),
+      passions: items.filter((item) => item.type === "passion"),
       equipment: items.filter((item) => item.type === "equipment"),
       weapons: items.filter((item) => item.type === "weapon")
     }, { inplace: false });
@@ -48,7 +70,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (!this.isEditable) {
       this.element.querySelectorAll(
-        "input[name], textarea[name], select[name], [data-skill-field]"
+        "input[name], textarea[name], select[name], [data-skill-field], [data-passion-field]"
       )
         .forEach((field) => { field.disabled = true; });
     }
@@ -76,6 +98,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-skill-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateSkillField(event));
+    });
+    this.element.querySelectorAll("[data-passion-field]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updatePassionField(event));
     });
   }
 
@@ -174,5 +199,17 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ? field.checked
       : Math.max(0, Number.parseInt(field.value, 10) || 0);
     await item.update({ [`system.${field.dataset.skillField}`]: value });
+  }
+
+  async #updatePassionField(event) {
+    if (!this.isEditable) return;
+
+    const field = event.currentTarget;
+    const itemId = field.closest("[data-item-id]")?.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    if (!item || item.type !== "passion") return;
+
+    const value = Math.max(0, Number.parseInt(field.value, 10) || 0);
+    await item.update({ [`system.${field.dataset.passionField}`]: value });
   }
 }

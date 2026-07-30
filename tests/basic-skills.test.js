@@ -33,4 +33,9 @@ test("Costumbres y Lengua Materna conservan su +40 inicial", () => {
 
   assert.equal(bySlug["costumbres"].system.baseBonus, 40);
   assert.equal(bySlug["lengua-materna"].system.baseBonus, 40);
+  assert.equal(bySlug["lengua-materna"].system.group, "language");
+  assert.equal(bySlug.aguante.system.group, "resistance");
+  assert.equal(bySlug.evadir.system.group, "resistance");
+  assert.equal(bySlug.musculo.system.group, "resistance");
+  assert.equal(bySlug.voluntad.system.group, "resistance");
 });

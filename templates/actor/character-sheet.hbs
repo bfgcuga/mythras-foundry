@@ -1,7 +1,27 @@
 <div class="character-sheet-content">
   <header class="sheet-header">
     <img src="{{actor.img}}" alt="{{actor.name}}" data-edit="img">
-    <input type="text" name="name" value="{{actor.name}}">
+    <div class="identity-fields">
+      <label class="identity-name">
+        <span>{{localize "MYTHRASF.Identity.CharacterName"}}</span>
+        <input type="text" name="name" value="{{actor.name}}">
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.PlayerName"}}</span>
+        <input type="text" name="system.identity.playerName"
+          value="{{actor.system.identity.playerName}}">
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.Culture"}}</span>
+        <input type="text" name="system.identity.culture.name"
+          value="{{actor.system.identity.culture.name}}">
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.Profession"}}</span>
+        <input type="text" name="system.identity.profession.name"
+          value="{{actor.system.identity.profession.name}}">
+      </label>
+    </div>
   </header>
 
   {{#unless actor.system.characteristicsGenerated}}
@@ -34,7 +54,7 @@
     <main class="sheet-body">
       <section class="tab-panel active" data-tab-content="character">
         <div class="section-heading">
-          <h2>{{localize "MYTHRASF.Characteristics"}}</h2>
+          <span></span>
           {{#if editable}}
             <button type="button" data-action="edit-characteristics">
               {{localize "MYTHRASF.Character.Edit"}}
@@ -42,41 +62,123 @@
           {{/if}}
         </div>
 
-        {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
+        <section class="paper-stat-block">
+          <fieldset class="paper-characteristics">
+            <legend>{{localize "MYTHRASF.Characteristics"}}</legend>
+            {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
+          </fieldset>
 
-        <h2>{{localize "MYTHRASF.Attributes"}}</h2>
-        <section class="derived-grid">
-          <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
-          <span>{{actor.system.resources.actionPoints.value}} / {{actor.system.attributes.actionPointsMax}}</span>
-          <label>{{localize "MYTHRASF.Attribute.DamageModifier"}}</label>
-          <span>{{actor.system.attributes.damageModifier.label}}</span>
-          <label>{{localize "MYTHRASF.Attribute.ExperienceModifier"}}</label>
-          <span>{{actor.system.attributes.experienceModifier}}</span>
-          <label>{{localize "MYTHRASF.Attribute.HealingRate"}}</label>
-          <span>{{actor.system.attributes.healingRate}}</span>
-          <label>{{localize "MYTHRASF.Attribute.Initiative"}}</label>
-          <span>{{actor.system.attributes.initiative}}</span>
-          <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
-          <span>{{actor.system.resources.luckPoints.value}} / {{actor.system.attributes.luckPointsMax}}</span>
-          <label>{{localize "MYTHRASF.Attribute.MagicPoints"}}</label>
-          <span>{{actor.system.resources.magicPoints.value}} / {{actor.system.attributes.magicPointsMax}}</span>
+          <fieldset class="paper-attributes">
+            <legend>{{localize "MYTHRASF.Attributes"}}</legend>
+            <div class="paper-attribute-list">
+              <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span>
+                <output>{{actor.system.attributes.actionPointsMax}}</output></label>
+              <label><span>{{localize "MYTHRASF.Attribute.DamageModifier"}}</span>
+                <output>{{actor.system.attributes.damageModifier.label}}</output></label>
+              <label><span>{{localize "MYTHRASF.Attribute.ExperienceModifier"}}</span>
+                <output>{{actor.system.attributes.experienceModifier}}</output></label>
+              <label><span>{{localize "MYTHRASF.Attribute.HealingRate"}}</span>
+                <output>{{actor.system.attributes.healingRate}}</output></label>
+              <label><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
+                <output>{{actor.system.attributes.initiative}}</output></label>
+              <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>
+                <output>{{actor.system.attributes.luckPointsMax}}</output></label>
+              <label><span>{{localize "MYTHRASF.Attribute.MovementRate"}}</span>
+                <output>{{actor.system.attributes.movementRate}}</output></label>
+            </div>
+          </fieldset>
         </section>
 
-        <h2>{{localize "MYTHRASF.Resources"}}</h2>
-        <section class="resource-grid">
-          <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
-          <input type="number" min="0" max="{{actor.system.attributes.actionPointsMax}}"
-            name="system.resources.actionPoints.value"
-            value="{{actor.system.resources.actionPoints.value}}">
-          <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
-          <input type="number" min="0" max="{{actor.system.attributes.luckPointsMax}}"
-            name="system.resources.luckPoints.value"
-            value="{{actor.system.resources.luckPoints.value}}">
-          <label>{{localize "MYTHRASF.Attribute.MagicPoints"}}</label>
-          <input type="number" min="0" max="{{actor.system.attributes.magicPointsMax}}"
-            name="system.resources.magicPoints.value"
-            value="{{actor.system.resources.magicPoints.value}}">
+        <section class="paper-skill-grid">
+          {{#each skillGroups as |group|}}
+            <fieldset class="paper-skill-group" data-skill-group="{{group.key}}">
+              <legend>{{localize group.label}}</legend>
+              <div class="paper-skill-header" aria-hidden="true">
+                <span>{{localize "MYTHRASF.Skill.Name"}}</span>
+                <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+                <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
+                <span>{{localize "MYTHRASF.Skill.Total"}}</span>
+              </div>
+              {{#each group.skills as |item|}}
+                <div class="paper-skill-row" data-item-id="{{item.id}}">
+                  <button type="button" data-action="edit-item">{{item.name}}</button>
+                  <output>{{item.system.base}}</output>
+                  <input type="checkbox" {{checked item.system.trained}}
+                    data-skill-field="trained"
+                    aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
+                  <output>{{item.system.total}}%</output>
+                </div>
+              {{else}}
+                <p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>
+              {{/each}}
+            </fieldset>
+          {{/each}}
+
+          <fieldset class="paper-magic-points">
+            <legend>{{localize "MYTHRASF.Attribute.MagicPoints"}}</legend>
+            <div class="magic-point-scale" aria-label="{{localize "MYTHRASF.MagicPoints.Scale"}}">
+              {{#each magicPointScale as |point|}}
+                <span class="{{#if point.available}}available{{/if}} {{#if point.current}}current{{/if}}">
+                  {{point.value}}
+                </span>
+              {{/each}}
+            </div>
+            <label class="magic-points-current">
+              <span>{{localize "MYTHRASF.MagicPoints.Current"}}</span>
+              <input type="number" min="0" max="{{actor.system.attributes.magicPointsMax}}"
+                name="system.resources.magicPoints.value"
+                value="{{actor.system.resources.magicPoints.value}}">
+              <output>/ {{actor.system.attributes.magicPointsMax}}</output>
+            </label>
+          </fieldset>
+
+          <fieldset class="paper-passions">
+            <legend>{{localize "MYTHRASF.Passions"}}</legend>
+            {{#if editable}}
+              <button type="button" class="passion-add"
+                data-action="create-item" data-type="passion">
+                {{localize "MYTHRASF.Add"}}
+              </button>
+            {{/if}}
+            <div class="paper-passion-header" aria-hidden="true">
+              <span>{{localize "MYTHRASF.Passion.Name"}}</span>
+              <span>%</span>
+              <span></span>
+            </div>
+            {{#each passions as |item|}}
+              <div class="paper-passion-row" data-item-id="{{item.id}}">
+                <button type="button" data-action="edit-item">{{item.name}}</button>
+                <input type="number" min="0" value="{{item.system.value}}"
+                  data-passion-field="value"
+                  aria-label="{{localize "MYTHRASF.Passion.Value"}}">
+                {{#if ../editable}}
+                  <button type="button" data-action="delete-item"
+                    aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
+                {{/if}}
+              </div>
+            {{else}}
+              <p class="empty">{{localize "MYTHRASF.Empty.Passions"}}</p>
+            {{/each}}
+          </fieldset>
         </section>
+
+        <details class="paper-resources">
+          <summary>{{localize "MYTHRASF.Resources"}}</summary>
+          <section class="resource-grid">
+            <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
+            <input type="number" min="0" max="{{actor.system.attributes.actionPointsMax}}"
+              name="system.resources.actionPoints.value"
+              value="{{actor.system.resources.actionPoints.value}}">
+            <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
+            <input type="number" min="0" max="{{actor.system.attributes.luckPointsMax}}"
+              name="system.resources.luckPoints.value"
+              value="{{actor.system.resources.luckPoints.value}}">
+            <label>{{localize "MYTHRASF.Attribute.MagicPoints"}}</label>
+            <input type="number" min="0" max="{{actor.system.attributes.magicPointsMax}}"
+              name="system.resources.magicPoints.value"
+              value="{{actor.system.resources.magicPoints.value}}">
+          </section>
+        </details>
       </section>
 
       <section class="tab-panel" data-tab-content="skills">
@@ -89,41 +191,30 @@
           {{/if}}
         </div>
 
+        {{#each skillGroups as |group|}}
+        <section class="skill-group" data-skill-group="{{group.key}}">
+          <h3>{{localize group.label}}</h3>
         <div class="skill-list-header" aria-hidden="true">
           <span>{{localize "MYTHRASF.Skill.Name"}}</span>
           <span>{{localize "MYTHRASF.Skill.Base"}}</span>
-          <span>{{localize "MYTHRASF.Skill.CultureShort"}}</span>
-          <span>{{localize "MYTHRASF.Skill.ProfessionShort"}}</span>
-          <span>{{localize "MYTHRASF.Skill.FreeShort"}}</span>
-          <span>{{localize "MYTHRASF.Skill.ExperienceShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.BonusSum"}}</span>
           <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
-          <span>{{localize "MYTHRASF.Skill.UsedShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.FumbledShort"}}</span>
           <span>{{localize "MYTHRASF.Skill.Total"}}</span>
           <span></span>
         </div>
         <ol class="item-list skill-list">
-          {{#each skills as |item|}}
+          {{#each group.skills as |item|}}
             <li data-item-id="{{item.id}}">
               <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
-              <span class="skill-base">{{item.system.base}}</span>
-              <input type="number" min="0" value="{{item.system.culturePoints}}"
-                data-skill-field="culturePoints"
-                aria-label="{{localize "MYTHRASF.Skill.CulturePoints"}}">
-              <input type="number" min="0" value="{{item.system.professionPoints}}"
-                data-skill-field="professionPoints"
-                aria-label="{{localize "MYTHRASF.Skill.ProfessionPoints"}}">
-              <input type="number" min="0" value="{{item.system.freePoints}}"
-                data-skill-field="freePoints"
-                aria-label="{{localize "MYTHRASF.Skill.FreePoints"}}">
-              <input type="number" min="0" value="{{item.system.experiencePoints}}"
-                data-skill-field="experiencePoints"
-                aria-label="{{localize "MYTHRASF.Skill.ExperiencePoints"}}">
+              <output class="skill-base">{{item.system.base}}</output>
+              <output class="skill-bonus">{{item.system.allocatedBonus}}</output>
               <input type="checkbox" {{checked item.system.trained}}
                 data-skill-field="trained"
                 aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
-              <input type="checkbox" {{checked item.system.used}}
-                data-skill-field="used"
-                aria-label="{{localize "MYTHRASF.Skill.Used"}}">
+              <input type="checkbox" {{checked item.system.fumbled}}
+                data-skill-field="fumbled"
+                aria-label="{{localize "MYTHRASF.Skill.Fumbled"}}">
               <strong class="skill-total" title="{{item.system.base}} + {{item.system.allocatedBonus}}">
                 {{item.system.total}}%
               </strong>
@@ -139,7 +230,7 @@
                   <option value="impossible">{{localize "MYTHRASF.Difficulty.impossible"}}</option>
                 </select>
                 <button type="button" data-action="roll-skill">{{localize "MYTHRASF.Roll"}}</button>
-                {{#if ../editable}}
+                {{#if ../../editable}}
                   <button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
                 {{/if}}
               </div>
@@ -148,6 +239,8 @@
             <li class="empty">{{localize "MYTHRASF.Empty.Skills"}}</li>
           {{/each}}
         </ol>
+        </section>
+        {{/each}}
       </section>
 
       <section class="tab-panel" data-tab-content="inventory">

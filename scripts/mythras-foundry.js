@@ -2,6 +2,7 @@ import { CharacterData } from "./data/character-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
 import {
   EquipmentData,
+  PassionData,
   SkillData,
   WeaponData
 } from "./data/item-data.js";
@@ -22,6 +23,7 @@ Hooks.once("init", async () => {
   CONFIG.Item.documentClass = MythrasItem;
   CONFIG.Item.dataModels.skill = SkillData;
   CONFIG.Item.dataModels.equipment = EquipmentData;
+  CONFIG.Item.dataModels.passion = PassionData;
   CONFIG.Item.dataModels.weapon = WeaponData;
 
   foundry.documents.collections.Actors.registerSheet(
@@ -38,7 +40,7 @@ Hooks.once("init", async () => {
     "mythras-foundry",
     MythrasItemSheet,
     {
-      types: ["skill", "equipment", "weapon"],
+      types: ["skill", "passion", "equipment", "weapon"],
       makeDefault: true,
       label: "MYTHRASF.Sheet.Item"
     }
@@ -113,6 +115,17 @@ function getLegacySkillUpdate(item) {
     changed = true;
   }
 
+  if (!item.system.group) {
+    update["system.group"] = getDefaultSkillGroup(item);
+    changed = true;
+  }
+
+  if (foundry.utils.hasProperty(item._source, "system.used")) {
+    update["system.-=used"] = null;
+    update["system.fumbled"] = false;
+    changed = true;
+  }
+
   const legacyBonus = Number(item.system.bonus ?? 0);
   const assignedPoints = [
     item.system.culturePoints,
@@ -127,6 +140,14 @@ function getLegacySkillUpdate(item) {
   }
 
   return changed ? update : null;
+}
+
+function getDefaultSkillGroup(item) {
+  if (["lengua-materna", "idioma"].includes(item.system.slug)) return "language";
+  if (["aguante", "evadir", "musculo", "voluntad"].includes(item.system.slug)) {
+    return "resistance";
+  }
+  return item.system.category === "professional" ? "professional" : "basic";
 }
 
 function clampResource(changed, candidate, key, maximum) {

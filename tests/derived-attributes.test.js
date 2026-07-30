@@ -7,7 +7,8 @@ import {
   calculateExperienceModifier,
   calculateHealingRate,
   calculateInitiative,
-  calculateLuckPoints
+  calculateLuckPoints,
+  calculateMovementRate
 } from "../scripts/rules/derived-attributes.js";
 
 test("Mythras Imperativo concede siempre dos puntos de acción", () => {
@@ -33,6 +34,10 @@ test("curación y suerte comparten progresión por tramos", () => {
 test("iniciativa redondea hacia arriba", () => {
   assert.equal(calculateInitiative(12, 12), 12);
   assert.equal(calculateInitiative(12, 13), 13);
+});
+
+test("el ritmo de movimiento humano de Imperativo es seis", () => {
+  assert.equal(calculateMovementRate(), 6);
 });
 
 test("modificador de daño conserva estructura y etiqueta", () => {

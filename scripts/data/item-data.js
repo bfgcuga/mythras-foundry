@@ -38,6 +38,13 @@ export class SkillData extends foundry.abstract.TypeDataModel {
         // load safely before the ready-hook migration renames it to "basic".
         choices: ["basic", "standard", "professional"]
       }),
+      group: new StringField({
+        required: true,
+        nullable: false,
+        initial: "",
+        blank: true,
+        choices: ["", "basic", "professional", "resistance", "magic", "language"]
+      }),
       characteristic1: textField("strength"),
       characteristic2: textField("dexterity"),
       // Legacy v0.0.10 field. Migrated to freePoints during the ready hook.
@@ -62,7 +69,7 @@ export class SkillData extends foundry.abstract.TypeDataModel {
         nullable: false,
         initial: false
       }),
-      used: new BooleanField({
+      fumbled: new BooleanField({
         required: true,
         nullable: false,
         initial: false
@@ -84,6 +91,15 @@ export class EquipmentData extends foundry.abstract.TypeDataModel {
         nullable: false,
         initial: false
       }),
+      description: descriptionField()
+    };
+  }
+}
+
+export class PassionData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      value: nonNegativeNumber(0, true),
       description: descriptionField()
     };
   }

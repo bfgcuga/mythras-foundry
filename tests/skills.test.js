@@ -20,7 +20,8 @@ test("separa la base de las mejoras por fase", () => {
   assert.deepEqual(result, {
     base: 26,
     bonus: 25,
-    total: 51
+    total: 51,
+    experienceImprovementBonus: 0
   });
 });
 
@@ -40,6 +41,21 @@ test("admite característica duplicada y bonificación inicial fija", () => {
   assert.deepEqual(result, {
     base: 66,
     bonus: 0,
-    total: 66
+    total: 66,
+    experienceImprovementBonus: 0
   });
+});
+
+test("una pifia concede un +1 a la futura mejora de experiencia", () => {
+  const result = calculateSkillValues({
+    characteristic1: "power",
+    characteristic2: "charisma",
+    fumbled: true
+  }, {
+    power: 11,
+    charisma: 12
+  });
+
+  assert.equal(result.experienceImprovementBonus, 1);
+  assert.equal(result.total, 23);
 });

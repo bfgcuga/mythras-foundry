@@ -42,6 +42,10 @@ export function calculateInitiative(dexterity, intelligence) {
   return Math.ceil((dexterity + intelligence) / 2);
 }
 
+export function calculateMovementRate() {
+  return 6;
+}
+
 export function calculateDamageModifier(strength, size) {
   const total = strength + size;
   const bands = [
@@ -88,7 +92,8 @@ export function calculateDerivedAttributes(characteristics) {
       characteristics.intelligence
     ),
     luckPointsMax: calculateLuckPoints(characteristics.power),
-    magicPointsMax: characteristics.power
+    magicPointsMax: characteristics.power,
+    movementRate: calculateMovementRate()
   };
 }
 

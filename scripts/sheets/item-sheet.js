@@ -36,8 +36,20 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       item: this.item,
       editable: this.isEditable,
       isSkill: this.item.type === "skill",
+      isPassion: this.item.type === "passion",
       isEquipment: this.item.type === "equipment",
       isWeapon: this.item.type === "weapon",
+      groupChoices: [
+        ["", "MYTHRASF.Skill.GroupAutomatic"],
+        ["basic", "MYTHRASF.Skill.GroupBasic"],
+        ["professional", "MYTHRASF.Skill.GroupProfessional"],
+        ["resistance", "MYTHRASF.Skill.GroupResistance"],
+        ["magic", "MYTHRASF.Skill.GroupMagic"],
+        ["language", "MYTHRASF.Skill.GroupLanguage"]
+      ].map(([value, key]) => ({
+        value,
+        label: game.i18n.localize(key)
+      })),
       characteristicChoices: [
         "strength",
         "constitution",

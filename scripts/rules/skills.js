@@ -12,6 +12,7 @@ export function calculateSkillValues(system, characteristics = {}) {
   return {
     base,
     bonus,
-    total: base + bonus
+    total: base + bonus,
+    experienceImprovementBonus: system.fumbled ? 1 : 0
   };
 }
