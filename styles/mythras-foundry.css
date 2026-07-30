@@ -130,6 +130,70 @@
   text-align: center;
 }
 
+.mythras-foundry .skill-list-header,
+.mythras-foundry .skill-list li {
+  display: grid;
+  grid-template-columns:
+    minmax(9rem, 1.5fr)
+    3.25rem
+    repeat(4, 3.25rem)
+    2.75rem
+    2.75rem
+    4rem
+    minmax(12rem, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mythras-foundry .skill-list-header {
+  padding: 0.35rem;
+  color: var(--color-text-subtle);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mythras-foundry .skill-list-header span:first-child,
+.mythras-foundry .skill-list .item-name {
+  text-align: left;
+}
+
+.mythras-foundry .skill-list li {
+  grid-template-columns:
+    minmax(9rem, 1.5fr)
+    3.25rem
+    repeat(4, 3.25rem)
+    2.75rem
+    2.75rem
+    4rem
+    minmax(12rem, 1fr);
+}
+
+.mythras-foundry .skill-list input[type="number"] {
+  min-width: 0;
+  text-align: center;
+}
+
+.mythras-foundry .skill-list input[type="checkbox"] {
+  justify-self: center;
+}
+
+.mythras-foundry .skill-base,
+.mythras-foundry .skill-total {
+  text-align: center;
+}
+
+.mythras-foundry .skill-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.mythras-foundry .skill-actions select {
+  min-width: 7rem;
+}
+
 .mythras-foundry .item-sheet-content {
   display: grid;
   grid-template-columns: minmax(9rem, auto) 1fr;
@@ -157,6 +221,19 @@
   }
 
   .mythras-foundry .item-list select {
+    grid-column: 1 / -1;
+  }
+
+  .mythras-foundry .skill-list-header {
+    display: none;
+  }
+
+  .mythras-foundry .skill-list li {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .mythras-foundry .skill-list .item-name,
+  .mythras-foundry .skill-actions {
     grid-column: 1 / -1;
   }
 }

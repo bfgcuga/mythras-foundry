@@ -89,27 +89,60 @@
           {{/if}}
         </div>
 
-        <ol class="item-list">
+        <div class="skill-list-header" aria-hidden="true">
+          <span>{{localize "MYTHRASF.Skill.Name"}}</span>
+          <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+          <span>{{localize "MYTHRASF.Skill.CultureShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.ProfessionShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.FreeShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.ExperienceShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.UsedShort"}}</span>
+          <span>{{localize "MYTHRASF.Skill.Total"}}</span>
+          <span></span>
+        </div>
+        <ol class="item-list skill-list">
           {{#each skills as |item|}}
             <li data-item-id="{{item.id}}">
               <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
-              <span class="skill-value">
-                {{item.system.base}} + {{item.system.allocatedBonus}} = <strong>{{item.system.total}}%</strong>
-              </span>
-              <select data-difficulty>
-                <option value="automatic">{{localize "MYTHRASF.Difficulty.automatic"}}</option>
-                <option value="veryEasy">{{localize "MYTHRASF.Difficulty.veryEasy"}}</option>
-                <option value="easy">{{localize "MYTHRASF.Difficulty.easy"}}</option>
-                <option value="standard" selected>{{localize "MYTHRASF.Difficulty.standard"}}</option>
-                <option value="hard">{{localize "MYTHRASF.Difficulty.hard"}}</option>
-                <option value="formidable">{{localize "MYTHRASF.Difficulty.formidable"}}</option>
-                <option value="herculean">{{localize "MYTHRASF.Difficulty.herculean"}}</option>
-                <option value="impossible">{{localize "MYTHRASF.Difficulty.impossible"}}</option>
-              </select>
-              <button type="button" data-action="roll-skill">{{localize "MYTHRASF.Roll"}}</button>
-              {{#if ../editable}}
-                <button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
-              {{/if}}
+              <span class="skill-base">{{item.system.base}}</span>
+              <input type="number" min="0" value="{{item.system.culturePoints}}"
+                data-skill-field="culturePoints"
+                aria-label="{{localize "MYTHRASF.Skill.CulturePoints"}}">
+              <input type="number" min="0" value="{{item.system.professionPoints}}"
+                data-skill-field="professionPoints"
+                aria-label="{{localize "MYTHRASF.Skill.ProfessionPoints"}}">
+              <input type="number" min="0" value="{{item.system.freePoints}}"
+                data-skill-field="freePoints"
+                aria-label="{{localize "MYTHRASF.Skill.FreePoints"}}">
+              <input type="number" min="0" value="{{item.system.experiencePoints}}"
+                data-skill-field="experiencePoints"
+                aria-label="{{localize "MYTHRASF.Skill.ExperiencePoints"}}">
+              <input type="checkbox" {{checked item.system.trained}}
+                data-skill-field="trained"
+                aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
+              <input type="checkbox" {{checked item.system.used}}
+                data-skill-field="used"
+                aria-label="{{localize "MYTHRASF.Skill.Used"}}">
+              <strong class="skill-total" title="{{item.system.base}} + {{item.system.allocatedBonus}}">
+                {{item.system.total}}%
+              </strong>
+              <div class="skill-actions">
+                <select data-difficulty aria-label="{{localize "MYTHRASF.Skill.Difficulty"}}">
+                  <option value="automatic">{{localize "MYTHRASF.Difficulty.automatic"}}</option>
+                  <option value="veryEasy">{{localize "MYTHRASF.Difficulty.veryEasy"}}</option>
+                  <option value="easy">{{localize "MYTHRASF.Difficulty.easy"}}</option>
+                  <option value="standard" selected>{{localize "MYTHRASF.Difficulty.standard"}}</option>
+                  <option value="hard">{{localize "MYTHRASF.Difficulty.hard"}}</option>
+                  <option value="formidable">{{localize "MYTHRASF.Difficulty.formidable"}}</option>
+                  <option value="herculean">{{localize "MYTHRASF.Difficulty.herculean"}}</option>
+                  <option value="impossible">{{localize "MYTHRASF.Difficulty.impossible"}}</option>
+                </select>
+                <button type="button" data-action="roll-skill">{{localize "MYTHRASF.Roll"}}</button>
+                {{#if ../editable}}
+                  <button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
+                {{/if}}
+              </div>
             </li>
           {{else}}
             <li class="empty">{{localize "MYTHRASF.Empty.Skills"}}</li>

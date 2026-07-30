@@ -47,7 +47,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     super._onRender(context, options);
 
     if (!this.isEditable) {
-      this.element.querySelectorAll("input[name], textarea[name], select[name]")
+      this.element.querySelectorAll(
+        "input[name], textarea[name], select[name], [data-skill-field]"
+      )
         .forEach((field) => { field.disabled = true; });
     }
 
@@ -71,6 +73,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
+    });
+    this.element.querySelectorAll("[data-skill-field]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateSkillField(event));
     });
   }
 
@@ -155,5 +160,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(row?.dataset.itemId);
     const difficulty = row?.querySelector("[data-difficulty]")?.value ?? "standard";
     await item?.rollSkill({ difficulty });
+  }
+
+  async #updateSkillField(event) {
+    if (!this.isEditable) return;
+
+    const field = event.currentTarget;
+    const itemId = field.closest("[data-item-id]")?.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    if (!item) return;
+
+    const value = field.type === "checkbox"
+      ? field.checked
+      : Math.max(0, Number.parseInt(field.value, 10) || 0);
+    await item.update({ [`system.${field.dataset.skillField}`]: value });
   }
 }
