@@ -1,90 +1,142 @@
 <div class="character-sheet-content">
+  <header class="sheet-header">
+    <img src="{{actor.img}}" alt="{{actor.name}}" data-edit="img">
+    <input type="text" name="name" value="{{actor.name}}">
+  </header>
 
-  <section class="characteristics">
+  {{#unless actor.system.characteristicsGenerated}}
+    <section class="generation-panel">
+      <h2>{{localize "MYTHRASF.Character.GenerationTitle"}}</h2>
+      <p>{{localize "MYTHRASF.Character.GenerationHelp"}}</p>
+      {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
+      {{#if editable}}
+        <button type="button" data-action="generate-characteristics">
+          {{localize "MYTHRASF.Character.Generate"}}
+        </button>
+        <button type="button" data-action="confirm-characteristics">
+          {{localize "MYTHRASF.Character.Confirm"}}
+        </button>
+      {{/if}}
+    </section>
+  {{else}}
+    <nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">
+      <button type="button" class="active" data-tab="character">
+        {{localize "MYTHRASF.Tab.Character"}}
+      </button>
+      <button type="button" data-tab="skills">
+        {{localize "MYTHRASF.Tab.Skills"}}
+      </button>
+      <button type="button" data-tab="inventory">
+        {{localize "MYTHRASF.Tab.Inventory"}}
+      </button>
+    </nav>
 
-    <div class="characteristic">
-      <label for="strength">FUE</label>
-      <input
-        id="strength"
-        type="number"
-        name="system.strength"
-        value="{{actor.system.strength}}"
-      >
-    </div>
+    <main class="sheet-body">
+      <section class="tab-panel active" data-tab-content="character">
+        <div class="section-heading">
+          <h2>{{localize "MYTHRASF.Characteristics"}}</h2>
+          {{#if editable}}
+            <button type="button" data-action="edit-characteristics">
+              {{localize "MYTHRASF.Character.Edit"}}
+            </button>
+          {{/if}}
+        </div>
 
-    <div class="characteristic">
-      <label for="constitution">CON</label>
-      <input
-        id="constitution"
-        type="number"
-        name="system.constitution"
-        value="{{actor.system.constitution}}"
-      >
-    </div>
+        {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
 
-    <div class="characteristic">
-      <label for="size">TAM</label>
-      <input
-        id="size"
-        type="number"
-        name="system.size"
-        value="{{actor.system.size}}"
-      >
-    </div>
+        <h2>{{localize "MYTHRASF.Attributes"}}</h2>
+        <section class="derived-grid">
+          <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
+          <span>{{actor.system.resources.actionPoints.value}} / {{actor.system.attributes.actionPointsMax}}</span>
+          <label>{{localize "MYTHRASF.Attribute.DamageModifier"}}</label>
+          <span>{{actor.system.attributes.damageModifier.label}}</span>
+          <label>{{localize "MYTHRASF.Attribute.ExperienceModifier"}}</label>
+          <span>{{actor.system.attributes.experienceModifier}}</span>
+          <label>{{localize "MYTHRASF.Attribute.HealingRate"}}</label>
+          <span>{{actor.system.attributes.healingRate}}</span>
+          <label>{{localize "MYTHRASF.Attribute.Initiative"}}</label>
+          <span>{{actor.system.attributes.initiative}}</span>
+          <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
+          <span>{{actor.system.resources.luckPoints.value}} / {{actor.system.attributes.luckPointsMax}}</span>
+          <label>{{localize "MYTHRASF.Attribute.MagicPoints"}}</label>
+          <span>{{actor.system.resources.magicPoints.value}} / {{actor.system.attributes.magicPointsMax}}</span>
+        </section>
 
-    <div class="characteristic">
-      <label for="dexterity">DES</label>
-      <input
-        id="dexterity"
-        type="number"
-        name="system.dexterity"
-        value="{{actor.system.dexterity}}"
-      >
-    </div>
+        <h2>{{localize "MYTHRASF.Resources"}}</h2>
+        <section class="resource-grid">
+          <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
+          <input type="number" min="0" max="{{actor.system.attributes.actionPointsMax}}"
+            name="system.resources.actionPoints.value"
+            value="{{actor.system.resources.actionPoints.value}}">
+          <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
+          <input type="number" min="0" max="{{actor.system.attributes.luckPointsMax}}"
+            name="system.resources.luckPoints.value"
+            value="{{actor.system.resources.luckPoints.value}}">
+          <label>{{localize "MYTHRASF.Attribute.MagicPoints"}}</label>
+          <input type="number" min="0" max="{{actor.system.attributes.magicPointsMax}}"
+            name="system.resources.magicPoints.value"
+            value="{{actor.system.resources.magicPoints.value}}">
+        </section>
+      </section>
 
-    <div class="characteristic">
-      <label for="intelligence">INT</label>
-      <input
-        id="intelligence"
-        type="number"
-        name="system.intelligence"
-        value="{{actor.system.intelligence}}"
-      >
-    </div>
+      <section class="tab-panel" data-tab-content="skills">
+        <div class="section-heading">
+          <h2>{{localize "MYTHRASF.Tab.Skills"}}</h2>
+          {{#if editable}}
+            <button type="button" data-action="create-item" data-type="skill">
+              {{localize "MYTHRASF.Add"}}
+            </button>
+          {{/if}}
+        </div>
 
-    <div class="characteristic">
-      <label for="power">POD</label>
-      <input
-        id="power"
-        type="number"
-        name="system.power"
-        value="{{actor.system.power}}"
-      >
-    </div>
+        <ol class="item-list">
+          {{#each skills as |item|}}
+            <li data-item-id="{{item.id}}">
+              <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
+              <span>{{item.system.total}}%</span>
+              <select data-difficulty>
+                <option value="veryEasy">{{localize "MYTHRASF.Difficulty.veryEasy"}}</option>
+                <option value="easy">{{localize "MYTHRASF.Difficulty.easy"}}</option>
+                <option value="standard" selected>{{localize "MYTHRASF.Difficulty.standard"}}</option>
+                <option value="hard">{{localize "MYTHRASF.Difficulty.hard"}}</option>
+                <option value="formidable">{{localize "MYTHRASF.Difficulty.formidable"}}</option>
+                <option value="herculean">{{localize "MYTHRASF.Difficulty.herculean"}}</option>
+                <option value="hopeless">{{localize "MYTHRASF.Difficulty.hopeless"}}</option>
+              </select>
+              <button type="button" data-action="roll-skill">{{localize "MYTHRASF.Roll"}}</button>
+              {{#if ../editable}}
+                <button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
+              {{/if}}
+            </li>
+          {{else}}
+            <li class="empty">{{localize "MYTHRASF.Empty.Skills"}}</li>
+          {{/each}}
+        </ol>
+      </section>
 
-    <div class="characteristic">
-      <label for="charisma">CAR</label>
-      <input
-        id="charisma"
-        type="number"
-        name="system.charisma"
-        value="{{actor.system.charisma}}"
-      >
-    </div>
+      <section class="tab-panel" data-tab-content="inventory">
+        <div class="section-heading">
+          <h2>{{localize "MYTHRASF.Equipment"}}</h2>
+          {{#if editable}}
+            <button type="button" data-action="create-item" data-type="equipment">
+              {{localize "MYTHRASF.Add"}}
+            </button>
+          {{/if}}
+        </div>
+        {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+          items=equipment emptyKey="MYTHRASF.Empty.Equipment"}}
 
-  </section>
-
-  <section class="derived-attributes">
-
-    <div class="derived-attribute">
-      <label>Iniciativa</label>
-      <input
-        type="number"
-        value="{{actor.system.attributes.initiative}}"
-        readonly
-      >
-    </div>
-
-  </section>
-
+        <div class="section-heading">
+          <h2>{{localize "MYTHRASF.Weapons"}}</h2>
+          {{#if editable}}
+            <button type="button" data-action="create-item" data-type="weapon">
+              {{localize "MYTHRASF.Add"}}
+            </button>
+          {{/if}}
+        </div>
+        {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+          items=weapons emptyKey="MYTHRASF.Empty.Weapons"}}
+      </section>
+    </main>
+  {{/unless}}
 </div>

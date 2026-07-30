@@ -16,19 +16,16 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Validar proyecto y etiqueta
+        run: |
+          npm test
+          npm run check -- "${{ github.ref_name }}"
+
       - name: Crear paquete ZIP
         shell: bash
         run: |
-          elementos=(system.json scripts templates styles lang README.md .gitignore)
-          existentes=()
-
-          for elemento in "${elementos[@]}"; do
-            if [ -e "$elemento" ]; then
-              existentes+=("$elemento")
-            fi
-          done
-
-          zip -r mythras-foundry.zip "${existentes[@]}"
+          elementos=(system.json scripts templates styles lang README.md)
+          zip -r mythras-foundry.zip "${elementos[@]}"
 
       - name: Crear release y adjuntar archivos
         env:

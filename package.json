@@ -1,0 +1,9 @@
+{
+  "name": "mythras-foundry",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/dev/validate-project.mjs",
+    "test": "node --test tests/*.test.js"
+  }
+}

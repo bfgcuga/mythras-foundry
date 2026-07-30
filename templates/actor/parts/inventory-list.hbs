@@ -1,0 +1,13 @@
+<ol class="item-list">
+  {{#each items as |item|}}
+    <li data-item-id="{{item.id}}">
+      <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
+      <span>{{item.system.quantity}} × {{item.system.weight}}</span>
+      {{#if @root.editable}}
+        <button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
+      {{/if}}
+    </li>
+  {{else}}
+    <li class="empty">{{localize emptyKey}}</li>
+  {{/each}}
+</ol>

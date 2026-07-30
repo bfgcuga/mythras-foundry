@@ -1,0 +1,60 @@
+<div class="item-sheet-content">
+  <header class="sheet-header">
+    <img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
+    <input type="text" name="name" value="{{item.name}}">
+  </header>
+
+  {{#if isSkill}}
+    <label>{{localize "MYTHRASF.Item.Category"}}</label>
+    <select name="system.category">
+      <option value="standard" {{#if item.system.isStandard}}selected{{/if}}>
+        {{localize "MYTHRASF.Skill.Standard"}}
+      </option>
+      <option value="professional" {{#if item.system.isProfessional}}selected{{/if}}>
+        {{localize "MYTHRASF.Skill.Professional"}}
+      </option>
+    </select>
+
+    <label>{{localize "MYTHRASF.Item.Characteristic1"}}</label>
+    <select name="system.characteristic1">
+      {{selectOptions characteristicChoices selected=item.system.characteristic1
+        labelAttr="label" valueAttr="value"}}
+    </select>
+    <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label>
+    <select name="system.characteristic2">
+      {{selectOptions characteristicChoices selected=item.system.characteristic2
+        labelAttr="label" valueAttr="value"}}
+    </select>
+    <label>{{localize "MYTHRASF.Item.Bonus"}}</label>
+    <input type="number" name="system.bonus" value="{{item.system.bonus}}">
+  {{else}}
+    <label>{{localize "MYTHRASF.Item.Quantity"}}</label>
+    <input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
+    <label>{{localize "MYTHRASF.Item.Weight"}}</label>
+    <input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
+    <label>{{localize "MYTHRASF.Item.Value"}}</label>
+    <input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}">
+    <label>{{localize "MYTHRASF.Item.Location"}}</label>
+    <input type="text" name="system.location" value="{{item.system.location}}">
+    <label class="checkbox">
+      <input type="checkbox" name="system.equipped" {{checked item.system.equipped}}>
+      {{localize "MYTHRASF.Item.Equipped"}}
+    </label>
+  {{/if}}
+
+  {{#if isWeapon}}
+    <label>{{localize "MYTHRASF.Weapon.Damage"}}</label>
+    <input type="text" name="system.damage" value="{{item.system.damage}}">
+    <label>{{localize "MYTHRASF.Weapon.Size"}}</label>
+    <input type="text" name="system.size" value="{{item.system.size}}">
+    <label>{{localize "MYTHRASF.Weapon.Reach"}}</label>
+    <input type="text" name="system.reach" value="{{item.system.reach}}">
+    <label>{{localize "MYTHRASF.Weapon.HitPoints"}}</label>
+    <input type="number" min="0" name="system.hitPoints" value="{{item.system.hitPoints}}">
+    <label>{{localize "MYTHRASF.Weapon.Grip"}}</label>
+    <input type="text" name="system.grip" value="{{item.system.grip}}">
+  {{/if}}
+
+  <label>{{localize "MYTHRASF.Item.Description"}}</label>
+  <textarea name="system.description">{{item.system.description}}</textarea>
+</div>

@@ -10,9 +10,14 @@
     "verified": 13
   },
   "documentTypes": {
-  "Actor": {
-    "character": {}
-  }
+    "Actor": {
+      "character": {}
+    },
+    "Item": {
+      "skill": {},
+      "equipment": {},
+      "weapon": {}
+    }
   },
   "authors": [
     {
@@ -23,6 +28,13 @@
     "scripts/mythras-foundry.js"
   ],
   "styles": [
-  "styles/mythras-foundry.css"
+    "styles/mythras-foundry.css"
+  ],
+  "languages": [
+    {
+      "lang": "es",
+      "name": "Español",
+      "path": "lang/es.json"
+    }
   ]
 }
