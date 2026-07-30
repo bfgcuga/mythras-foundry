@@ -52,6 +52,13 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         nullable: false,
         initial: false
       }),
+      generationMethod: new StringField({
+        required: true,
+        nullable: false,
+        initial: "",
+        blank: true,
+        choices: ["", "random", "randomSwap", "points"]
+      }),
       ...characteristics,
       identity: new SchemaField({
         playerName: textField(),

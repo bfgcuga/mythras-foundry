@@ -1,22 +1,27 @@
 <section class="characteristics-grid">
-  <label for="strength">{{localize "MYTHRASF.Characteristic.strength"}}</label>
-  <input id="strength" type="number" min="1" name="system.strength" value="{{actor.system.strength}}">
-
-  <label for="constitution">{{localize "MYTHRASF.Characteristic.constitution"}}</label>
-  <input id="constitution" type="number" min="1" name="system.constitution" value="{{actor.system.constitution}}">
-
-  <label for="size">{{localize "MYTHRASF.Characteristic.size"}}</label>
-  <input id="size" type="number" min="1" name="system.size" value="{{actor.system.size}}">
-
-  <label for="dexterity">{{localize "MYTHRASF.Characteristic.dexterity"}}</label>
-  <input id="dexterity" type="number" min="1" name="system.dexterity" value="{{actor.system.dexterity}}">
-
-  <label for="intelligence">{{localize "MYTHRASF.Characteristic.intelligence"}}</label>
-  <input id="intelligence" type="number" min="1" name="system.intelligence" value="{{actor.system.intelligence}}">
-
-  <label for="power">{{localize "MYTHRASF.Characteristic.power"}}</label>
-  <input id="power" type="number" min="1" name="system.power" value="{{actor.system.power}}">
-
-  <label for="charisma">{{localize "MYTHRASF.Characteristic.charisma"}}</label>
-  <input id="charisma" type="number" min="1" name="system.charisma" value="{{actor.system.charisma}}">
+  {{#each characteristicRows as |characteristic|}}
+    <div class="characteristic-row">
+      <label>{{characteristic.label}}</label>
+      <div class="characteristic-controls">
+        {{#if ../showCharacteristicAdjustments}}
+          <button type="button" data-action="adjust-characteristic"
+            data-characteristic="{{characteristic.key}}" data-delta="-1"
+            aria-label="{{localize "MYTHRASF.Character.Decrease"}}">−</button>
+          <button type="button" data-action="adjust-characteristic"
+            data-characteristic="{{characteristic.key}}" data-delta="1"
+            aria-label="{{localize "MYTHRASF.Character.Increase"}}">+</button>
+        {{/if}}
+        {{#if ../showCharacteristicSwaps}}
+          <select data-swap-characteristic="{{characteristic.key}}"
+            aria-label="{{localize "MYTHRASF.Character.Swap"}}">
+            <option value="">{{localize "MYTHRASF.Character.Swap"}}</option>
+            {{#each characteristic.swapChoices as |choice|}}
+              <option value="{{choice.key}}">{{choice.label}}</option>
+            {{/each}}
+          </select>
+        {{/if}}
+        <output>{{characteristic.value}}</output>
+      </div>
+    </div>
+  {{/each}}
 </section>

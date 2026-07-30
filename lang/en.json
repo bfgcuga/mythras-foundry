@@ -121,5 +121,15 @@
   "MYTHRASF.RollResult.critical": "Critical",
   "MYTHRASF.RollResult.success": "Success",
   "MYTHRASF.RollResult.failure": "Failure",
-  "MYTHRASF.RollResult.fumble": "Fumble"
+  "MYTHRASF.RollResult.fumble": "Fumble",
+  "MYTHRASF.Character.Method.random": "Random",
+  "MYTHRASF.Character.Method.randomSwap": "Random with swaps",
+  "MYTHRASF.Character.Method.points": "Point allocation",
+  "MYTHRASF.Character.PointsRemaining": "Points remaining: {points}",
+  "MYTHRASF.Character.ChooseMethod": "Choose a characteristic generation method first.",
+  "MYTHRASF.Character.SpendAllPoints": "You must allocate all 75 points before accepting.",
+  "MYTHRASF.Character.FinishEdit": "Finish editing characteristics",
+  "MYTHRASF.Character.Decrease": "Decrease characteristic",
+  "MYTHRASF.Character.Increase": "Increase characteristic",
+  "MYTHRASF.Character.Swap": "Swap with..."
 }

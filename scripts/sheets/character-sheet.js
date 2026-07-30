@@ -1,3 +1,11 @@
+import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
+import {
+  CHARACTERISTIC_MINIMUMS,
+  adjustPointAllocation,
+  calculateAllocationRemaining,
+  canSwapCharacteristics,
+  createMinimumAllocation
+} from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -53,9 +61,40 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }));
     const basicSkillGroup = skillGroups.find((group) => group.key === "basic");
     const secondarySkillGroups = skillGroups.filter((group) => group.key !== "basic");
+    const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
+      key,
+      label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
+      value: this.actor.system[key],
+      swapChoices: CHARACTERISTIC_KEYS
+        .filter((candidate) => canSwapCharacteristics(key, candidate))
+        .map((candidate) => ({
+          key: candidate,
+          label: game.i18n.localize(`MYTHRASF.Characteristic.${candidate}`)
+        }))
+    }));
+    const characteristicsGenerated = this.actor.system.characteristicsGenerated;
+    const generationMethod = this.actor.system.generationMethod;
+    const generationMethods = ["random", "randomSwap", "points"].map((key) => ({
+      key,
+      label: game.i18n.localize(`MYTHRASF.Character.Method.${key}`),
+      active: generationMethod === key
+    }));
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
       editable: this.isEditable,
+      characteristicRows,
+      characteristicsEditing: Boolean(this._characteristicsEditing),
+      generationMethod,
+      generationMethods,
+      isPointAllocation: !characteristicsGenerated && generationMethod === "points",
+      allocationRemaining: calculateAllocationRemaining(this.actor.system),
+      showCharacteristicAdjustments: this.isEditable && (
+        (!characteristicsGenerated && generationMethod === "points")
+        || (characteristicsGenerated && this._characteristicsEditing)
+      ),
+      showCharacteristicSwaps: this.isEditable
+        && !characteristicsGenerated
+        && generationMethod === "randomSwap",
       skillGroups,
       basicSkillGroup,
       secondarySkillGroups,
@@ -81,10 +120,17 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelector("[data-action='confirm-characteristics']")
       ?.addEventListener("click", () => this.#confirmCharacteristics());
-    this.element.querySelector("[data-action='generate-characteristics']")
-      ?.addEventListener("click", () => this.#generateCharacteristics());
-    this.element.querySelector("[data-action='edit-characteristics']")
-      ?.addEventListener("click", () => this.#editCharacteristics());
+    this.element.querySelectorAll("[data-generation-method]").forEach((button) => {
+      button.addEventListener("click", (event) => this.#selectGenerationMethod(event));
+    });
+    this.element.querySelector("[data-action='toggle-characteristics-edit']")
+      ?.addEventListener("click", () => this.#toggleCharacteristicsEdit());
+    this.element.querySelectorAll("[data-action='adjust-characteristic']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#adjustCharacteristic(event));
+    });
+    this.element.querySelectorAll("[data-swap-characteristic]").forEach((select) => {
+      select.addEventListener("change", (event) => this.#swapCharacteristic(event));
+    });
     this.element.querySelectorAll("[data-action='create-item']").forEach((button) => {
       button.addEventListener("click", (event) => this.#createItem(event));
     });
@@ -124,9 +170,21 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #confirmCharacteristics() {
     if (!this.isEditable) return;
-    await this.submit();
+    const method = this.actor.system.generationMethod;
+    if (!method) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Character.ChooseMethod"));
+      return;
+    }
+    if (
+      method === "points"
+      && calculateAllocationRemaining(this.actor.system) !== 0
+    ) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Character.SpendAllPoints"));
+      return;
+    }
 
     const { attributes } = this.actor.system;
+    this._characteristicsEditing = false;
     await this.actor.update({
       "system.characteristicsGenerated": true,
       "system.resources.actionPoints.value": attributes.actionPointsMax,
@@ -135,8 +193,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
   }
 
-  async #generateCharacteristics() {
+  async #selectGenerationMethod(event) {
+    event.preventDefault();
     if (!this.isEditable) return;
+
+    const method = event.currentTarget.dataset.generationMethod;
+    if (method === "points") {
+      const allocation = createMinimumAllocation();
+      const update = { "system.generationMethod": method };
+      for (const [key, value] of Object.entries(allocation)) {
+        update[`system.${key}`] = value;
+      }
+      await this.actor.update(update);
+      return;
+    }
 
     const formulas = {
       strength: "3d6",
@@ -147,7 +217,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       power: "3d6",
       charisma: "3d6"
     };
-    const update = {};
+    const update = { "system.generationMethod": method };
 
     for (const [key, formula] of Object.entries(formulas)) {
       const roll = await new Roll(formula).evaluate();
@@ -157,9 +227,43 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.actor.update(update);
   }
 
-  async #editCharacteristics() {
+  async #toggleCharacteristicsEdit() {
     if (!this.isEditable) return;
-    await this.actor.update({ "system.characteristicsGenerated": false });
+    this._characteristicsEditing = !this._characteristicsEditing;
+    await this.render({ force: true });
+  }
+
+  async #adjustCharacteristic(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+
+    const key = event.currentTarget.dataset.characteristic;
+    const delta = Number(event.currentTarget.dataset.delta);
+    const generated = this.actor.system.characteristicsGenerated;
+    let value = Number(this.actor.system[key]);
+
+    if (!generated && this.actor.system.generationMethod === "points") {
+      value = adjustPointAllocation(this.actor.system, key, delta);
+    } else if (generated && this._characteristicsEditing) {
+      value = Math.max(CHARACTERISTIC_MINIMUMS[key], value + delta);
+    } else {
+      return;
+    }
+
+    await this.actor.update({ [`system.${key}`]: value });
+  }
+
+  async #swapCharacteristic(event) {
+    if (!this.isEditable || this.actor.system.characteristicsGenerated) return;
+
+    const first = event.currentTarget.dataset.swapCharacteristic;
+    const second = event.currentTarget.value;
+    if (!canSwapCharacteristics(first, second)) return;
+
+    await this.actor.update({
+      [`system.${first}`]: this.actor.system[second],
+      [`system.${second}`]: this.actor.system[first]
+    });
   }
 
   async #createItem(event) {

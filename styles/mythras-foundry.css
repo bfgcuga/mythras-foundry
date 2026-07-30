@@ -173,14 +173,21 @@
 }
 
 .mythras-foundry .paper-characteristics .characteristics-grid {
+  display: grid;
   padding: 0;
   border: 0;
   background: transparent;
-  grid-template-columns: minmax(8rem, 1fr) 3.2rem;
   gap: 0.3rem;
 }
 
-.mythras-foundry .paper-characteristics .characteristics-grid label,
+.mythras-foundry .characteristic-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) 12rem;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.mythras-foundry .paper-characteristics .characteristic-row > label,
 .mythras-foundry .paper-attribute-list label > span {
   min-height: 1.65rem;
   padding: 0.2rem 0.75rem;
@@ -191,13 +198,79 @@
   font-weight: 700;
 }
 
-.mythras-foundry .paper-characteristics .characteristics-grid input {
+.mythras-foundry .characteristic-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.mythras-foundry .characteristic-controls output {
+  display: grid;
+  place-items: center;
+  flex: 0 0 3.2rem;
   height: 1.65rem;
   border: 2px solid #4d4a49;
   border-radius: 0.35rem;
   background: #eadbb8;
   text-align: center;
   font-weight: 700;
+}
+
+.mythras-foundry .characteristic-controls button,
+.mythras-foundry .characteristics-edit-toggle {
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  min-height: 0;
+  padding: 0;
+}
+
+.mythras-foundry .characteristic-controls select {
+  min-width: 0;
+  max-width: 8rem;
+  height: 1.65rem;
+  background: #eadbb8;
+}
+
+.mythras-foundry .paper-characteristics legend {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mythras-foundry .characteristics-edit-toggle.active,
+.mythras-foundry .generation-methods button.active {
+  background: #b79d70;
+}
+
+.mythras-foundry .character-generation {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+.mythras-foundry .generation-methods {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.mythras-foundry .generation-methods button {
+  min-height: 2.5rem;
+  padding: 0.25rem;
+  line-height: 1.1;
+}
+
+.mythras-foundry .allocation-remaining {
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
+}
+
+.mythras-foundry .confirm-characteristics {
+  justify-self: center;
 }
 
 .mythras-foundry .paper-attribute-list {
@@ -207,7 +280,7 @@
 
 .mythras-foundry .paper-attribute-list label {
   display: grid;
-  grid-template-columns: minmax(9rem, 1fr) auto;
+  grid-template-columns: minmax(9rem, 1fr) 9.25rem;
   align-items: center;
   gap: 0.3rem;
 }
@@ -226,16 +299,21 @@
   border-radius: 0.35rem;
   background: #eadbb8;
   font-weight: 700;
+  width: 3.9rem;
+  justify-self: end;
 }
 
 .mythras-foundry .resource-control {
   display: flex;
+  width: 9.25rem;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.2rem;
 }
 
 .mythras-foundry .paper-attribute-list .resource-value {
   display: flex;
+  width: 3.9rem;
   min-width: 3.9rem;
   padding: 0 0.35rem;
   justify-content: center;

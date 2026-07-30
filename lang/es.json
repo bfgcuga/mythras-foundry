@@ -121,5 +121,15 @@
   "MYTHRASF.RollResult.critical": "Crítico",
   "MYTHRASF.RollResult.success": "Éxito",
   "MYTHRASF.RollResult.failure": "Fallo",
-  "MYTHRASF.RollResult.fumble": "Pifia"
+  "MYTHRASF.RollResult.fumble": "Pifia",
+  "MYTHRASF.Character.Method.random": "Aleatorio",
+  "MYTHRASF.Character.Method.randomSwap": "Aleatorio con cambios",
+  "MYTHRASF.Character.Method.points": "Asignación de puntos",
+  "MYTHRASF.Character.PointsRemaining": "Puntos restantes: {points}",
+  "MYTHRASF.Character.ChooseMethod": "Elige primero un método de generación de características.",
+  "MYTHRASF.Character.SpendAllPoints": "Debes repartir los 75 puntos antes de aceptar.",
+  "MYTHRASF.Character.FinishEdit": "Dejar de editar las características",
+  "MYTHRASF.Character.Decrease": "Reducir característica",
+  "MYTHRASF.Character.Increase": "Aumentar característica",
+  "MYTHRASF.Character.Swap": "Intercambiar con..."
 }

@@ -24,21 +24,6 @@
     </div>
   </header>
 
-  {{#unless actor.system.characteristicsGenerated}}
-    <section class="generation-panel">
-      <h2>{{localize "MYTHRASF.Character.GenerationTitle"}}</h2>
-      <p>{{localize "MYTHRASF.Character.GenerationHelp"}}</p>
-      {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
-      {{#if editable}}
-        <button type="button" data-action="generate-characteristics">
-          {{localize "MYTHRASF.Character.Generate"}}
-        </button>
-        <button type="button" data-action="confirm-characteristics">
-          {{localize "MYTHRASF.Character.Confirm"}}
-        </button>
-      {{/if}}
-    </section>
-  {{else}}
     <nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">
       <button type="button" class="active" data-tab="character">
         {{localize "MYTHRASF.Tab.Character"}}
@@ -50,18 +35,43 @@
 
     <main class="sheet-body">
       <section class="tab-panel active" data-tab-content="character">
-        <div class="section-heading">
-          <span></span>
-          {{#if editable}}
-            <button type="button" data-action="edit-characteristics">
-              {{localize "MYTHRASF.Character.Edit"}}
-            </button>
-          {{/if}}
-        </div>
-
         <section class="paper-stat-block">
           <fieldset class="paper-characteristics">
-            <legend>{{localize "MYTHRASF.Characteristics"}}</legend>
+            <legend>
+              <span>{{localize "MYTHRASF.Characteristics"}}</span>
+              {{#if actor.system.characteristicsGenerated}}
+                {{#if editable}}
+                  <button type="button" class="characteristics-edit-toggle {{#if characteristicsEditing}}active{{/if}}"
+                    data-action="toggle-characteristics-edit"
+                    aria-pressed="{{characteristicsEditing}}"
+                    title="{{#if characteristicsEditing}}{{localize "MYTHRASF.Character.FinishEdit"}}{{else}}{{localize "MYTHRASF.Character.Edit"}}{{/if}}">
+                    <i class="fas {{#if characteristicsEditing}}fa-check{{else}}fa-pen{{/if}}" aria-hidden="true"></i>
+                  </button>
+                {{/if}}
+              {{/if}}
+            </legend>
+            {{#unless actor.system.characteristicsGenerated}}
+              <div class="character-generation">
+                <div class="generation-methods">
+                  {{#each generationMethods as |method|}}
+                    <button type="button" class="{{#if method.active}}active{{/if}}"
+                      data-generation-method="{{method.key}}">{{method.label}}</button>
+                  {{/each}}
+                </div>
+                {{#if isPointAllocation}}
+                  <p class="allocation-remaining">
+                    {{localize "MYTHRASF.Character.PointsRemaining" points=allocationRemaining}}
+                  </p>
+                {{/if}}
+                {{#if generationMethod}}
+                  <button type="button" class="confirm-characteristics"
+                    data-action="confirm-characteristics">
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                    {{localize "MYTHRASF.Character.Confirm"}}
+                  </button>
+                {{/if}}
+              </div>
+            {{/unless}}
             {{> "systems/mythras-foundry/templates/actor/parts/characteristics.hbs"}}
           </fieldset>
 
@@ -71,10 +81,6 @@
               <label class="resource-attribute">
                 <span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span>
                 <div class="resource-control">
-                  <output class="resource-value">
-                    <span>{{actor.system.resources.actionPoints.value}}</span>
-                    <b>/ {{actor.system.attributes.actionPointsMax}}</b>
-                  </output>
                   <button type="button" data-resource="actionPoints"
                     data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}">−</button>
                   <button type="button" data-resource="actionPoints"
@@ -83,6 +89,10 @@
                     data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}">
                     <i class="fas fa-arrow-up" aria-hidden="true"></i>
                   </button>
+                  <output class="resource-value">
+                    <span>{{actor.system.resources.actionPoints.value}}</span>
+                    <b>/ {{actor.system.attributes.actionPointsMax}}</b>
+                  </output>
                 </div>
               </label>
               <label><span>{{localize "MYTHRASF.Attribute.DamageModifier"}}</span>
@@ -96,10 +106,6 @@
               <label class="resource-attribute">
                 <span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>
                 <div class="resource-control">
-                  <output class="resource-value">
-                    <span>{{actor.system.resources.luckPoints.value}}</span>
-                    <b>/ {{actor.system.attributes.luckPointsMax}}</b>
-                  </output>
                   <button type="button" data-resource="luckPoints"
                     data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}">−</button>
                   <button type="button" data-resource="luckPoints"
@@ -108,15 +114,15 @@
                     data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}">
                     <i class="fas fa-arrow-up" aria-hidden="true"></i>
                   </button>
+                  <output class="resource-value">
+                    <span>{{actor.system.resources.luckPoints.value}}</span>
+                    <b>/ {{actor.system.attributes.luckPointsMax}}</b>
+                  </output>
                 </div>
               </label>
               <label class="resource-attribute">
                 <span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span>
                 <div class="resource-control">
-                  <output class="resource-value">
-                    <span>{{actor.system.resources.magicPoints.value}}</span>
-                    <b>/ {{actor.system.attributes.magicPointsMax}}</b>
-                  </output>
                   <button type="button" data-resource="magicPoints"
                     data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}">−</button>
                   <button type="button" data-resource="magicPoints"
@@ -125,6 +131,10 @@
                     data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}">
                     <i class="fas fa-arrow-up" aria-hidden="true"></i>
                   </button>
+                  <output class="resource-value">
+                    <span>{{actor.system.resources.magicPoints.value}}</span>
+                    <b>/ {{actor.system.attributes.magicPointsMax}}</b>
+                  </output>
                 </div>
               </label>
               <label><span>{{localize "MYTHRASF.Attribute.MovementRate"}}</span>
@@ -262,5 +272,4 @@
           items=weapons emptyKey="MYTHRASF.Empty.Weapons"}}
       </section>
     </main>
-  {{/unless}}
 </div>
