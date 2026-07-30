@@ -19,6 +19,7 @@ import {
   serializeBackgroundDraft,
   setAllocation,
   skillAbilityKey,
+  styleAbilityKey,
   validateBackgroundSelection,
   validateFreePhase
 } from "../rules/background-generation.js";
@@ -189,6 +190,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-background-style-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateBackgroundStyle(event));
+    });
+    this.element.querySelectorAll("[data-background-style-action]").forEach((button) => {
+      button.addEventListener("click", (event) => this.#changeBackgroundStyles(event));
     });
     this.element.querySelectorAll("[data-background-free-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateFreeSkill(event));
@@ -376,7 +380,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         ...ability,
         phase: allocationPhase,
         label: this.#abilityLabel(ability),
-        points: Number(allocation[ability.key] ?? 0)
+        base: this.#abilityBase(ability),
+        previousPoints: this.#previousBackgroundPoints(draft, allocationPhase, ability.key),
+        points: Number(allocation[ability.key] ?? 0),
+        total: this.#abilityBase(ability)
+          + this.#previousBackgroundPoints(draft, allocationPhase, ability.key)
+          + Number(allocation[ability.key] ?? 0)
       }))
       .sort((left, right) => left.label.localeCompare(right.label, game.i18n.lang));
     const reviewAbilities = freeAbilities.map((ability) => {
@@ -429,11 +438,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             checked: selectedProfessionals.has(entry.id),
             specialization: draft.specializations[`${phase}:${entry.id}`] ?? ""
           })),
-          styles: selectedBackground.styles.map((prompt, index) => ({
-            id: `${phase}:${index}`,
-            prompt,
-            ...(draft.styles[`${phase}:${index}`] ?? {})
-          }))
+          styles: phaseAbilities
+            .filter((ability) => ability.type === "combatStyle")
+            .map((ability) => ({
+              ...ability,
+              phase,
+              canRemove: !ability.required
+            }))
         }
         : null,
       selectedProfessionalCount: selectedProfessionals.size,
@@ -462,6 +473,29 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (ability.type === "combatStyle") return ability.name || ability.prompt;
     const name = SKILL_NAMES.get(ability.slug) ?? ability.slug;
     return ability.specialization ? `${name} (${ability.specialization})` : name;
+  }
+
+  #abilityBase(ability) {
+    if (ability.type === "combatStyle") {
+      return Number(this.actor.system.strength) + Number(this.actor.system.dexterity);
+    }
+    const source = BASIC_SKILLS_BY_SLUG.get(ability.slug)
+      ?? PROFESSIONAL_SKILLS_BY_SLUG.get(ability.slug);
+    if (!source) return 0;
+    return Number(this.actor.system[source.system.characteristic1] ?? 0)
+      + Number(this.actor.system[source.system.characteristic2] ?? 0)
+      + Number(source.system.baseBonus ?? 0);
+  }
+
+  #previousBackgroundPoints(draft, phase, key) {
+    if (phase === "profession") {
+      return Number(draft.allocations.culture[key] ?? 0);
+    }
+    if (phase === "free") {
+      return Number(draft.allocations.culture[key] ?? 0)
+        + Number(draft.allocations.profession[key] ?? 0);
+    }
+    return 0;
   }
 
   async #saveBackgroundDraft(draft) {
@@ -519,7 +553,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       selected.delete(slug);
     }
     target[group] = [...selected];
-    draft.allocations[phase] = {};
+    this.#pruneBackgroundAllocation(draft, phase);
     await this.#saveBackgroundDraft(draft);
   }
 
@@ -543,28 +577,62 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     if (phase === "culture") draft.cultureProfessionals = [...selected];
     else draft.professionProfessionals = [...selected];
-    draft.allocations[phase] = {};
+    this.#pruneBackgroundAllocation(draft, phase);
     await this.#saveBackgroundDraft(draft);
   }
 
   async #updateBackgroundSpecialization(event) {
     const { phase, option } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const background = phase === "culture"
+      ? getCulture(draft.cultureKey)
+      : getProfession(draft.professionKey);
+    const selectedOption = background?.professional.find((entry) => entry.id === option);
+    const previous = draft.specializations[`${phase}:${option}`] ?? "";
+    const previousKey = selectedOption
+      ? skillAbilityKey(selectedOption.slug, previous)
+      : "";
     draft.specializations[`${phase}:${option}`] = event.currentTarget.value.trim();
-    draft.allocations[phase] = {};
+    const nextKey = selectedOption
+      ? skillAbilityKey(selectedOption.slug, draft.specializations[`${phase}:${option}`])
+      : "";
+    this.#transferBackgroundPoints(draft.allocations[phase], previousKey, nextKey);
+    this.#pruneBackgroundAllocation(draft, phase);
     await this.#saveBackgroundDraft(draft);
   }
 
   async #updateBackgroundStyle(event) {
     const { style, backgroundStyleField: field } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const previousKey = styleAbilityKey(draft.styles[style]?.name ?? "");
     draft.styles[style] = {
       ...(draft.styles[style] ?? {}),
       [field]: event.currentTarget.value.trim()
     };
     if (field === "name") {
       const phase = style.split(":")[0];
-      draft.allocations[phase] = {};
+      const nextKey = styleAbilityKey(draft.styles[style].name ?? "");
+      this.#transferBackgroundPoints(draft.allocations[phase], previousKey, nextKey);
+      this.#pruneBackgroundAllocation(draft, phase);
+    }
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #changeBackgroundStyles(event) {
+    event.preventDefault();
+    const { phase, backgroundStyleAction: action, style } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    if (action === "add") {
+      const id = `${phase}:extra-${Date.now().toString(36)}`;
+      draft.extraStyles[phase].push(id);
+      draft.styles[id] = { name: "", weapons: "", traits: "" };
+    } else if (action === "remove" && style) {
+      const oldName = draft.styles[style]?.name ?? "";
+      const oldKey = styleAbilityKey(oldName);
+      draft.extraStyles[phase] = draft.extraStyles[phase].filter((id) => id !== style);
+      delete draft.styles[style];
+      delete draft.allocations[phase][oldKey];
+      this.#pruneBackgroundAllocation(draft, phase);
     }
     await this.#saveBackgroundDraft(draft);
   }
@@ -572,9 +640,38 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #updateFreeSkill(event) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const field = event.currentTarget.dataset.backgroundFreeField;
+    const previousKey = skillAbilityKey(
+      draft.freeProfessional.slug,
+      draft.freeProfessional.specialization
+    );
     draft.freeProfessional[field] = event.currentTarget.value.trim();
-    draft.allocations.free = {};
+    const nextKey = skillAbilityKey(
+      draft.freeProfessional.slug,
+      draft.freeProfessional.specialization
+    );
+    this.#transferBackgroundPoints(draft.allocations.free, previousKey, nextKey);
+    this.#pruneBackgroundAllocation(draft, "free");
     await this.#saveBackgroundDraft(draft);
+  }
+
+  #transferBackgroundPoints(allocation, previousKey, nextKey) {
+    if (!previousKey || !nextKey || previousKey === nextKey) return;
+    const points = Number(allocation[previousKey] ?? 0);
+    if (points > 0) allocation[nextKey] = Number(allocation[nextKey] ?? 0) + points;
+    delete allocation[previousKey];
+  }
+
+  #pruneBackgroundAllocation(draft, phase) {
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    const abilities = phase === "free"
+      ? getFreeAbilities(culture, profession, draft, CORE_BASIC_SLUGS)
+      : getPhaseAbilities(phase === "culture" ? culture : profession, draft, phase);
+    const allowed = new Set(abilities.map((ability) => ability.key));
+    draft.allocations[phase] = Object.fromEntries(
+      Object.entries(draft.allocations[phase])
+        .filter(([key]) => allowed.has(key))
+    );
   }
 
   async #updateBackgroundPoints(event) {

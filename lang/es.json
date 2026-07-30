@@ -170,5 +170,9 @@
   "MYTHRASF.Background.Validation.points": "Reparte todos los puntos únicamente entre las habilidades permitidas.",
   "MYTHRASF.Background.Validation.freeSkill": "Elige una habilidad profesional adicional.",
   "MYTHRASF.Background.Validation.freeSkillDuplicate": "La habilidad adicional debe ser una profesional nueva o una especialización nueva.",
-  "MYTHRASF.Background.Validation.incomplete": "La creación del trasfondo está incompleta."
+  "MYTHRASF.Background.Validation.incomplete": "La creación del trasfondo está incompleta.",
+  "MYTHRASF.Background.PreviousPoints": "Anteriores",
+  "MYTHRASF.Background.CurrentPoints": "Esta fase",
+  "MYTHRASF.Background.AddStyle": "Añadir estilo de combate",
+  "MYTHRASF.Background.RemoveStyle": "Eliminar estilo de combate"
 }

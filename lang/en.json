@@ -170,5 +170,9 @@
   "MYTHRASF.Background.Validation.points": "Allocate all available points only among the permitted skills.",
   "MYTHRASF.Background.Validation.freeSkill": "Choose one additional professional skill.",
   "MYTHRASF.Background.Validation.freeSkillDuplicate": "The additional skill must be a new professional skill or a new specialization.",
-  "MYTHRASF.Background.Validation.incomplete": "The background creation is incomplete."
+  "MYTHRASF.Background.Validation.incomplete": "The background creation is incomplete.",
+  "MYTHRASF.Background.PreviousPoints": "Previous",
+  "MYTHRASF.Background.CurrentPoints": "This phase",
+  "MYTHRASF.Background.AddStyle": "Add combat style",
+  "MYTHRASF.Background.RemoveStyle": "Remove combat style"
 }

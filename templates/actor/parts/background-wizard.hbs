@@ -80,7 +80,17 @@
 
       {{#each wizard.selected.styles as |style|}}
         <section class="background-style-fields">
-          <h4>{{style.prompt}}</h4>
+          <h4>
+            {{style.prompt}}
+            {{#if style.canRemove}}
+              <button type="button" class="background-style-remove"
+                data-background-style-action="remove"
+                data-phase="{{style.phase}}" data-style="{{style.id}}"
+                aria-label="{{localize "MYTHRASF.Background.RemoveStyle"}}">
+                <i class="fas fa-trash" aria-hidden="true"></i>
+              </button>
+            {{/if}}
+          </h4>
           <label>
             <span>{{localize "MYTHRASF.Background.StyleName"}}</span>
             <input type="text" value="{{style.name}}" data-background-style-field="name"
@@ -98,6 +108,12 @@
           </label>
         </section>
       {{/each}}
+      <button type="button" class="background-style-add"
+        data-background-style-action="add"
+        data-phase="{{wizard.allocationPhase}}">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+        {{localize "MYTHRASF.Background.AddStyle"}}
+      </button>
     </div>
   {{/if}}
 
@@ -131,17 +147,29 @@
             points=wizard.allocationRemaining total=wizard.allocationBudget}}</strong>
         </header>
         <div class="background-allocation-rows">
+          <div class="background-allocation-header" aria-hidden="true">
+            <span>{{localize "MYTHRASF.Skill.Name"}}</span>
+            <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+            <span>{{localize "MYTHRASF.Background.PreviousPoints"}}</span>
+            <span>{{localize "MYTHRASF.Background.CurrentPoints"}}</span>
+            <span>{{localize "MYTHRASF.Skill.Total"}}</span>
+          </div>
           {{#each wizard.allocationRows as |ability|}}
-            <label>
-              <span>{{ability.label}}</span>
-              <button type="button" data-background-points-action data-delta="-1"
-                data-phase="{{ability.phase}}" data-ability="{{ability.key}}">−</button>
-              <input type="number" min="0" value="{{ability.points}}"
-                data-background-points data-phase="{{ability.phase}}"
-                data-ability="{{ability.key}}">
-              <button type="button" data-background-points-action data-delta="1"
-                data-phase="{{ability.phase}}" data-ability="{{ability.key}}">+</button>
-            </label>
+            <div class="background-allocation-row">
+              <span class="ability-name">{{ability.label}}</span>
+              <output>{{ability.base}}</output>
+              <output>{{ability.previousPoints}}</output>
+              <div class="background-point-control">
+                <button type="button" data-background-points-action data-delta="-1"
+                  data-phase="{{ability.phase}}" data-ability="{{ability.key}}">−</button>
+                <input type="number" min="0" value="{{ability.points}}"
+                  data-background-points data-phase="{{ability.phase}}"
+                  data-ability="{{ability.key}}">
+                <button type="button" data-background-points-action data-delta="1"
+                  data-phase="{{ability.phase}}" data-ability="{{ability.key}}">+</button>
+              </div>
+              <strong>{{ability.total}}%</strong>
+            </div>
           {{/each}}
         </div>
       </section>

@@ -20,6 +20,7 @@ export function createBackgroundDraft() {
     professionProfessionals: [],
     specializations: {},
     styles: {},
+    extraStyles: { culture: [], profession: [] },
     freeProfessional: { slug: "", specialization: "" },
     allocations: { culture: {}, profession: {}, free: {} }
   };
@@ -47,6 +48,10 @@ export function mergeDraft(draft = {}) {
     professionChoices: { ...initial.professionChoices, ...draft.professionChoices },
     specializations: { ...initial.specializations, ...draft.specializations },
     styles: { ...initial.styles, ...draft.styles },
+    extraStyles: {
+      culture: [...(draft.extraStyles?.culture ?? [])],
+      profession: [...(draft.extraStyles?.profession ?? [])]
+    },
     freeProfessional: { ...initial.freeProfessional, ...draft.freeProfessional },
     allocations: {
       culture: { ...initial.allocations.culture, ...draft.allocations?.culture },
@@ -121,15 +126,27 @@ export function getPhaseAbilities(background, draft, phase) {
       option: entry
     };
   });
-  const styles = (background.styles ?? []).map((prompt, index) => {
-    const style = draft.styles[`${phase}:${index}`] ?? {};
+  const requiredStyles = (background.styles ?? []).map((prompt, index) => ({
+    id: `${phase}:${index}`,
+    prompt,
+    required: true
+  }));
+  const extraStyles = (draft.extraStyles?.[phase] ?? []).map((id) => ({
+    id,
+    prompt: "Estilo de combate adicional",
+    required: false
+  }));
+  const styles = [...requiredStyles, ...extraStyles].map((definition) => {
+    const style = draft.styles[definition.id] ?? {};
     return {
       key: styleAbilityKey(style.name),
       type: "combatStyle",
+      id: definition.id,
       name: style.name ?? "",
       weapons: style.weapons ?? "",
       traits: style.traits ?? "",
-      prompt
+      prompt: definition.prompt,
+      required: definition.required
     };
   });
   return [...basics, ...professionals, ...styles];
@@ -214,6 +231,11 @@ export function validateBackgroundSelection(background, draft, phase) {
   }
   for (let index = 0; index < (background.styles ?? []).length; index += 1) {
     if (!String(draft.styles[`${phase}:${index}`]?.name ?? "").trim()) {
+      return { valid: false, reason: "style" };
+    }
+  }
+  for (const id of draft.extraStyles?.[phase] ?? []) {
+    if (!String(draft.styles[id]?.name ?? "").trim()) {
       return { valid: false, reason: "style" };
     }
   }

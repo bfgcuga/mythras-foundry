@@ -461,25 +461,70 @@
 
 .mythras-foundry .background-allocation-rows {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.25rem 0.75rem;
+  gap: 0.25rem;
 }
 
-.mythras-foundry .background-allocation-rows label {
+.mythras-foundry .background-allocation-header,
+.mythras-foundry .background-allocation-row {
   display: grid;
-  grid-template-columns: minmax(7rem, 1fr) 1.55rem 3.25rem 1.55rem;
+  grid-template-columns: minmax(9rem, 1fr) 3.25rem 4rem 7rem 4rem;
   align-items: center;
+  gap: 0.35rem;
+  min-height: 1.75rem;
+  text-align: center;
+}
+
+.mythras-foundry .background-allocation-header {
+  border-bottom: 1px solid var(--mythras-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.mythras-foundry .background-allocation-row {
+  border-bottom: 1px solid rgb(107 83 47 / 35%);
+}
+
+.mythras-foundry .background-allocation-row .ability-name {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mythras-foundry .background-point-control {
+  display: grid;
+  grid-template-columns: 1.55rem minmax(2.8rem, 1fr) 1.55rem;
   gap: 0.2rem;
 }
 
-.mythras-foundry .background-allocation-rows button {
+.mythras-foundry .background-point-control button {
   min-height: 1.55rem;
   padding: 0;
 }
 
-.mythras-foundry .background-allocation-rows input {
+.mythras-foundry .background-point-control input {
   min-width: 0;
   text-align: center;
+}
+
+.mythras-foundry .background-style-fields h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.mythras-foundry .background-style-remove {
+  width: 1.55rem;
+  min-height: 1.55rem;
+  padding: 0;
+  color: #7a2821;
+}
+
+.mythras-foundry .background-style-add {
+  align-self: start;
+  min-height: 2rem;
+  font-size: 0.75rem;
 }
 
 .mythras-foundry .background-summary-header,

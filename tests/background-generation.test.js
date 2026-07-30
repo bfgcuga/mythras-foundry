@@ -118,3 +118,21 @@ test("la habilidad libre no puede repetir una profesional ya adquirida", () => {
     { valid: false, reason: "freeSkillDuplicate" }
   );
 });
+
+test("una fase admite estilos de combate adicionales independientes", () => {
+  const draft = createBackgroundDraft();
+  const culture = {
+    basic: [],
+    choices: [],
+    professionalChoiceCount: 3,
+    professional: [],
+    styles: ["Estilo cultural"]
+  };
+  draft.styles["culture:0"] = { name: "Espada y escudo" };
+  draft.extraStyles.culture.push("culture:extra-1");
+  draft.styles["culture:extra-1"] = { name: "Arco tribal" };
+  const styles = getAllAcquiredAbilities(culture, null, draft, {
+    includeFree: false
+  }).filter((ability) => ability.type === "combatStyle");
+  assert.deepEqual(styles.map((style) => style.name), ["Espada y escudo", "Arco tribal"]);
+});
