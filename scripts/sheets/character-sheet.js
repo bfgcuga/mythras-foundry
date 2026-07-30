@@ -84,6 +84,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       editable: this.isEditable,
       characteristicRows,
       characteristicsEditing: Boolean(this._characteristicsEditing),
+      skillsEditing: Boolean(this._skillsEditing),
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
@@ -125,6 +126,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelector("[data-action='toggle-characteristics-edit']")
       ?.addEventListener("click", () => this.#toggleCharacteristicsEdit());
+    this.element.querySelector("[data-action='toggle-skills-edit']")
+      ?.addEventListener("click", () => this.#toggleSkillsEdit());
     this.element.querySelectorAll("[data-action='adjust-characteristic']").forEach((button) => {
       button.addEventListener("click", (event) => this.#adjustCharacteristic(event));
     });
@@ -230,6 +233,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #toggleCharacteristicsEdit() {
     if (!this.isEditable) return;
     this._characteristicsEditing = !this._characteristicsEditing;
+    await this.render({ force: true });
+  }
+
+  async #toggleSkillsEdit() {
+    if (!this.isEditable) return;
+    this._skillsEditing = !this._skillsEditing;
     await this.render({ force: true });
   }
 

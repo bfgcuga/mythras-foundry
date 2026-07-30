@@ -131,5 +131,7 @@
   "MYTHRASF.Character.FinishEdit": "Dejar de editar las características",
   "MYTHRASF.Character.Decrease": "Reducir característica",
   "MYTHRASF.Character.Increase": "Aumentar característica",
-  "MYTHRASF.Character.Swap": "Intercambiar con..."
+  "MYTHRASF.Character.Swap": "Intercambiar con...",
+  "MYTHRASF.Skill.EditMode": "Editar habilidades",
+  "MYTHRASF.Skill.FinishEdit": "Dejar de editar"
 }

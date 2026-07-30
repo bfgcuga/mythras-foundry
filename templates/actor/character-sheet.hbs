@@ -143,15 +143,29 @@
           </fieldset>
         </section>
 
-        <section class="paper-skill-columns">
+        {{#if editable}}
+          <div class="skills-management">
+            <button type="button" class="skills-edit-toggle {{#if skillsEditing}}active{{/if}}"
+              data-action="toggle-skills-edit" aria-pressed="{{skillsEditing}}"
+              title="{{#if skillsEditing}}{{localize "MYTHRASF.Skill.FinishEdit"}}{{else}}{{localize "MYTHRASF.Skill.EditMode"}}{{/if}}">
+              <i class="fas {{#if skillsEditing}}fa-check{{else}}fa-pen{{/if}}" aria-hidden="true"></i>
+              {{#if skillsEditing}}
+                {{localize "MYTHRASF.Skill.FinishEdit"}}
+              {{else}}
+                {{localize "MYTHRASF.Skill.EditMode"}}
+              {{/if}}
+            </button>
+          </div>
+        {{/if}}
+        <section class="paper-skill-columns {{#if skillsEditing}}skills-editing{{/if}}">
           <div class="paper-skill-column paper-skill-column-basic">
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-              group=basicSkillGroup editable=editable}}
+              group=basicSkillGroup editable=editable skillsEditing=skillsEditing}}
           </div>
           <div class="paper-skill-column paper-skill-column-secondary">
             {{#each secondarySkillGroups as |group|}}
               {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-                group=group editable=../editable}}
+                group=group editable=../editable skillsEditing=../skillsEditing}}
             {{/each}}
 
           <fieldset class="paper-passions">

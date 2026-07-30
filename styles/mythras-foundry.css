@@ -355,6 +355,27 @@
   margin-top: 0.75rem;
 }
 
+.mythras-foundry .skills-management {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.65rem 0 -0.45rem;
+}
+
+.mythras-foundry .skills-edit-toggle {
+  width: auto;
+  min-height: 1.65rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.mythras-foundry .skills-edit-toggle.active {
+  background: #b79d70;
+}
+
+.mythras-foundry .skills-editing .skill-delete {
+  color: #7a2821;
+}
+
 .mythras-foundry .paper-skill-column {
   display: flex;
   min-width: 0;
