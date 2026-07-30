@@ -13,8 +13,8 @@ function steppedValue(value, firstLimit, firstValue, step) {
   return firstValue + Math.ceil((value - firstLimit) / step);
 }
 
-export function calculateActionPoints(intelligence, dexterity) {
-  return steppedValue(intelligence + dexterity, 12, 1, 12);
+export function calculateActionPoints() {
+  return 2;
 }
 
 export function calculateExperienceModifier(charisma) {
@@ -37,32 +37,38 @@ export function calculateInitiative(dexterity, intelligence) {
 export function calculateDamageModifier(strength, size) {
   const total = strength + size;
   const bands = [
-    [5, -1, 1, 8],
-    [10, -1, 1, 6],
-    [15, -1, 1, 4],
-    [20, -1, 1, 2],
-    [25, 0, 0, 0],
-    [30, 1, 1, 2],
-    [35, 1, 1, 4],
-    [40, 1, 1, 6],
-    [45, 1, 1, 8],
-    [50, 1, 1, 10],
-    [60, 1, 1, 12]
+    [5, -1, [[1, 8]]],
+    [10, -1, [[1, 6]]],
+    [15, -1, [[1, 4]]],
+    [20, -1, [[1, 2]]],
+    [25, 0, []],
+    [30, 1, [[1, 2]]],
+    [35, 1, [[1, 4]]],
+    [40, 1, [[1, 6]]],
+    [45, 1, [[1, 8]]],
+    [50, 1, [[1, 10]]],
+    [60, 1, [[1, 12]]],
+    [70, 1, [[2, 6]]],
+    [80, 1, [[1, 8], [1, 6]]],
+    [90, 1, [[2, 8]]],
+    [100, 1, [[1, 10], [1, 8]]],
+    [110, 1, [[2, 10]]]
   ];
 
   const band = bands.find(([limit]) => total <= limit);
-  if (band) return createDamageModifier(...band.slice(1));
+  if (band) return createDamageModifier(band[1], band[2]);
 
-  const dice = 1 + Math.ceil((total - 60) / 10);
-  return createDamageModifier(1, dice, 6);
+  const stepsAfterTwoD10 = Math.ceil((total - 110) / 10);
+  const completeD10 = Math.floor(stepsAfterTwoD10 / 5);
+  const remainder = stepsAfterTwoD10 % 5;
+  const terms = [[2 + completeD10, 10]];
+  if (remainder > 0) terms.push([1, remainder * 2]);
+  return createDamageModifier(1, terms);
 }
 
 export function calculateDerivedAttributes(characteristics) {
   return {
-    actionPointsMax: calculateActionPoints(
-      characteristics.intelligence,
-      characteristics.dexterity
-    ),
+    actionPointsMax: calculateActionPoints(),
     damageModifier: calculateDamageModifier(
       characteristics.strength,
       characteristics.size
@@ -78,10 +84,16 @@ export function calculateDerivedAttributes(characteristics) {
   };
 }
 
-function createDamageModifier(sign, dice, faces) {
-  const label = dice === 0
+function createDamageModifier(sign, terms) {
+  const label = terms.length === 0
     ? "0"
-    : `${sign > 0 ? "+" : "-"}${dice}d${faces}`;
+    : `${sign > 0 ? "+" : "-"}${terms
+      .map(([dice, faces]) => `${dice}d${faces}`)
+      .join("+")}`;
 
-  return { sign, dice, faces, label };
+  return {
+    sign,
+    terms: terms.map(([dice, faces]) => ({ dice, faces })),
+    label
+  };
 }

@@ -10,11 +10,8 @@ import {
   calculateLuckPoints
 } from "../scripts/rules/derived-attributes.js";
 
-test("puntos de acción respetan los límites de tramo", () => {
-  assert.equal(calculateActionPoints(6, 6), 1);
-  assert.equal(calculateActionPoints(7, 6), 2);
-  assert.equal(calculateActionPoints(12, 12), 2);
-  assert.equal(calculateActionPoints(13, 12), 3);
+test("Mythras Imperativo concede siempre dos puntos de acción", () => {
+  assert.equal(calculateActionPoints(), 2);
 });
 
 test("modificador de experiencia respeta los límites de tramo", () => {
@@ -41,20 +38,20 @@ test("iniciativa redondea hacia arriba", () => {
 test("modificador de daño conserva estructura y etiqueta", () => {
   assert.deepEqual(calculateDamageModifier(10, 10), {
     sign: -1,
-    dice: 1,
-    faces: 2,
+    terms: [{ dice: 1, faces: 2 }],
     label: "-1d2"
   });
   assert.deepEqual(calculateDamageModifier(13, 12), {
     sign: 0,
-    dice: 0,
-    faces: 0,
+    terms: [],
     label: "0"
   });
   assert.deepEqual(calculateDamageModifier(15, 15), {
     sign: 1,
-    dice: 1,
-    faces: 2,
+    terms: [{ dice: 1, faces: 2 }],
     label: "+1d2"
   });
+  assert.equal(calculateDamageModifier(35, 36).label, "+1d8+1d6");
+  assert.equal(calculateDamageModifier(55, 56).label, "+2d10+1d2");
+  assert.equal(calculateDamageModifier(60, 61).label, "+2d10+1d4");
 });
