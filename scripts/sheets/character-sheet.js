@@ -47,6 +47,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         item.system.group || item.system.category
       ) === key)
     }));
+    const basicSkillGroup = skillGroups.find((group) => group.key === "basic");
+    const secondarySkillGroups = skillGroups.filter((group) => group.key !== "basic");
     const magicMaximum = Number(this.actor.system.attributes.magicPointsMax);
     const magicCurrent = Number(this.actor.system.resources.magicPoints.value);
 
@@ -54,6 +56,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       actor: this.actor,
       editable: this.isEditable,
       skillGroups,
+      basicSkillGroup,
+      secondarySkillGroups,
       magicPointScale: Array.from({ length: 31 }, (_, value) => ({
         value,
         available: value <= magicMaximum,

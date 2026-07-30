@@ -1,11 +1,30 @@
 .mythras-foundry {
-  --mythras-accent: #6f2d1f;
-  --mythras-border: #b9aa91;
-  --mythras-panel: rgba(255, 255, 255, 0.45);
+  --mythras-accent: #3d3933;
+  --mythras-border: #9c8766;
+  --mythras-ink: #302e2a;
+  --mythras-paper: #dfcda8;
+  --mythras-panel: rgba(255, 249, 226, 0.42);
+  color: var(--mythras-ink);
 }
 
 .mythras-foundry .window-content {
   overflow: hidden;
+  background:
+    linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18)),
+    var(--mythras-paper);
+  color: var(--mythras-ink);
+}
+
+.mythras-foundry input,
+.mythras-foundry select,
+.mythras-foundry textarea,
+.mythras-foundry button,
+.mythras-foundry output,
+.mythras-foundry label,
+.mythras-foundry span,
+.mythras-foundry p,
+.mythras-foundry summary {
+  color: var(--mythras-ink);
 }
 
 .mythras-foundry .character-sheet-content,
@@ -158,8 +177,8 @@
   min-height: 1.65rem;
   padding: 0.2rem 0.75rem;
   border-radius: 1rem;
-  background: #4d4a49;
-  color: #fff;
+  background: #b79d70;
+  color: var(--mythras-ink);
   font-family: var(--font-serif);
   font-weight: 700;
 }
@@ -201,12 +220,20 @@
   font-weight: 700;
 }
 
-.mythras-foundry .paper-skill-grid {
+.mythras-foundry .paper-resource-row,
+.mythras-foundry .paper-skill-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
   gap: 0.75rem;
   margin-top: 0.75rem;
+}
+
+.mythras-foundry .paper-skill-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .mythras-foundry .paper-skill-group {
@@ -216,7 +243,7 @@
 .mythras-foundry .paper-skill-header,
 .mythras-foundry .paper-skill-row {
   display: grid;
-  grid-template-columns: minmax(7rem, 1fr) 4rem 2.7rem 3.5rem;
+  grid-template-columns: minmax(7rem, 1fr) 4rem 2.7rem 2.7rem 3.5rem;
   align-items: center;
   gap: 0.3rem;
   min-height: 1.45rem;
@@ -249,7 +276,7 @@
 }
 
 .mythras-foundry .paper-resources {
-  margin-top: 0.75rem;
+  margin: 0;
 }
 
 .mythras-foundry .magic-point-scale {
@@ -274,8 +301,8 @@
 
 .mythras-foundry .magic-point-scale span.current {
   border-color: var(--mythras-accent);
-  background: var(--mythras-accent);
-  color: #fff;
+  background: #b79d70;
+  color: var(--mythras-ink);
   font-weight: 700;
 }
 
@@ -471,7 +498,8 @@
 @media (max-width: 560px) {
   .mythras-foundry .identity-fields,
   .mythras-foundry .paper-stat-block,
-  .mythras-foundry .paper-skill-grid {
+  .mythras-foundry .paper-resource-row,
+  .mythras-foundry .paper-skill-columns {
     grid-template-columns: 1fr;
   }
 

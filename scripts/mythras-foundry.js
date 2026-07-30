@@ -13,7 +13,8 @@ import { MythrasItemSheet } from "./sheets/item-sheet.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
-  "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+  "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
+  "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
 ];
 
 Hooks.once("init", async () => {

@@ -89,30 +89,20 @@
           </fieldset>
         </section>
 
-        <section class="paper-skill-grid">
-          {{#each skillGroups as |group|}}
-            <fieldset class="paper-skill-group" data-skill-group="{{group.key}}">
-              <legend>{{localize group.label}}</legend>
-              <div class="paper-skill-header" aria-hidden="true">
-                <span>{{localize "MYTHRASF.Skill.Name"}}</span>
-                <span>{{localize "MYTHRASF.Skill.Base"}}</span>
-                <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
-                <span>{{localize "MYTHRASF.Skill.Total"}}</span>
-              </div>
-              {{#each group.skills as |item|}}
-                <div class="paper-skill-row" data-item-id="{{item.id}}">
-                  <button type="button" data-action="edit-item">{{item.name}}</button>
-                  <output>{{item.system.base}}</output>
-                  <input type="checkbox" {{checked item.system.trained}}
-                    data-skill-field="trained"
-                    aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
-                  <output>{{item.system.total}}%</output>
-                </div>
-              {{else}}
-                <p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>
-              {{/each}}
-            </fieldset>
-          {{/each}}
+        <section class="paper-resource-row">
+          <fieldset class="paper-resources">
+            <legend>{{localize "MYTHRASF.Resources"}}</legend>
+            <section class="resource-grid">
+              <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
+              <input type="number" min="0" max="{{actor.system.attributes.actionPointsMax}}"
+                name="system.resources.actionPoints.value"
+                value="{{actor.system.resources.actionPoints.value}}">
+              <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
+              <input type="number" min="0" max="{{actor.system.attributes.luckPointsMax}}"
+                name="system.resources.luckPoints.value"
+                value="{{actor.system.resources.luckPoints.value}}">
+            </section>
+          </fieldset>
 
           <fieldset class="paper-magic-points">
             <legend>{{localize "MYTHRASF.Attribute.MagicPoints"}}</legend>
@@ -131,6 +121,19 @@
               <output>/ {{actor.system.attributes.magicPointsMax}}</output>
             </label>
           </fieldset>
+
+        </section>
+
+        <section class="paper-skill-columns">
+          <div class="paper-skill-column paper-skill-column-basic">
+            {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
+              group=basicSkillGroup}}
+          </div>
+          <div class="paper-skill-column paper-skill-column-secondary">
+            {{#each secondarySkillGroups as |group|}}
+              {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
+                group=group}}
+            {{/each}}
 
           <fieldset class="paper-passions">
             <legend>{{localize "MYTHRASF.Passions"}}</legend>
@@ -160,25 +163,8 @@
               <p class="empty">{{localize "MYTHRASF.Empty.Passions"}}</p>
             {{/each}}
           </fieldset>
+          </div>
         </section>
-
-        <details class="paper-resources">
-          <summary>{{localize "MYTHRASF.Resources"}}</summary>
-          <section class="resource-grid">
-            <label>{{localize "MYTHRASF.Attribute.ActionPoints"}}</label>
-            <input type="number" min="0" max="{{actor.system.attributes.actionPointsMax}}"
-              name="system.resources.actionPoints.value"
-              value="{{actor.system.resources.actionPoints.value}}">
-            <label>{{localize "MYTHRASF.Attribute.LuckPoints"}}</label>
-            <input type="number" min="0" max="{{actor.system.attributes.luckPointsMax}}"
-              name="system.resources.luckPoints.value"
-              value="{{actor.system.resources.luckPoints.value}}">
-            <label>{{localize "MYTHRASF.Attribute.MagicPoints"}}</label>
-            <input type="number" min="0" max="{{actor.system.attributes.magicPointsMax}}"
-              name="system.resources.magicPoints.value"
-              value="{{actor.system.resources.magicPoints.value}}">
-          </section>
-        </details>
       </section>
 
       <section class="tab-panel" data-tab-content="skills">
