@@ -43,9 +43,6 @@
       <button type="button" class="active" data-tab="character">
         {{localize "MYTHRASF.Tab.Character"}}
       </button>
-      <button type="button" data-tab="skills">
-        {{localize "MYTHRASF.Tab.Skills"}}
-      </button>
       <button type="button" data-tab="inventory">
         {{localize "MYTHRASF.Tab.Inventory"}}
       </button>
@@ -127,12 +124,12 @@
         <section class="paper-skill-columns">
           <div class="paper-skill-column paper-skill-column-basic">
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-              group=basicSkillGroup}}
+              group=basicSkillGroup editable=editable}}
           </div>
           <div class="paper-skill-column paper-skill-column-secondary">
             {{#each secondarySkillGroups as |group|}}
               {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-                group=group}}
+                group=group editable=../editable}}
             {{/each}}
 
           <fieldset class="paper-passions">

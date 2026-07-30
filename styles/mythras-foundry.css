@@ -27,6 +27,14 @@
   color: var(--mythras-ink);
 }
 
+.mythras-foundry input:not([type="checkbox"]),
+.mythras-foundry select,
+.mythras-foundry textarea {
+  border-color: var(--mythras-border);
+  background: #eadbb8 !important;
+  color: var(--mythras-ink) !important;
+}
+
 .mythras-foundry .character-sheet-content,
 .mythras-foundry .item-sheet-content {
   display: flex;
@@ -187,7 +195,7 @@
   height: 1.65rem;
   border: 2px solid #4d4a49;
   border-radius: 0.35rem;
-  background: #fff;
+  background: #eadbb8;
   text-align: center;
   font-weight: 700;
 }
@@ -216,7 +224,7 @@
   min-height: 1.65rem;
   border: 2px solid #4d4a49;
   border-radius: 0.35rem;
-  background: #fff;
+  background: #eadbb8;
   font-weight: 700;
 }
 
@@ -237,16 +245,33 @@
 }
 
 .mythras-foundry .paper-skill-group {
+  position: relative;
   padding-top: 0.35rem;
+}
+
+.mythras-foundry .skill-group-add {
+  position: absolute;
+  top: -0.45rem;
+  right: 0.6rem;
+  display: grid;
+  width: 1.65rem;
+  min-height: 1.65rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--mythras-border);
+  border-radius: 50%;
+  background: var(--mythras-paper);
 }
 
 .mythras-foundry .paper-skill-header,
 .mythras-foundry .paper-skill-row {
   display: grid;
-  grid-template-columns: minmax(7rem, 1fr) 4rem 2.7rem 2.7rem 3.5rem;
+  grid-template-columns:
+    1.55rem minmax(5.5rem, 1fr) 2.8rem 2.8rem
+    2.2rem 2.2rem 3.1rem 1.55rem;
   align-items: center;
-  gap: 0.3rem;
-  min-height: 1.45rem;
+  gap: 0.25rem;
+  min-height: 1.75rem;
 }
 
 .mythras-foundry .paper-skill-header {
@@ -254,7 +279,10 @@
   font-weight: 700;
 }
 
-.mythras-foundry .paper-skill-row button {
+.mythras-foundry .paper-skill-row .skill-name {
+  display: flex;
+  height: 1.65rem;
+  align-items: center;
   overflow: hidden;
   padding: 0;
   border: 0;
@@ -267,12 +295,34 @@
 }
 
 .mythras-foundry .paper-skill-row output {
+  display: flex;
+  height: 1.65rem;
+  align-items: center;
+  justify-content: center;
   border-bottom: 1px solid var(--mythras-border);
   text-align: center;
 }
 
 .mythras-foundry .paper-skill-row input {
   justify-self: center;
+}
+
+.mythras-foundry .paper-skill-row .skill-roll,
+.mythras-foundry .paper-skill-row .skill-delete {
+  display: grid;
+  width: 1.55rem;
+  min-height: 1.55rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+
+.mythras-foundry .paper-skill-row .skill-roll:hover,
+.mythras-foundry .paper-skill-row .skill-delete:hover,
+.mythras-foundry .skill-group-add:hover {
+  color: var(--mythras-accent);
+  box-shadow: 0 0 0 1px var(--mythras-accent);
 }
 
 .mythras-foundry .paper-resources {

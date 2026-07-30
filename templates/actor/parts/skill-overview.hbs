@@ -1,16 +1,33 @@
 <fieldset class="paper-skill-group" data-skill-group="{{group.key}}">
   <legend>{{localize group.label}}</legend>
+  {{#if editable}}
+    <button type="button" class="skill-group-add"
+      data-action="add-skill-from-pack" data-skill-group="{{group.key}}"
+      aria-label="{{localize "MYTHRASF.Skill.AddToGroup"}}"
+      title="{{localize "MYTHRASF.Skill.AddToGroup"}}">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+    </button>
+  {{/if}}
   <div class="paper-skill-header" aria-hidden="true">
+    <span></span>
     <span>{{localize "MYTHRASF.Skill.Name"}}</span>
     <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+    <span>{{localize "MYTHRASF.Skill.BonusSum"}}</span>
     <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
     <span>{{localize "MYTHRASF.Skill.FumbledShort"}}</span>
     <span>{{localize "MYTHRASF.Skill.Total"}}</span>
+    <span></span>
   </div>
   {{#each group.skills as |item|}}
     <div class="paper-skill-row" data-item-id="{{item.id}}">
-      <button type="button" data-action="edit-item">{{item.name}}</button>
+      <button type="button" class="skill-roll" data-action="roll-skill"
+        aria-label="{{localize "MYTHRASF.Skill.Roll"}}"
+        title="{{localize "MYTHRASF.Skill.Roll"}}">
+        <i class="fas fa-dice-d20" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="skill-name" data-action="edit-item">{{item.name}}</button>
       <output>{{item.system.base}}</output>
+      <output>{{item.system.allocatedBonus}}</output>
       <input type="checkbox" {{checked item.system.trained}}
         data-skill-field="trained"
         aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
@@ -18,6 +35,15 @@
         data-skill-field="fumbled"
         aria-label="{{localize "MYTHRASF.Skill.Fumbled"}}">
       <output>{{item.system.total}}%</output>
+      {{#if ../editable}}
+        <button type="button" class="skill-delete" data-action="delete-item"
+          aria-label="{{localize "MYTHRASF.Delete"}}"
+          title="{{localize "MYTHRASF.Delete"}}">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>
+      {{else}}
+        <span></span>
+      {{/if}}
     </div>
   {{else}}
     <p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>

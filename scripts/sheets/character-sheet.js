@@ -1,5 +1,13 @@
 const { ActorSheetV2 } = foundry.applications.sheets;
-const { HandlebarsApplicationMixin } = foundry.applications.api;
+const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+const SKILL_GROUP_LABELS = {
+  basic: "MYTHRASF.Skill.GroupBasic",
+  professional: "MYTHRASF.Skill.GroupProfessional",
+  resistance: "MYTHRASF.Skill.GroupResistance",
+  magic: "MYTHRASF.Skill.GroupMagic",
+  language: "MYTHRASF.Skill.GroupLanguage"
+};
 
 export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -34,13 +42,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options);
     const items = [...this.actor.items];
     const skills = items.filter((item) => item.type === "skill");
-    const skillGroups = [
-      ["basic", "MYTHRASF.Skill.GroupBasic"],
-      ["professional", "MYTHRASF.Skill.GroupProfessional"],
-      ["resistance", "MYTHRASF.Skill.GroupResistance"],
-      ["magic", "MYTHRASF.Skill.GroupMagic"],
-      ["language", "MYTHRASF.Skill.GroupLanguage"]
-    ].map(([key, label]) => ({
+    const skillGroups = Object.entries(SKILL_GROUP_LABELS).map(([key, label]) => ({
       key,
       label,
       skills: skills.filter((item) => (
@@ -99,6 +101,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
+    });
+    this.element.querySelectorAll("[data-action='add-skill-from-pack']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#addSkillFromPack(event));
     });
     this.element.querySelectorAll("[data-skill-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateSkillField(event));
@@ -189,6 +194,67 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(row?.dataset.itemId);
     const difficulty = row?.querySelector("[data-difficulty]")?.value ?? "standard";
     await item?.rollSkill({ difficulty });
+  }
+
+  async #addSkillFromPack(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+
+    const group = event.currentTarget.dataset.skillGroup;
+    const pack = game.packs.get("mythras-foundry.skills");
+    if (!pack) {
+      ui.notifications.error(game.i18n.localize("MYTHRASF.Skill.PackMissing"));
+      return;
+    }
+
+    const existingSlugs = new Set(
+      this.actor.items
+        .filter((item) => item.type === "skill")
+        .map((item) => item.system.slug)
+        .filter(Boolean)
+    );
+    const documents = await pack.getDocuments({ type: "skill" });
+    const available = documents
+      .filter((item) => (item.system.group || item.system.category) === group)
+      .filter((item) => !existingSlugs.has(item.system.slug))
+      .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
+
+    if (available.length === 0) {
+      ui.notifications.info(game.i18n.localize("MYTHRASF.Skill.NoneAvailable"));
+      return;
+    }
+
+    const options = available.map((item) => (
+      `<option value="${item.id}">${foundry.utils.escapeHTML(item.name)}</option>`
+    )).join("");
+    const formData = await DialogV2.input({
+      window: {
+        title: game.i18n.format("MYTHRASF.Skill.AddDialogTitle", {
+          group: game.i18n.localize(SKILL_GROUP_LABELS[group])
+        })
+      },
+      content: `
+        <label class="skill-pack-picker">
+          <span>${game.i18n.localize("MYTHRASF.Skill.ChooseFromPack")}</span>
+          <select name="skillId" autofocus>${options}</select>
+        </label>
+      `,
+      ok: {
+        label: game.i18n.localize("MYTHRASF.Add"),
+        icon: "fas fa-plus"
+      }
+    });
+    if (!formData) return;
+
+    const skillId = formData.get?.("skillId") ?? formData.object?.skillId;
+    const source = available.find((item) => item.id === skillId);
+    if (!source) return;
+
+    const sourceData = source.toObject();
+    delete sourceData._id;
+    delete sourceData._key;
+    delete sourceData.folder;
+    await this.actor.createEmbeddedDocuments("Item", [sourceData]);
   }
 
   async #updateSkillField(event) {
