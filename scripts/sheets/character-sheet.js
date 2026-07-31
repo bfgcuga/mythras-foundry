@@ -1140,7 +1140,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const result = await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.Passion.Create") },
       content: `<div class="passion-create-dialog">
-        <label><span>${game.i18n.localize("MYTHRASF.Passion.Verb")}</span>
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.VerbLabel")}</span>
           <select name="verb">${verbOptions}</select></label>
         <label><span>${game.i18n.localize("MYTHRASF.Passion.CustomVerb")}</span>
           <input type="text" name="customVerb"></label>

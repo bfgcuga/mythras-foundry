@@ -96,7 +96,7 @@
   "MYTHRASF.Passion.Create": "Create passion",
   "MYTHRASF.Passion.Structured": "Calculate from verb and object",
   "MYTHRASF.Passion.LegacyHelp": "This legacy passion keeps its existing total. Define its verb and object, then enable structured calculation; its total will be preserved.",
-  "MYTHRASF.Passion.Verb": "Verb",
+  "MYTHRASF.Passion.VerbLabel": "Verb",
   "MYTHRASF.Passion.CustomVerb": "Other verb",
   "MYTHRASF.Passion.ObjectType": "Object type",
   "MYTHRASF.Passion.ObjectDescription": "Passion object",

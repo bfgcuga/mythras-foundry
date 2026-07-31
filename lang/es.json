@@ -96,7 +96,7 @@
   "MYTHRASF.Passion.Create": "Crear pasión",
   "MYTHRASF.Passion.Structured": "Calcular a partir del verbo y el objeto",
   "MYTHRASF.Passion.LegacyHelp": "Esta pasión antigua conserva su total actual. Define su verbo y objeto y después activa el cálculo estructurado; su total se conservará.",
-  "MYTHRASF.Passion.Verb": "Verbo",
+  "MYTHRASF.Passion.VerbLabel": "Verbo",
   "MYTHRASF.Passion.CustomVerb": "Otro verbo",
   "MYTHRASF.Passion.ObjectType": "Tipo de objeto",
   "MYTHRASF.Passion.ObjectDescription": "Objeto de la pasión",
