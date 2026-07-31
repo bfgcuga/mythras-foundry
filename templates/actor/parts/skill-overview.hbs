@@ -8,43 +8,77 @@
       <i class="fas fa-plus" aria-hidden="true"></i>
     </button>
   {{/if}}
-  <div class="paper-skill-header" aria-hidden="true">
-    <span></span>
-    <span>{{localize "MYTHRASF.Skill.Name"}}</span>
-    <span>{{localize "MYTHRASF.Skill.Base"}}</span>
-    <span>{{localize "MYTHRASF.Skill.BonusSum"}}</span>
-    <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
-    <span>{{localize "MYTHRASF.Skill.FumbledShort"}}</span>
-    <span>{{localize "MYTHRASF.Skill.Total"}}</span>
-    <span></span>
-  </div>
-  {{#each group.skills as |item|}}
-    <div class="paper-skill-row" data-item-id="{{item.id}}">
-      <button type="button" class="skill-roll" data-action="roll-skill"
-        aria-label="{{localize "MYTHRASF.Skill.Roll"}}"
-        title="{{localize "MYTHRASF.Skill.Roll"}}">
-        <i class="fas fa-dice-d20" aria-hidden="true"></i>
-      </button>
-      <button type="button" class="skill-name" data-action="edit-item">{{item.name}}</button>
-      <output>{{item.system.base}}</output>
-      <output>{{item.system.allocatedBonus}}</output>
-      <input type="checkbox" {{checked item.system.trained}}
-        data-skill-field="trained"
-        aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
-      <input type="checkbox" {{checked item.system.fumbled}}
-        data-skill-field="fumbled"
-        aria-label="{{localize "MYTHRASF.Skill.Fumbled"}}">
-      <output>{{item.system.total}}%</output>
-      {{#if ../skillsEditing}}
-        <button type="button" class="skill-delete" data-action="delete-item"
-          aria-label="{{localize "MYTHRASF.Delete"}}"
-          title="{{localize "MYTHRASF.Delete"}}">
-          <i class="fas fa-trash" aria-hidden="true"></i>
-        </button>
-      {{else}}
-        <span></span>
-      {{/if}}
+  {{#if group.creationMode}}
+    <div class="paper-skill-header creation-skill-grid" aria-hidden="true">
+      <span>{{localize "MYTHRASF.Skill.Name"}}</span>
+      <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+      <span>{{localize "MYTHRASF.Background.PreviousPoints"}}</span>
+      <span>{{group.creationPhaseLabel}}</span>
+      <span>{{localize "MYTHRASF.Skill.Total"}}</span>
     </div>
+  {{else}}
+    <div class="paper-skill-header" aria-hidden="true">
+      <span></span>
+      <span>{{localize "MYTHRASF.Skill.Name"}}</span>
+      <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+      <span>{{localize "MYTHRASF.Skill.BonusSum"}}</span>
+      <span>{{localize "MYTHRASF.Skill.TrainedShort"}}</span>
+      <span>{{localize "MYTHRASF.Skill.FumbledShort"}}</span>
+      <span>{{localize "MYTHRASF.Skill.Total"}}</span>
+      <span></span>
+    </div>
+  {{/if}}
+  {{#each group.skills as |item|}}
+    {{#if ../group.creationMode}}
+      <div class="paper-skill-row creation-skill-grid" data-item-id="{{item.id}}">
+        <button type="button" class="skill-name" data-action="edit-item">{{item.name}}</button>
+        <output>{{item.creation.base}}</output>
+        <output>{{item.creation.previousPoints}}</output>
+        <div class="creation-skill-points">
+          {{#if item.creation.modifiable}}
+            <button type="button" data-background-points-action data-delta="-1"
+              data-phase="{{item.creation.phase}}" data-ability="{{item.creation.key}}">−</button>
+          {{else}}
+            <span></span>
+          {{/if}}
+          <output>{{item.creation.currentPoints}}</output>
+          {{#if item.creation.modifiable}}
+            <button type="button" data-background-points-action data-delta="1"
+              data-phase="{{item.creation.phase}}" data-ability="{{item.creation.key}}">+</button>
+          {{else}}
+            <span></span>
+          {{/if}}
+        </div>
+        <output>{{item.creation.total}}%</output>
+      </div>
+    {{else}}
+      <div class="paper-skill-row" data-item-id="{{item.id}}">
+        <button type="button" class="skill-roll" data-action="roll-skill"
+          aria-label="{{localize "MYTHRASF.Skill.Roll"}}"
+          title="{{localize "MYTHRASF.Skill.Roll"}}">
+          <i class="fas fa-dice-d20" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="skill-name" data-action="edit-item">{{item.name}}</button>
+        <output>{{item.system.base}}</output>
+        <output>{{item.system.allocatedBonus}}</output>
+        <input type="checkbox" {{checked item.system.trained}}
+          data-skill-field="trained"
+          aria-label="{{localize "MYTHRASF.Skill.Trained"}}">
+        <input type="checkbox" {{checked item.system.fumbled}}
+          data-skill-field="fumbled"
+          aria-label="{{localize "MYTHRASF.Skill.Fumbled"}}">
+        <output>{{item.system.total}}%</output>
+        {{#if ../skillsEditing}}
+          <button type="button" class="skill-delete" data-action="delete-item"
+            aria-label="{{localize "MYTHRASF.Delete"}}"
+            title="{{localize "MYTHRASF.Delete"}}">
+            <i class="fas fa-trash" aria-hidden="true"></i>
+          </button>
+        {{else}}
+          <span></span>
+        {{/if}}
+      </div>
+    {{/if}}
   {{else}}
     <p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>
   {{/each}}

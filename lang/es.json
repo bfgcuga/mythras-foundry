@@ -174,5 +174,9 @@
   "MYTHRASF.Background.PreviousPoints": "Anteriores",
   "MYTHRASF.Background.CurrentPoints": "Esta fase",
   "MYTHRASF.Background.AddStyle": "Añadir estilo de combate",
-  "MYTHRASF.Background.RemoveStyle": "Eliminar estilo de combate"
+  "MYTHRASF.Background.RemoveStyle": "Eliminar estilo de combate",
+  "MYTHRASF.Background.PhasePoints.culture": "Cultura",
+  "MYTHRASF.Background.PhasePoints.profession": "Profesión",
+  "MYTHRASF.Background.PhasePoints.free": "Libres",
+  "MYTHRASF.Background.ReviewHelp": "Revisa los valores finales en las listas de habilidades inferiores antes de confirmar."
 }

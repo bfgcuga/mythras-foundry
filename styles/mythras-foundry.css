@@ -593,6 +593,39 @@
   font-weight: 700;
 }
 
+.mythras-foundry .paper-skill-header.creation-skill-grid,
+.mythras-foundry .paper-skill-row.creation-skill-grid {
+  grid-template-columns: minmax(6rem, 1fr) 2.8rem 3.2rem 5.2rem 3.2rem;
+}
+
+.mythras-foundry .creation-skill-points {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(1.8rem, 1fr) 1.4rem;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.mythras-foundry .creation-skill-points button {
+  min-height: 1.4rem;
+  padding: 0;
+  border: 1px solid var(--mythras-border);
+  background: #eadbb8;
+}
+
+.mythras-foundry .creation-skill-points output {
+  border-bottom: 1px solid var(--mythras-border);
+}
+
+.mythras-foundry .background-points-counter {
+  margin: 0.75rem 0 0;
+  padding: 0.45rem;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0.35rem;
+  background: #eadbb8;
+  text-align: center;
+  font-weight: 700;
+}
+
 .mythras-foundry .paper-skill-row .skill-name {
   display: flex;
   height: 1.65rem;

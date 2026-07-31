@@ -91,15 +91,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options);
     const items = [...this.actor.items];
     const skills = items.filter((item) => ["skill", "combatStyle"].includes(item.type));
-    const skillGroups = Object.entries(SKILL_GROUP_LABELS).map(([key, label]) => ({
-      key,
-      label,
-      skills: skills.filter((item) => (
-        item.system.group || item.system.category
-      ) === key)
-    }));
-    const basicSkillGroup = skillGroups.find((group) => group.key === "basic");
-    const secondarySkillGroups = skillGroups.filter((group) => group.key !== "basic");
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -123,6 +114,24 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       && !this.actor.system.backgroundComplete
       ? this.#prepareBackgroundWizard()
       : null;
+    const backgroundDraft = backgroundWizard
+      ? parseBackgroundDraft(this.actor.system.backgroundDraft)
+      : null;
+    const skillGroups = Object.entries(SKILL_GROUP_LABELS).map(([key, label]) => ({
+      key,
+      label,
+      creationMode: Boolean(backgroundWizard),
+      creationPhaseLabel: backgroundDraft
+        ? game.i18n.localize(`MYTHRASF.Background.PhasePoints.${
+          backgroundDraft.stage === "review" ? "free" : backgroundDraft.stage
+        }`)
+        : "",
+      skills: skills
+        .filter((item) => (item.system.group || item.system.category) === key)
+        .map((item) => this.#prepareSkillRow(item, backgroundDraft))
+    }));
+    const basicSkillGroup = skillGroups.find((group) => group.key === "basic");
+    const secondarySkillGroups = skillGroups.filter((group) => group.key !== "basic");
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
       editable: this.isEditable,
@@ -232,6 +241,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-passion-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updatePassionField(event));
     });
+
+    if (context.backgroundWizard && !this._backgroundSyncing) {
+      const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+      if (this.#backgroundItemsNeedSync(draft)) {
+        this._backgroundSyncing = true;
+        this.#syncBackgroundItems(draft)
+          .catch((error) => console.error(
+            "Mythras Foundry | Error synchronizing background draft",
+            error
+          ))
+          .finally(() => { this._backgroundSyncing = false; });
+      }
+    }
   }
 
   #activateTab(event) {
@@ -469,6 +491,48 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     };
   }
 
+  #prepareSkillRow(item, draft) {
+    const row = {
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      system: item.system
+    };
+    if (!draft) return row;
+
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    const phase = draft.stage === "review" ? "free" : draft.stage;
+    const key = item.getFlag("mythras-foundry", "backgroundDraftAbility")
+      ?? item.getFlag("mythras-foundry", "backgroundAbility")
+      ?? (item.type === "combatStyle"
+        ? styleAbilityKey(item.name)
+        : skillAbilityKey(
+          item.system.templateSlug || item.system.slug,
+          item.system.specialization
+        ));
+    const allowedAbilities = phase === "free"
+      ? getFreeAbilities(culture, profession, draft, CORE_BASIC_SLUGS)
+      : getPhaseAbilities(phase === "culture" ? culture : profession, draft, phase);
+    const allowed = new Set(allowedAbilities.map((ability) => ability.key));
+    const currentPoints = Number(draft.allocations[phase]?.[key] ?? 0);
+    const previousPoints = this.#previousBackgroundPoints(draft, phase, key);
+    return {
+      ...row,
+      creation: {
+        key,
+        phase,
+        modifiable: draft.stage !== "review" && allowed.has(key),
+        base: Number(item.system.base ?? this.#abilityBase(
+          allowedAbilities.find((ability) => ability.key === key) ?? {}
+        )),
+        previousPoints,
+        currentPoints,
+        total: Number(item.system.base ?? 0) + previousPoints + currentPoints
+      }
+    };
+  }
+
   #abilityLabel(ability) {
     if (ability.type === "combatStyle") return ability.name || ability.prompt;
     const name = SKILL_NAMES.get(ability.slug) ?? ability.slug;
@@ -499,9 +563,167 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #saveBackgroundDraft(draft) {
-    await this.actor.update({
-      "system.backgroundDraft": serializeBackgroundDraft(draft)
+    this._backgroundSyncing = true;
+    try {
+      await this.actor.update({
+        "system.backgroundDraft": serializeBackgroundDraft(draft)
+      });
+      await this.#syncBackgroundItems(draft);
+    } finally {
+      this._backgroundSyncing = false;
+    }
+  }
+
+  async #syncBackgroundItems(draft) {
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    const acquired = getAllAcquiredAbilities(culture, profession, draft);
+    const desired = new Map(acquired.map((ability) => [ability.key, ability]));
+    const draftItems = this.actor.items.filter((item) => (
+      item.getFlag("mythras-foundry", "backgroundDraftAbility")
+    ));
+    const draftByKey = new Map(draftItems.map((item) => [
+      item.getFlag("mythras-foundry", "backgroundDraftAbility"),
+      item
+    ]));
+    const deletions = draftItems
+      .filter((item) => !desired.has(
+        item.getFlag("mythras-foundry", "backgroundDraftAbility")
+      ))
+      .map((item) => item.id);
+    if (deletions.length > 0) {
+      await this.actor.deleteEmbeddedDocuments("Item", deletions);
+    }
+
+    const updates = [];
+    const creations = [];
+    for (const source of BASIC_SKILL_SOURCES) {
+      if (source.system.slug === "estilo-de-combate") continue;
+      const item = this.actor.items.find((candidate) => (
+        candidate.type === "skill" && candidate.system.slug === source.system.slug
+      ));
+      if (!item) continue;
+      const key = skillAbilityKey(source.system.slug);
+      updates.push({
+        _id: item.id,
+        "system.culturePoints": Number(draft.allocations.culture[key] ?? 0),
+        "system.professionPoints": Number(draft.allocations.profession[key] ?? 0),
+        "system.freePoints": Number(draft.allocations.free[key] ?? 0)
+      });
+    }
+
+    for (const ability of acquired) {
+      if (
+        ability.type === "skill"
+        && BASIC_SKILLS_BY_SLUG.has(ability.slug)
+        && !ability.specialization
+      ) continue;
+      const points = {
+        culturePoints: Number(draft.allocations.culture[ability.key] ?? 0),
+        professionPoints: Number(draft.allocations.profession[ability.key] ?? 0),
+        freePoints: Number(draft.allocations.free[ability.key] ?? 0)
+      };
+      const existing = draftByKey.get(ability.key);
+      if (existing && !deletions.includes(existing.id)) {
+        updates.push({
+          _id: existing.id,
+          "system.culturePoints": points.culturePoints,
+          "system.professionPoints": points.professionPoints,
+          "system.freePoints": points.freePoints
+        });
+      } else {
+        creations.push(this.#createBackgroundAbilityData(ability, points, true));
+      }
+    }
+    if (updates.length > 0) {
+      await this.actor.updateEmbeddedDocuments("Item", updates);
+    }
+    if (creations.length > 0) {
+      await this.actor.createEmbeddedDocuments("Item", creations);
+    }
+  }
+
+  #backgroundItemsNeedSync(draft) {
+    const culture = getCulture(draft.cultureKey);
+    const profession = getProfession(draft.professionKey);
+    const desired = getAllAcquiredAbilities(culture, profession, draft)
+      .filter((ability) => !(
+        ability.type === "skill"
+        && BASIC_SKILLS_BY_SLUG.has(ability.slug)
+        && !ability.specialization
+      ));
+    const currentKeys = new Set(this.actor.items
+      .map((item) => item.getFlag("mythras-foundry", "backgroundDraftAbility"))
+      .filter(Boolean));
+    if (
+      desired.length !== currentKeys.size
+      || desired.some((ability) => !currentKeys.has(ability.key))
+    ) return true;
+    return BASIC_SKILL_SOURCES.some((source) => {
+      if (source.system.slug === "estilo-de-combate") return false;
+      const item = this.actor.items.find((candidate) => (
+        candidate.type === "skill" && candidate.system.slug === source.system.slug
+      ));
+      const key = skillAbilityKey(source.system.slug);
+      return item && (
+        Number(item.system.culturePoints) !== Number(draft.allocations.culture[key] ?? 0)
+        || Number(item.system.professionPoints) !== Number(
+          draft.allocations.profession[key] ?? 0
+        )
+        || Number(item.system.freePoints) !== Number(draft.allocations.free[key] ?? 0)
+      );
     });
+  }
+
+  #createBackgroundAbilityData(ability, points, draft = false) {
+    const flag = draft ? "backgroundDraftAbility" : "backgroundAbility";
+    if (ability.type === "combatStyle") {
+      return {
+        name: ability.name,
+        type: "combatStyle",
+        img: "icons/svg/sword.svg",
+        system: {
+          slug: ability.key.slice(6),
+          templateSlug: "estilo-de-combate",
+          specialization: ability.name,
+          category: "professional",
+          group: "combat",
+          characteristic1: "strength",
+          characteristic2: "dexterity",
+          baseBonus: 0,
+          bonus: 0,
+          ...points,
+          experiencePoints: 0,
+          trained: false,
+          fumbled: false,
+          weapons: ability.weapons,
+          traits: ability.traits,
+          sourceType: "background",
+          description: ability.prompt
+        },
+        flags: { "mythras-foundry": { [flag]: ability.key } }
+      };
+    }
+    const source = PROFESSIONAL_SKILLS_BY_SLUG.get(ability.slug);
+    if (!source) return null;
+    const data = foundry.utils.deepClone(source);
+    data.name = ability.specialization
+      ? `${source.name} (${ability.specialization})`
+      : source.name;
+    data.system.slug = ability.specialization
+      ? `${ability.slug}-${ability.key.split(":").at(-1)}`
+      : ability.slug;
+    data.system.templateSlug = ability.slug;
+    data.system.specialization = ability.specialization;
+    Object.assign(data.system, points);
+    data.flags = {
+      ...(data.flags ?? {}),
+      "mythras-foundry": {
+        ...(data.flags?.["mythras-foundry"] ?? {}),
+        [flag]: ability.key
+      }
+    };
+    return data;
   }
 
   async #selectBackground(event) {
@@ -744,82 +966,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
 
-    const abilities = getFreeAbilities(culture, profession, draft, CORE_BASIC_SLUGS);
-    const updates = [];
-    const creations = [];
-    for (const ability of abilities) {
-      const points = {
-        culturePoints: Number(draft.allocations.culture[ability.key] ?? 0),
-        professionPoints: Number(draft.allocations.profession[ability.key] ?? 0),
-        freePoints: Number(draft.allocations.free[ability.key] ?? 0)
-      };
-      if (ability.type === "combatStyle") {
-        creations.push({
-          name: ability.name,
-          type: "combatStyle",
-          img: "icons/svg/sword.svg",
-          system: {
-            slug: ability.key.slice(6),
-            templateSlug: "estilo-de-combate",
-            specialization: ability.name,
-            category: "professional",
-            group: "combat",
-            characteristic1: "strength",
-            characteristic2: "dexterity",
-            baseBonus: 0,
-            bonus: 0,
-            ...points,
-            experiencePoints: 0,
-            trained: false,
-            fumbled: false,
-            weapons: ability.weapons,
-            traits: ability.traits,
-            sourceType: "background",
-            description: ability.prompt
-          },
-          flags: { "mythras-foundry": { backgroundAbility: ability.key } }
-        });
-        continue;
-      }
-
-      const basic = BASIC_SKILLS_BY_SLUG.get(ability.slug);
-      if (basic && ability.specialization === "") {
-        const item = this.actor.items.find((candidate) => (
-          candidate.type === "skill" && candidate.system.slug === ability.slug
-        ));
-        if (item) updates.push({ _id: item.id, ...Object.fromEntries(
-          Object.entries(points).map(([key, value]) => [`system.${key}`, value])
-        ) });
-        continue;
-      }
-
-      const source = PROFESSIONAL_SKILLS_BY_SLUG.get(ability.slug);
-      if (!source) continue;
-      const data = foundry.utils.deepClone(source);
-      data.name = ability.specialization
-        ? `${source.name} (${ability.specialization})`
-        : source.name;
-      data.system.slug = ability.specialization
-        ? `${ability.slug}-${ability.key.split(":").at(-1)}`
-        : ability.slug;
-      data.system.templateSlug = ability.slug;
-      data.system.specialization = ability.specialization;
-      Object.assign(data.system, points);
-      data.flags = {
-        ...(data.flags ?? {}),
-        "mythras-foundry": {
-          ...(data.flags?.["mythras-foundry"] ?? {}),
-          backgroundAbility: ability.key
-        }
-      };
-      creations.push(data);
-    }
-
-    if (creations.length > 0) {
-      await this.actor.createEmbeddedDocuments("Item", creations);
-    }
-    if (updates.length > 0) {
-      await this.actor.updateEmbeddedDocuments("Item", updates);
+    await this.#syncBackgroundItems(draft);
+    const finalizedItems = this.actor.items
+      .filter((item) => item.getFlag("mythras-foundry", "backgroundDraftAbility"))
+      .map((item) => ({
+        _id: item.id,
+        "flags.mythras-foundry.backgroundAbility": item.getFlag(
+          "mythras-foundry",
+          "backgroundDraftAbility"
+        ),
+        "flags.mythras-foundry.-=backgroundDraftAbility": null
+      }));
+    if (finalizedItems.length > 0) {
+      await this.actor.updateEmbeddedDocuments("Item", finalizedItems);
     }
     const [cultureDocument, professionDocument] = await Promise.all([
       this.#getBackgroundDocument("cultures", culture.key),

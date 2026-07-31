@@ -174,5 +174,9 @@
   "MYTHRASF.Background.PreviousPoints": "Previous",
   "MYTHRASF.Background.CurrentPoints": "This phase",
   "MYTHRASF.Background.AddStyle": "Add combat style",
-  "MYTHRASF.Background.RemoveStyle": "Remove combat style"
+  "MYTHRASF.Background.RemoveStyle": "Remove combat style",
+  "MYTHRASF.Background.PhasePoints.culture": "Culture",
+  "MYTHRASF.Background.PhasePoints.profession": "Profession",
+  "MYTHRASF.Background.PhasePoints.free": "Free",
+  "MYTHRASF.Background.ReviewHelp": "Review the final values in the skill lists below before confirming."
 }

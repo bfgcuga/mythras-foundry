@@ -139,63 +139,17 @@
   {{/if}}
 
   {{#if wizard.allocationPhase}}
-    {{#if wizard.allocationRows.length}}
-      <section class="background-allocation">
-        <header>
-          <h4>{{localize "MYTHRASF.Background.AllocatePoints"}}</h4>
-          <strong>{{localize "MYTHRASF.Background.PointsRemaining"
-            points=wizard.allocationRemaining total=wizard.allocationBudget}}</strong>
-        </header>
-        <div class="background-allocation-rows">
-          <div class="background-allocation-header" aria-hidden="true">
-            <span>{{localize "MYTHRASF.Skill.Name"}}</span>
-            <span>{{localize "MYTHRASF.Skill.Base"}}</span>
-            <span>{{localize "MYTHRASF.Background.PreviousPoints"}}</span>
-            <span>{{localize "MYTHRASF.Background.CurrentPoints"}}</span>
-            <span>{{localize "MYTHRASF.Skill.Total"}}</span>
-          </div>
-          {{#each wizard.allocationRows as |ability|}}
-            <div class="background-allocation-row">
-              <span class="ability-name">{{ability.label}}</span>
-              <output>{{ability.base}}</output>
-              <output>{{ability.previousPoints}}</output>
-              <div class="background-point-control">
-                <button type="button" data-background-points-action data-delta="-1"
-                  data-phase="{{ability.phase}}" data-ability="{{ability.key}}">−</button>
-                <input type="number" min="0" value="{{ability.points}}"
-                  data-background-points data-phase="{{ability.phase}}"
-                  data-ability="{{ability.key}}">
-                <button type="button" data-background-points-action data-delta="1"
-                  data-phase="{{ability.phase}}" data-ability="{{ability.key}}">+</button>
-              </div>
-              <strong>{{ability.total}}%</strong>
-            </div>
-          {{/each}}
-        </div>
-      </section>
-    {{/if}}
+    <p class="background-points-counter">
+      {{localize "MYTHRASF.Background.PointsRemaining"
+        points=wizard.allocationRemaining total=wizard.allocationBudget}}
+    </p>
   {{/if}}
 
   {{#if wizard.isReview}}
     <div class="background-summary">
       <p><b>{{localize "MYTHRASF.Background.Culture"}}:</b> {{wizard.cultureName}}</p>
       <p><b>{{localize "MYTHRASF.Background.Profession"}}:</b> {{wizard.professionName}}</p>
-      <div class="background-summary-header">
-        <span>{{localize "MYTHRASF.Skill.Name"}}</span>
-        <span>{{localize "MYTHRASF.Skill.CultureShort"}}</span>
-        <span>{{localize "MYTHRASF.Skill.ProfessionShort"}}</span>
-        <span>{{localize "MYTHRASF.Skill.FreeShort"}}</span>
-        <span>{{localize "MYTHRASF.Skill.BonusSum"}}</span>
-      </div>
-      {{#each wizard.reviewAbilities as |ability|}}
-        <div class="background-summary-row">
-          <span>{{ability.label}}</span>
-          <span>{{ability.culturePoints}}</span>
-          <span>{{ability.professionPoints}}</span>
-          <span>{{ability.freePoints}}</span>
-          <strong>{{ability.totalPoints}}</strong>
-        </div>
-      {{/each}}
+      <p>{{localize "MYTHRASF.Background.ReviewHelp"}}</p>
     </div>
   {{/if}}
 
