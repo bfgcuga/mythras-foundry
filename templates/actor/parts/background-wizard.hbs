@@ -68,10 +68,18 @@
             {{#if option.checked}}
               {{#if option.specializationRequired}}
                 <input type="text" value="{{option.specialization}}"
+                  list="{{option.specializationListId}}"
                   placeholder="{{localize "MYTHRASF.Background.Specialization"}}"
                   data-background-specialization
                   data-phase="{{option.phase}}"
                   data-option="{{option.id}}">
+                {{#if option.existingSpecializations.length}}
+                  <datalist id="{{option.specializationListId}}">
+                    {{#each option.existingSpecializations as |specialization|}}
+                      <option value="{{specialization}}"></option>
+                    {{/each}}
+                  </datalist>
+                {{/if}}
               {{/if}}
             {{/if}}
           {{/each}}
@@ -132,7 +140,15 @@
         <label>
           <span>{{localize "MYTHRASF.Background.Specialization"}}</span>
           <input type="text" value="{{wizard.freeProfessional.specialization}}"
+            list="{{wizard.freeSpecializationListId}}"
             data-background-free-field="specialization">
+          {{#if wizard.freeExistingSpecializations.length}}
+            <datalist id="{{wizard.freeSpecializationListId}}">
+              {{#each wizard.freeExistingSpecializations as |specialization|}}
+                <option value="{{specialization}}"></option>
+              {{/each}}
+            </datalist>
+          {{/if}}
         </label>
       {{/if}}
     </div>

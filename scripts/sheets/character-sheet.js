@@ -454,11 +454,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               checked: (selectedChoices[choice.id] ?? []).includes(entry.slug)
             }))
           })),
-          professional: selectedBackground.professional.map((entry) => ({
+          professional: selectedBackground.professional.map((entry, index) => ({
             ...entry,
             phase,
             checked: selectedProfessionals.has(entry.id),
-            specialization: draft.specializations[`${phase}:${entry.id}`] ?? ""
+            specialization: draft.specializations[`${phase}:${entry.id}`] ?? "",
+            specializationListId: `specializations-${phase}-${entry.slug}-${index}`,
+            existingSpecializations: this.#existingSpecializations(entry.slug, phase)
           })),
           styles: phaseAbilities
             .filter((ability) => ability.type === "combatStyle")
@@ -478,6 +480,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           || !acquiredBeforeFree.has(skillAbilityKey(source.system.slug))
       })).filter((entry) => entry.available || entry.selected),
       freeProfessional: draft.freeProfessional,
+      freeSpecializationListId: `specializations-free-${
+        draft.freeProfessional.slug || "skill"
+      }`,
+      freeExistingSpecializations: this.#existingSpecializations(
+        draft.freeProfessional.slug,
+        "free"
+      ),
       freeSpecializationRequired: freeSkillNeedsSpecialization(
         draft.freeProfessional.slug
       ),
@@ -537,6 +546,18 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (ability.type === "combatStyle") return ability.name || ability.prompt;
     const name = SKILL_NAMES.get(ability.slug) ?? ability.slug;
     return ability.specialization ? `${name} (${ability.specialization})` : name;
+  }
+
+  #existingSpecializations(slug, phase) {
+    if (!slug) return [];
+    return [...new Set(this.actor.items
+      .filter((item) => (
+        item.type === "skill"
+        && (item.system.templateSlug || item.system.slug) === slug
+        && String(item.system.specialization ?? "").trim()
+      ))
+      .map((item) => item.system.specialization.trim()))]
+      .sort((left, right) => left.localeCompare(right, game.i18n.lang));
   }
 
   #abilityBase(ability) {

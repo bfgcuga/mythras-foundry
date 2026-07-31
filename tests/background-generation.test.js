@@ -80,6 +80,32 @@ test("las especializaciones distintas crean habilidades independientes", () => {
   assert.equal(keys.filter((key) => key.startsWith("skill:saber:")).length, 2);
 });
 
+test("la misma especialización de cultura y profesión se fusiona", () => {
+  const draft = createBackgroundDraft();
+  const culture = {
+    basic: [],
+    choices: [],
+    professionalChoiceCount: 3,
+    professional: [{ id: "c", slug: "artesania", specializationRequired: true }],
+    styles: []
+  };
+  const profession = {
+    basic: [],
+    choices: [],
+    professionalChoiceCount: 3,
+    professional: [{ id: "p", slug: "artesania", specializationRequired: true }],
+    styles: []
+  };
+  draft.cultureProfessionals = ["c"];
+  draft.professionProfessionals = ["p"];
+  draft.specializations["culture:c"] = "Carpintería";
+  draft.specializations["profession:p"] = "Carpintería";
+  const matches = getAllAcquiredAbilities(culture, profession, draft, {
+    includeFree: false
+  }).filter((ability) => ability.key === skillAbilityKey("artesania", "Carpintería"));
+  assert.equal(matches.length, 1);
+});
+
 test("la asignación nunca sobrepasa el presupuesto de la fase", () => {
   let allocation = setAllocation({}, "skill:atletismo:", 80, 100);
   allocation = setAllocation(allocation, "skill:aguante:", 50, 100);

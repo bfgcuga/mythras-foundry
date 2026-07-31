@@ -35,6 +35,36 @@
   color: var(--mythras-ink) !important;
 }
 
+.mythras-foundry input[type="checkbox"] {
+  display: inline-grid;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  appearance: none;
+  place-content: center;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0.15rem;
+  background: var(--mythras-paper);
+}
+
+.mythras-foundry input[type="checkbox"]::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  content: "";
+  background: var(--mythras-ink);
+  clip-path: polygon(14% 44%, 0 59%, 40% 100%, 100% 18%, 84% 4%, 38% 70%);
+  transform: scale(0);
+}
+
+.mythras-foundry input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.mythras-foundry input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--mythras-accent);
+  outline-offset: 1px;
+}
+
 .mythras-foundry .character-sheet-content,
 .mythras-foundry .item-sheet-content {
   display: flex;
