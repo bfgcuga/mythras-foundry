@@ -129,7 +129,7 @@ export function getPhaseAbilities(background, draft, phase) {
   const requiredStyles = (background.styles ?? []).map((prompt, index) => ({
     id: `${phase}:${index}`,
     prompt,
-    required: true
+    required: phase === "culture"
   }));
   const extraStyles = (draft.extraStyles?.[phase] ?? []).map((id) => ({
     id,
@@ -230,7 +230,10 @@ export function validateBackgroundSelection(background, draft, phase) {
     }
   }
   for (let index = 0; index < (background.styles ?? []).length; index += 1) {
-    if (!String(draft.styles[`${phase}:${index}`]?.name ?? "").trim()) {
+    if (
+      phase === "culture"
+      && !String(draft.styles[`${phase}:${index}`]?.name ?? "").trim()
+    ) {
       return { valid: false, reason: "style" };
     }
   }
@@ -240,7 +243,10 @@ export function validateBackgroundSelection(background, draft, phase) {
     }
   }
   const abilities = getPhaseAbilities(background, draft, phase);
-  if (abilities.some((ability) => !ability.key || ability.key === "style:")) {
+  if (abilities.some((ability) => (
+    !ability.key
+    || (ability.type === "combatStyle" && ability.required && ability.key === "style:")
+  ))) {
     return { valid: false, reason: "style" };
   }
   if (allocationRemaining(phase, draft.allocations[phase]) !== 0) {

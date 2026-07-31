@@ -101,8 +101,24 @@ Hooks.once("ready", async () => {
       await actor.updateEmbeddedDocuments("Item", legacyUpdates);
     }
     await ensureBasicSkills(actor);
+    await deduplicateBackgroundAbilities(actor);
   }
 });
+
+async function deduplicateBackgroundAbilities(actor) {
+  const seen = new Set();
+  const duplicates = [];
+  for (const item of actor.items) {
+    const key = item.getFlag("mythras-foundry", "backgroundAbility")
+      ?? item.getFlag("mythras-foundry", "backgroundDraftAbility");
+    if (!key) continue;
+    if (seen.has(key)) duplicates.push(item.id);
+    else seen.add(key);
+  }
+  if (duplicates.length > 0) {
+    await actor.deleteEmbeddedDocuments("Item", duplicates);
+  }
+}
 
 function isPrimaryActiveGM() {
   const primaryGM = game.users

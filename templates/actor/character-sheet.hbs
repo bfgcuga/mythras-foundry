@@ -151,10 +151,20 @@
             wizard=backgroundWizard}}
         {{/if}}
 
+        {{#if backgroundWizard.allocationPhase}}
+          <div class="background-floating-counter">
+            {{localize "MYTHRASF.Background.PointsRemaining"
+              points=backgroundWizard.allocationRemaining
+              total=backgroundWizard.allocationBudget}}
+          </div>
+        {{/if}}
+
         <section class="paper-skill-columns {{#if editMode}}skills-editing{{/if}}">
           <div class="paper-skill-column paper-skill-column-basic">
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
               group=basicSkillGroup editable=editable skillsEditing=editMode}}
+            {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
+              group=combatSkillGroup editable=editable skillsEditing=editMode}}
           </div>
           <div class="paper-skill-column paper-skill-column-secondary">
             {{#each secondarySkillGroups as |group|}}

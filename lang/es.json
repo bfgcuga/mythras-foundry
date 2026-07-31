@@ -178,5 +178,6 @@
   "MYTHRASF.Background.PhasePoints.culture": "Cultura",
   "MYTHRASF.Background.PhasePoints.profession": "Profesión",
   "MYTHRASF.Background.PhasePoints.free": "Libres",
-  "MYTHRASF.Background.ReviewHelp": "Revisa los valores finales en las listas de habilidades inferiores antes de confirmar."
+  "MYTHRASF.Background.ReviewHelp": "Revisa los valores finales en las listas de habilidades inferiores antes de confirmar.",
+  "MYTHRASF.CombatStyle.Create": "Crear estilo de combate"
 }

@@ -120,6 +120,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const skillGroups = Object.entries(SKILL_GROUP_LABELS).map(([key, label]) => ({
       key,
       label,
+      isCombat: key === "combat",
       creationMode: Boolean(backgroundWizard),
       creationPhaseLabel: backgroundDraft
         ? game.i18n.localize(`MYTHRASF.Background.PhasePoints.${
@@ -131,7 +132,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         .map((item) => this.#prepareSkillRow(item, backgroundDraft))
     }));
     const basicSkillGroup = skillGroups.find((group) => group.key === "basic");
-    const secondarySkillGroups = skillGroups.filter((group) => group.key !== "basic");
+    const combatSkillGroup = skillGroups.find((group) => group.key === "combat");
+    const secondarySkillGroups = skillGroups.filter((group) => (
+      !["basic", "combat"].includes(group.key)
+    ));
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
       editable: this.isEditable,
@@ -151,6 +155,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       backgroundWizard,
       skillGroups,
       basicSkillGroup,
+      combatSkillGroup,
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
       equipment: items.filter((item) => item.type === "equipment"),
@@ -231,6 +236,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='add-skill-from-pack']").forEach((button) => {
       button.addEventListener("click", (event) => this.#addSkillFromPack(event));
+    });
+    this.element.querySelectorAll("[data-action='create-combat-style']").forEach((button) => {
+      button.addEventListener("click", () => this.#createCombatStyle());
     });
     this.element.querySelectorAll("[data-resource-action]").forEach((button) => {
       button.addEventListener("click", (event) => this.#adjustResource(event));
@@ -371,7 +379,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const profession = getProfession(draft.professionKey);
     const stage = draft.stage;
     const phase = ["culture", "profession"].includes(stage) ? stage : null;
-    const selectedBackground = phase === "culture" ? culture : profession;
+    const selectedBackground = phase
+      ? (phase === "culture" ? culture : profession)
+      : null;
     const selectedProfessionals = new Set(
       phase === "culture"
         ? draft.cultureProfessionals
@@ -467,6 +477,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             .map((ability) => ({
               ...ability,
               phase,
+              existingStyleNames: this.#existingCombatStyleNames(),
               canRemove: !ability.required
             }))
         }
@@ -560,6 +571,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       .sort((left, right) => left.localeCompare(right, game.i18n.lang));
   }
 
+  #existingCombatStyleNames() {
+    return [...new Set(this.actor.items
+      .filter((item) => item.type === "combatStyle" && item.name.trim())
+      .map((item) => item.name.trim()))]
+      .sort((left, right) => left.localeCompare(right, game.i18n.lang));
+  }
+
   #abilityBase(ability) {
     if (ability.type === "combatStyle") {
       return Number(this.actor.system.strength) + Number(this.actor.system.dexterity);
@@ -603,15 +621,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draftItems = this.actor.items.filter((item) => (
       item.getFlag("mythras-foundry", "backgroundDraftAbility")
     ));
-    const draftByKey = new Map(draftItems.map((item) => [
-      item.getFlag("mythras-foundry", "backgroundDraftAbility"),
-      item
-    ]));
-    const deletions = draftItems
+    const draftByKey = new Map();
+    const duplicates = [];
+    for (const item of draftItems) {
+      const key = item.getFlag("mythras-foundry", "backgroundDraftAbility");
+      if (draftByKey.has(key)) duplicates.push(item.id);
+      else draftByKey.set(key, item);
+    }
+    const deletions = [...duplicates, ...draftItems
       .filter((item) => !desired.has(
         item.getFlag("mythras-foundry", "backgroundDraftAbility")
       ))
-      .map((item) => item.id);
+      .map((item) => item.id)]
+      .filter((id, index, values) => values.indexOf(id) === index);
     if (deletions.length > 0) {
       await this.actor.deleteEmbeddedDocuments("Item", deletions);
     }
@@ -1151,6 +1173,43 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       console.error("Mythras Foundry | Error adding skill from compendium", error);
       ui.notifications.error(game.i18n.localize("MYTHRASF.Skill.AddFailed"));
     }
+  }
+
+  async #createCombatStyle() {
+    if (!this.isEditable) return;
+    const result = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.CombatStyle.Create") },
+      content: `
+        <div class="combat-style-dialog">
+          <label><span>${game.i18n.localize("MYTHRASF.Background.StyleName")}</span>
+            <input type="text" name="name" autofocus required></label>
+          <label><span>${game.i18n.localize("MYTHRASF.CombatStyle.Weapons")}</span>
+            <input type="text" name="weapons"></label>
+          <label><span>${game.i18n.localize("MYTHRASF.CombatStyle.Traits")}</span>
+            <input type="text" name="traits"></label>
+        </div>
+      `,
+      ok: {
+        label: game.i18n.localize("MYTHRASF.Add"),
+        icon: "fas fa-plus",
+        callback: (dialogEvent, button) => ({
+          name: button.form.elements.name.value.trim(),
+          weapons: button.form.elements.weapons.value.trim(),
+          traits: button.form.elements.traits.value.trim()
+        })
+      }
+    });
+    if (!result?.name) return;
+    const key = styleAbilityKey(result.name);
+    const data = this.#createBackgroundAbilityData({
+      key,
+      type: "combatStyle",
+      name: result.name,
+      weapons: result.weapons,
+      traits: result.traits,
+      prompt: ""
+    }, { culturePoints: 0, professionPoints: 0, freePoints: 0 });
+    await this.actor.createEmbeddedDocuments("Item", [data]);
   }
 
   async #adjustResource(event) {

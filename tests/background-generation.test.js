@@ -162,3 +162,24 @@ test("una fase admite estilos de combate adicionales independientes", () => {
   }).filter((ability) => ability.type === "combatStyle");
   assert.deepEqual(styles.map((style) => style.name), ["Espada y escudo", "Arco tribal"]);
 });
+
+test("un estilo ofrecido por la profesión puede dejarse vacío", () => {
+  const draft = createBackgroundDraft();
+  const profession = {
+    basic: [],
+    choices: [],
+    professionalChoiceCount: 3,
+    professional: [
+      { id: "a", slug: "actuar", specializationRequired: false },
+      { id: "b", slug: "callejeo", specializationRequired: false },
+      { id: "c", slug: "comerciar", specializationRequired: false }
+    ],
+    styles: ["Estilo cultural o militar"]
+  };
+  draft.professionProfessionals = ["a", "b", "c"];
+  draft.allocations.profession[skillAbilityKey("actuar")] = 100;
+  assert.deepEqual(
+    validateBackgroundSelection(profession, draft, "profession"),
+    { valid: true }
+  );
+});

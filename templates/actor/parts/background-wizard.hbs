@@ -102,7 +102,14 @@
           <label>
             <span>{{localize "MYTHRASF.Background.StyleName"}}</span>
             <input type="text" value="{{style.name}}" data-background-style-field="name"
-              data-style="{{style.id}}">
+              list="combat-styles-{{style.id}}" data-style="{{style.id}}">
+            {{#if style.existingStyleNames.length}}
+              <datalist id="combat-styles-{{style.id}}">
+                {{#each style.existingStyleNames as |styleName|}}
+                  <option value="{{styleName}}"></option>
+                {{/each}}
+              </datalist>
+            {{/if}}
           </label>
           <label>
             <span>{{localize "MYTHRASF.CombatStyle.Weapons"}}</span>
@@ -152,13 +159,6 @@
         </label>
       {{/if}}
     </div>
-  {{/if}}
-
-  {{#if wizard.allocationPhase}}
-    <p class="background-points-counter">
-      {{localize "MYTHRASF.Background.PointsRemaining"
-        points=wizard.allocationRemaining total=wizard.allocationBudget}}
-    </p>
   {{/if}}
 
   {{#if wizard.isReview}}

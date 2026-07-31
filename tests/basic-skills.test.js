@@ -15,7 +15,10 @@ test("el catálogo contiene todas las habilidades básicas de Imperativo", () =>
 });
 
 test("el catálogo completo contiene básicas y profesionales sin duplicados", () => {
-  assert.equal(ALL_SKILL_SOURCES.length, 61);
+  assert.equal(ALL_SKILL_SOURCES.length, 60);
+  assert.ok(!ALL_SKILL_SOURCES.some((skill) => (
+    skill.system.slug === "estilo-de-combate"
+  )));
   assert.equal(
     new Set(ALL_SKILL_SOURCES.map((skill) => skill.system.slug)).size,
     ALL_SKILL_SOURCES.length

@@ -178,5 +178,6 @@
   "MYTHRASF.Background.PhasePoints.culture": "Culture",
   "MYTHRASF.Background.PhasePoints.profession": "Profession",
   "MYTHRASF.Background.PhasePoints.free": "Free",
-  "MYTHRASF.Background.ReviewHelp": "Review the final values in the skill lists below before confirming."
+  "MYTHRASF.Background.ReviewHelp": "Review the final values in the skill lists below before confirming.",
+  "MYTHRASF.CombatStyle.Create": "Create combat style"
 }

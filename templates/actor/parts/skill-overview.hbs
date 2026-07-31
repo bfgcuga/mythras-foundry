@@ -2,7 +2,8 @@
   <legend>{{localize group.label}}</legend>
   {{#if editable}}
     <button type="button" class="skill-group-add"
-      data-action="add-skill-from-pack" data-skill-group="{{group.key}}"
+      data-action="{{#if group.isCombat}}create-combat-style{{else}}add-skill-from-pack{{/if}}"
+      data-skill-group="{{group.key}}"
       aria-label="{{localize "MYTHRASF.Skill.AddToGroup"}}"
       title="{{localize "MYTHRASF.Skill.AddToGroup"}}">
       <i class="fas fa-plus" aria-hidden="true"></i>

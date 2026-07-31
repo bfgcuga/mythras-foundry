@@ -27,6 +27,15 @@
   color: var(--mythras-ink);
 }
 
+.mythras-foundry h1,
+.mythras-foundry h2,
+.mythras-foundry h3,
+.mythras-foundry h4,
+.mythras-foundry h5,
+.mythras-foundry legend {
+  color: var(--mythras-ink) !important;
+}
+
 .mythras-foundry input:not([type="checkbox"]),
 .mythras-foundry select,
 .mythras-foundry textarea {
@@ -646,14 +655,32 @@
   border-bottom: 1px solid var(--mythras-border);
 }
 
-.mythras-foundry .background-points-counter {
-  margin: 0.75rem 0 0;
-  padding: 0.45rem;
-  border: 1px solid var(--mythras-border);
-  border-radius: 0.35rem;
+.mythras-foundry .background-floating-counter {
+  position: sticky;
+  z-index: 5;
+  top: 0.25rem;
+  width: max-content;
+  max-width: 100%;
+  margin: 0.5rem auto -0.25rem;
+  padding: 0.45rem 0.8rem;
+  border: 2px solid var(--mythras-border);
+  border-radius: 0.5rem;
   background: #eadbb8;
+  box-shadow: 0 2px 5px rgb(48 46 42 / 25%);
   text-align: center;
   font-weight: 700;
+}
+
+.mythras-foundry .combat-style-dialog {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mythras-foundry .combat-style-dialog label {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .mythras-foundry .paper-skill-row .skill-name {
