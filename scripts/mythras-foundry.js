@@ -10,6 +10,7 @@ import {
 } from "./data/item-data.js";
 import { MythrasItem } from "./documents/mythras-item.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
+import { styleAbilityKey } from "./rules/background-generation.js";
 import { CharacterSheet } from "./sheets/character-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 
@@ -106,14 +107,42 @@ Hooks.once("ready", async () => {
 });
 
 async function deduplicateBackgroundAbilities(actor) {
-  const seen = new Set();
+  const seen = new Map();
   const duplicates = [];
   for (const item of actor.items) {
-    const key = item.getFlag("mythras-foundry", "backgroundAbility")
+    const flaggedKey = item.getFlag("mythras-foundry", "backgroundAbility")
       ?? item.getFlag("mythras-foundry", "backgroundDraftAbility");
+    // A combat style is identified by its normalized name even when it predates
+    // the background wizard or carries a stale phase flag.
+    const key = item.type === "combatStyle"
+      ? styleAbilityKey(item.name)
+      : flaggedKey;
     if (!key) continue;
-    if (seen.has(key)) duplicates.push(item.id);
-    else seen.add(key);
+    const keeper = seen.get(key);
+    if (!keeper) {
+      seen.set(key, item);
+      continue;
+    }
+    const pointFields = [
+      "culturePoints", "professionPoints", "freePoints", "experiencePoints"
+    ];
+    const update = { _id: keeper.id };
+    for (const field of pointFields) {
+      update[`system.${field}`] = Math.max(
+        Number(keeper.system[field] ?? 0),
+        Number(item.system[field] ?? 0)
+      );
+    }
+    update["system.trained"] = Boolean(keeper.system.trained || item.system.trained);
+    update["system.fumbled"] = Boolean(keeper.system.fumbled || item.system.fumbled);
+    if (!keeper.system.weapons && item.system.weapons) {
+      update["system.weapons"] = item.system.weapons;
+    }
+    if (!keeper.system.traits && item.system.traits) {
+      update["system.traits"] = item.system.traits;
+    }
+    await actor.updateEmbeddedDocuments("Item", [update]);
+    duplicates.push(item.id);
   }
   if (duplicates.length > 0) {
     await actor.deleteEmbeddedDocuments("Item", duplicates);

@@ -121,7 +121,8 @@
 }
 
 .mythras-foundry .identity-fields input,
-.mythras-foundry .identity-fields .identity-name input {
+.mythras-foundry .identity-fields .identity-name input,
+.mythras-foundry .identity-fields .identity-readonly {
   height: 1.8rem;
   border: 0;
   border-bottom: 1px solid var(--mythras-border);
@@ -129,6 +130,15 @@
   background: transparent;
   font-size: 1rem;
   font-weight: 400;
+}
+
+.mythras-foundry .identity-fields .identity-readonly {
+  display: block;
+  min-width: 0;
+  padding: 0 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mythras-foundry .sheet-tabs {
@@ -394,17 +404,15 @@
   margin-top: 0.75rem;
 }
 
-.mythras-foundry .sheet-edit-management {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.45rem;
-}
-
 .mythras-foundry .sheet-edit-toggle {
   width: auto;
   min-height: 1.65rem;
   padding: 0.15rem 0.55rem;
   font-size: 0.75rem;
+}
+
+.mythras-foundry .sheet-tabs .sheet-edit-toggle {
+  margin-left: auto;
 }
 
 .mythras-foundry .sheet-edit-toggle.active {

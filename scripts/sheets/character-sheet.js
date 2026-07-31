@@ -628,6 +628,25 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (draftByKey.has(key)) duplicates.push(item.id);
       else draftByKey.set(key, item);
     }
+    const combatByKey = new Map();
+    for (const item of this.actor.items.filter((candidate) => candidate.type === "combatStyle")) {
+      const key = styleAbilityKey(item.name);
+      const current = combatByKey.get(key);
+      if (!current) {
+        combatByKey.set(key, item);
+        continue;
+      }
+      // Prefer an established item over a transient copy made by the wizard.
+      if (
+        current.getFlag("mythras-foundry", "backgroundDraftAbility")
+        && !item.getFlag("mythras-foundry", "backgroundDraftAbility")
+      ) {
+        duplicates.push(current.id);
+        combatByKey.set(key, item);
+      } else {
+        duplicates.push(item.id);
+      }
+    }
     const deletions = [...duplicates, ...draftItems
       .filter((item) => !desired.has(
         item.getFlag("mythras-foundry", "backgroundDraftAbility")
@@ -666,13 +685,21 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         professionPoints: Number(draft.allocations.profession[ability.key] ?? 0),
         freePoints: Number(draft.allocations.free[ability.key] ?? 0)
       };
-      const existing = draftByKey.get(ability.key);
+      const existing = ability.type === "combatStyle"
+        ? combatByKey.get(styleAbilityKey(ability.name))
+        : draftByKey.get(ability.key);
       if (existing && !deletions.includes(existing.id)) {
         updates.push({
           _id: existing.id,
           "system.culturePoints": points.culturePoints,
           "system.professionPoints": points.professionPoints,
-          "system.freePoints": points.freePoints
+          "system.freePoints": points.freePoints,
+          ...(ability.type === "combatStyle" && ability.weapons
+            ? { "system.weapons": ability.weapons }
+            : {}),
+          ...(ability.type === "combatStyle" && ability.traits
+            ? { "system.traits": ability.traits }
+            : {})
         });
       } else {
         creations.push(this.#createBackgroundAbilityData(ability, points, true));
@@ -698,6 +725,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const currentKeys = new Set(this.actor.items
       .map((item) => item.getFlag("mythras-foundry", "backgroundDraftAbility"))
       .filter(Boolean));
+    for (const item of this.actor.items.filter((candidate) => candidate.type === "combatStyle")) {
+      const key = styleAbilityKey(item.name);
+      if (desired.some((ability) => ability.key === key)) currentKeys.add(key);
+    }
     if (
       desired.length !== currentKeys.size
       || desired.some((ability) => !currentKeys.has(ability.key))
