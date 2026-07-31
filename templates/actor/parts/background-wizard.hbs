@@ -135,14 +135,41 @@
   {{#if wizard.isFree}}
     <div class="background-free-skill">
       <label>
-        <span>{{localize "MYTHRASF.Background.ExtraProfessional"}}</span>
+        <span>{{localize "MYTHRASF.Background.ExtraSkill"}}</span>
         <select data-background-free-field="slug">
           <option value="">{{localize "MYTHRASF.Background.Select"}}</option>
           {{#each wizard.freeProfessionalOptions as |entry|}}
             <option value="{{entry.slug}}" {{#if entry.selected}}selected{{/if}}>{{entry.name}}</option>
           {{/each}}
+          <option value="__combat-style__" {{#if wizard.freeCombatStyleSelected}}selected{{/if}}>
+            {{localize "MYTHRASF.Skill.GroupCombat"}}
+          </option>
         </select>
       </label>
+      {{#if wizard.freeCombatStyleSelected}}
+        <label>
+          <span>{{localize "MYTHRASF.Background.StyleName"}}</span>
+          <input type="text" value="{{wizard.freeProfessional.name}}"
+            list="free-existing-combat-styles" data-background-free-field="name">
+          {{#if wizard.freeExistingCombatStyles.length}}
+            <datalist id="free-existing-combat-styles">
+              {{#each wizard.freeExistingCombatStyles as |styleName|}}
+                <option value="{{styleName}}"></option>
+              {{/each}}
+            </datalist>
+          {{/if}}
+        </label>
+        <label>
+          <span>{{localize "MYTHRASF.Background.Weapons"}}</span>
+          <input type="text" value="{{wizard.freeProfessional.weapons}}"
+            data-background-free-field="weapons">
+        </label>
+        <label>
+          <span>{{localize "MYTHRASF.Background.Traits"}}</span>
+          <input type="text" value="{{wizard.freeProfessional.traits}}"
+            data-background-free-field="traits">
+        </label>
+      {{/if}}
       {{#if wizard.freeSpecializationRequired}}
         <label>
           <span>{{localize "MYTHRASF.Background.Specialization"}}</span>

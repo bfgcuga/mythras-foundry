@@ -21,7 +21,9 @@ export function createBackgroundDraft() {
     specializations: {},
     styles: {},
     extraStyles: { culture: [], profession: [] },
-    freeProfessional: { slug: "", specialization: "" },
+    freeProfessional: {
+      type: "skill", slug: "", specialization: "", name: "", weapons: "", traits: ""
+    },
     allocations: { culture: {}, profession: {}, free: {} }
   };
 }
@@ -160,14 +162,26 @@ export function getAllAcquiredAbilities(culture, profession, draft, {
     ...getPhaseAbilities(profession, draft, "profession")
   ];
   if (includeFree && draft.freeProfessional.slug) {
-    const { slug, specialization } = draft.freeProfessional;
-    abilities.push({
-      key: skillAbilityKey(slug, specialization),
-      type: "skill",
-      slug,
-      specialization,
-      freeChoice: true
-    });
+    const free = draft.freeProfessional;
+    if (free.type === "combatStyle") {
+      abilities.push({
+        key: styleAbilityKey(free.name),
+        type: "combatStyle",
+        name: free.name,
+        weapons: free.weapons,
+        traits: free.traits,
+        specialization: free.name,
+        freeChoice: true
+      });
+    } else {
+      abilities.push({
+        key: skillAbilityKey(free.slug, free.specialization),
+        type: "skill",
+        slug: free.slug,
+        specialization: free.specialization,
+        freeChoice: true
+      });
+    }
   }
   const unique = new Map();
   for (const ability of abilities) {
@@ -260,18 +274,14 @@ export function validateBackgroundSelection(background, draft, phase) {
 }
 
 export function validateFreePhase(culture, profession, draft, basicSlugs = []) {
-  const { slug, specialization } = draft.freeProfessional;
+  const { type, slug, specialization, name } = draft.freeProfessional;
   if (!slug) return { valid: false, reason: "freeSkill" };
-  if (freeSkillNeedsSpecialization(slug) && !String(specialization).trim()) {
-    return { valid: false, reason: "specialization" };
+  if (type === "combatStyle" && !String(name).trim()) {
+    return { valid: false, reason: "style" };
   }
-  const extraKey = skillAbilityKey(slug, specialization);
-  const alreadyAcquired = new Set(
-    getAllAcquiredAbilities(culture, profession, draft, { includeFree: false })
-      .map((ability) => ability.key)
-  );
-  if (alreadyAcquired.has(extraKey)) {
-    return { valid: false, reason: "freeSkillDuplicate" };
+  if (type !== "combatStyle" && freeSkillNeedsSpecialization(slug)
+    && !String(specialization).trim()) {
+    return { valid: false, reason: "specialization" };
   }
   if (allocationRemaining("free", draft.allocations.free) !== 0) {
     return { valid: false, reason: "points" };

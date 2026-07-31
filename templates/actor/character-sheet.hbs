@@ -177,19 +177,34 @@
               </button>
             {{/if}}
             <div class="paper-passion-header" aria-hidden="true">
+              <span></span>
               <span>{{localize "MYTHRASF.Passion.Name"}}</span>
-              <span>%</span>
+              <span>{{localize "MYTHRASF.Skill.Base"}}</span>
+              <span>{{localize "MYTHRASF.Skill.BonusSum"}}</span>
+              <span>{{localize "MYTHRASF.Skill.Total"}}</span>
               <span></span>
             </div>
             {{#each passions as |item|}}
               <div class="paper-passion-row" data-item-id="{{item.id}}">
+                <button type="button" class="passion-roll" data-action="roll-passion"
+                  aria-label="{{localize "MYTHRASF.Passion.Roll"}}">
+                  <i class="fas fa-dice-d20" aria-hidden="true"></i>
+                </button>
                 <button type="button" data-action="edit-item">{{item.name}}</button>
-                <input type="number" min="0" value="{{item.system.value}}"
-                  data-passion-field="value"
-                  aria-label="{{localize "MYTHRASF.Passion.Value"}}">
-                {{#if ../editable}}
-                  <button type="button" data-action="delete-item"
-                    aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
+                <output>{{item.system.base}}</output>
+                <output>{{item.system.allocatedBonus}}</output>
+                <output>{{item.system.total}}%</output>
+                {{#if ../editMode}}
+                  <div class="passion-edit-controls">
+                    <button type="button" data-passion-adjust="-1">−</button>
+                    <button type="button" data-passion-adjust="1">+</button>
+                    <button type="button" class="passion-delete" data-action="delete-item"
+                      aria-label="{{localize "MYTHRASF.Delete"}}">
+                      <i class="fas fa-trash" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                {{else}}
+                  <span></span>
                 {{/if}}
               </div>
             {{else}}

@@ -123,7 +123,7 @@ test("la fase libre exige habilidad adicional, especialización y 150 puntos", (
   );
 });
 
-test("la habilidad libre no puede repetir una profesional ya adquirida", () => {
+test("la habilidad libre puede mejorar una habilidad ya adquirida", () => {
   const draft = createBackgroundDraft();
   const culture = {
     basic: [],
@@ -141,8 +141,25 @@ test("la habilidad libre no puede repetir una profesional ya adquirida", () => {
   draft.allocations.free[skillAbilityKey("actuar")] = 150;
   assert.deepEqual(
     validateFreePhase(culture, null, draft, []),
-    { valid: false, reason: "freeSkillDuplicate" }
+    { valid: true }
   );
+});
+
+test("la habilidad libre puede ser un estilo de combate", () => {
+  const draft = createBackgroundDraft();
+  draft.freeProfessional = {
+    type: "combatStyle",
+    slug: "__combat-style__",
+    specialization: "",
+    name: "Lanza y escudo",
+    weapons: "Lanza, escudo",
+    traits: "Formación cerrada"
+  };
+  draft.allocations.free["style:lanza-y-escudo"] = 150;
+  assert.deepEqual(validateFreePhase(null, null, draft, []), { valid: true });
+  const [style] = getAllAcquiredAbilities(null, null, draft);
+  assert.equal(style.type, "combatStyle");
+  assert.equal(style.name, "Lanza y escudo");
 });
 
 test("una fase admite estilos de combate adicionales independientes", () => {

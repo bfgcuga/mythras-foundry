@@ -53,7 +53,9 @@
   place-content: center;
   border: 1px solid var(--mythras-border);
   border-radius: 0.15rem;
-  background: var(--mythras-paper);
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .mythras-foundry input[type="checkbox"]::before {
@@ -67,6 +69,12 @@
 
 .mythras-foundry input[type="checkbox"]:checked::before {
   transform: scale(1);
+}
+
+.mythras-foundry input[type="checkbox"]:checked {
+  border-color: var(--mythras-ink) !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .mythras-foundry input[type="checkbox"]:focus-visible {
@@ -798,7 +806,7 @@
 .mythras-foundry .paper-passion-header,
 .mythras-foundry .paper-passion-row {
   display: grid;
-  grid-template-columns: minmax(8rem, 1fr) 4rem 2rem;
+  grid-template-columns: 1.25rem minmax(7rem, 1fr) 2.5rem 2.5rem 3rem auto;
   align-items: center;
   gap: 0.35rem;
 }
@@ -808,7 +816,7 @@
   font-weight: 700;
 }
 
-.mythras-foundry .paper-passion-row button:first-child {
+.mythras-foundry .paper-passion-row > button[data-action="edit-item"] {
   overflow: hidden;
   padding: 0;
   border: 0;
@@ -820,9 +828,57 @@
   white-space: nowrap;
 }
 
-.mythras-foundry .paper-passion-row input {
-  min-width: 0;
+.mythras-foundry .paper-passion-row output {
   text-align: center;
+}
+
+.mythras-foundry .passion-roll {
+  width: 1.2rem;
+  min-height: 1.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.mythras-foundry .passion-edit-controls {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.mythras-foundry .passion-edit-controls button {
+  width: 1.45rem;
+  min-height: 1.45rem;
+  padding: 0;
+}
+
+.mythras-foundry .passion-delete {
+  color: #7a2821;
+}
+
+.mythras-foundry .passion-value-summary {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.passion-create-dialog {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.passion-create-dialog label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mythras-foundry .passion-create-dialog label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mythras-foundry .passion-value-summary {
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0.5rem;
+  border: 1px solid var(--mythras-border);
 }
 
 .mythras-foundry .item-list {

@@ -1,7 +1,7 @@
 <div class="item-sheet-content">
   <header class="sheet-header">
     <img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
-    <input type="text" name="name" value="{{item.name}}">
+    <input type="text" name="name" value="{{item.name}}" {{#if isPassion}}readonly{{/if}}>
   </header>
 
   {{#if isSkillLike}}
@@ -47,8 +47,40 @@
     <textarea name="system.rules">{{item.system.rules}}</textarea>
   {{else}}
   {{#if isPassion}}
-    <label>{{localize "MYTHRASF.Passion.Value"}}</label>
-    <input type="number" min="0" name="system.value" value="{{item.system.value}}">
+    {{#if item.system.isLegacy}}
+      <p class="passion-legacy-note">{{localize "MYTHRASF.Passion.LegacyHelp"}}</p>
+      <label>{{localize "MYTHRASF.Passion.Value"}}</label>
+      <input type="number" min="0" name="system.value" value="{{item.system.value}}">
+    {{/if}}
+    <label class="checkbox">
+      <input type="checkbox" name="system.structured" {{checked item.system.structured}}>
+      {{localize "MYTHRASF.Passion.Structured"}}
+    </label>
+      <label>{{localize "MYTHRASF.Passion.Verb"}}</label>
+      <select name="system.verb">
+        {{selectOptions passionVerbChoices selected=item.system.verb labelAttr="label" valueAttr="value"}}
+      </select>
+      {{#if isCustomPassionVerb}}
+        <label>{{localize "MYTHRASF.Passion.CustomVerb"}}</label>
+        <input type="text" name="system.customVerb" value="{{item.system.customVerb}}">
+      {{/if}}
+      <label>{{localize "MYTHRASF.Passion.ObjectType"}}</label>
+      <select name="system.objectType">
+        {{selectOptions passionObjectChoices selected=item.system.objectType labelAttr="label" valueAttr="value"}}
+      </select>
+      <label>{{localize "MYTHRASF.Passion.ObjectDescription"}}</label>
+      <input type="text" name="system.objectDescription" value="{{item.system.objectDescription}}">
+      <div class="passion-value-summary">
+        <span>{{localize "MYTHRASF.Skill.Base"}}: <b>{{item.system.base}}</b></span>
+        <span>{{localize "MYTHRASF.Skill.BonusSum"}}: <b>{{item.system.allocatedBonus}}</b></span>
+        <span>{{localize "MYTHRASF.Skill.Total"}}: <b>{{item.system.total}}%</b></span>
+      </div>
+      <label>{{localize "MYTHRASF.Passion.CreationBonus"}}</label>
+      <input type="number" name="system.creationBonus" value="{{item.system.creationBonus}}">
+      <label>{{localize "MYTHRASF.Passion.ExperiencePoints"}}</label>
+      <input type="number" name="system.experiencePoints" value="{{item.system.experiencePoints}}">
+      <label>{{localize "MYTHRASF.Passion.ManualAdjustment"}}</label>
+      <input type="number" name="system.manualAdjustment" value="{{item.system.manualAdjustment}}">
   {{else}}
     <label>{{localize "MYTHRASF.Item.Quantity"}}</label>
     <input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">

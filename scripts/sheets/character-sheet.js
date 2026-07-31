@@ -7,6 +7,7 @@ import {
 } from "../data/backgrounds.js";
 import { BASIC_SKILL_SOURCES } from "../data/basic-skills.js";
 import { PROFESSIONAL_SKILL_SOURCES } from "../data/professional-skills.js";
+import { ALL_SKILL_SOURCES } from "../data/skills.js";
 import {
   BACKGROUND_BUDGETS,
   allocationRemaining as backgroundAllocationRemaining,
@@ -31,6 +32,7 @@ import {
   createMinimumAllocation
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
+import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -50,9 +52,11 @@ const BASIC_SKILLS_BY_SLUG = new Map(
 const PROFESSIONAL_SKILLS_BY_SLUG = new Map(
   PROFESSIONAL_SKILL_SOURCES.map((source) => [source.system.slug, source])
 );
+const SKILLS_BY_SLUG = new Map(
+  ALL_SKILL_SOURCES.map((source) => [source.system.slug, source])
+);
 const SKILL_NAMES = new Map([
-  ...BASIC_SKILL_SOURCES,
-  ...PROFESSIONAL_SKILL_SOURCES
+  ...ALL_SKILL_SOURCES
 ].map((source) => [source.system.slug, source.name]));
 const CORE_BASIC_SLUGS = BASIC_SKILL_SOURCES
   .map((source) => source.system.slug)
@@ -234,6 +238,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
     });
+    this.element.querySelectorAll("[data-action='roll-passion']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#rollPassion(event));
+    });
+    this.element.querySelectorAll("[data-passion-adjust]").forEach((button) => {
+      button.addEventListener("click", (event) => this.#adjustPassion(event));
+    });
     this.element.querySelectorAll("[data-action='add-skill-from-pack']").forEach((button) => {
       button.addEventListener("click", (event) => this.#addSkillFromPack(event));
     });
@@ -399,10 +409,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       draft,
       CORE_BASIC_SLUGS
     );
-    const acquiredBeforeFree = new Set(
-      getAllAcquiredAbilities(culture, profession, draft, { includeFree: false })
-        .map((ability) => ability.key)
-    );
     const allocationPhase = phase ?? (stage === "free" ? "free" : null);
     const allocationAbilities = allocationPhase === "free" ? freeAbilities : phaseAbilities;
     const allocation = allocationPhase ? draft.allocations[allocationPhase] : {};
@@ -483,13 +489,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         : null,
       selectedProfessionalCount: selectedProfessionals.size,
-      freeProfessionalOptions: PROFESSIONAL_SKILL_SOURCES.map((source) => ({
+      freeProfessionalOptions: ALL_SKILL_SOURCES.map((source) => ({
         slug: source.system.slug,
         name: source.name,
-        selected: source.system.slug === draft.freeProfessional.slug,
-        available: freeSkillNeedsSpecialization(source.system.slug)
-          || !acquiredBeforeFree.has(skillAbilityKey(source.system.slug))
-      })).filter((entry) => entry.available || entry.selected),
+        group: source.system.group,
+        selected: draft.freeProfessional.type !== "combatStyle"
+          && source.system.slug === draft.freeProfessional.slug
+      })),
+      freeCombatStyleSelected: draft.freeProfessional.type === "combatStyle",
+      freeExistingCombatStyles: this.#existingCombatStyleNames(),
       freeProfessional: draft.freeProfessional,
       freeSpecializationListId: `specializations-free-${
         draft.freeProfessional.slug || "skill"
@@ -500,7 +508,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ),
       freeSpecializationRequired: freeSkillNeedsSpecialization(
         draft.freeProfessional.slug
-      ),
+      ) && draft.freeProfessional.type !== "combatStyle",
       allocationPhase,
       allocationRows,
       allocationRemaining: allocationPhase
@@ -582,8 +590,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (ability.type === "combatStyle") {
       return Number(this.actor.system.strength) + Number(this.actor.system.dexterity);
     }
-    const source = BASIC_SKILLS_BY_SLUG.get(ability.slug)
-      ?? PROFESSIONAL_SKILLS_BY_SLUG.get(ability.slug);
+    const source = SKILLS_BY_SLUG.get(ability.slug);
     if (!source) return 0;
     return Number(this.actor.system[source.system.characteristic1] ?? 0)
       + Number(this.actor.system[source.system.characteristic2] ?? 0)
@@ -778,7 +785,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         flags: { "mythras-foundry": { [flag]: ability.key } }
       };
     }
-    const source = PROFESSIONAL_SKILLS_BY_SLUG.get(ability.slug);
+    const source = SKILLS_BY_SLUG.get(ability.slug);
     if (!source) return null;
     const data = foundry.utils.deepClone(source);
     data.name = ability.specialization
@@ -814,7 +821,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       draft.professionProfessionals = [];
       draft.allocations.profession = {};
       draft.allocations.free = {};
-      draft.freeProfessional = { slug: "", specialization: "" };
+      draft.freeProfessional = createBackgroundDraft().freeProfessional;
       for (const key of Object.keys(draft.specializations)) {
         if (key.startsWith("profession:")) delete draft.specializations[key];
       }
@@ -936,15 +943,32 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #updateFreeSkill(event) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const field = event.currentTarget.dataset.backgroundFreeField;
-    const previousKey = skillAbilityKey(
-      draft.freeProfessional.slug,
-      draft.freeProfessional.specialization
-    );
-    draft.freeProfessional[field] = event.currentTarget.value.trim();
-    const nextKey = skillAbilityKey(
-      draft.freeProfessional.slug,
-      draft.freeProfessional.specialization
-    );
+    const previousKey = draft.freeProfessional.type === "combatStyle"
+      ? styleAbilityKey(draft.freeProfessional.name)
+      : skillAbilityKey(
+        draft.freeProfessional.slug,
+        draft.freeProfessional.specialization
+      );
+    const value = event.currentTarget.value.trim();
+    if (field === "slug") {
+      if (value === "__combat-style__") {
+        Object.assign(draft.freeProfessional, {
+          type: "combatStyle", slug: value, specialization: ""
+        });
+      } else {
+        Object.assign(draft.freeProfessional, {
+          type: "skill", slug: value, name: "", weapons: "", traits: ""
+        });
+      }
+    } else {
+      draft.freeProfessional[field] = value;
+    }
+    const nextKey = draft.freeProfessional.type === "combatStyle"
+      ? styleAbilityKey(draft.freeProfessional.name)
+      : skillAbilityKey(
+        draft.freeProfessional.slug,
+        draft.freeProfessional.specialization
+      );
     this.#transferBackgroundPoints(draft.allocations.free, previousKey, nextKey);
     this.#pruneBackgroundAllocation(draft, "free");
     await this.#saveBackgroundDraft(draft);
@@ -1082,9 +1106,61 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
 
     const type = event.currentTarget.dataset.type;
+    if (type === "passion") {
+      await this.#createPassion();
+      return;
+    }
     const name = game.i18n.localize(`MYTHRASF.Item.New.${type}`);
     const [item] = await this.actor.createEmbeddedDocuments("Item", [{ name, type }]);
     item?.sheet.render(true);
+  }
+
+  async #createPassion() {
+    const verbOptions = PASSION_VERBS.map((verb) => (
+      `<option value="${verb}">${game.i18n.localize(`MYTHRASF.Passion.Verb.${verb}`)}</option>`
+    )).join("");
+    const objectOptions = PASSION_OBJECT_TYPES.map((type) => (
+      `<option value="${type}">${game.i18n.localize(`MYTHRASF.Passion.Object.${type}`)}</option>`
+    )).join("");
+    const result = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.Passion.Create") },
+      content: `<div class="passion-create-dialog">
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.Verb")}</span>
+          <select name="verb">${verbOptions}</select></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.CustomVerb")}</span>
+          <input type="text" name="customVerb"></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.ObjectType")}</span>
+          <select name="objectType">${objectOptions}</select></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.ObjectDescription")}</span>
+          <input type="text" name="objectDescription" required></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.CreationBonus")}</span>
+          <input type="number" name="creationBonus" value="0"></label>
+      </div>`,
+      ok: {
+        label: game.i18n.localize("MYTHRASF.Add"),
+        icon: "fas fa-plus",
+        callback: (dialogEvent, button) => {
+          const elements = button.form.elements;
+          return {
+            verb: elements.verb.value,
+            customVerb: elements.customVerb.value.trim(),
+            objectType: elements.objectType.value,
+            objectDescription: elements.objectDescription.value.trim(),
+            creationBonus: Number.parseInt(elements.creationBonus.value, 10) || 0
+          };
+        }
+      }
+    });
+    if (!result?.objectDescription) return;
+    const verb = result.verb === "other"
+      ? result.customVerb
+      : game.i18n.localize(`MYTHRASF.Passion.Verb.${result.verb}`);
+    if (!verb) return;
+    await this.actor.createEmbeddedDocuments("Item", [{
+      name: `${verb} (${result.objectDescription})`,
+      type: "passion",
+      system: { ...result, structured: true }
+    }]);
   }
 
   #editItem(event) {
@@ -1107,6 +1183,28 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(row?.dataset.itemId);
     const difficulty = row?.querySelector("[data-difficulty]")?.value ?? "standard";
     await item?.rollSkill({ difficulty });
+  }
+
+  async #rollPassion(event) {
+    event.preventDefault();
+    const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
+    await this.actor.items.get(itemId)?.rollPassion();
+  }
+
+  async #adjustPassion(event) {
+    event.preventDefault();
+    if (!this.isEditable || !this._editMode) return;
+    const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    if (!item || item.type !== "passion") return;
+    const delta = Number(event.currentTarget.dataset.passionAdjust) || 0;
+    if (item.system.structured) {
+      await item.update({
+        "system.experiencePoints": Number(item.system.experiencePoints ?? 0) + delta
+      });
+    } else {
+      await item.update({ "system.value": Math.max(0, Number(item.system.value ?? 0) + delta) });
+    }
   }
 
   async #addSkillFromPack(event) {

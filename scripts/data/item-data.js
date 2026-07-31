@@ -134,6 +134,15 @@ export class EquipmentData extends foundry.abstract.TypeDataModel {
 export class PassionData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
+      structured: new BooleanField({ required: true, nullable: false, initial: false }),
+      verb: textField("other"),
+      customVerb: textField(),
+      objectType: textField(),
+      objectDescription: textField(),
+      creationBonus: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
+      experiencePoints: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
+      manualAdjustment: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
+      // Legacy total retained so existing actors keep exactly the same value.
       value: nonNegativeNumber(0, true),
       description: descriptionField()
     };

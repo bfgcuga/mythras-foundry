@@ -1,8 +1,18 @@
 import { calculateSkillValues } from "../rules/skills.js";
+import { calculatePassionValues } from "../rules/passions.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
     super.prepareDerivedData();
+
+    if (this.type === "passion") {
+      const values = calculatePassionValues(this.system, this.actor?.system);
+      this.system.base = values.base;
+      this.system.allocatedBonus = values.bonus;
+      this.system.total = values.total;
+      this.system.isLegacy = values.legacy;
+      return;
+    }
 
     if (!["skill", "combatStyle"].includes(this.type)) return;
 
@@ -60,6 +70,20 @@ export class MythrasItem extends Item {
     if (result === "fumble" && !this.system.fumbled) {
       await this.update({ "system.fumbled": true });
     }
+  }
+
+  async rollPassion() {
+    if (this.type !== "passion") return;
+    const target = Math.max(0, Number(this.system.total ?? 0));
+    const criticalTarget = Math.max(1, Math.ceil(target / 10));
+    const roll = await new Roll("1d100").evaluate();
+    const result = classifyRoll(roll.total, target, criticalTarget);
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+      flavor: `<strong>${foundry.utils.escapeHTML(this.name)}</strong> (${target}%): ${
+        game.i18n.localize(`MYTHRASF.RollResult.${result}`)
+      }`
+    });
   }
 }
 
