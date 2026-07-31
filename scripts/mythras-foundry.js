@@ -76,7 +76,7 @@ Hooks.on("preUpdateActor", (actor, changed) => {
 
 Hooks.on("preCreateItem", (item, data) => {
   const current = String(data.img ?? item.img ?? "");
-  if (!current || current === "icons/svg/item-bag.svg") {
+  if (!current || ["icons/svg/item-bag.svg", "icons/svg/mystery-man.svg"].includes(current)) {
     item.updateSource({ img: defaultItemIcon(data.type ?? item.type) });
   }
 });
@@ -111,8 +111,30 @@ Hooks.once("ready", async () => {
     }
     await ensureBasicSkills(actor);
     await deduplicateBackgroundAbilities(actor);
+    await migrateEmbeddedItemIcons(actor);
+  }
+  const worldIconUpdates = game.items
+    .map(getLegacyItemIconUpdate)
+    .filter(Boolean);
+  if (worldIconUpdates.length > 0) {
+    await Item.updateDocuments(worldIconUpdates);
   }
 });
+
+async function migrateEmbeddedItemIcons(actor) {
+  const updates = actor.items.map(getLegacyItemIconUpdate).filter(Boolean);
+  if (updates.length > 0) await actor.updateEmbeddedDocuments("Item", updates);
+}
+
+function getLegacyItemIconUpdate(item) {
+  if (item.type === "passion" && item.img === "icons/svg/heart.svg") {
+    return { _id: item.id, img: defaultItemIcon("passion") };
+  }
+  if (item.type === "combatStyle" && item.img === "icons/svg/sword.svg") {
+    return { _id: item.id, img: defaultItemIcon("combatStyle") };
+  }
+  return null;
+}
 
 async function deduplicateBackgroundAbilities(actor) {
   const seen = new Map();

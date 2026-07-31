@@ -32,7 +32,7 @@ jobs:
       - name: Crear paquete ZIP
         shell: bash
         run: |
-          elementos=(system.json scripts templates styles lang packs README.md)
+          elementos=(system.json scripts templates styles lang assets packs README.md)
           zip -r mythras-foundry.zip "${elementos[@]}"
 
       - name: Crear release y adjuntar archivos

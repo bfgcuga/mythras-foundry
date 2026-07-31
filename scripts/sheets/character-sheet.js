@@ -8,6 +8,7 @@ import {
 import { BASIC_SKILL_SOURCES } from "../data/basic-skills.js";
 import { PROFESSIONAL_SKILL_SOURCES } from "../data/professional-skills.js";
 import { ALL_SKILL_SOURCES } from "../data/skills.js";
+import { defaultItemIcon } from "../data/item-icons.js";
 import {
   BACKGROUND_BUDGETS,
   allocationRemaining as backgroundAllocationRemaining,
@@ -777,7 +778,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return {
         name: ability.name,
         type: "combatStyle",
-        img: "icons/svg/sword.svg",
+        img: defaultItemIcon("combatStyle"),
         system: {
           slug: ability.key.slice(6),
           templateSlug: "estilo-de-combate",

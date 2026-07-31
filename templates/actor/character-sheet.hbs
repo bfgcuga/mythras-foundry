@@ -176,8 +176,10 @@
             <legend>{{localize "MYTHRASF.Passions"}}</legend>
             {{#if editable}}
               <button type="button" class="passion-add"
-                data-action="create-item" data-type="passion">
-                {{localize "MYTHRASF.Add"}}
+                data-action="create-item" data-type="passion"
+                aria-label="{{localize "MYTHRASF.Add"}}"
+                title="{{localize "MYTHRASF.Add"}}">
+                <i class="fas fa-plus" aria-hidden="true"></i>
               </button>
             {{/if}}
             <div class="paper-passion-header" aria-hidden="true">

@@ -640,7 +640,8 @@
   padding-top: 0.35rem;
 }
 
-.mythras-foundry .skill-group-add {
+.mythras-foundry .skill-group-add,
+.mythras-foundry .passion-add {
   position: absolute;
   top: -0.45rem;
   right: 0.6rem;
@@ -762,7 +763,8 @@
 
 .mythras-foundry .paper-skill-row .skill-roll:hover,
 .mythras-foundry .paper-skill-row .skill-delete:hover,
-.mythras-foundry .skill-group-add:hover {
+.mythras-foundry .skill-group-add:hover,
+.mythras-foundry .passion-add:hover {
   color: var(--mythras-accent);
   box-shadow: 0 0 0 1px var(--mythras-accent);
 }
@@ -816,19 +818,10 @@
   position: relative;
 }
 
-.mythras-foundry .passion-add {
-  position: absolute;
-  top: -0.35rem;
-  right: 0.6rem;
-  width: auto;
-  min-height: 1.5rem;
-  padding: 0 0.55rem;
-}
-
 .mythras-foundry .paper-passion-header,
 .mythras-foundry .paper-passion-row {
   display: grid;
-  grid-template-columns: 1.25rem minmax(7rem, 1fr) 2.5rem 2.5rem 3rem auto;
+  grid-template-columns: 1.25rem minmax(7rem, 1fr) 3rem 3rem 3.5rem 5rem;
   align-items: center;
   gap: 0.35rem;
 }
