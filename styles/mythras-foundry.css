@@ -8,7 +8,7 @@
 }
 
 .mythras-foundry .window-content {
-  overflow: hidden;
+  overflow: auto;
   background:
     linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18)),
     var(--mythras-paper);
@@ -89,6 +89,28 @@
   height: 100%;
   min-height: 0;
   gap: 0.75rem;
+}
+
+.mythras-foundry .character-sheet-content {
+  min-width: 900px;
+}
+
+.mythras-foundry .portrait-picker {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.mythras-foundry .portrait-picker img {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
 }
 
 .mythras-foundry .sheet-header {
@@ -1011,38 +1033,4 @@
 
 .mythras-foundry label.checkbox {
   grid-column: 1 / -1;
-}
-
-@media (max-width: 560px) {
-  .mythras-foundry .identity-fields,
-  .mythras-foundry .paper-stat-block,
-  .mythras-foundry .paper-resource-row,
-  .mythras-foundry .paper-skill-columns {
-    grid-template-columns: 1fr;
-  }
-
-  .mythras-foundry .identity-fields .identity-name {
-    grid-column: auto;
-  }
-
-  .mythras-foundry .item-list li {
-    grid-template-columns: 1fr auto;
-  }
-
-  .mythras-foundry .item-list select {
-    grid-column: 1 / -1;
-  }
-
-  .mythras-foundry .skill-list-header {
-    display: none;
-  }
-
-  .mythras-foundry .skill-list li {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .mythras-foundry .skill-list .item-name,
-  .mythras-foundry .skill-actions {
-    grid-column: 1 / -1;
-  }
 }

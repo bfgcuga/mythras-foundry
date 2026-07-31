@@ -1,5 +1,6 @@
 import { CharacterData } from "./data/character-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
+import { defaultItemIcon } from "./data/item-icons.js";
 import {
   BackgroundData,
   CombatStyleData,
@@ -71,6 +72,13 @@ Hooks.on("preUpdateActor", (actor, changed) => {
   clampResource(changed, candidate, "actionPoints", attributes.actionPointsMax);
   clampResource(changed, candidate, "luckPoints", attributes.luckPointsMax);
   clampResource(changed, candidate, "magicPoints", attributes.magicPointsMax);
+});
+
+Hooks.on("preCreateItem", (item, data) => {
+  const current = String(data.img ?? item.img ?? "");
+  if (!current || current === "icons/svg/item-bag.svg") {
+    item.updateSource({ img: defaultItemIcon(data.type ?? item.type) });
+  }
 });
 
 Hooks.on("createActor", async (actor, options, userId) => {

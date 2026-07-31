@@ -1,6 +1,10 @@
 <div class="character-sheet-content">
   <header class="sheet-header">
-    <img src="{{actor.img}}" alt="{{actor.name}}" data-edit="img">
+    <button type="button" class="portrait-picker" data-action="choose-portrait"
+      aria-label="{{localize "MYTHRASF.Identity.ChoosePortrait"}}"
+      title="{{localize "MYTHRASF.Identity.ChoosePortrait"}}">
+      <img src="{{actor.img}}" alt="{{actor.name}}">
+    </button>
     <div class="identity-fields">
       <label class="identity-name">
         <span>{{localize "MYTHRASF.Identity.CharacterName"}}</span>
