@@ -95,10 +95,15 @@
   min-width: 900px;
 }
 
-.mythras-foundry .portrait-picker {
-  width: 64px;
-  height: 64px;
-  min-width: 64px;
+.mythras-foundry .portrait-frame {
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+
+.mythras-foundry .portrait-view {
+  width: 128px;
+  height: 128px;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--mythras-border);
@@ -106,11 +111,26 @@
   background: transparent;
 }
 
-.mythras-foundry .portrait-picker img {
+.mythras-foundry .portrait-view img {
   width: 100%;
   height: 100%;
   border: 0;
   object-fit: cover;
+}
+
+.mythras-foundry .portrait-edit {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.3rem;
+  display: grid;
+  width: 1.8rem;
+  min-height: 1.8rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--mythras-border);
+  border-radius: 50%;
+  background: var(--mythras-paper);
+  box-shadow: 0 1px 3px rgb(48 46 42 / 35%);
 }
 
 .mythras-foundry .sheet-header {
@@ -120,7 +140,12 @@
   gap: 0.75rem;
 }
 
-.mythras-foundry .sheet-header img {
+.mythras-foundry .character-sheet-content .sheet-header {
+  grid-template-columns: 128px 1fr;
+  min-height: 128px;
+}
+
+.mythras-foundry .item-sheet-content .sheet-header img {
   width: 64px;
   height: 64px;
   object-fit: cover;

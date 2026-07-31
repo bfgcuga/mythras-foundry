@@ -37,7 +37,7 @@ import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const { FilePicker } = foundry.applications.apps;
+const { FilePicker, ImagePopout } = foundry.applications.apps;
 
 const SKILL_GROUP_LABELS = {
   basic: "MYTHRASF.Skill.GroupBasic",
@@ -192,6 +192,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ?.addEventListener("click", () => this.#toggleEditMode());
     this.element.querySelector("[data-action='choose-portrait']")
       ?.addEventListener("click", () => this.#choosePortrait());
+    this.element.querySelector("[data-action='view-portrait']")
+      ?.addEventListener("click", () => this.#viewPortrait());
     this.element.querySelectorAll("[data-action='adjust-characteristic']").forEach((button) => {
       button.addEventListener("click", (event) => this.#adjustCharacteristic(event));
     });
@@ -291,14 +293,23 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #choosePortrait() {
     if (!this.isEditable) return;
+    const worldDirectory = `worlds/${game.world.id}`;
     const picker = new FilePicker({
       type: "image",
-      current: this.actor.img,
+      current: worldDirectory,
       callback: async (path) => {
         if (path) await this.actor.update({ img: path });
       }
     });
-    await picker.browse();
+    await picker.browse(worldDirectory);
+  }
+
+  #viewPortrait() {
+    new ImagePopout({
+      src: this.actor.img,
+      uuid: this.actor.uuid,
+      window: { title: this.actor.name }
+    }).render(true);
   }
 
   async #confirmCharacteristics() {

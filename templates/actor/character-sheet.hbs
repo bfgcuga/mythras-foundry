@@ -1,10 +1,19 @@
 <div class="character-sheet-content">
   <header class="sheet-header">
-    <button type="button" class="portrait-picker" data-action="choose-portrait"
-      aria-label="{{localize "MYTHRASF.Identity.ChoosePortrait"}}"
-      title="{{localize "MYTHRASF.Identity.ChoosePortrait"}}">
-      <img src="{{actor.img}}" alt="{{actor.name}}">
-    </button>
+    <div class="portrait-frame">
+      <button type="button" class="portrait-view" data-action="view-portrait"
+        aria-label="{{localize "MYTHRASF.Identity.ViewPortrait"}}"
+        title="{{localize "MYTHRASF.Identity.ViewPortrait"}}">
+        <img src="{{actor.img}}" alt="{{actor.name}}">
+      </button>
+      {{#if editable}}
+        <button type="button" class="portrait-edit" data-action="choose-portrait"
+          aria-label="{{localize "MYTHRASF.Identity.ChoosePortrait"}}"
+          title="{{localize "MYTHRASF.Identity.ChoosePortrait"}}">
+          <i class="fas fa-camera" aria-hidden="true"></i>
+        </button>
+      {{/if}}
+    </div>
     <div class="identity-fields">
       <label class="identity-name">
         <span>{{localize "MYTHRASF.Identity.CharacterName"}}</span>
