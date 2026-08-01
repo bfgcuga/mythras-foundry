@@ -73,8 +73,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isBackground: ["culture", "profession"].includes(this.item.type),
       isPassion: this.item.type === "passion",
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
-      isEquipment: ["equipment", "weapon"].includes(this.item.type),
+      isEquipment: ["equipment", "weapon", "armor"].includes(this.item.type),
       isWeapon: this.item.type === "weapon",
+      isArmor: this.item.type === "armor",
       isHitLocation: this.item.type === "hitLocation",
       combatStyleWeaponNames: this.item.type === "combatStyle"
         ? (this.item.system.weaponProfiles ?? []).map((profile) => profile.name).join(", ")
@@ -117,6 +118,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       })),
       damageModifierChoices: ["full", "half", "none"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Weapon.DamageModifier.${value}`)
+      })),
+      armorEraChoices: ["ancient", "modern", "futuristic"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Armor.Era.${value}`)
       })),
       locationCategoryChoices: ["limb", "head", "chest", "abdomen", "other"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.HitLocation.Category.${value}`)

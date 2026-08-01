@@ -3,6 +3,7 @@ import { ensureBasicSkills } from "./data/basic-skills.js";
 import { defaultItemIcon } from "./data/item-icons.js";
 import {
   BackgroundData,
+  ArmorData,
   CombatStyleData,
   EquipmentData,
   HitLocationData,
@@ -39,6 +40,7 @@ Hooks.once("init", async () => {
   CONFIG.Item.dataModels.equipment = EquipmentData;
   CONFIG.Item.dataModels.passion = PassionData;
   CONFIG.Item.dataModels.weapon = WeaponData;
+  CONFIG.Item.dataModels.armor = ArmorData;
   CONFIG.Item.dataModels.hitLocation = HitLocationData;
 
   foundry.documents.collections.Actors.registerSheet(
@@ -55,7 +57,7 @@ Hooks.once("init", async () => {
     "mythras-foundry",
     MythrasItemSheet,
     {
-      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "hitLocation"],
+      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "armor", "hitLocation"],
       makeDefault: true,
       label: "MYTHRASF.Sheet.Item"
     }

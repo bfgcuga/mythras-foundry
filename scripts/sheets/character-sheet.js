@@ -104,6 +104,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       .sort((left, right) => left.system.rangeStart - right.system.rangeStart);
     const equipment = items.filter((item) => item.type === "equipment");
     const weapons = items.filter((item) => item.type === "weapon");
+    const armor = items.filter((item) => item.type === "armor");
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -173,6 +174,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       passions: items.filter((item) => item.type === "passion"),
       equipment,
       weapons,
+      armor,
       hitLocations,
       combatStyles: combatStyles.map((style) => ({
         item: style,
@@ -186,11 +188,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       armorTotal: hitLocations.reduce((total, location) => (
         total + Number(location.system.armorPoints ?? 0)
       ), 0),
-      combatGear: equipment.map((item) => ({
+      combatGear: [...equipment, ...armor].map((item) => ({
         item,
         load: Number(item.system.quantity ?? 0) * Number(item.system.weight ?? 0)
       })),
-      combatGearLoad: equipment.reduce((total, item) => (
+      combatGearLoad: [...equipment, ...armor].reduce((total, item) => (
         total + Number(item.system.quantity ?? 0) * Number(item.system.weight ?? 0)
       ), 0) + weapons.reduce((total, weapon) => (
         total + Number(weapon.system.quantity ?? 0) * Number(

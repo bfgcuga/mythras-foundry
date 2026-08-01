@@ -312,6 +312,17 @@
           items=equipment emptyKey="MYTHRASF.Empty.Equipment"}}
 
         <div class="section-heading">
+          <h2>{{localize "MYTHRASF.Armors"}}</h2>
+          {{#if editable}}
+            <button type="button" data-action="create-item" data-type="armor">
+              {{localize "MYTHRASF.Add"}}
+            </button>
+          {{/if}}
+        </div>
+        {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+          items=armor emptyKey="MYTHRASF.Empty.Armor"}}
+
+        <div class="section-heading">
           <h2>{{localize "MYTHRASF.Weapons"}}</h2>
           {{#if editable}}
             <button type="button" data-action="create-item" data-type="weapon">

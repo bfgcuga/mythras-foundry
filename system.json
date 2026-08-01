@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.30/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.31/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -21,6 +21,7 @@
       "passion": {},
       "equipment": {},
       "weapon": {},
+      "armor": {},
       "hitLocation": {}
     }
   },
@@ -66,6 +67,20 @@
       "name": "professions",
       "label": "Profesiones de Mythras Imperativo",
       "path": "packs/professions",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "weapons",
+      "label": "Armas de Mythras Imperativo",
+      "path": "packs/weapons",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "armor",
+      "label": "Armaduras de Mythras Imperativo",
+      "path": "packs/armor",
       "type": "Item",
       "system": "mythras-foundry"
     }

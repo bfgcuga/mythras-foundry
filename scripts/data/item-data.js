@@ -183,6 +183,18 @@ export class WeaponData extends EquipmentData {
   }
 }
 
+export class ArmorData extends EquipmentData {
+  static defineSchema() {
+    return {
+      ...super.defineSchema(),
+      armorPoints: nonNegativeNumber(0, true),
+      era: new StringField({ required: true, nullable: false, initial: "ancient",
+        choices: ["ancient", "modern", "futuristic"] }),
+      coverage: textField()
+    };
+  }
+}
+
 export class HitLocationData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {

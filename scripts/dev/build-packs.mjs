@@ -8,6 +8,8 @@ import {
   PROFESSION_SOURCES
 } from "../data/backgrounds.js";
 import { ALL_SKILL_SOURCES } from "../data/skills.js";
+import { WEAPON_SOURCES } from "../data/weapons.js";
+import { ARMOR_SOURCES } from "../data/armor.js";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
 
@@ -19,7 +21,7 @@ async function buildPack(name, sources, idNamespace) {
   await mkdir(sourceDirectory, { recursive: true });
 
   for (const [index, source] of sources.entries()) {
-    const key = source.system.slug ?? source.system.key;
+    const key = source.buildKey ?? source.system.slug ?? source.system.key ?? source.system.profileKey;
     const id = createHash("sha256")
       .update(`mythras-foundry.${idNamespace}.${key}`)
       .digest("hex")
@@ -51,3 +53,5 @@ async function buildPack(name, sources, idNamespace) {
 await buildPack("skills", ALL_SKILL_SOURCES, "skill");
 await buildPack("cultures", CULTURE_SOURCES, "culture");
 await buildPack("professions", PROFESSION_SOURCES, "profession");
+await buildPack("weapons", WEAPON_SOURCES, "weapon");
+await buildPack("armor", ARMOR_SOURCES, "armor");
