@@ -1,5 +1,6 @@
 import { calculateSkillValues } from "../rules/skills.js";
 import { calculatePassionValues } from "../rules/passions.js";
+import { woundLevel } from "../rules/hit-locations.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
@@ -11,6 +12,14 @@ export class MythrasItem extends Item {
       this.system.allocatedBonus = values.bonus;
       this.system.total = values.total;
       this.system.isLegacy = values.legacy;
+      return;
+    }
+
+    if (this.type === "hitLocation") {
+      this.system.woundLevel = woundLevel(
+        this.system.currentHitPoints,
+        this.system.maxHitPoints
+      );
       return;
     }
 

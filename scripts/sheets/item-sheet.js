@@ -5,6 +5,7 @@ import {
   PASSION_VERBS,
   calculatePassionBase
 } from "../rules/passions.js";
+import { normalizeWeaponProfile, parseWeaponProfileReferences } from "../rules/combat.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -33,6 +34,14 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static async _onSubmitForm(event, form, formData) {
     const update = formData.object;
+    if (this.item.type === "combatStyle" && update.system?.weapons !== undefined) {
+      update.system.weaponProfiles = parseWeaponProfileReferences(update.system.weapons);
+    }
+    if (this.item.type === "weapon") {
+      update.system.profileKey = normalizeWeaponProfile(
+        update.system?.profileKey || update.name || this.item.name
+      );
+    }
     if (this.item.type === "passion" && update.system?.structured) {
       if (!this.item.system.structured) {
         const base = calculatePassionBase(
@@ -64,8 +73,13 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isBackground: ["culture", "profession"].includes(this.item.type),
       isPassion: this.item.type === "passion",
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
-      isEquipment: this.item.type === "equipment",
+      isEquipment: ["equipment", "weapon"].includes(this.item.type),
       isWeapon: this.item.type === "weapon",
+      isHitLocation: this.item.type === "hitLocation",
+      combatStyleWeaponNames: this.item.type === "combatStyle"
+        ? (this.item.system.weaponProfiles ?? []).map((profile) => profile.name).join(", ")
+          || this.item.system.weapons
+        : "",
       groupChoices: [
         ["", "MYTHRASF.Skill.GroupAutomatic"],
         ["basic", "MYTHRASF.Skill.GroupBasic"],
@@ -97,6 +111,18 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       passionObjectChoices: PASSION_OBJECT_TYPES.map((value) => ({
         value,
         label: game.i18n.localize(`MYTHRASF.Passion.Object.${value}`)
+      })),
+      weaponTypeChoices: ["melee", "ranged", "shield"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Weapon.Type.${value}`)
+      })),
+      damageModifierChoices: ["full", "half", "none"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Weapon.DamageModifier.${value}`)
+      })),
+      locationCategoryChoices: ["limb", "head", "chest", "abdomen", "other"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.HitLocation.Category.${value}`)
+      })),
+      locationHpClassChoices: ["arm", "standard", "abdomen", "chest"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.HitLocation.HpClass.${value}`)
       }))
     }, { inplace: false });
   }

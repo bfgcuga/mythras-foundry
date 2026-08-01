@@ -6,7 +6,7 @@ import { ITEM_TYPE_ICONS, defaultItemIcon } from "../scripts/data/item-icons.js"
 
 test("cada tipo de Item del sistema tiene un icono predeterminado", () => {
   for (const type of [
-    "skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon"
+    "skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "hitLocation"
   ]) {
     assert.match(ITEM_TYPE_ICONS[type], /\.svg$/);
   }

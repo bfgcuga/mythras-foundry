@@ -5,15 +5,19 @@ import {
   BackgroundData,
   CombatStyleData,
   EquipmentData,
+  HitLocationData,
   PassionData,
   SkillData,
   WeaponData
 } from "./data/item-data.js";
 import { MythrasItem } from "./documents/mythras-item.js";
+import { calculateLocationHitPoints, humanHitLocationData } from "./rules/hit-locations.js";
+import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
 import { styleAbilityKey } from "./rules/background-generation.js";
 import { CharacterSheet } from "./sheets/character-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
+import { activateCombatCard } from "./rules/combat-chat.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -34,6 +38,7 @@ Hooks.once("init", async () => {
   CONFIG.Item.dataModels.equipment = EquipmentData;
   CONFIG.Item.dataModels.passion = PassionData;
   CONFIG.Item.dataModels.weapon = WeaponData;
+  CONFIG.Item.dataModels.hitLocation = HitLocationData;
 
   foundry.documents.collections.Actors.registerSheet(
     "mythras-foundry",
@@ -49,7 +54,7 @@ Hooks.once("init", async () => {
     "mythras-foundry",
     MythrasItemSheet,
     {
-      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon"],
+      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "hitLocation"],
       makeDefault: true,
       label: "MYTHRASF.Sheet.Item"
     }
@@ -57,6 +62,9 @@ Hooks.once("init", async () => {
 
   await loadTemplates(PARTIALS);
 });
+
+Hooks.on("renderChatMessageHTML", (message, html) => activateCombatCard(message, html));
+Hooks.on("renderChatMessage", (message, html) => activateCombatCard(message, html));
 
 Hooks.on("preUpdateActor", (actor, changed) => {
   if (actor.type !== "character") return;
@@ -79,12 +87,21 @@ Hooks.on("preCreateItem", (item, data) => {
   if (!current || ["icons/svg/item-bag.svg", "icons/svg/mystery-man.svg"].includes(current)) {
     item.updateSource({ img: defaultItemIcon(data.type ?? item.type) });
   }
+  const type = data.type ?? item.type;
+  const system = data.system ?? item.system ?? {};
+  if (type === "combatStyle" && !(system.weaponProfiles?.length) && system.weapons) {
+    item.updateSource({ "system.weaponProfiles": parseWeaponProfileReferences(system.weapons) });
+  }
+  if (type === "weapon" && !system.profileKey) {
+    item.updateSource({ "system.profileKey": normalizeWeaponProfile(data.name ?? item.name) });
+  }
 });
 
 Hooks.on("createActor", async (actor, options, userId) => {
   if (userId !== game.user.id) return;
   await ensureBasicSkills(actor);
   if (actor.type === "character") {
+    await ensureHumanHitLocations(actor);
     await actor.update({ "system.backgroundCreationEnabled": true });
   }
 });
@@ -97,6 +114,9 @@ Hooks.once("ready", async () => {
   );
   for (const item of legacyWorldSkills) {
     await migrateLegacySkill(item);
+  }
+  for (const item of game.items.filter((candidate) => ["combatStyle", "weapon"].includes(candidate.type))) {
+    await migrateWorldCombatItem(item);
   }
 
   for (const actor of game.actors.filter((candidate) => candidate.type === "character")) {
@@ -112,6 +132,8 @@ Hooks.once("ready", async () => {
     await ensureBasicSkills(actor);
     await deduplicateBackgroundAbilities(actor);
     await migrateEmbeddedItemIcons(actor);
+    await migrateCombatItems(actor);
+    await ensureHumanHitLocations(actor);
   }
   const worldIconUpdates = game.items
     .map(getLegacyItemIconUpdate)
@@ -120,6 +142,77 @@ Hooks.once("ready", async () => {
     await Item.updateDocuments(worldIconUpdates);
   }
 });
+
+Hooks.on("updateActor", async (actor, changed, options, userId) => {
+  if (userId !== game.user.id || actor.type !== "character") return;
+  if (!foundry.utils.hasProperty(changed, "system.constitution")
+    && !foundry.utils.hasProperty(changed, "system.size")) return;
+  const updates = actor.items.filter((item) => item.type === "hitLocation"
+    && item.system.autoCalculate).map((item) => {
+      const maximum = calculateLocationHitPoints(
+        actor.system.constitution, actor.system.size, item.system.hpClass
+      );
+      const previousMaximum = Number(item.system.maxHitPoints ?? maximum);
+      const current = Number(item.system.currentHitPoints ?? previousMaximum);
+      return {
+        _id: item.id,
+        "system.maxHitPoints": maximum,
+        "system.currentHitPoints": current === previousMaximum ? maximum : current
+      };
+    });
+  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+});
+
+async function ensureHumanHitLocations(actor) {
+  if (actor.type !== "character" || actor.items.some((item) => item.type === "hitLocation")) return;
+  await actor.createEmbeddedDocuments("Item", humanHitLocationData(
+    actor.system,
+    (key) => game.i18n.localize(key)
+  ));
+}
+
+async function migrateCombatItems(actor) {
+  const updates = [];
+  for (const item of actor.items) {
+    if (item.type === "combatStyle" && (item.system.weaponProfiles?.length ?? 0) === 0
+      && item.system.weapons) {
+      updates.push({ _id: item.id,
+        "system.weaponProfiles": parseWeaponProfileReferences(item.system.weapons) });
+    }
+    if (item.type === "weapon") {
+      const update = { _id: item.id };
+      let changed = false;
+      if (!item.system.profileKey) {
+        update["system.profileKey"] = normalizeWeaponProfile(item.name);
+        changed = true;
+      }
+      const legacy = Number(item.system.hitPoints ?? 0);
+      if (!item.system.maxHitPoints && legacy) {
+        update["system.maxHitPoints"] = legacy;
+        update["system.currentHitPoints"] = legacy;
+        changed = true;
+      }
+      if (changed) updates.push(update);
+    }
+  }
+  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+}
+
+async function migrateWorldCombatItem(item) {
+  if (item.type === "combatStyle" && (item.system.weaponProfiles?.length ?? 0) === 0
+    && item.system.weapons) {
+    await item.update({ "system.weaponProfiles": parseWeaponProfileReferences(item.system.weapons) });
+  }
+  if (item.type !== "weapon") return;
+  const update = {};
+  if (!item.system.profileKey) update["system.profileKey"] = normalizeWeaponProfile(item.name);
+  const legacy = Number(item.system.hitPoints ?? 0);
+  if (!item.system.maxHitPoints && legacy) {
+    update["system.maxHitPoints"] = legacy;
+    update["system.currentHitPoints"] = legacy;
+  }
+  if (Object.keys(update).length) await item.update(update);
+}
 
 async function migrateEmbeddedItemIcons(actor) {
   const updates = actor.items.map(getLegacyItemIconUpdate).filter(Boolean);

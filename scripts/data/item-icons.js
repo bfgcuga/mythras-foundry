@@ -5,7 +5,8 @@ export const ITEM_TYPE_ICONS = Object.freeze({
   profession: "icons/svg/upgrade.svg",
   passion: "systems/mythras-foundry/assets/icons/passion.svg",
   equipment: "icons/svg/item-bag.svg",
-  weapon: "icons/svg/sword.svg"
+  weapon: "icons/svg/sword.svg",
+  hitLocation: "icons/svg/blood.svg"
 });
 
 export function defaultItemIcon(type) {

@@ -34,6 +34,8 @@ import {
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
+import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
+import { createAttackMessage } from "../rules/combat-chat.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -97,6 +99,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options);
     const items = [...this.actor.items];
     const skills = items.filter((item) => ["skill", "combatStyle"].includes(item.type));
+    const combatStyles = items.filter((item) => item.type === "combatStyle");
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -165,8 +168,42 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
       equipment: items.filter((item) => item.type === "equipment"),
-      weapons: items.filter((item) => item.type === "weapon")
+      weapons: items.filter((item) => item.type === "weapon"),
+      hitLocations: items.filter((item) => item.type === "hitLocation")
+        .sort((left, right) => left.system.rangeStart - right.system.rangeStart),
+      combatWeapons: items.filter((item) => item.type === "weapon" && item.system.equipped)
+        .map((weapon) => this.#prepareCombatWeapon(weapon, combatStyles)),
+      familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
+        .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))
     }, { inplace: false });
+  }
+
+  #prepareCombatWeapon(weapon, combatStyles) {
+    const resolution = resolveWeaponStyle({
+      weapon,
+      styles: combatStyles,
+      selectedStyleId: weapon.system.preferredCombatStyleId,
+      familiarity: weapon.system.familiarity
+    });
+    const candidates = resolution.matching.length ? resolution.matching : combatStyles;
+    return {
+      item: weapon,
+      styleOptions: candidates.map((style) => ({
+        id: style.id,
+        name: style.name,
+        selected: style.id === resolution.style?.id
+      })),
+      hasDirectStyle: resolution.matching.length > 0,
+      needsStyleChoice: !resolution.style,
+      familiarity: resolution.familiarity,
+      familiarityOptions: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
+        .map((value) => ({ value, selected: value === resolution.familiarity,
+          label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) })),
+      difficulty: resolution.difficulty,
+      difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${resolution.difficulty}`),
+      effectiveTarget: difficultyTarget(resolution.target, resolution.difficulty),
+      canAttack: Boolean(resolution.style) || resolution.usesBase
+    };
   }
 
   _onRender(context, options) {
@@ -175,7 +212,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) {
       this.element.querySelectorAll(
         "input[name], textarea[name], select[name], [data-skill-field], "
-        + "[data-passion-field], [data-resource-action]"
+        + "[data-passion-field], [data-resource-action], [data-combat-style], "
+        + "[data-combat-familiarity]"
       )
         .forEach((field) => { field.disabled = true; });
     }
@@ -183,6 +221,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-tab]").forEach((button) => {
       button.addEventListener("click", (event) => this.#activateTab(event));
     });
+    this.#showTab(this._activeTab ?? "character");
     this.element.querySelector("[data-action='confirm-characteristics']")
       ?.addEventListener("click", () => this.#confirmCharacteristics());
     this.element.querySelectorAll("[data-generation-method]").forEach((button) => {
@@ -265,6 +304,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-passion-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updatePassionField(event));
     });
+    this.element.querySelectorAll("[data-combat-style]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event));
+    });
+    this.element.querySelectorAll("[data-combat-familiarity]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event));
+    });
+    this.element.querySelectorAll("[data-action='roll-weapon-attack']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#rollWeaponAttack(event));
+    });
 
     if (context.backgroundWizard && !this._backgroundSyncing) {
       const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
@@ -283,12 +331,56 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #activateTab(event) {
     event.preventDefault();
     const tab = event.currentTarget.dataset.tab;
+    this._activeTab = tab;
+    this.#showTab(tab);
+  }
+
+  #showTab(tab) {
     this.element.querySelectorAll("[data-tab]").forEach((button) => {
       button.classList.toggle("active", button.dataset.tab === tab);
     });
     this.element.querySelectorAll("[data-tab-content]").forEach((section) => {
       section.classList.toggle("active", section.dataset.tabContent === tab);
     });
+  }
+
+  async #updateWeaponCombatChoice(event) {
+    if (!this.isEditable) return;
+    const row = event.currentTarget.closest("[data-item-id]");
+    const weapon = this.actor.items.get(row?.dataset.itemId);
+    if (!weapon || weapon.type !== "weapon") return;
+    const update = {};
+    if (event.currentTarget.matches("[data-combat-style]")) {
+      update["system.preferredCombatStyleId"] = event.currentTarget.value;
+    } else {
+      update["system.familiarity"] = event.currentTarget.value;
+    }
+    await weapon.update(update);
+  }
+
+  async #rollWeaponAttack(event) {
+    event.preventDefault();
+    const row = event.currentTarget.closest("[data-item-id]");
+    const weapon = this.actor.items.get(row?.dataset.itemId);
+    if (!weapon) return;
+    const styles = this.actor.items.filter((item) => item.type === "combatStyle");
+    const resolution = resolveWeaponStyle({
+      weapon,
+      styles,
+      selectedStyleId: row.querySelector("[data-combat-style]")?.value,
+      familiarity: row.querySelector("[data-combat-familiarity]")?.value
+        ?? weapon.system.familiarity
+    });
+    if (!resolution.style && !resolution.usesBase) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
+      return;
+    }
+    const targets = Array.from(game.user.targets ?? []);
+    if (targets.length > 1) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.OneTarget"));
+      return;
+    }
+    await createAttackMessage({ actor: this.actor, weapon, resolution, target: targets[0] });
   }
 
   async #choosePortrait() {

@@ -1,7 +1,9 @@
 const {
+  ArrayField,
   BooleanField,
   HTMLField,
   NumberField,
+  SchemaField,
   StringField
 } = foundry.data.fields;
 
@@ -98,6 +100,10 @@ export class CombatStyleData extends SkillData {
         choices: ["combat"]
       }),
       weapons: textField(),
+      weaponProfiles: new ArrayField(new SchemaField({
+        key: textField(),
+        name: textField()
+      }), { required: true, nullable: false, initial: [] }),
       traits: textField(),
       sourceType: textField()
     };
@@ -153,11 +159,44 @@ export class WeaponData extends EquipmentData {
   static defineSchema() {
     return {
       ...super.defineSchema(),
+      profileKey: textField(),
+      weaponType: new StringField({ required: true, nullable: false, initial: "melee",
+        choices: ["melee", "ranged", "shield"] }),
       damage: textField(),
+      damageModifierMode: new StringField({ required: true, nullable: false, initial: "full",
+        choices: ["full", "half", "none"] }),
       size: textField(),
       reach: textField(),
       hitPoints: nonNegativeNumber(0, true),
-      grip: textField()
+      maxHitPoints: nonNegativeNumber(0, true),
+      currentHitPoints: nonNegativeNumber(0, true),
+      armorPoints: nonNegativeNumber(0, true),
+      encumbrance: nonNegativeNumber(),
+      effects: textField(),
+      grip: textField(),
+      range: textField(),
+      reload: textField(),
+      preferredCombatStyleId: textField(),
+      familiarity: new StringField({ required: true, nullable: false, initial: "similar",
+        choices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"] })
+    };
+  }
+}
+
+export class HitLocationData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      rangeStart: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 1, max: 20 }),
+      rangeEnd: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 1, max: 20 }),
+      category: new StringField({ required: true, nullable: false, initial: "other",
+        choices: ["limb", "head", "chest", "abdomen", "other"] }),
+      hpClass: new StringField({ required: true, nullable: false, initial: "standard",
+        choices: ["arm", "standard", "abdomen", "chest"] }),
+      autoCalculate: new BooleanField({ required: true, nullable: false, initial: false }),
+      maxHitPoints: nonNegativeNumber(1, true),
+      currentHitPoints: new NumberField({ required: true, nullable: false, integer: true, initial: 1 }),
+      armorPoints: nonNegativeNumber(0, true),
+      description: descriptionField()
     };
   }
 }

@@ -1,0 +1,54 @@
+export const HUMAN_HIT_LOCATIONS = Object.freeze([
+  { nameKey: "rightLeg", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard" },
+  { nameKey: "leftLeg", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard" },
+  { nameKey: "abdomen", rangeStart: 7, rangeEnd: 9, category: "abdomen", hpClass: "abdomen" },
+  { nameKey: "chest", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest" },
+  { nameKey: "rightArm", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm" },
+  { nameKey: "leftArm", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm" },
+  { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard" }
+]);
+
+export function calculateLocationHitPoints(constitution, size, hpClass = "standard") {
+  const band = Math.max(1, Math.ceil((Number(constitution) + Number(size)) / 5));
+  const offsets = { arm: -1, standard: 0, abdomen: 1, chest: 2 };
+  return Math.max(1, band + (offsets[hpClass] ?? 0));
+}
+
+export function woundLevel(current, maximum) {
+  const value = Number(current ?? 0);
+  const max = Math.max(1, Number(maximum ?? 1));
+  if (value >= max) return "healthy";
+  if (value > 0) return "minor";
+  if (value > -max) return "serious";
+  return "major";
+}
+
+export function findHitLocation(locations, roll) {
+  const value = Number(roll);
+  return locations.find((location) => value >= Number(location.system.rangeStart)
+    && value <= Number(location.system.rangeEnd)) ?? null;
+}
+
+export function humanHitLocationData(actorSystem, localize = (key) => key) {
+  return HUMAN_HIT_LOCATIONS.map((location) => {
+    const maximum = calculateLocationHitPoints(
+      actorSystem?.constitution,
+      actorSystem?.size,
+      location.hpClass
+    );
+    return {
+      name: localize(`MYTHRASF.HitLocation.Name.${location.nameKey}`),
+      type: "hitLocation",
+      system: {
+        rangeStart: location.rangeStart,
+        rangeEnd: location.rangeEnd,
+        category: location.category,
+        hpClass: location.hpClass,
+        autoCalculate: true,
+        maxHitPoints: maximum,
+        currentHitPoints: maximum,
+        armorPoints: 0
+      }
+    };
+  });
+}

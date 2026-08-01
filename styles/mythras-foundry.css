@@ -1052,3 +1052,62 @@
 .mythras-foundry label.checkbox {
   grid-column: 1 / -1;
 }
+
+.mythras-foundry .combat-location-table,
+.mythras-foundry .combat-weapon-table {
+  overflow-x: auto;
+  border: 1px solid var(--mythras-border);
+}
+
+.mythras-foundry .combat-table-header,
+.mythras-foundry .combat-location-row,
+.mythras-foundry .combat-weapon-row {
+  display: grid;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 48rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--mythras-border);
+}
+
+.mythras-foundry .combat-location-row,
+.mythras-foundry .combat-table-header:has(+ .combat-location-row) {
+  grid-template-columns: 4rem minmax(10rem, 1fr) 3rem 6rem 8rem 2rem;
+}
+
+.mythras-foundry .combat-weapon-row,
+.mythras-foundry .combat-weapon-table .combat-table-header {
+  grid-template-columns: minmax(9rem, 1fr) 6rem 7rem 6rem minmax(14rem, 1.5fr) 5rem 5rem;
+}
+
+.mythras-foundry .combat-table-header {
+  background: rgb(80 55 35 / 10%);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.mythras-foundry .combat-location-row > button:first-of-type,
+.mythras-foundry .combat-weapon-row > button:first-of-type {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.mythras-foundry .combat-style-choice {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mythras-foundry .combat-weapons-heading { margin-top: 1.2rem; }
+.mythras-foundry .wound-healthy { color: #285f32; }
+.mythras-foundry .wound-minor { color: #916b17; }
+.mythras-foundry .wound-serious { color: #9b471f; }
+.mythras-foundry .wound-major { color: #8a1818; }
+
+.mythras-combat-card { display: grid; gap: 0.35rem; }
+.mythras-combat-card h3, .mythras-combat-card p { margin: 0; }
+.mythras-combat-card label { display: grid; gap: 0.2rem; }
+.mythras-combat-card .combat-card-damage { display: grid; gap: 0.3rem; }
+.mythras-combat-card .combat-card-applied { font-weight: 700; }
+.mythras-combat-card .combat-card-warning { color: #8a1818; }
