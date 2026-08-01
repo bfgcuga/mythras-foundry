@@ -1,0 +1,97 @@
+<div class="combat-paper-layout">
+  <fieldset class="combat-paper-panel combat-paper-locations">
+    <legend>{{localize "MYTHRASF.HitLocations"}}</legend>
+    {{#if editable}}<button type="button" class="combat-panel-add" data-action="create-item"
+      data-type="hitLocation" aria-label="{{localize "MYTHRASF.Add"}}">+</button>{{/if}}
+    <div class="combat-location-head">
+      <span>d20</span><span>{{localize "MYTHRASF.HitLocation.Location"}}</span>
+      <span>{{localize "MYTHRASF.HitLocation.MaxShort"}}</span>
+      <span>{{localize "MYTHRASF.HitLocation.CurrentShort"}}</span>
+      <span>{{localize "MYTHRASF.HitLocation.Armor"}}</span><span></span>
+    </div>
+    {{#each hitLocations as |location|}}
+      <div class="combat-location-line" data-item-id="{{location.id}}">
+        <span>{{location.system.rangeStart}}–{{location.system.rangeEnd}}</span>
+        <button type="button" data-action="edit-item">{{location.name}}</button>
+        <output class="location-max">{{location.system.maxHitPoints}}</output>
+        <output class="location-current wound-{{location.system.woundLevel}}">{{location.system.currentHitPoints}}</output>
+        <output class="location-armor">{{location.system.armorPoints}}</output>
+        {{#if ../editMode}}<button type="button" data-action="delete-item"
+          aria-label="{{localize "MYTHRASF.Delete"}}">×</button>{{else}}<span></span>{{/if}}
+      </div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.HitLocations"}}</p>{{/each}}
+    <div class="combat-wound-legend">
+      <span>{{localize "MYTHRASF.HitLocation.Wound"}}:</span>
+      <span class="wound-minor">{{localize "MYTHRASF.Wound.minor"}}</span>
+      <span class="wound-serious">{{localize "MYTHRASF.Wound.serious"}}</span>
+      <span class="wound-major">{{localize "MYTHRASF.Wound.major"}}</span>
+    </div>
+  </fieldset>
+
+  <fieldset class="combat-paper-panel combat-paper-armor">
+    <legend>{{localize "MYTHRASF.Combat.WornArmor"}}</legend>
+    <div class="combat-armor-head"><span>{{localize "MYTHRASF.HitLocation.Location"}}</span><span>{{localize "MYTHRASF.HitLocation.Armor"}}</span></div>
+    {{#each hitLocations as |location|}}
+      <div class="combat-armor-line" data-item-id="{{location.id}}">
+        <button type="button" data-action="edit-item">{{location.name}}</button>
+        <output>{{location.system.armorPoints}}</output>
+      </div>
+    {{/each}}
+    <div class="combat-paper-total"><span>{{localize "MYTHRASF.Combat.TotalArmor"}}</span><strong>{{armorTotal}}</strong></div>
+  </fieldset>
+
+  <fieldset class="combat-paper-panel combat-paper-equipment">
+    <legend>{{localize "MYTHRASF.Equipment"}}</legend>
+    <div class="combat-equipment-head"><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.Combat.Load"}}</span></div>
+    {{#each combatGear as |row|}}
+      <div class="combat-equipment-line" data-item-id="{{row.item.id}}">
+        <button type="button" data-action="edit-item">{{row.item.name}} × {{row.item.system.quantity}}</button>
+        <output>{{row.load}}</output>
+      </div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.Equipment"}}</p>{{/each}}
+    <div class="combat-paper-total"><span>{{localize "MYTHRASF.Combat.TotalLoad"}}</span><strong>{{combatGearLoad}}</strong></div>
+  </fieldset>
+
+  <fieldset class="combat-paper-panel combat-paper-styles">
+    <legend>{{localize "MYTHRASF.Skill.GroupCombat"}} ({{localize "MYTHRASF.Combat.BaseFormula"}})</legend>
+    {{#if editable}}<button type="button" class="combat-panel-add" data-action="create-combat-style"
+      aria-label="{{localize "MYTHRASF.Add"}}">+</button>{{/if}}
+    <div class="combat-style-head"><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>{{localize "MYTHRASF.CombatStyle.Weapons"}}</span><span>{{localize "MYTHRASF.CombatStyle.Traits"}}</span><span>%</span></div>
+    {{#each combatStyles as |style|}}
+      <div class="combat-style-line" data-item-id="{{style.item.id}}">
+        <button type="button" data-action="edit-item">{{style.item.name}}</button>
+        <span>{{style.weapons}}</span><span>{{style.traits}}</span><strong>{{style.total}}%</strong>
+      </div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Combat.NoStyles"}}</p>{{/each}}
+  </fieldset>
+
+  <fieldset class="combat-paper-panel combat-paper-weapons">
+    <legend>{{localize "MYTHRASF.Combat.WeaponsAndShields"}}</legend>
+    <div class="combat-weapon-head">
+      <span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.Weapon.Damage"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.Reach"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.Grip"}}</span><span>{{localize "MYTHRASF.Weapon.Effects"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>%</span><span></span>
+    </div>
+    {{#each combatWeapons as |row|}}
+      <div class="combat-weapon-line" data-item-id="{{row.item.id}}">
+        <button type="button" data-action="edit-item">{{row.item.name}}</button>
+        <span>{{row.item.system.damage}}</span><span>{{row.item.system.size}}</span><span>{{row.item.system.reach}}</span>
+        <span>{{row.item.system.grip}}</span><span>{{row.item.system.effects}}</span>
+        <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>
+        <div class="combat-style-choice">
+          <select data-combat-style aria-label="{{localize "MYTHRASF.Combat.Style"}}">
+            {{#if row.needsStyleChoice}}<option value="">{{localize "MYTHRASF.Combat.SelectStyle"}}</option>{{/if}}
+            {{#each row.styleOptions as |style|}}<option value="{{style.id}}" {{#if style.selected}}selected{{/if}}>{{style.name}}</option>{{/each}}
+          </select>
+          {{#unless row.hasDirectStyle}}<select data-combat-familiarity aria-label="{{localize "MYTHRASF.Combat.Familiarity"}}">
+            {{#each row.familiarityOptions as |option|}}<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>{{/each}}
+          </select>{{/unless}}
+        </div>
+        <strong title="{{row.difficultyLabel}}">{{row.effectiveTarget}}%</strong>
+        <button type="button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
+          aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
+      </div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.EquippedWeapons"}}</p>{{/each}}
+  </fieldset>
+</div>

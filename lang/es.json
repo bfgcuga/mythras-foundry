@@ -295,5 +295,15 @@
   "MYTHRASF.Combat.SourceMissing": "El atacante o el arma ya no existen.",
   "MYTHRASF.Combat.NoPermission": "No tienes permiso para modificar el objetivo.",
   "MYTHRASF.Combat.WoundWarning.serious": "Una herida seria requiere la prueba de Aguante y las consecuencias correspondientes.",
-  "MYTHRASF.Combat.WoundWarning.major": "Una herida grave requiere la prueba de Aguante correspondiente y puede incapacitar o matar a la víctima."
+  "MYTHRASF.Combat.WoundWarning.major": "Una herida grave requiere la prueba de Aguante correspondiente y puede incapacitar o matar a la víctima.",
+  "MYTHRASF.HitLocation.MaxShort": "PV Máx.",
+  "MYTHRASF.HitLocation.CurrentShort": "PV",
+  "MYTHRASF.Combat.WornArmor": "Armadura usada",
+  "MYTHRASF.Combat.TotalArmor": "PA totales de armadura",
+  "MYTHRASF.Combat.Object": "Objeto",
+  "MYTHRASF.Combat.Load": "CAR",
+  "MYTHRASF.Combat.TotalLoad": "CAR total transportada",
+  "MYTHRASF.Combat.BaseFormula": "FUE + DES",
+  "MYTHRASF.Combat.NoStyles": "No hay estilos de combate.",
+  "MYTHRASF.Combat.WeaponsAndShields": "Armas y escudos"
 }

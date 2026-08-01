@@ -100,6 +100,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const items = [...this.actor.items];
     const skills = items.filter((item) => ["skill", "combatStyle"].includes(item.type));
     const combatStyles = items.filter((item) => item.type === "combatStyle");
+    const hitLocations = items.filter((item) => item.type === "hitLocation")
+      .sort((left, right) => left.system.rangeStart - right.system.rangeStart);
+    const equipment = items.filter((item) => item.type === "equipment");
+    const weapons = items.filter((item) => item.type === "weapon");
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -167,11 +171,33 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       combatSkillGroup,
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
-      equipment: items.filter((item) => item.type === "equipment"),
-      weapons: items.filter((item) => item.type === "weapon"),
-      hitLocations: items.filter((item) => item.type === "hitLocation")
-        .sort((left, right) => left.system.rangeStart - right.system.rangeStart),
-      combatWeapons: items.filter((item) => item.type === "weapon" && item.system.equipped)
+      equipment,
+      weapons,
+      hitLocations,
+      combatStyles: combatStyles.map((style) => ({
+        item: style,
+        weapons: (style.system.weaponProfiles ?? [])
+          .map((profile) => profile.name)
+          .filter(Boolean)
+          .join(", ") || style.system.weapons,
+        traits: style.system.traits,
+        total: Number(style.system.total ?? 0)
+      })),
+      armorTotal: hitLocations.reduce((total, location) => (
+        total + Number(location.system.armorPoints ?? 0)
+      ), 0),
+      combatGear: equipment.map((item) => ({
+        item,
+        load: Number(item.system.quantity ?? 0) * Number(item.system.weight ?? 0)
+      })),
+      combatGearLoad: equipment.reduce((total, item) => (
+        total + Number(item.system.quantity ?? 0) * Number(item.system.weight ?? 0)
+      ), 0) + weapons.reduce((total, weapon) => (
+        total + Number(weapon.system.quantity ?? 0) * Number(
+          weapon.system.encumbrance || weapon.system.weight || 0
+        )
+      ), 0),
+      combatWeapons: weapons.filter((item) => item.system.equipped)
         .map((weapon) => this.#prepareCombatWeapon(weapon, combatStyles)),
       familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))

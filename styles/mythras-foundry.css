@@ -1053,53 +1053,204 @@
   grid-column: 1 / -1;
 }
 
-.mythras-foundry .combat-location-table,
-.mythras-foundry .combat-weapon-table {
-  overflow-x: auto;
-  border: 1px solid var(--mythras-border);
-}
-
-.mythras-foundry .combat-table-header,
-.mythras-foundry .combat-location-row,
-.mythras-foundry .combat-weapon-row {
+.mythras-foundry .combat-paper-layout {
   display: grid;
+  grid-template-areas:
+    "locations armor equipment"
+    "styles styles equipment"
+    "weapons weapons weapons";
+  grid-template-columns: minmax(18rem, 1.05fr) minmax(14rem, 0.8fr) minmax(16rem, 0.9fr);
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.mythras-foundry .tab-panel[data-tab-content="combat"] { container-type: inline-size; }
+
+.mythras-foundry .combat-paper-panel {
+  position: relative;
+  margin: 0;
+  padding: 0.65rem 0.55rem 0.55rem;
+  border: 2px solid var(--mythras-accent);
+  border-radius: 0.7rem;
+  background: rgb(255 250 232 / 30%);
+}
+
+.mythras-foundry .combat-paper-panel legend {
+  max-width: calc(100% - 2.5rem);
+  padding: 0 0.45rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mythras-foundry .combat-paper-locations { grid-area: locations; }
+.mythras-foundry .combat-paper-armor { grid-area: armor; }
+.mythras-foundry .combat-paper-equipment { grid-area: equipment; }
+.mythras-foundry .combat-paper-styles { grid-area: styles; }
+.mythras-foundry .combat-paper-weapons { grid-area: weapons; overflow-x: auto; }
+
+.mythras-foundry .combat-panel-add {
+  position: absolute;
+  top: -0.35rem;
+  right: 0.55rem;
+  width: 1.65rem;
+  min-height: 1.65rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.mythras-foundry .combat-location-head,
+.mythras-foundry .combat-location-line {
+  display: grid;
+  grid-template-columns: 2.8rem minmax(6rem, 1fr) 2.2rem 2.2rem 2.2rem 1.5rem;
   align-items: center;
-  gap: 0.45rem;
-  min-width: 48rem;
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid var(--mythras-border);
+  gap: 0.25rem;
 }
 
-.mythras-foundry .combat-location-row,
-.mythras-foundry .combat-table-header:has(+ .combat-location-row) {
-  grid-template-columns: 4rem minmax(10rem, 1fr) 3rem 6rem 8rem 2rem;
+.mythras-foundry .combat-location-head,
+.mythras-foundry .combat-armor-head,
+.mythras-foundry .combat-equipment-head,
+.mythras-foundry .combat-style-head,
+.mythras-foundry .combat-weapon-head {
+  color: var(--color-text-subtle);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
 }
 
-.mythras-foundry .combat-weapon-row,
-.mythras-foundry .combat-weapon-table .combat-table-header {
-  grid-template-columns: minmax(9rem, 1fr) 6rem 7rem 6rem minmax(14rem, 1.5fr) 5rem 5rem;
+.mythras-foundry .combat-location-line,
+.mythras-foundry .combat-armor-line,
+.mythras-foundry .combat-equipment-line,
+.mythras-foundry .combat-style-line,
+.mythras-foundry .combat-weapon-line {
+  min-height: 2rem;
+  border-bottom: 1px solid rgb(61 57 51 / 35%);
 }
 
-.mythras-foundry .combat-table-header {
-  background: rgb(80 55 35 / 10%);
-  font-size: 0.78rem;
+.mythras-foundry .combat-location-line > button[data-action="edit-item"],
+.mythras-foundry .combat-armor-line > button,
+.mythras-foundry .combat-equipment-line > button,
+.mythras-foundry .combat-style-line > button,
+.mythras-foundry .combat-weapon-line > button[data-action="edit-item"] {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mythras-foundry .combat-location-line output {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  justify-self: center;
+  border: 1.5px solid var(--mythras-accent);
+  background: rgb(255 250 232 / 45%);
   font-weight: 700;
 }
 
-.mythras-foundry .combat-location-row > button:first-of-type,
-.mythras-foundry .combat-weapon-row > button:first-of-type {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
+.mythras-foundry .combat-location-line .location-max { border-radius: 50%; }
+.mythras-foundry .combat-location-line .location-current { border-radius: 0.35rem; }
+.mythras-foundry .combat-location-line .location-armor {
+  height: 1.95rem;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 92% 18%, 80% 72%, 50% 100%, 20% 72%, 8% 18%);
 }
 
-.mythras-foundry .combat-style-choice {
+.mythras-foundry .combat-wound-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.65rem;
+  margin-top: 0.65rem;
+  font-size: 0.72rem;
+}
+
+.mythras-foundry .combat-armor-head,
+.mythras-foundry .combat-armor-line,
+.mythras-foundry .combat-equipment-head,
+.mythras-foundry .combat-equipment-line {
   display: grid;
-  gap: 0.2rem;
+  grid-template-columns: minmax(7rem, 1fr) 3rem;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.mythras-foundry .combat-weapons-heading { margin-top: 1.2rem; }
+.mythras-foundry .combat-armor-line output {
+  display: grid;
+  width: 2rem;
+  height: 2.1rem;
+  place-items: center;
+  justify-self: center;
+  border: 1.5px solid var(--mythras-accent);
+  clip-path: polygon(50% 0, 92% 18%, 80% 72%, 50% 100%, 20% 72%, 8% 18%);
+  font-weight: 700;
+}
+
+.mythras-foundry .combat-paper-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+  padding-top: 0.4rem;
+  border-top: 2px solid var(--mythras-accent);
+  font-size: 0.78rem;
+}
+
+.mythras-foundry .combat-style-head,
+.mythras-foundry .combat-style-line {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 1.4fr) minmax(8rem, 1fr) 3.5rem;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mythras-foundry .combat-style-line > span,
+.mythras-foundry .combat-weapon-line > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mythras-foundry .combat-style-line > strong { text-align: center; }
+
+.mythras-foundry .combat-weapon-head,
+.mythras-foundry .combat-weapon-line {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) 4rem 3.2rem 3.5rem 4rem minmax(6rem, 0.8fr) 5.5rem minmax(9rem, 1.1fr) 3.5rem 2rem;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 55rem;
+}
+
+.mythras-foundry .combat-weapon-line { padding: 0.25rem 0; }
+.mythras-foundry .combat-weapon-line > strong { text-align: center; }
+.mythras-foundry .combat-weapon-line > button[data-action="roll-weapon-attack"] {
+  width: 1.8rem;
+  min-height: 1.8rem;
+  padding: 0;
+}
+
+.mythras-foundry .combat-style-choice { display: grid; gap: 0.15rem; min-width: 0; }
+.mythras-foundry .combat-style-choice select { min-width: 0; font-size: 0.72rem; }
+
+@container (max-width: 760px) {
+  .mythras-foundry .combat-paper-layout {
+    grid-template-areas: "locations armor" "styles styles" "equipment equipment" "weapons weapons";
+    grid-template-columns: minmax(18rem, 1fr) minmax(14rem, 0.8fr);
+  }
+}
+
+@container (max-width: 520px) {
+  .mythras-foundry .combat-paper-layout {
+    grid-template-areas: "locations" "armor" "styles" "equipment" "weapons";
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .mythras-foundry .wound-healthy { color: #285f32; }
 .mythras-foundry .wound-minor { color: #916b17; }
 .mythras-foundry .wound-serious { color: #9b471f; }

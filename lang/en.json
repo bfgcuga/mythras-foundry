@@ -295,5 +295,15 @@
   "MYTHRASF.Combat.SourceMissing": "The attacking actor or weapon no longer exists.",
   "MYTHRASF.Combat.NoPermission": "You do not have permission to modify the target.",
   "MYTHRASF.Combat.WoundWarning.serious": "A serious wound requires the appropriate Endurance test and consequences.",
-  "MYTHRASF.Combat.WoundWarning.major": "A major wound requires the appropriate Endurance test and may incapacitate or kill the victim."
+  "MYTHRASF.Combat.WoundWarning.major": "A major wound requires the appropriate Endurance test and may incapacitate or kill the victim.",
+  "MYTHRASF.HitLocation.MaxShort": "Max HP",
+  "MYTHRASF.HitLocation.CurrentShort": "HP",
+  "MYTHRASF.Combat.WornArmor": "Worn armour",
+  "MYTHRASF.Combat.TotalArmor": "Total armour points",
+  "MYTHRASF.Combat.Object": "Item",
+  "MYTHRASF.Combat.Load": "ENC",
+  "MYTHRASF.Combat.TotalLoad": "Total carried ENC",
+  "MYTHRASF.Combat.BaseFormula": "STR + DEX",
+  "MYTHRASF.Combat.NoStyles": "No combat styles.",
+  "MYTHRASF.Combat.WeaponsAndShields": "Weapons & Shields"
 }

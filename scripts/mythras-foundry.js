@@ -22,6 +22,7 @@ import { activateCombatCard } from "./rules/combat-chat.js";
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
   "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
+  "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
   "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
 ];
