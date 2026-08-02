@@ -1291,7 +1291,7 @@
 .mythras-foundry .inventory-table .item-list li > span { overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .mythras-foundry .inventory-table .equip-toggle { width: 2rem; min-height: 1.8rem; padding: 0; }
 
-.mythras-foundry .inventory-table .hand-toggle {
+.mythras-foundry .hand-toggle {
   display: inline-flex;
   width: auto;
   min-width: 2rem;
@@ -1300,6 +1300,9 @@
   gap: 0.08rem;
   color: #777;
 }
+.mythras-foundry .combat-weapon-name { display: flex; min-width: 0; align-items: center; gap: 0.2rem; }
+.mythras-foundry .combat-weapon-name > button[data-action="edit-item"] { min-width: 0; flex: 1; overflow: hidden; padding: 0; border: 0; background: transparent; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.mythras-foundry .combat-weapon-name > .hand-toggle { min-width: 2rem; min-height: 1.8rem; padding: 0.2rem; flex: 0 0 auto; }
 .mythras-foundry .hand-toggle[data-hands="0"] i,
 .mythras-foundry .hand-toggle[data-hands="1"] i:nth-child(2) { display: none; }
 .mythras-foundry .hand-toggle[data-hands="0"]::after { content: "—"; }

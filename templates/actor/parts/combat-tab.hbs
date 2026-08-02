@@ -64,7 +64,10 @@
     </div>
     {{#each combatWeapons as |row|}}
       <div class="combat-weapon-line" data-item-id="{{row.item.id}}">
-        <button type="button" data-action="edit-item">{{row.item.name}}</button>
+        <div class="combat-weapon-name">
+          <button type="button" data-action="edit-item">{{row.item.name}}</button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.item.system.handsRequired}}" class="hand-toggle {{#if row.item.system.equipped}}equipped{{/if}}" aria-pressed="{{row.item.system.equipped}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fa-solid fa-hand"></i><i class="fa-solid fa-hand"></i></button>
+        </div>
         <span>{{row.item.system.damage}}</span><span>{{row.item.system.size}}</span><span>{{row.item.system.reach}}</span>
         <span>{{row.item.system.grip}}</span><span>{{row.item.system.effects}}</span>
         <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>

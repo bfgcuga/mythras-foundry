@@ -33,7 +33,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   };
 
   static async _onSubmitForm(event, form, formData) {
-    const update = formData.object;
+    const update = foundry.utils.expandObject(formData.object);
     if (this.item.type === "combatStyle" && update.system?.weapons !== undefined) {
       update.system.weaponProfiles = parseWeaponProfileReferences(update.system.weapons);
     }
