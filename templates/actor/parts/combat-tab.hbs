@@ -57,14 +57,15 @@
 
   <fieldset class="combat-paper-panel combat-paper-weapons">
     <legend>{{localize "MYTHRASF.Combat.WeaponsAndShields"}}</legend>
-    <div class="combat-weapon-head">
+    <h4 class="combat-weapon-section-title">{{localize "MYTHRASF.Combat.MeleeWeaponsAndShields"}}</h4>
+    <div class="combat-weapon-head combat-weapon-melee">
       <span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.Weapon.Damage"}}</span>
       <span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.Reach"}}</span>
       <span>{{localize "MYTHRASF.Weapon.Grip"}}</span><span>{{localize "MYTHRASF.Weapon.Effects"}}</span>
       <span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>%</span><span></span>
     </div>
-    {{#each combatWeapons as |row|}}
-      <div class="combat-weapon-line" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
+    {{#each meleeCombatWeapons as |row|}}
+      <div class="combat-weapon-line combat-weapon-melee" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
           <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
           <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
@@ -85,7 +86,39 @@
         <button type="button" class="sheet-icon-button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
           aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
       </div>
-    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.Weapons"}}</p>{{/each}}
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.MeleeWeapons"}}</p>{{/each}}
+
+    <h4 class="combat-weapon-section-title">{{localize "MYTHRASF.Combat.RangedWeapons"}}</h4>
+    <div class="combat-weapon-head combat-weapon-ranged">
+      <span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.Weapon.Damage"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.DamageModifier.Label"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.Range"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.Reload"}}</span><span>{{localize "MYTHRASF.Weapon.Effects"}}</span>
+      <span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>%</span><span></span>
+    </div>
+    {{#each rangedCombatWeapons as |row|}}
+      <div class="combat-weapon-line combat-weapon-ranged" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
+        <div class="combat-weapon-name">
+          <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+        </div>
+        <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.damageModifierLabel}}</span><span>{{row.mode.range}}</span>
+        <span>{{row.mode.reload}}</span><span class="combat-effects">{{row.mode.effects}}</span>
+        <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>
+        <div class="combat-style-choice">
+          <select data-combat-style aria-label="{{localize "MYTHRASF.Combat.Style"}}">
+            {{#if row.needsStyleChoice}}<option value="">{{localize "MYTHRASF.Combat.SelectStyle"}}</option>{{/if}}
+            {{#each row.styleOptions as |style|}}<option value="{{style.id}}" {{#if style.selected}}selected{{/if}}>{{style.name}}</option>{{/each}}
+          </select>
+          {{#unless row.hasDirectStyle}}<select data-combat-familiarity aria-label="{{localize "MYTHRASF.Combat.Familiarity"}}">
+            {{#each row.familiarityOptions as |option|}}<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>{{/each}}
+          </select>{{/unless}}
+        </div>
+        <strong title="{{row.difficultyLabel}}">{{row.effectiveTarget}}%</strong>
+        <button type="button" class="sheet-icon-button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
+          aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
+      </div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.RangedWeapons"}}</p>{{/each}}
   </fieldset>
 
   <fieldset class="combat-paper-panel combat-paper-fatigue">

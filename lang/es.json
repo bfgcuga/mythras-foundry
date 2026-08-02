@@ -226,6 +226,8 @@
   "MYTHRASF.Empty.Passions": "No passions.",
   "MYTHRASF.Empty.Equipment": "No hay equipo.",
   "MYTHRASF.Empty.Weapons": "No hay armas.",
+  "MYTHRASF.Empty.MeleeWeapons": "No hay armas cuerpo a cuerpo ni escudos.",
+  "MYTHRASF.Empty.RangedWeapons": "No hay armas a distancia.",
   "MYTHRASF.Difficulty.automatic": "Automática",
   "MYTHRASF.Difficulty.veryEasy": "Muy fácil",
   "MYTHRASF.Difficulty.easy": "Fácil",
@@ -397,5 +399,7 @@
   "MYTHRASF.Combat.TotalLoad": "CAR total transportada",
   "MYTHRASF.Combat.BaseFormula": "FUE + DES",
   "MYTHRASF.Combat.NoStyles": "No hay estilos de combate.",
-  "MYTHRASF.Combat.WeaponsAndShields": "Armas y escudos"
+  "MYTHRASF.Combat.WeaponsAndShields": "Armas y escudos",
+  "MYTHRASF.Combat.MeleeWeaponsAndShields": "Armas cuerpo a cuerpo y escudos",
+  "MYTHRASF.Combat.RangedWeapons": "Armas a distancia"
 }

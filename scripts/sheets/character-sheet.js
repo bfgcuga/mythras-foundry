@@ -113,6 +113,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
+    const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon)
+      .map((mode) => this.#prepareCombatWeapon(weapon, mode, combatStyles)));
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -237,8 +239,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       wornArmorPenalty: equippedArmor.reduce((total, item) => (
         total + Number(item.system.penalty ?? 0) * Number(item.system.quantity ?? 1)
       ), 0),
-      combatWeapons: weapons.flatMap((weapon) => weaponModes(weapon)
-        .map((mode) => this.#prepareCombatWeapon(weapon, mode, combatStyles))),
+      combatWeapons,
+      meleeCombatWeapons: combatWeapons.filter((row) => row.mode.weaponType !== "ranged"),
+      rangedCombatWeapons: combatWeapons.filter((row) => row.mode.weaponType === "ranged")
+        .map((row) => ({ ...row,
+          damageModifierLabel: game.i18n.localize(
+            `MYTHRASF.Weapon.DamageModifier.${row.mode.damageModifierMode ?? "full"}`) })),
       familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))
     }, { inplace: false });

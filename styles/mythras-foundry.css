@@ -1319,13 +1319,27 @@
 
 .mythras-foundry .combat-style-line > strong { text-align: center; }
 
+.mythras-foundry .combat-weapon-section-title {
+  margin: 0.55rem 0 0.25rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
 .mythras-foundry .combat-weapon-head,
 .mythras-foundry .combat-weapon-line {
   display: grid;
-  grid-template-columns: minmax(7rem, 1fr) 4rem 3.2rem 3.5rem 4rem minmax(6rem, 0.8fr) 5.5rem minmax(9rem, 1.1fr) 3.5rem 2rem;
   align-items: center;
   gap: 0.35rem;
   min-width: 55rem;
+}
+
+.mythras-foundry .combat-weapon-melee {
+  grid-template-columns: minmax(7rem, 1fr) 4rem 3.2rem 3.5rem 4rem minmax(6rem, 0.8fr) 5.5rem minmax(9rem, 1.1fr) 3.5rem 2rem;
+}
+
+.mythras-foundry .combat-weapon-ranged {
+  grid-template-columns: minmax(7rem, 1fr) 4rem 3.2rem 5.5rem minmax(6rem, 0.8fr) 4rem minmax(6rem, 0.8fr) 5.5rem minmax(9rem, 1.1fr) 3.5rem 2rem;
 }
 
 .mythras-foundry .combat-weapon-line { padding: 0.25rem 0; }

@@ -226,6 +226,8 @@
   "MYTHRASF.Empty.Passions": "No passions.",
   "MYTHRASF.Empty.Equipment": "No equipment.",
   "MYTHRASF.Empty.Weapons": "No weapons.",
+  "MYTHRASF.Empty.MeleeWeapons": "No melee weapons or shields.",
+  "MYTHRASF.Empty.RangedWeapons": "No ranged weapons.",
   "MYTHRASF.Difficulty.automatic": "Automatic",
   "MYTHRASF.Difficulty.veryEasy": "Very Easy",
   "MYTHRASF.Difficulty.easy": "Easy",
@@ -397,5 +399,7 @@
   "MYTHRASF.Combat.TotalLoad": "Total carried ENC",
   "MYTHRASF.Combat.BaseFormula": "STR + DEX",
   "MYTHRASF.Combat.NoStyles": "No combat styles.",
-  "MYTHRASF.Combat.WeaponsAndShields": "Weapons & Shields"
+  "MYTHRASF.Combat.WeaponsAndShields": "Weapons & Shields",
+  "MYTHRASF.Combat.MeleeWeaponsAndShields": "Melee Weapons & Shields",
+  "MYTHRASF.Combat.RangedWeapons": "Ranged Weapons"
 }
