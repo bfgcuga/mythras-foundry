@@ -68,7 +68,7 @@
         <input type="checkbox" class="sheet-state-box" {{checked item.system.fumbled}}
           data-skill-field="fumbled"
           aria-label="{{localize "MYTHRASF.Skill.Fumbled"}}">
-        <output>{{item.system.total}}%</output>
+        <output class="penalized-value">{{item.totalDisplay.base}}%{{#if item.totalDisplay.penalized}} <span class="penalized-value-modifier">({{item.totalDisplay.effective}}%)</span>{{/if}}</output>
         {{#if ../skillsEditing}}
           <button type="button" class="skill-delete" data-action="delete-item"
             aria-label="{{localize "MYTHRASF.Delete"}}"

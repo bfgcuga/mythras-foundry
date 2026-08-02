@@ -36,7 +36,7 @@
     <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
       <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>
       <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output></label>
-      <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.actionPoints}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly penalized-value">{{headerStatus.actionPoints.base}}{{#if headerStatus.actionPoints.penalized}} <span class="penalized-value-modifier">({{headerStatus.actionPoints.effective}})</span>{{/if}}</output></label>
       <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
       <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
       <label><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
@@ -116,8 +116,8 @@
                     <i class="fas fa-arrow-up" aria-hidden="true"></i>
                   </button>
                   <output class="resource-value">
-                    <span>{{actor.system.resources.actionPoints.value}}</span>
-                    <b>/ {{actor.system.attributes.actionPointsMax}}</b>
+                    <span>{{attributePenalties.actionPoints.base}}</span>
+                    {{#if attributePenalties.actionPoints.penalized}}<b class="penalized-value-modifier">({{attributePenalties.actionPoints.effective}})</b>{{/if}}
                   </output>
                 </div>
               </label>
@@ -128,7 +128,7 @@
               <label><span>{{localize "MYTHRASF.Attribute.HealingRate"}}</span>
                 <output>{{actor.system.attributes.healingRate}}</output></label>
               <label><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
-                <output>{{actor.system.attributes.initiative}}</output></label>
+                <output class="penalized-value">{{attributePenalties.initiative.base}}{{#if attributePenalties.initiative.penalized}} <span class="penalized-value-modifier">({{attributePenalties.initiative.effective}})</span>{{/if}}</output></label>
               <label class="resource-attribute">
                 <span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>
                 <div class="resource-control">
@@ -164,7 +164,7 @@
                 </div>
               </label>
               <label><span>{{localize "MYTHRASF.Attribute.MovementRate"}}</span>
-                <output>{{actor.system.attributes.movementRate}}</output></label>
+                <output class="penalized-value">{{attributePenalties.movement.base}}{{#if attributePenalties.movement.penalized}} <span class="penalized-value-modifier">({{attributePenalties.movement.effective}})</span>{{/if}}</output></label>
             </div>
           </fieldset>
         </section>
@@ -278,8 +278,8 @@
               <input type="checkbox" class="sheet-state-box" {{checked item.system.fumbled}}
                 data-skill-field="fumbled"
                 aria-label="{{localize "MYTHRASF.Skill.Fumbled"}}">
-              <strong class="skill-total" title="{{item.system.base}} + {{item.system.allocatedBonus}}">
-                {{item.system.total}}%
+              <strong class="skill-total penalized-value" title="{{item.system.base}} + {{item.system.allocatedBonus}}">
+                {{item.totalDisplay.base}}%{{#if item.totalDisplay.penalized}} <span class="penalized-value-modifier">({{item.totalDisplay.effective}}%)</span>{{/if}}
               </strong>
               <div class="skill-actions">
                 <select data-difficulty aria-label="{{localize "MYTHRASF.Skill.Difficulty"}}">

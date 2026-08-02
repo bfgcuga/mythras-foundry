@@ -50,7 +50,7 @@
     {{#each combatStyles as |style|}}
       <div class="combat-style-line" data-item-id="{{style.item.id}}">
         <button type="button" data-action="edit-item">{{style.item.name}}</button>
-        <span>{{style.weapons}}</span><span>{{style.traits}}</span><strong>{{style.total}}%</strong>
+        <span>{{style.weapons}}</span><span>{{style.traits}}</span><strong class="penalized-value">{{style.totalDisplay.base}}%{{#if style.totalDisplay.penalized}} <span class="penalized-value-modifier">({{style.totalDisplay.effective}}%)</span>{{/if}}</strong>
       </div>
     {{else}}<p class="empty">{{localize "MYTHRASF.Combat.NoStyles"}}</p>{{/each}}
   </fieldset>
@@ -81,7 +81,7 @@
             {{#each row.familiarityOptions as |option|}}<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>{{/each}}
           </select>{{/unless}}
         </div>
-        <strong title="{{row.difficultyLabel}}">{{row.baseTarget}}%{{#if row.hasTargetPenalty}} <span class="combat-target-penalty">({{row.effectiveTarget}}%)</span>{{/if}}</strong>
+        <strong class="penalized-value" title="{{row.difficultyLabel}}">{{row.baseTarget}}%{{#if row.hasTargetPenalty}} <span class="penalized-value-modifier">({{row.effectiveTarget}}%)</span>{{/if}}</strong>
         <button type="button" class="sheet-icon-button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
           aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
       </div>
@@ -116,7 +116,7 @@
             {{#each row.familiarityOptions as |option|}}<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>{{/each}}
           </select>{{/unless}}
         </div>
-        <strong title="{{row.difficultyLabel}}">{{row.baseTarget}}%{{#if row.hasTargetPenalty}} <span class="combat-target-penalty">({{row.effectiveTarget}}%)</span>{{/if}}</strong>
+        <strong class="penalized-value" title="{{row.difficultyLabel}}">{{row.baseTarget}}%{{#if row.hasTargetPenalty}} <span class="penalized-value-modifier">({{row.effectiveTarget}}%)</span>{{/if}}</strong>
         <button type="button" class="sheet-icon-button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
           aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
       </div>

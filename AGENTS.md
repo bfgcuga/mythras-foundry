@@ -26,6 +26,13 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - `--mythras-font-size-auxiliary` (`0.72rem`) se reserva para notas, ayudas o metadatos secundarios; no se usa para información operativa ni para hacer que una tabla entre.
 - Si una tabla no cabe al tamaño normal de la hoja, se ajustan primero la cuadrícula, los espacios y el reparto de columnas. No se reduce la tipografía de forma local para evitar el desbordamiento.
 
+## Valores penalizados
+
+- Un valor afectado por una penalización muestra primero su valor base sin modificar y, únicamente si cambia, el valor efectivo entre paréntesis inmediatamente después.
+- El contenedor usa `penalized-value` y el valor entre paréntesis usa `penalized-value-modifier`, que lo identifica en rojo sin reducir su tamaño de letra.
+- Este patrón se aplica por igual a porcentajes, atributos derivados, recursos máximos y cualquier otro valor operativo. No se sustituye el valor base ni se muestra el paréntesis cuando ambos valores coinciden.
+- Los valores base y efectivos proceden de ayudantes puros compartidos; la plantilla solo decide si representa el modificador.
+
 ## Botones con iconos
 
 - Acciones integradas en filas —tirar, equipar, eliminar y similares— usan `sheet-icon-button`. Su fondo es transparente.

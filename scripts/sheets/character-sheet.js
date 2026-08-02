@@ -1,4 +1,4 @@
-import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
+import { CHARACTERISTIC_KEYS, calculateDerivedAttributes } from "../rules/derived-attributes.js";
 import {
   CULTURES,
   PROFESSIONS,
@@ -39,8 +39,9 @@ import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
-import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { applyFatigue, combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -113,6 +114,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
+    const baseAttributes = this.actor.system.baseAttributes
+      ?? calculateDerivedAttributes(this.actor.system);
+    const effectiveAttributes = this.actor.system.attributes;
+    const actionPointsDisplay = penalizedResource(
+      this.actor.system.resources.actionPoints.value,
+      baseAttributes.actionPointsMax,
+      effectiveAttributes.actionPointsMax
+    );
     const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon)
       .map((mode) => this.#prepareCombatWeapon(weapon, mode, combatStyles)));
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
@@ -166,7 +175,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       characteristicRows,
       editMode: Boolean(this._editMode),
       headerStatus: {
-        actionPoints: `${this.actor.system.resources.actionPoints.value}/${this.actor.system.attributes.actionPointsMax}`,
+        actionPoints: actionPointsDisplay,
         magicPoints: `${this.actor.system.resources.magicPoints.value}/${this.actor.system.attributes.magicPointsMax}`,
         luckPoints: `${this.actor.system.resources.luckPoints.value}/${this.actor.system.attributes.luckPointsMax}`,
         fatigue: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`),
@@ -180,6 +189,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           : game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
         encumbrance: "",
         encumbrancePenalty: ""
+      },
+      attributePenalties: {
+        actionPoints: actionPointsDisplay,
+        initiative: penalizedValue(baseAttributes.initiative, effectiveAttributes.initiative),
+        movement: penalizedValue(baseAttributes.movementRate, effectiveAttributes.movementRate)
       },
       generationMethod,
       generationMethods,
@@ -220,7 +234,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           .filter(Boolean)
           .join(", ") || style.system.weapons,
         traits: style.system.traits,
-        total: Number(style.system.total ?? 0)
+        total: Number(style.system.total ?? 0),
+        totalDisplay: penalizedValue(
+          Number(style.system.total ?? 0),
+          difficultyTarget(Number(style.system.total ?? 0), currentFatigue.skillDifficulty)
+        )
       })),
       combatArmor: armor.map((item) => ({
         item,
@@ -497,7 +515,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #updateFatigue(event) {
     if (!this.isEditable || !event.currentTarget.checked) return;
-    await this.actor.update({ "system.fatigueLevel": event.currentTarget.value });
+    const levelKey = event.currentTarget.value;
+    const baseAttributes = calculateDerivedAttributes(this.actor.system);
+    const effectiveAttributes = applyFatigue(baseAttributes, levelKey);
+    const currentActionPoints = Number(this.actor.system.resources.actionPoints.value ?? 0);
+    await this.actor.update({
+      "system.fatigueLevel": levelKey,
+      "system.resources.actionPoints.value": Math.min(
+        currentActionPoints, effectiveAttributes.actionPointsMax)
+    });
   }
 
   async #updateWeaponCombatChoice(event) {
@@ -809,11 +835,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #prepareSkillRow(item, draft) {
+    const total = Number(item.system.total ?? 0);
     const row = {
       id: item.id,
       name: item.name,
       type: item.type,
-      system: item.system
+      system: item.system,
+      totalDisplay: penalizedValue(total, difficultyTarget(
+        total, fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty))
     };
     if (!draft) return row;
 

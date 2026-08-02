@@ -95,7 +95,8 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
   prepareDerivedData() {
     super.prepareDerivedData();
 
-    this.attributes = applyFatigue(calculateDerivedAttributes(this), this.fatigueLevel);
+    this.baseAttributes = calculateDerivedAttributes(this);
+    this.attributes = applyFatigue(this.baseAttributes, this.fatigueLevel);
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;

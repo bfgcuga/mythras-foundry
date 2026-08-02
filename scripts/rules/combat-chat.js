@@ -20,6 +20,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       : resolution.style?.name ?? "",
     familiarity: resolution.familiarity,
     difficulty: resolution.difficulty,
+    baseTargetValue: resolution.target,
     targetValue,
     attackRoll: roll.total,
     result,
@@ -159,7 +160,9 @@ function renderAttackCard(data, actor, weapon, target = null) {
     <button type="button" data-combat-action="roll-damage">${game.i18n.localize("MYTHRASF.Combat.RollDamage")}</button>` : "";
   return `<section class="mythras-combat-card">
     <h3>${escape(actor?.name ?? "")} — ${escape(weapon?.name ?? "")}${data.modeName ? ` (${escape(data.modeName)})` : ""}</h3>
-    <p>${escape(data.styleName)} · ${game.i18n.localize(`MYTHRASF.Difficulty.${data.difficulty}`)} (${data.targetValue}%)</p>
+    <p>${escape(data.styleName)} · ${game.i18n.localize(`MYTHRASF.Difficulty.${data.difficulty}`)}
+      <span class="penalized-value">${data.baseTargetValue ?? data.targetValue}%${data.baseTargetValue !== undefined && data.baseTargetValue !== data.targetValue
+        ? ` <span class="penalized-value-modifier">(${data.targetValue}%)</span>` : ""}</span></p>
     ${resolvedTarget ? `<p>${game.i18n.localize("MYTHRASF.Combat.Target")}: ${escape(resolvedTarget.name)}</p>` : ""}
     <p><strong>${data.attackRoll}</strong> — ${game.i18n.localize(`MYTHRASF.RollResult.${data.result}`)}</p>
     ${damageSection}

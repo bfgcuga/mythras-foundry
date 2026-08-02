@@ -57,6 +57,21 @@
   box-shadow: none !important;
 }
 
+.mythras-foundry .penalized-value,
+.chat-message .penalized-value {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.mythras-foundry .penalized-value-modifier,
+.chat-message .penalized-value-modifier {
+  margin: 0;
+  color: #a1241b !important;
+}
+
 .mythras-foundry input[type="checkbox"].sheet-state-box,
 .mythras-foundry input[type="radio"].sheet-state-box {
   display: inline-grid;
@@ -1344,7 +1359,6 @@
 
 .mythras-foundry .combat-weapon-line { padding: 0.25rem 0; }
 .mythras-foundry .combat-weapon-line > strong { text-align: center; }
-.mythras-foundry .combat-target-penalty { color: #a1241b; }
 .mythras-foundry .combat-weapon-line > button[data-action="roll-weapon-attack"] {
   width: 1.8rem;
   min-height: 1.8rem;

@@ -72,7 +72,9 @@ export class MythrasItem extends Item {
       flavor: `
         <strong>${foundry.utils.escapeHTML(this.name)}</strong>
         — ${game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)}
-        (${target}%): ${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}
+        <span class="penalized-value">${baseTarget}%${target !== baseTarget
+          ? ` <span class="penalized-value-modifier">(${target}%)</span>` : ""}</span>:
+        ${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}
       `
     });
 
