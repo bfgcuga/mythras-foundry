@@ -40,7 +40,7 @@ import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
-import { worstWoundLevel } from "../rules/hit-locations.js";
+import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -171,7 +171,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         fatigueKey: currentFatigue.key,
         wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
         woundKey: currentWound,
-        encumbrance: ""
+        woundPenalty: game.i18n.localize(
+          `MYTHRASF.Header.WoundPenalty.${woundPenaltyKey(currentWound)}`),
+        fatiguePenalty: currentFatigue.skillDifficulty === "standard"
+          ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
+          : game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
+        encumbrance: "",
+        encumbrancePenalty: ""
       },
       generationMethod,
       generationMethods,

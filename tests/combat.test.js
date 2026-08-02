@@ -13,6 +13,7 @@ import {
   findHitLocation,
   humanHitLocationData,
   woundLevel,
+  woundPenaltyKey,
   worstWoundLevel
 } from "../scripts/rules/hit-locations.js";
 
@@ -94,6 +95,13 @@ test("el estado general usa la herida más grave de todas las localizaciones", (
     { system: { currentHitPoints: -4, maxHitPoints: 4 } }];
   assert.equal(worstWoundLevel(locations), "major");
   assert.equal(worstWoundLevel([]), "healthy");
+});
+
+test("la penalizacion del encabezado deriva del nivel de herida", () => {
+  assert.equal(woundPenaltyKey("healthy"), "none");
+  assert.equal(woundPenaltyKey("minor"), "none");
+  assert.equal(woundPenaltyKey("serious"), "locationDisabled");
+  assert.equal(woundPenaltyKey("major"), "possibleIncapacitation");
 });
 
 test("una tirada localiza el rango correspondiente o devuelve null", () => {

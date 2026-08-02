@@ -32,6 +32,12 @@ export function worstWoundLevel(locations) {
   }, "healthy");
 }
 
+export function woundPenaltyKey(level) {
+  if (level === "serious") return "locationDisabled";
+  if (level === "major") return "possibleIncapacitation";
+  return "none";
+}
+
 export function findHitLocation(locations, roll) {
   const value = Number(roll);
   return locations.find((location) => value >= Number(location.system.rangeStart)

@@ -34,12 +34,15 @@
       </label>
     </div>
     <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
-      <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.actionPoints}}</output></label>
-      <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output></label>
       <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>
-      <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.actionPoints}}</output></label>
       <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
+      <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
       <label><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
+      <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.woundPenalty}}</output></label>
+      <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.fatiguePenalty}}</output></label>
+      <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrancePenalty}}</output></label>
     </section>
   </header>
 

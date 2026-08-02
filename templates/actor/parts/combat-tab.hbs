@@ -91,7 +91,7 @@
   <fieldset class="combat-paper-panel combat-paper-fatigue">
     <legend>{{localize "MYTHRASF.Fatigue.Label"}}</legend>
     <div class="combat-fatigue-head"><span>{{localize "MYTHRASF.Fatigue.State"}}</span><span>{{localize "MYTHRASF.Fatigue.SkillModifier"}}</span><span>{{localize "MYTHRASF.Fatigue.Movement"}}</span><span>{{localize "MYTHRASF.Fatigue.Initiative"}}</span><span>{{localize "MYTHRASF.Fatigue.ActionPoints"}}</span><span>{{localize "MYTHRASF.Fatigue.Recovery"}}</span></div>
-    {{#each fatigueRows as |row|}}<label class="combat-fatigue-line {{#if row.selected}}active{{/if}}">
+    {{#each fatigueRows as |row|}}<label class="combat-fatigue-line">
       <span><input type="radio" class="sheet-state-box" name="fatigue-level" value="{{row.key}}"
         data-fatigue-level {{checked row.selected}} aria-label="{{row.levelLabel}}"> {{row.levelLabel}}</span>
       <span>{{row.skillLabel}}</span><span>{{row.movementLabel}}{{#if row.movementPenalty}} -{{row.movementPenalty}} m{{/if}}</span>

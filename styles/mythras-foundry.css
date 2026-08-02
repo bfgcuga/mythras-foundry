@@ -97,6 +97,22 @@
   outline-offset: 1px;
 }
 
+.mythras-foundry input[type="radio"].sheet-state-box {
+  border: 1px solid var(--mythras-border) !important;
+  border-radius: 0.15rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mythras-foundry input[type="radio"].sheet-state-box::before {
+  background: var(--mythras-ink) !important;
+}
+
+.mythras-foundry input[type="radio"].sheet-state-box::after {
+  display: none !important;
+  content: none !important;
+}
+
 .mythras-foundry .character-sheet-content,
 .mythras-foundry .item-sheet-content {
   display: flex;
@@ -156,7 +172,7 @@
 }
 
 .mythras-foundry .character-sheet-content .sheet-header {
-  grid-template-columns: 160px minmax(0, 1fr) minmax(15rem, 0.55fr);
+  grid-template-columns: 160px minmax(0, 1fr) minmax(25rem, 0.85fr);
   min-height: 160px;
 }
 
@@ -204,7 +220,7 @@
 
 .mythras-foundry .header-status {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-self: stretch;
   gap: 0.4rem 0.65rem;
   padding-left: 0.75rem;
@@ -230,6 +246,16 @@
   background: transparent;
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.mythras-foundry .header-status .header-penalty {
+  font-size: 0.65rem;
+}
+
+.mythras-foundry .header-status .header-penalty output {
+  min-height: 1.65rem;
+  font-size: 0.72rem;
+  font-weight: 400;
 }
 
 .mythras-foundry .identity-fields .identity-readonly {
@@ -1180,7 +1206,6 @@
 .mythras-foundry .combat-fatigue-head { color: var(--color-text-subtle); font-size: 0.65rem; font-weight: 700; text-align: center; }
 .mythras-foundry .combat-fatigue-line { min-height: 1.65rem; border-bottom: 1px solid rgb(61 57 51 / 25%); font-size: 0.7rem; text-align: center; }
 .mythras-foundry .combat-fatigue-line > span:first-child { text-align: left; }
-.mythras-foundry .combat-fatigue-line.active { background: rgb(255 250 232 / 55%); font-weight: 700; }
 
 .mythras-foundry .combat-location-line,
 .mythras-foundry .combat-armor-line,
