@@ -56,19 +56,29 @@
 
   {{#if isWeapon}}
     <label>{{localize "MYTHRASF.Weapon.ProfileKey"}}</label><input type="text" name="system.profileKey" value="{{item.system.profileKey}}">
-    <label>{{localize "MYTHRASF.Weapon.TypeLabel"}}</label><select name="system.weaponType">{{selectOptions weaponTypeChoices selected=item.system.weaponType labelAttr="label" valueAttr="value"}}</select>
-    <label>{{localize "MYTHRASF.Weapon.Damage"}}</label><input type="text" name="system.damage" value="{{item.system.damage}}">
-    <label>{{localize "MYTHRASF.Weapon.DamageModifier.Label"}}</label><select name="system.damageModifierMode">{{selectOptions damageModifierChoices selected=item.system.damageModifierMode labelAttr="label" valueAttr="value"}}</select>
-    <label>{{localize "MYTHRASF.Weapon.Size"}}</label><input type="text" name="system.size" value="{{item.system.size}}">
-    <label>{{localize "MYTHRASF.Weapon.Reach"}}</label><input type="text" name="system.reach" value="{{item.system.reach}}">
-    <label>{{localize "MYTHRASF.Weapon.Effects"}}</label><input type="text" name="system.effects" value="{{item.system.effects}}">
     <label>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
     <label>{{localize "MYTHRASF.Weapon.HitPoints"}}</label><div><input type="number" min="0" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}"> / <input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}"></div>
     <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}">
-    <label>{{localize "MYTHRASF.Weapon.Grip"}}</label><input type="text" name="system.grip" value="{{item.system.grip}}">
-    <label>{{localize "MYTHRASF.Weapon.HandsRequired"}}</label><input type="number" min="0" max="2" name="system.handsRequired" value="{{item.system.handsRequired}}">
-    <label>{{localize "MYTHRASF.Weapon.Range"}}</label><input type="text" name="system.range" value="{{item.system.range}}">
-    <label>{{localize "MYTHRASF.Weapon.Reload"}}</label><input type="text" name="system.reload" value="{{item.system.reload}}">
+    <label>{{localize "MYTHRASF.Weapon.PreparedMode"}}</label><select name="system.activeModeKey">{{selectOptions weaponModes selected=item.system.activeModeKey labelAttr="name" valueAttr="key"}}</select>
+    <fieldset class="weapon-modes-editor"><legend>{{localize "MYTHRASF.Weapon.Modes"}}</legend>
+      <button type="button" class="sheet-add-button" data-action="add-weapon-mode" aria-label="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus"></i></button>
+      {{#each weaponModes as |mode|}}<section class="weapon-mode-editor">
+        <div class="weapon-mode-actions"><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="-1" aria-label="{{localize "MYTHRASF.MoveUp"}}"><i class="fas fa-arrow-up"></i></button><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="1" aria-label="{{localize "MYTHRASF.MoveDown"}}"><i class="fas fa-arrow-down"></i></button><button type="button" class="sheet-icon-button" data-action="delete-weapon-mode" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash"></i></button></div>
+        <label>{{localize "MYTHRASF.Weapon.ModeKey"}}</label><input name="system.modes.{{@index}}.key" value="{{mode.key}}">
+        <label>{{localize "MYTHRASF.Weapon.ModeName"}}</label><input name="system.modes.{{@index}}.name" value="{{mode.name}}">
+        <label>{{localize "MYTHRASF.Weapon.ProfileKey"}}</label><input name="system.modes.{{@index}}.profileKey" value="{{mode.profileKey}}">
+        <label>{{localize "MYTHRASF.Weapon.TypeLabel"}}</label><select name="system.modes.{{@index}}.weaponType">{{selectOptions ../weaponTypeChoices selected=mode.weaponType labelAttr="label" valueAttr="value"}}</select>
+        <label>{{localize "MYTHRASF.Weapon.Damage"}}</label><input name="system.modes.{{@index}}.damage" value="{{mode.damage}}">
+        <label>{{localize "MYTHRASF.Weapon.DamageModifier.Label"}}</label><select name="system.modes.{{@index}}.damageModifierMode">{{selectOptions ../damageModifierChoices selected=mode.damageModifierMode labelAttr="label" valueAttr="value"}}</select>
+        <label>{{localize "MYTHRASF.Weapon.Size"}}</label><input name="system.modes.{{@index}}.size" value="{{mode.size}}">
+        <label>{{localize "MYTHRASF.Weapon.Reach"}}</label><input name="system.modes.{{@index}}.reach" value="{{mode.reach}}">
+        <label>{{localize "MYTHRASF.Weapon.Grip"}}</label><input name="system.modes.{{@index}}.grip" value="{{mode.grip}}">
+        <label>{{localize "MYTHRASF.Weapon.HandsRequired"}}</label><input type="number" min="0" max="2" name="system.modes.{{@index}}.handsRequired" value="{{mode.handsRequired}}">
+        <label>{{localize "MYTHRASF.Weapon.Range"}}</label><input name="system.modes.{{@index}}.range" value="{{mode.range}}">
+        <label>{{localize "MYTHRASF.Weapon.Reload"}}</label><input name="system.modes.{{@index}}.reload" value="{{mode.reload}}">
+        <label>{{localize "MYTHRASF.Weapon.Effects"}}</label><textarea name="system.modes.{{@index}}.effects">{{mode.effects}}</textarea>
+      </section>{{/each}}
+    </fieldset>
   {{/if}}
 
   {{#if isArmor}}

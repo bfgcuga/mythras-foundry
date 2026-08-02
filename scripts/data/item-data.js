@@ -1,3 +1,5 @@
+import { weaponHandsRequired } from "../rules/equipment.js";
+
 const {
   ArrayField,
   BooleanField,
@@ -26,6 +28,27 @@ const descriptionField = () => new HTMLField({
   required: true,
   nullable: false,
   initial: ""
+});
+
+const weaponModeField = () => new SchemaField({
+  key: textField("mode"),
+  name: textField(),
+  profileKey: textField(),
+  weaponType: new StringField({ required: true, nullable: false, initial: "melee",
+    choices: ["melee", "ranged", "shield"] }),
+  damage: textField(),
+  damageModifierMode: new StringField({ required: true, nullable: false, initial: "full",
+    choices: ["full", "half", "none"] }),
+  size: textField(),
+  reach: textField(),
+  effects: textField(),
+  grip: textField(),
+  handsRequired: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 0, max: 2 }),
+  range: textField(),
+  reload: textField(),
+  preferredCombatStyleId: textField(),
+  familiarity: new StringField({ required: true, nullable: false, initial: "similar",
+    choices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"] })
 });
 
 export class SkillData extends foundry.abstract.TypeDataModel {
@@ -160,6 +183,8 @@ export class WeaponData extends EquipmentData {
     return {
       ...super.defineSchema(),
       profileKey: textField(),
+      activeModeKey: textField(),
+      modes: new ArrayField(weaponModeField(), { required: true, nullable: false, initial: [] }),
       weaponType: new StringField({ required: true, nullable: false, initial: "melee",
         choices: ["melee", "ranged", "shield"] }),
       damage: textField(),
@@ -181,6 +206,10 @@ export class WeaponData extends EquipmentData {
       familiarity: new StringField({ required: true, nullable: false, initial: "similar",
         choices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"] })
     };
+  }
+
+  get effectiveHandsRequired() {
+    return weaponHandsRequired(this);
   }
 }
 

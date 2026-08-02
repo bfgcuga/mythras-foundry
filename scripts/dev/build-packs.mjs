@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { compilePack } from "@foundryvtt/foundryvtt-cli";
+import { compilePack } from "@foundryvtt/foundryvtt-cli/index.mjs";
 import {
   CULTURE_SOURCES,
   PROFESSION_SOURCES

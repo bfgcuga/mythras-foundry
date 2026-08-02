@@ -64,13 +64,13 @@
       <span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>%</span><span></span>
     </div>
     {{#each combatWeapons as |row|}}
-      <div class="combat-weapon-line" data-item-id="{{row.item.id}}">
+      <div class="combat-weapon-line" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
-          <button type="button" data-action="edit-item">{{row.item.name}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.item.system.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.item.system.equipped}}equipped{{/if}}" aria-pressed="{{row.item.system.equipped}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+          <button type="button" data-action="edit-item">{{row.item.name}} — {{row.mode.name}}</button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.mode.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
         </div>
-        <span>{{row.item.system.damage}}</span><span>{{row.item.system.size}}</span><span>{{row.item.system.reach}}</span>
-        <span>{{row.item.system.grip}}</span><span class="combat-effects">{{row.item.system.effects}}</span>
+        <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span>
+        <span>{{row.mode.grip}}</span><span class="combat-effects">{{row.mode.effects}}</span>
         <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>
         <div class="combat-style-choice">
           <select data-combat-style aria-label="{{localize "MYTHRASF.Combat.Style"}}">

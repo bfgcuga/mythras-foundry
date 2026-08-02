@@ -2,14 +2,17 @@ import { classifyRoll } from "../documents/mythras-item.js";
 import { applyArmor, damageModifierFormula, difficultyTarget } from "./combat.js";
 import { findHitLocation, woundLevel } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
+import { findWeaponMode } from "./weapon-modes.js";
 
-export async function createAttackMessage({ actor, weapon, resolution, target }) {
+export async function createAttackMessage({ actor, weapon, mode, resolution, target }) {
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
   const roll = await new Roll("1d100").evaluate();
   const result = classifyRoll(roll.total, targetValue, Math.max(1, Math.ceil(targetValue / 10)));
   const data = {
     actorUuid: actor.uuid,
     weaponId: weapon.id,
+    modeKey: mode.key,
+    modeName: mode.name,
     targetActorUuid: target?.actor?.uuid ?? "",
     targetName: target?.name ?? "",
     styleName: resolution.usesBase
@@ -54,16 +57,17 @@ async function rollDamage(message, button) {
   if (!data || data.damageRolled) return;
   const actor = await fromUuid(data.actorUuid);
   const weapon = actor?.items.get(data.weaponId);
-  if (!actor || !weapon) return ui.notifications.error(
+  const mode = weapon ? findWeaponMode(weapon, data.modeKey) : null;
+  if (!actor || !weapon || !mode) return ui.notifications.error(
     game.i18n.localize("MYTHRASF.Combat.SourceMissing")
   );
   const modifier = damageModifierFormula(
     actor.system.attributes?.damageModifier,
-    weapon.system.damageModifierMode
+    mode.damageModifierMode
   );
   const formula = modifier
-    ? `max(0, (${weapon.system.damage || "0"}) + (${modifier}))`
-    : `max(0, ${weapon.system.damage || "0"})`;
+    ? `max(0, (${mode.damage || "0"}) + (${modifier}))`
+    : `max(0, ${mode.damage || "0"})`;
   const damageRoll = await new Roll(formula).evaluate();
   data.damageRolled = true;
   data.damage = damageRoll.total;
@@ -154,7 +158,7 @@ function renderAttackCard(data, actor, weapon, target = null) {
     </label>` : ""}
     <button type="button" data-combat-action="roll-damage">${game.i18n.localize("MYTHRASF.Combat.RollDamage")}</button>` : "";
   return `<section class="mythras-combat-card">
-    <h3>${escape(actor?.name ?? "")} — ${escape(weapon?.name ?? "")}</h3>
+    <h3>${escape(actor?.name ?? "")} — ${escape(weapon?.name ?? "")}${data.modeName ? ` (${escape(data.modeName)})` : ""}</h3>
     <p>${escape(data.styleName)} · ${game.i18n.localize(`MYTHRASF.Difficulty.${data.difficulty}`)} (${data.targetValue}%)</p>
     ${resolvedTarget ? `<p>${game.i18n.localize("MYTHRASF.Combat.Target")}: ${escape(resolvedTarget.name)}</p>` : ""}
     <p><strong>${data.attackRoll}</strong> — ${game.i18n.localize(`MYTHRASF.RollResult.${data.result}`)}</p>

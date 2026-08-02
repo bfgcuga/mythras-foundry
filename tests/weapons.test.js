@@ -11,12 +11,12 @@ import {
 test("el compendio contiene todas las armas y escudos de muestra de Imperativo", () => {
   assert.equal(SHIELD_SOURCES.length, 5);
   assert.equal(MELEE_WEAPON_SOURCES.length, 14);
-  assert.equal(RANGED_WEAPON_SOURCES.length, 12);
-  assert.equal(WEAPON_SOURCES.length, 31);
+  assert.equal(RANGED_WEAPON_SOURCES.length, 11);
+  assert.equal(WEAPON_SOURCES.length, 30);
 });
 
 test("cada entrada tiene identificador de compilación y perfil reutilizable", () => {
-  assert.equal(new Set(WEAPON_SOURCES.map((source) => source.buildKey)).size, 31);
+  assert.equal(new Set(WEAPON_SOURCES.map((source) => source.buildKey)).size, 30);
   for (const source of WEAPON_SOURCES) {
     assert.equal(source.type, "weapon");
     assert.ok(source.buildKey);
@@ -24,6 +24,8 @@ test("cada entrada tiene identificador de compilación y perfil reutilizable", (
     assert.ok(source.system.damage);
     assert.equal(source.system.currentHitPoints, source.system.maxHitPoints);
     assert.ok(source.system.handsRequired >= 0 && source.system.handsRequired <= 2);
+    assert.ok(source.system.modes.length >= 1);
+    assert.ok(source.system.modes.some((mode) => mode.key === source.system.activeModeKey));
   }
 });
 
@@ -36,9 +38,9 @@ test("las empuñaduras del compendio consumen las manos esperadas", () => {
 
 test("los dos modos de la daga comparten perfil sin colisionar en el compendio", () => {
   const daggers = WEAPON_SOURCES.filter((source) => source.system.profileKey === "daga");
-  assert.equal(daggers.length, 2);
-  assert.notEqual(daggers[0].buildKey, daggers[1].buildKey);
-  assert.deepEqual(new Set(daggers.map((source) => source.system.weaponType)), new Set(["melee", "ranged"]));
+  assert.equal(daggers.length, 1);
+  assert.deepEqual(daggers[0].system.modes.map((mode) => mode.key), ["melee", "thrown"]);
+  assert.deepEqual(new Set(daggers[0].system.modes.map((mode) => mode.weaponType)), new Set(["melee", "ranged"]));
 });
 
 test("las armas a distancia respetan el uso del modificador de daño", () => {

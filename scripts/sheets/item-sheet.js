@@ -6,6 +6,7 @@ import {
   calculatePassionBase
 } from "../rules/passions.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "../rules/combat.js";
+import { modeKeysAreUnique, nextModeKey, normalizeModeKey, weaponModes } from "../rules/weapon-modes.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -41,6 +42,17 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       update.system.profileKey = normalizeWeaponProfile(
         update.system?.profileKey || update.name || this.item.name
       );
+      if (update.system?.modes) {
+        update.system.modes = Object.values(update.system.modes).map((mode) => ({ ...mode,
+          key: normalizeModeKey(mode.key), profileKey: mode.profileKey
+            ? normalizeWeaponProfile(mode.profileKey) : "" }));
+        if (!modeKeysAreUnique(update.system.modes)) {
+          return ui.notifications.error(game.i18n.localize("MYTHRASF.Weapon.DuplicateModeKey"));
+        }
+        if (!update.system.modes.some((mode) => mode.key === update.system.activeModeKey)) {
+          update.system.activeModeKey = update.system.modes[0].key;
+        }
+      }
     }
     if (this.item.type === "passion" && update.system?.structured) {
       if (!this.item.system.structured) {
@@ -75,6 +87,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
       isEquipment: ["equipment", "weapon", "armor"].includes(this.item.type),
       isWeapon: this.item.type === "weapon",
+      weaponModes: this.item.type === "weapon" ? weaponModes(this.item) : [],
       isArmor: this.item.type === "armor",
       isHitLocation: this.item.type === "hitLocation",
       combatStyleWeaponNames: this.item.type === "combatStyle"
@@ -138,5 +151,42 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       this.element.querySelectorAll("input[name], textarea[name], select[name]")
         .forEach((field) => { field.disabled = true; });
     }
+    this.element.querySelector("[data-action='add-weapon-mode']")
+      ?.addEventListener("click", () => this.#addWeaponMode());
+    this.element.querySelectorAll("[data-action='delete-weapon-mode']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#deleteWeaponMode(event)));
+    this.element.querySelectorAll("[data-action='move-weapon-mode']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#moveWeaponMode(event)));
+  }
+
+  async #addWeaponMode() {
+    if (!this.isEditable) return;
+    const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
+    const key = nextModeKey(modes);
+    modes.push({ key, name: game.i18n.localize("MYTHRASF.Weapon.NewMode"), profileKey: "",
+      weaponType: "melee", damage: "", damageModifierMode: "full", size: "", reach: "",
+      effects: "", grip: "1 mano", handsRequired: 1, range: "", reload: "",
+      preferredCombatStyleId: "", familiarity: "similar" });
+    await this.item.update({ "system.modes": modes });
+  }
+
+  async #deleteWeaponMode(event) {
+    const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
+    if (modes.length <= 1) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.Weapon.KeepOneMode"));
+    const index = Number(event.currentTarget.dataset.modeIndex);
+    modes.splice(index, 1);
+    const active = modes.some((mode) => mode.key === this.item.system.activeModeKey)
+      ? this.item.system.activeModeKey : modes[0].key;
+    await this.item.update({ "system.modes": modes, "system.activeModeKey": active });
+  }
+
+  async #moveWeaponMode(event) {
+    const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
+    const index = Number(event.currentTarget.dataset.modeIndex);
+    const target = index + Number(event.currentTarget.dataset.direction);
+    if (target < 0 || target >= modes.length) return;
+    [modes[index], modes[target]] = [modes[target], modes[index]];
+    await this.item.update({ "system.modes": modes });
   }
 }

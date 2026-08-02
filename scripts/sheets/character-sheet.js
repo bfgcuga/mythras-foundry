@@ -37,6 +37,7 @@ import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
+import { findWeaponMode, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -176,7 +177,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
       equipment,
-      weapons,
+      weapons: weapons.map((item) => ({ item, modes: weaponModes(item),
+        modeSummary: weaponModes(item).map((mode) => mode.name || mode.key).join(" / "),
+        activeModeKey: findWeaponMode(item)?.key ?? "" })),
       armor,
       hitLocations,
       combatHitLocations: hitLocations.map((item) => ({
@@ -201,22 +204,26 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       wornArmorPenalty: equippedArmor.reduce((total, item) => (
         total + Number(item.system.penalty ?? 0) * Number(item.system.quantity ?? 1)
       ), 0),
-      combatWeapons: weapons.map((weapon) => this.#prepareCombatWeapon(weapon, combatStyles)),
+      combatWeapons: weapons.flatMap((weapon) => weaponModes(weapon)
+        .map((mode) => this.#prepareCombatWeapon(weapon, mode, combatStyles))),
       familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))
     }, { inplace: false });
   }
 
-  #prepareCombatWeapon(weapon, combatStyles) {
+  #prepareCombatWeapon(weapon, mode, combatStyles) {
+    const modeWeapon = weaponModeView(weapon, mode);
     const resolution = resolveWeaponStyle({
-      weapon,
+      weapon: modeWeapon,
       styles: combatStyles,
-      selectedStyleId: weapon.system.preferredCombatStyleId,
-      familiarity: weapon.system.familiarity
+      selectedStyleId: mode.preferredCombatStyleId,
+      familiarity: mode.familiarity
     });
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
     return {
       item: weapon,
+      mode,
+      prepared: Boolean(weapon.system.equipped && weapon.system.activeModeKey === mode.key),
       styleOptions: candidates.map((style) => ({
         id: style.id,
         name: style.name,
@@ -231,7 +238,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       difficulty: resolution.difficulty,
       difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${resolution.difficulty}`),
       effectiveTarget: difficultyTarget(resolution.target, resolution.difficulty),
-      canAttack: Boolean(resolution.style) || resolution.usesBase
+      canAttack: weapon.system.equipped && weapon.system.activeModeKey === mode.key
+        && (Boolean(resolution.style) || resolution.usesBase)
     };
   }
 
@@ -311,6 +319,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='toggle-equipped']").forEach((button) => {
       button.addEventListener("click", (event) => this.#toggleEquipped(event));
+    });
+    this.element.querySelectorAll("[data-active-weapon-mode]").forEach((select) => {
+      select.addEventListener("change", (event) => this.#prepareWeaponMode(event));
     });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
@@ -396,10 +407,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
-    if (item.type === "weapon" && !item.system.equipped) {
+    const modeKey = event.currentTarget.closest("[data-mode-key]")?.dataset.modeKey
+      || item.system.activeModeKey || findWeaponMode(item)?.key;
+    if (item.type === "weapon" && (!item.system.equipped || modeKey !== item.system.activeModeKey)) {
       const assessment = assessWeaponEquip(
         item,
-        this.actor.items.filter((candidate) => candidate.type === "weapon")
+        this.actor.items.filter((candidate) => candidate.type === "weapon"), modeKey
       );
       if (!assessment.allowed) {
         ui.notifications.warn(game.i18n.format("MYTHRASF.Weapon.HandsUnavailable", {
@@ -409,7 +422,24 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return;
       }
     }
-    await item.update({ "system.equipped": !item.system.equipped });
+    const samePrepared = item.system.equipped && modeKey === item.system.activeModeKey;
+    await item.update({ "system.equipped": !samePrepared, "system.activeModeKey": modeKey });
+  }
+
+  async #prepareWeaponMode(event) {
+    if (!this.isEditable) return;
+    const weapon = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (!weapon) return;
+    const modeKey = event.currentTarget.value;
+    if (weapon.system.equipped) {
+      const assessment = assessWeaponEquip(weapon,
+        this.actor.items.filter((item) => item.type === "weapon"), modeKey);
+      if (!assessment.allowed) {
+        event.currentTarget.value = weapon.system.activeModeKey;
+        return ui.notifications.warn(game.i18n.format("MYTHRASF.Weapon.HandsUnavailable", assessment));
+      }
+    }
+    await weapon.update({ "system.activeModeKey": modeKey });
   }
 
   async #updateWeaponCombatChoice(event) {
@@ -417,13 +447,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const row = event.currentTarget.closest("[data-item-id]");
     const weapon = this.actor.items.get(row?.dataset.itemId);
     if (!weapon || weapon.type !== "weapon") return;
-    const update = {};
+    const modes = weaponModes(weapon).map((mode) => ({ ...mode }));
+    const mode = modes.find((entry) => entry.key === row.dataset.modeKey);
+    if (!mode) return;
     if (event.currentTarget.matches("[data-combat-style]")) {
-      update["system.preferredCombatStyleId"] = event.currentTarget.value;
+      mode.preferredCombatStyleId = event.currentTarget.value;
     } else {
-      update["system.familiarity"] = event.currentTarget.value;
+      mode.familiarity = event.currentTarget.value;
     }
-    await weapon.update(update);
+    await weapon.update({ "system.modes": modes });
   }
 
   async #rollWeaponAttack(event) {
@@ -431,13 +463,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const row = event.currentTarget.closest("[data-item-id]");
     const weapon = this.actor.items.get(row?.dataset.itemId);
     if (!weapon) return;
+    const mode = findWeaponMode(weapon, row.dataset.modeKey);
+    if (!weapon.system.equipped || weapon.system.activeModeKey !== mode?.key) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.ModeNotPrepared"));
+      return;
+    }
+    const modeWeapon = weaponModeView(weapon, mode);
     const styles = this.actor.items.filter((item) => item.type === "combatStyle");
     const resolution = resolveWeaponStyle({
-      weapon,
+      weapon: modeWeapon,
       styles,
       selectedStyleId: row.querySelector("[data-combat-style]")?.value,
       familiarity: row.querySelector("[data-combat-familiarity]")?.value
-        ?? weapon.system.familiarity
+        ?? mode.familiarity
     });
     if (!resolution.style && !resolution.usesBase) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
@@ -448,7 +486,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.OneTarget"));
       return;
     }
-    await createAttackMessage({ actor: this.actor, weapon, resolution, target: targets[0] });
+    await createAttackMessage({ actor: this.actor, weapon, mode, resolution, target: targets[0] });
   }
 
   async #choosePortrait() {

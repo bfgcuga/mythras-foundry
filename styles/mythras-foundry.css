@@ -1298,6 +1298,12 @@
   grid-template-columns: minmax(12rem, 1fr) 5rem 4rem minmax(8rem, 0.8fr) 5rem 2rem;
   min-width: 45rem;
 }
+
+.mythras-foundry .weapon-modes-editor { position: relative; grid-column: 1 / -1; }
+.mythras-foundry .weapon-modes-editor > .sheet-add-button { position: absolute; top: -0.75rem; right: 0.35rem; }
+.mythras-foundry .weapon-mode-editor { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.3rem 0.6rem; padding: 0.6rem 0; border-bottom: 1px solid var(--mythras-border); }
+.mythras-foundry .weapon-mode-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.2rem; }
+.mythras-foundry .weapon-mode-editor textarea { min-height: 3rem; resize: vertical; }
 .mythras-foundry .inventory-table-head { min-height: 1.8rem; padding: 0.25rem 0.35rem; color: var(--color-text-subtle); font-size: 0.72rem; font-weight: 700; text-align: center; }
 .mythras-foundry .inventory-table .item-list li { padding: 0.35rem; }
 .mythras-foundry .inventory-table .item-list li > span { overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }

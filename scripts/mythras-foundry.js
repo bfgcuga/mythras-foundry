@@ -19,7 +19,9 @@ import { styleAbilityKey } from "./rules/background-generation.js";
 import { CharacterSheet } from "./sheets/character-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
-import { inferWeaponHands } from "./rules/equipment.js";
+import { weaponHandsRequired } from "./rules/equipment.js";
+import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
+import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -43,6 +45,11 @@ Hooks.once("init", async () => {
   CONFIG.Item.dataModels.weapon = WeaponData;
   CONFIG.Item.dataModels.armor = ArmorData;
   CONFIG.Item.dataModels.hitLocation = HitLocationData;
+  game.settings.registerMenu("mythras-foundry", "weaponModeMerge", {
+    name: "MYTHRASF.Weapon.MergeTool", label: "MYTHRASF.Weapon.MergeTool",
+    hint: "MYTHRASF.Weapon.MergeHelp", icon: "fas fa-object-group",
+    type: WeaponModeMergeTool, restricted: true
+  });
 
   foundry.documents.collections.Actors.registerSheet(
     "mythras-foundry",
@@ -98,6 +105,10 @@ Hooks.on("preCreateItem", (item, data) => {
   }
   if (type === "weapon" && !system.profileKey) {
     item.updateSource({ "system.profileKey": normalizeWeaponProfile(data.name ?? item.name) });
+  }
+  if (type === "weapon" && !(system.modes?.length)) {
+    const mode = legacyWeaponMode({ name: data.name ?? item.name, system });
+    item.updateSource({ "system.modes": [mode], "system.activeModeKey": mode.key });
   }
 });
 
@@ -186,6 +197,15 @@ async function migrateCombatItems(actor) {
     if (item.type === "weapon") {
       const update = { _id: item.id };
       let changed = false;
+      if (!(item.system.modes?.length)) {
+        const mode = legacyWeaponMode(item);
+        update["system.modes"] = [mode];
+        update["system.activeModeKey"] = mode.key;
+        changed = true;
+      } else if (!weaponModes(item).some((mode) => mode.key === item.system.activeModeKey)) {
+        update["system.activeModeKey"] = weaponModes(item)[0].key;
+        changed = true;
+      }
       if (!item.system.profileKey) {
         update["system.profileKey"] = normalizeWeaponProfile(item.name);
         changed = true;
@@ -196,8 +216,10 @@ async function migrateCombatItems(actor) {
         update["system.currentHitPoints"] = legacy;
         changed = true;
       }
-      if (!foundry.utils.hasProperty(item._source, "system.handsRequired")) {
-        update["system.handsRequired"] = inferWeaponHands(item.system);
+      const requiredHands = weaponHandsRequired(item);
+      if (!foundry.utils.hasProperty(item._source, "system.handsRequired")
+        || Number(item.system.handsRequired) !== requiredHands) {
+        update["system.handsRequired"] = requiredHands;
         changed = true;
       }
       if (changed) updates.push(update);
@@ -213,14 +235,23 @@ async function migrateWorldCombatItem(item) {
   }
   if (item.type !== "weapon") return;
   const update = {};
+  if (!(item.system.modes?.length)) {
+    const mode = legacyWeaponMode(item);
+    update["system.modes"] = [mode];
+    update["system.activeModeKey"] = mode.key;
+  } else if (!weaponModes(item).some((mode) => mode.key === item.system.activeModeKey)) {
+    update["system.activeModeKey"] = weaponModes(item)[0].key;
+  }
   if (!item.system.profileKey) update["system.profileKey"] = normalizeWeaponProfile(item.name);
   const legacy = Number(item.system.hitPoints ?? 0);
   if (!item.system.maxHitPoints && legacy) {
     update["system.maxHitPoints"] = legacy;
     update["system.currentHitPoints"] = legacy;
   }
-  if (!foundry.utils.hasProperty(item._source, "system.handsRequired")) {
-    update["system.handsRequired"] = inferWeaponHands(item.system);
+  const requiredHands = weaponHandsRequired(item);
+  if (!foundry.utils.hasProperty(item._source, "system.handsRequired")
+    || Number(item.system.handsRequired) !== requiredHands) {
+    update["system.handsRequired"] = requiredHands;
   }
   if (Object.keys(update).length) await item.update(update);
 }

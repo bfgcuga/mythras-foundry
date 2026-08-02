@@ -33,8 +33,15 @@ const weapon = ({
   handsRequired = profileKey === "desarmado" ? 0 : (grip === "2 manos" ? 2 : 1),
   effects = "",
   description = "",
-  img = "icons/svg/sword.svg"
-}) => ({
+  img = "icons/svg/sword.svg",
+  modes = null
+}) => {
+  const defaultMode = { key: weaponType === "ranged" ? "ranged" : weaponType === "shield" ? "shield" : "melee",
+    name: weaponType === "ranged" ? "A distancia" : weaponType === "shield" ? "Escudo" : "Cuerpo a cuerpo",
+    profileKey: "", weaponType, damage, damageModifierMode, size, reach: "", effects, grip,
+    handsRequired, range, reload, preferredCombatStyleId: "", familiarity: "similar" };
+  const resolvedModes = modes ?? [defaultMode];
+  return ({
   buildKey: key,
   name,
   type: "weapon",
@@ -42,6 +49,8 @@ const weapon = ({
   system: {
     ...baseSystem,
     profileKey,
+    activeModeKey: resolvedModes[0].key,
+    modes: resolvedModes,
     weaponType,
     damage,
     damageModifierMode,
@@ -57,7 +66,8 @@ const weapon = ({
     description
   },
   flags: { "mythras-foundry": { source: "mythras-imperative-srd" } }
-});
+  });
+};
 
 const shield = (data) => weapon({
   ...data,
@@ -95,7 +105,14 @@ export const MELEE_WEAPON_SOURCES = Object.freeze([
   weapon({ key: "garrote", name: "Garrote", damage: "1d6", size: "M", ap: 4, hp: 4,
     grip: "1 mano" }),
   weapon({ key: "daga", name: "Daga", damage: "1d4+1", size: "P", ap: 6, hp: 8,
-    effects: "Arrojadiza", grip: "1 mano", range: "5/10/20" }),
+    effects: "Arrojadiza", grip: "1 mano", range: "5/10/20", modes: [
+      { key: "melee", name: "Cuerpo a cuerpo", profileKey: "", weaponType: "melee", damage: "1d4+1",
+        damageModifierMode: "full", size: "P", reach: "", effects: "Arrojadiza", grip: "1 mano",
+        handsRequired: 1, range: "", reload: "", preferredCombatStyleId: "", familiarity: "similar" },
+      { key: "thrown", name: "Arrojada", profileKey: "", weaponType: "ranged", damage: "1d4",
+        damageModifierMode: "full", size: "P", reach: "", effects: "Empalamiento P, arrojadiza", grip: "1 mano",
+        handsRequired: 1, range: "5/10/20", reload: "", preferredCombatStyleId: "", familiarity: "similar" }
+    ] }),
   weapon({ key: "punyo-patada", profileKey: "desarmado", name: "Puño/Patada", damage: "1d3",
     size: "P", damageModifierMode: "full", description: "Daño de combate desarmado humano." }),
   weapon({ key: "espada-larga", name: "Espada Larga", damage: "1d8", size: "M", ap: 6, hp: 12,
@@ -120,8 +137,6 @@ export const RANGED_WEAPON_SOURCES = Object.freeze([
     damageModifierMode: "none", range: "10/25/50", effects: "Arrojadiza" }),
   ranged({ key: "arco", name: "Arco", damage: "1d8", size: "G", ap: 4, hp: 4,
     range: "15/100/200", reload: "1", grip: "2 manos", effects: "Empalamiento P" }),
-  ranged({ key: "daga-arrojada", profileKey: "daga", name: "Daga (Arrojada)", damage: "1d4", size: "P",
-    ap: 4, hp: 8, range: "5/10/20", effects: "Empalamiento P, arrojadiza" }),
   ranged({ key: "jabalina", name: "Jabalina", damage: "1d8+1", size: "E", ap: 3, hp: 8,
     range: "10/20/50", effects: "Empalamiento M, arrojadiza" }),
   ranged({ key: "honda", name: "Honda", damage: "1d8", size: "G", ap: 1, hp: 2,
