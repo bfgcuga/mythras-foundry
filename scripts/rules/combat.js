@@ -64,7 +64,7 @@ export function resolveWeaponStyle({ weapon, styles, selectedStyleId, familiarit
 
 export function difficultyTarget(value, difficulty = "standard") {
   const multipliers = { veryEasy: 2, easy: 1.5, standard: 1, hard: 2 / 3,
-    formidable: 0.5, herculean: 0.2 };
+    formidable: 0.5, herculean: 0.2, impossible: 0 };
   return Math.max(0, Math.ceil(Number(value ?? 0) * (multipliers[difficulty] ?? 1)));
 }
 

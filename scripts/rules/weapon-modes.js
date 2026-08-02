@@ -11,7 +11,7 @@ export function legacyWeaponMode(weapon) {
   const type = WEAPON_MODE_TYPES.includes(system.weaponType) ? system.weaponType : "melee";
   return {
     key: normalizeModeKey(type === "ranged" ? "ranged" : type === "shield" ? "shield" : "melee"),
-    name: weapon?.name ?? "",
+    name: "",
     profileKey: "",
     weaponType: type,
     damage: system.damage ?? "",
@@ -48,7 +48,7 @@ export function weaponModeView(weapon, modeOrKey = "") {
   if (!mode) return null;
   return {
     id: weapon?.id,
-    name: mode.name || weapon?.name || "",
+    name: weaponModeDisplayName(weapon, mode),
     actor: weapon?.actor,
     parentWeapon: weapon,
     mode,
@@ -61,6 +61,12 @@ export function weaponModeView(weapon, modeOrKey = "") {
       equipped: Boolean(weapon?.system?.equipped)
     }
   };
+}
+
+export function weaponModeDisplayName(weapon, mode) {
+  const name = String(weapon?.name ?? "").trim();
+  const suffix = String(mode?.name ?? "").trim();
+  return suffix ? `${name} - ${suffix}` : name;
 }
 
 export function nextModeKey(modes, seed = "mode") {

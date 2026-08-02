@@ -37,7 +37,7 @@ const weapon = ({
   modes = null
 }) => {
   const defaultMode = { key: weaponType === "ranged" ? "ranged" : weaponType === "shield" ? "shield" : "melee",
-    name: weaponType === "ranged" ? "A distancia" : weaponType === "shield" ? "Escudo" : "Cuerpo a cuerpo",
+    name: "",
     profileKey: "", weaponType, damage, damageModifierMode, size, reach: "", effects, grip,
     handsRequired, range, reload, preferredCombatStyleId: "", familiarity: "similar" };
   const resolvedModes = modes ?? [defaultMode];
@@ -106,10 +106,10 @@ export const MELEE_WEAPON_SOURCES = Object.freeze([
     grip: "1 mano" }),
   weapon({ key: "daga", name: "Daga", damage: "1d4+1", size: "P", ap: 6, hp: 8,
     effects: "Arrojadiza", grip: "1 mano", range: "5/10/20", modes: [
-      { key: "melee", name: "Cuerpo a cuerpo", profileKey: "", weaponType: "melee", damage: "1d4+1",
+      { key: "melee", name: "", profileKey: "", weaponType: "melee", damage: "1d4+1",
         damageModifierMode: "full", size: "P", reach: "", effects: "Arrojadiza", grip: "1 mano",
         handsRequired: 1, range: "", reload: "", preferredCombatStyleId: "", familiarity: "similar" },
-      { key: "thrown", name: "Arrojada", profileKey: "", weaponType: "ranged", damage: "1d4",
+      { key: "thrown", name: "Arrojar", profileKey: "", weaponType: "ranged", damage: "1d4",
         damageModifierMode: "full", size: "P", reach: "", effects: "Empalamiento P, arrojadiza", grip: "1 mano",
         handsRequired: 1, range: "5/10/20", reload: "", preferredCombatStyleId: "", familiarity: "similar" }
     ] }),

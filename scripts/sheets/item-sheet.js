@@ -163,7 +163,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!this.isEditable) return;
     const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
     const key = nextModeKey(modes);
-    modes.push({ key, name: game.i18n.localize("MYTHRASF.Weapon.NewMode"), profileKey: "",
+    modes.push({ key, name: "", profileKey: "",
       weaponType: "melee", damage: "", damageModifierMode: "full", size: "", reach: "",
       effects: "", grip: "1 mano", handsRequired: 1, range: "", reload: "",
       preferredCombatStyleId: "", familiarity: "similar" });

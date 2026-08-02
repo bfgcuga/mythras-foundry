@@ -4,7 +4,7 @@
     {{#if armorTable}}<span>{{localize "TYPES.Item.armor"}}</span>{{/if}}
     {{#if weaponTable}}<span>{{localize "TYPES.Item.weapon"}}</span>{{/if}}
     {{#if equipmentTable}}<span>{{localize "MYTHRASF.Item.Quantity"}}</span><span>{{localize "MYTHRASF.Item.Weight"}}</span><span>{{localize "MYTHRASF.Item.Location"}}</span>{{/if}}
-    {{#if weaponTable}}<span>{{localize "MYTHRASF.Weapon.Modes"}}</span><span>{{localize "MYTHRASF.Weapon.PreparedMode"}}</span><span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span>{{/if}}
+    {{#if weaponTable}}<span>{{localize "MYTHRASF.Weapon.PreparedMode"}}</span><span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span>{{/if}}
     {{#if armorTable}}<span>{{localize "MYTHRASF.Armor.Points"}}</span><span>{{localize "MYTHRASF.Armor.Coverage"}}</span><span>{{localize "MYTHRASF.Armor.PenaltyShort"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span>{{/if}}
     <span></span>
   </div>
@@ -13,8 +13,7 @@
       {{#if ../weaponTable}}
         <li data-item-id="{{entry.item.id}}">
           <button type="button" class="item-name" data-action="edit-item">{{entry.item.name}}</button>
-          <span>{{entry.modeSummary}}</span>
-          <select data-active-weapon-mode aria-label="{{localize "MYTHRASF.Weapon.PreparedMode"}}">{{selectOptions entry.modes selected=entry.activeModeKey labelAttr="name" valueAttr="key"}}</select>
+          {{#if entry.hasMultipleModes}}<select data-active-weapon-mode aria-label="{{localize "MYTHRASF.Weapon.PreparedMode"}}">{{selectOptions entry.modeOptions selected=entry.activeModeKey labelAttr="displayName" valueAttr="key"}}</select>{{else}}<span>—</span>{{/if}}
           <span>{{entry.item.system.armorPoints}} / {{entry.item.system.currentHitPoints}}–{{entry.item.system.maxHitPoints}}</span>
           <button type="button" data-action="toggle-equipped" class="sheet-icon-button equip-toggle equipment-state-toggle hand-toggle {{#if entry.item.system.equipped}}equipped{{/if}}" aria-pressed="{{entry.item.system.equipped}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
           {{#if @root.editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}

@@ -37,8 +37,9 @@ import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
-import { findWeaponMode, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
+import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
+import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -177,8 +178,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
       equipment,
-      weapons: weapons.map((item) => ({ item, modes: weaponModes(item),
-        modeSummary: weaponModes(item).map((mode) => mode.name || mode.key).join(" / "),
+      weapons: weapons.map((item) => ({ item,
+        hasMultipleModes: weaponModes(item).length > 1,
+        modeOptions: weaponModes(item).map((mode) => ({ ...mode,
+          displayName: weaponModeDisplayName(item, mode) })),
         activeModeKey: findWeaponMode(item)?.key ?? "" })),
       armor,
       hitLocations,
@@ -201,6 +204,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         item,
         coverageLabel: item.system.coverage || game.i18n.localize("MYTHRASF.Armor.AllLocations")
       })),
+      fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
+        selected: level.key === this.actor.system.fatigueLevel,
+        levelLabel: game.i18n.localize(`MYTHRASF.Fatigue.Level.${level.key}`),
+        skillLabel: level.key === "fresh" ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
+          : game.i18n.localize(`MYTHRASF.Difficulty.${level.skillDifficulty}`),
+        movementLabel: game.i18n.localize(`MYTHRASF.Fatigue.MovementValue.${level.movement}`),
+        initiativeLabel: level.skillDifficulty === "impossible" ? game.i18n.localize("MYTHRASF.Fatigue.NoActivity") : level.initiativePenalty ? `-${level.initiativePenalty}` : "—",
+        actionPointLabel: level.skillDifficulty === "impossible" ? game.i18n.localize("MYTHRASF.Fatigue.NoActivity") : level.actionPointPenalty ? `-${level.actionPointPenalty}` : "—",
+        recoveryLabel: game.i18n.localize(`MYTHRASF.Fatigue.RecoveryValue.${level.recovery}`)
+      })),
       wornArmorPenalty: equippedArmor.reduce((total, item) => (
         total + Number(item.system.penalty ?? 0) * Number(item.system.quantity ?? 1)
       ), 0),
@@ -219,10 +232,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       selectedStyleId: mode.preferredCombatStyleId,
       familiarity: mode.familiarity
     });
+    resolution.difficulty = combineDifficulties(resolution.difficulty,
+      fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
     return {
       item: weapon,
       mode,
+      displayName: weaponModeDisplayName(weapon, mode),
       prepared: Boolean(weapon.system.equipped && weapon.system.activeModeKey === mode.key),
       styleOptions: candidates.map((style) => ({
         id: style.id,
@@ -238,7 +254,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       difficulty: resolution.difficulty,
       difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${resolution.difficulty}`),
       effectiveTarget: difficultyTarget(resolution.target, resolution.difficulty),
-      canAttack: weapon.system.equipped && weapon.system.activeModeKey === mode.key
+      canAttack: resolution.difficulty !== "impossible" && weapon.system.equipped && weapon.system.activeModeKey === mode.key
         && (Boolean(resolution.style) || resolution.usesBase)
     };
   }
@@ -322,6 +338,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-active-weapon-mode]").forEach((select) => {
       select.addEventListener("change", (event) => this.#prepareWeaponMode(event));
+    });
+    this.element.querySelectorAll("[data-fatigue-level]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateFatigue(event));
     });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
@@ -442,6 +461,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await weapon.update({ "system.activeModeKey": modeKey });
   }
 
+  async #updateFatigue(event) {
+    if (!this.isEditable || !event.currentTarget.checked) return;
+    await this.actor.update({ "system.fatigueLevel": event.currentTarget.value });
+  }
+
   async #updateWeaponCombatChoice(event) {
     if (!this.isEditable) return;
     const row = event.currentTarget.closest("[data-item-id]");
@@ -477,6 +501,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarity: row.querySelector("[data-combat-familiarity]")?.value
         ?? mode.familiarity
     });
+    resolution.difficulty = combineDifficulties(resolution.difficulty,
+      fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
+    if (resolution.difficulty === "impossible") {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Fatigue.NoActivity"));
+      return;
+    }
     if (!resolution.style && !resolution.usesBase) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
       return;
@@ -1406,7 +1436,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
-    const difficulty = row?.querySelector("[data-difficulty]")?.value ?? "standard";
+    const difficulty = combineDifficulties(row?.querySelector("[data-difficulty]")?.value ?? "standard",
+      fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
     await item?.rollSkill({ difficulty });
   }
 

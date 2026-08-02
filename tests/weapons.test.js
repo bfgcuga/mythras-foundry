@@ -40,6 +40,7 @@ test("los dos modos de la daga comparten perfil sin colisionar en el compendio",
   const daggers = WEAPON_SOURCES.filter((source) => source.system.profileKey === "daga");
   assert.equal(daggers.length, 1);
   assert.deepEqual(daggers[0].system.modes.map((mode) => mode.key), ["melee", "thrown"]);
+  assert.deepEqual(daggers[0].system.modes.map((mode) => mode.name), ["", "Arrojar"]);
   assert.deepEqual(new Set(daggers[0].system.modes.map((mode) => mode.weaponType)), new Set(["melee", "ranged"]));
 });
 

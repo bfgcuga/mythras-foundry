@@ -42,6 +42,16 @@
     <div class="combat-paper-total"><span>{{localize "MYTHRASF.Armor.TotalPenalty"}}</span><strong>{{wornArmorPenalty}}%</strong></div>
   </fieldset>
 
+  <fieldset class="combat-paper-panel combat-paper-fatigue">
+    <legend>{{localize "MYTHRASF.Fatigue.Label"}}</legend>
+    <div class="combat-fatigue-head"><span>{{localize "MYTHRASF.Fatigue.State"}}</span><span>{{localize "MYTHRASF.Fatigue.SkillModifier"}}</span><span>{{localize "MYTHRASF.Fatigue.Movement"}}</span><span>{{localize "MYTHRASF.Fatigue.Initiative"}}</span><span>{{localize "MYTHRASF.Fatigue.ActionPoints"}}</span><span>{{localize "MYTHRASF.Fatigue.Recovery"}}</span></div>
+    {{#each fatigueRows as |row|}}<label class="combat-fatigue-line {{#if row.selected}}active{{/if}}">
+      <span><input type="radio" value="{{row.key}}" data-fatigue-level {{checked row.selected}}> {{row.levelLabel}}</span>
+      <span>{{row.skillLabel}}</span><span>{{row.movementLabel}}{{#if row.movementPenalty}} -{{row.movementPenalty}} m{{/if}}</span>
+      <span>{{row.initiativeLabel}}</span><span>{{row.actionPointLabel}}</span><span>{{row.recoveryLabel}}</span>
+    </label>{{/each}}
+  </fieldset>
+
   <fieldset class="combat-paper-panel combat-paper-styles">
     <legend>{{localize "MYTHRASF.Skill.GroupCombat"}} ({{localize "MYTHRASF.Combat.BaseFormula"}})</legend>
     {{#if editable}}<button type="button" class="combat-panel-add sheet-add-button" data-action="create-combat-style"
@@ -66,7 +76,7 @@
     {{#each combatWeapons as |row|}}
       <div class="combat-weapon-line" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
-          <button type="button" data-action="edit-item">{{row.item.name}} — {{row.mode.name}}</button>
+          <button type="button" data-action="edit-item">{{row.displayName}}</button>
           <button type="button" data-action="toggle-equipped" data-hands="{{row.mode.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span>

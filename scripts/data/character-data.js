@@ -2,6 +2,7 @@ import {
   CHARACTERISTIC_KEYS,
   calculateDerivedAttributes
 } from "../rules/derived-attributes.js";
+import { applyFatigue, FATIGUE_LEVELS } from "../rules/fatigue.js";
 
 const {
   BooleanField,
@@ -75,6 +76,8 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         initial: "",
         blank: true
       }),
+      fatigueLevel: new StringField({ required: true, nullable: false, initial: "fresh",
+        choices: FATIGUE_LEVELS.map((level) => level.key) }),
       ...characteristics,
       identity: new SchemaField({
         playerName: textField(),
@@ -92,7 +95,7 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
   prepareDerivedData() {
     super.prepareDerivedData();
 
-    this.attributes = calculateDerivedAttributes(this);
+    this.attributes = applyFatigue(calculateDerivedAttributes(this), this.fatigueLevel);
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;

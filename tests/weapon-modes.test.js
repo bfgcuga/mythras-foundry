@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { effectiveModeProfileKey, findWeaponMode, legacyWeaponMode, modeKeysAreUnique, weaponModeView } from "../scripts/rules/weapon-modes.js";
+import { effectiveModeProfileKey, findWeaponMode, legacyWeaponMode, modeKeysAreUnique, weaponModeDisplayName, weaponModeView } from "../scripts/rules/weapon-modes.js";
 import { mergedWeaponModes, weaponMergeCandidates } from "../scripts/rules/weapon-mode-merge.js";
 
 test("un arma antigua produce un modo equivalente sin perder su estilo", () => {
@@ -15,6 +15,13 @@ test("un modo hereda el perfil físico o puede sobrescribirlo", () => {
 });
 
 test("las claves duplicadas se detectan", () => assert.equal(modeKeysAreUnique([{ key: "melee" }, { key: "Mêlée" }]), false));
+
+test("el nombre físico solo añade un sufijo cuando el modo lo necesita", () => {
+  const weapon = { name: "Daga" };
+  assert.equal(weaponModeDisplayName(weapon, { name: "" }), "Daga");
+  assert.equal(weaponModeDisplayName(weapon, { name: "Arrojar" }), "Daga - Arrojar");
+  assert.equal(weaponModeDisplayName({ name: "Lanza" }, { name: "2M" }), "Lanza - 2M");
+});
 
 test("el asistente conserva datos físicos y solo combina modos", () => {
   const keeper = { id: "a", type: "weapon", system: { profileKey: "daga", weight: 1, modes: [{ key: "melee" }] } };
