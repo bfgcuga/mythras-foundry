@@ -157,19 +157,54 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element.querySelectorAll("[data-action='move-weapon-mode']").forEach((button) =>
       button.addEventListener("click", (event) => this.#moveWeaponMode(event)));
     this.element.querySelector("[data-action='add-combat-style-profile']")
-      ?.addEventListener("click", () => this.#addManualCombatStyleProfiles());
+      ?.addEventListener("click", (event) => {
+        event.preventDefault();
+        this.#addManualCombatStyleProfiles().catch((error) => this.#notifyProfileError(error));
+      });
     this.element.querySelector("[data-combat-style-profile-input]")
       ?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") { event.preventDefault(); this.#addManualCombatStyleProfiles(); }
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          this.#addManualCombatStyleProfiles().catch((error) => this.#notifyProfileError(error));
+        }
       });
     this.element.querySelectorAll("[data-action='delete-combat-style-profile']").forEach((button) =>
       button.addEventListener("click", (event) => this.#deleteCombatStyleProfile(event)));
+    const dropZone = this.element.querySelector("[data-combat-style-weapon-drop]");
+    dropZone?.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      dropZone.classList.add("drag-over");
+    });
+    dropZone?.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+    dropZone?.addEventListener("drop", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropZone.classList.remove("drag-over");
+      this.#handleCombatStyleWeaponDrop(event).catch((error) => this.#notifyProfileError(error));
+    });
   }
 
   async _onDropDocument(event, document) {
     if (this.item.type !== "combatStyle") return super._onDropDocument(event, document);
     if (!this.isEditable) return null;
     if (!event.target?.closest?.(".combat-style-weapons-editor")) return null;
+    if (document?.documentName !== "Item" || document.type !== "weapon") {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.DropWeaponOnly"));
+      return null;
+    }
+    return this.#addDroppedWeapon(document);
+  }
+
+  async #handleCombatStyleWeaponDrop(event) {
+    if (!this.isEditable || this.item.type !== "combatStyle") return null;
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event);
+    if (!data?.type) return null;
+    const document = await Item.implementation.fromDropData(data);
+    return this.#addDroppedWeapon(document);
+  }
+
+  async #addDroppedWeapon(document) {
     if (document?.documentName !== "Item" || document.type !== "weapon") {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.DropWeaponOnly"));
       return null;
@@ -183,6 +218,11 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!selected?.length) return null;
     await this.#addCombatStyleProfiles(selected);
     return document;
+  }
+
+  #notifyProfileError(error) {
+    console.error("Mythras Foundry | Error updating combat style weapon profiles", error);
+    ui.notifications.error(game.i18n.localize("MYTHRASF.CombatStyle.ProfileUpdateFailed"));
   }
 
   async #selectWeaponProfiles(options) {
@@ -216,7 +256,10 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!this.isEditable || this.item.type !== "combatStyle") return;
     const input = this.element.querySelector("[data-combat-style-profile-input]");
     const profiles = manualWeaponProfiles(input?.value);
-    if (!profiles.length) return;
+    if (!profiles.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.EnterWeaponProfile"));
+      return;
+    }
     await this.#addCombatStyleProfiles(profiles);
     input.value = "";
   }

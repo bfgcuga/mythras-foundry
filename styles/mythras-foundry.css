@@ -1377,6 +1377,10 @@
   text-align: center;
 }
 .mythras-foundry .combat-style-weapon-drop i { font-size: 1.25rem; }
+.mythras-foundry .combat-style-weapon-drop.drag-over {
+  border-color: var(--mythras-accent);
+  background: var(--mythras-panel);
+}
 .mythras-foundry .combat-style-profile-list { margin: 0; padding: 0; list-style: none; }
 .mythras-foundry .combat-style-profile-list li {
   display: grid;
@@ -1394,6 +1398,11 @@
   align-items: center;
   gap: 0.4rem;
   margin-top: 0.65rem;
+}
+.mythras-foundry .combat-style-profile-manual label { grid-column: 1 / -1; font-size: 0.72rem; font-weight: 700; }
+.mythras-foundry .combat-style-profile-manual textarea {
+  min-height: 3.2rem;
+  resize: vertical;
 }
 .mythras-foundry .combat-style-profile-manual .sheet-add-button { position: static; }
 .mythras-foundry .combat-style-profile-dialog { display: grid; gap: 0.45rem; }

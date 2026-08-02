@@ -21,7 +21,7 @@
     {{#if isCombatStyle}}
       <fieldset class="combat-style-weapons-editor">
         <legend>{{localize "MYTHRASF.CombatStyle.Weapons"}}</legend>
-        <div class="combat-style-weapon-drop"><i class="fas fa-hand-pointer" aria-hidden="true"></i>
+        <div class="combat-style-weapon-drop" data-combat-style-weapon-drop><i class="fas fa-hand-pointer" aria-hidden="true"></i>
           <span>{{localize "MYTHRASF.CombatStyle.DropWeaponsHere"}}</span></div>
         <ol class="combat-style-profile-list">
           {{#each combatStyleWeaponProfiles as |profile|}}<li>
@@ -32,8 +32,10 @@
           </li>{{else}}<li class="empty">{{localize "MYTHRASF.CombatStyle.NoWeaponProfiles"}}</li>{{/each}}
         </ol>
         {{#if editable}}<div class="combat-style-profile-manual">
-          <input type="text" class="sheet-field-editable" data-combat-style-profile-input
-            placeholder="{{localize "MYTHRASF.CombatStyle.ManualWeaponProfiles"}}">
+          <label for="combat-style-profile-input">{{localize "MYTHRASF.CombatStyle.ManualWeaponProfilesLabel"}}</label>
+          <textarea class="sheet-field-editable" data-combat-style-profile-input rows="2"
+            id="combat-style-profile-input"
+            placeholder="{{localize "MYTHRASF.CombatStyle.ManualWeaponProfiles"}}"></textarea>
           <button type="button" class="sheet-add-button" data-action="add-combat-style-profile"
             aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
         </div>{{/if}}
