@@ -23,7 +23,15 @@ test("cada entrada tiene identificador de compilación y perfil reutilizable", (
     assert.ok(source.system.profileKey);
     assert.ok(source.system.damage);
     assert.equal(source.system.currentHitPoints, source.system.maxHitPoints);
+    assert.ok(source.system.handsRequired >= 0 && source.system.handsRequired <= 2);
   }
+});
+
+test("las empuñaduras del compendio consumen las manos esperadas", () => {
+  assert.equal(WEAPON_SOURCES.find(({ buildKey }) => buildKey === "punyo-patada").system.handsRequired, 0);
+  assert.equal(WEAPON_SOURCES.find(({ buildKey }) => buildKey === "rodela").system.handsRequired, 1);
+  assert.equal(WEAPON_SOURCES.find(({ buildKey }) => buildKey === "espada-ancha").system.handsRequired, 1);
+  assert.equal(WEAPON_SOURCES.find(({ buildKey }) => buildKey === "espada-larga").system.handsRequired, 2);
 });
 
 test("los dos modos de la daga comparten perfil sin colisionar en el compendio", () => {

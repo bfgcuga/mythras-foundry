@@ -36,6 +36,7 @@ import { calculateResourceValue } from "../rules/resources.js";
 import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
+import { assessWeaponEquip } from "../rules/equipment.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -368,6 +369,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
+    if (item.type === "weapon" && !item.system.equipped) {
+      const assessment = assessWeaponEquip(
+        item,
+        this.actor.items.filter((candidate) => candidate.type === "weapon")
+      );
+      if (!assessment.allowed) {
+        ui.notifications.warn(game.i18n.format("MYTHRASF.Weapon.HandsUnavailable", {
+          required: assessment.required,
+          available: assessment.available
+        }));
+        return;
+      }
+    }
     await item.update({ "system.equipped": !item.system.equipped });
   }
 

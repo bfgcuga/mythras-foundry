@@ -19,6 +19,7 @@ import { styleAbilityKey } from "./rules/background-generation.js";
 import { CharacterSheet } from "./sheets/character-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
+import { inferWeaponHands } from "./rules/equipment.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -195,6 +196,10 @@ async function migrateCombatItems(actor) {
         update["system.currentHitPoints"] = legacy;
         changed = true;
       }
+      if (!foundry.utils.hasProperty(item._source, "system.handsRequired")) {
+        update["system.handsRequired"] = inferWeaponHands(item.system);
+        changed = true;
+      }
       if (changed) updates.push(update);
     }
   }
@@ -213,6 +218,9 @@ async function migrateWorldCombatItem(item) {
   if (!item.system.maxHitPoints && legacy) {
     update["system.maxHitPoints"] = legacy;
     update["system.currentHitPoints"] = legacy;
+  }
+  if (!foundry.utils.hasProperty(item._source, "system.handsRequired")) {
+    update["system.handsRequired"] = inferWeaponHands(item.system);
   }
   if (Object.keys(update).length) await item.update(update);
 }

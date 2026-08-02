@@ -1291,10 +1291,26 @@
 .mythras-foundry .inventory-table .item-list li > span { overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .mythras-foundry .inventory-table .equip-toggle { width: 2rem; min-height: 1.8rem; padding: 0; }
 
+.mythras-foundry .inventory-table .hand-toggle {
+  display: inline-flex;
+  width: auto;
+  min-width: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+  color: #777;
+}
+.mythras-foundry .hand-toggle[data-hands="0"] i,
+.mythras-foundry .hand-toggle[data-hands="1"] i:nth-child(2) { display: none; }
+.mythras-foundry .hand-toggle[data-hands="0"]::after { content: "—"; }
+.mythras-foundry .hand-toggle.equipped { color: var(--mythras-accent); background: rgb(114 76 34 / 18%); }
+.mythras-foundry .hand-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
+
 .mythras-foundry .wound-healthy { color: #285f32; }
-.mythras-foundry .wound-minor { color: #916b17; }
-.mythras-foundry .wound-serious { color: #9b471f; }
-.mythras-foundry .wound-major { color: #8a1818; }
+.mythras-foundry .wound-minor { color: #285f32; background-color: #dff3df !important; }
+.mythras-foundry .wound-serious { color: #5f4a00; background-color: #ffe58a !important; }
+.mythras-foundry .wound-major { color: #fff; background-color: #a51f1f !important; }
+.mythras-foundry .combat-wound-legend [class^="wound-"] { padding: 0.08rem 0.3rem; border-radius: 0.25rem; }
 
 .mythras-combat-card { display: grid; gap: 0.35rem; }
 .mythras-combat-card h3, .mythras-combat-card p { margin: 0; }

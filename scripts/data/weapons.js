@@ -30,6 +30,7 @@ const weapon = ({
   range = "",
   reload = "",
   grip = "",
+  handsRequired = profileKey === "desarmado" ? 0 : (grip === "2 manos" ? 2 : 1),
   effects = "",
   description = "",
   img = "icons/svg/sword.svg"
@@ -51,6 +52,7 @@ const weapon = ({
     range,
     reload,
     grip,
+    handsRequired,
     effects,
     description
   },

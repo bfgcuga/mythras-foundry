@@ -174,6 +174,7 @@ export class WeaponData extends EquipmentData {
       encumbrance: nonNegativeNumber(),
       effects: textField(),
       grip: textField(),
+      handsRequired: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 0, max: 2 }),
       range: textField(),
       reload: textField(),
       preferredCombatStyleId: textField(),
