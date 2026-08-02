@@ -261,6 +261,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     resolution.difficulty = combineDifficulties(resolution.difficulty,
       fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
+    const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
     return {
       item: weapon,
       mode,
@@ -281,7 +282,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       difficulty: resolution.difficulty,
       difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${resolution.difficulty}`),
       baseTarget: resolution.target,
-      effectiveTarget: difficultyTarget(resolution.target, resolution.difficulty),
+      effectiveTarget,
+      hasTargetPenalty: effectiveTarget !== resolution.target,
       canAttack: resolution.difficulty !== "impossible" && weapon.system.equipped && weapon.system.activeModeKey === mode.key
         && (Boolean(resolution.style) || resolution.usesBase)
     };
