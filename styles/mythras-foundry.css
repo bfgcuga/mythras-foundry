@@ -665,8 +665,7 @@
   padding-top: 0.35rem;
 }
 
-.mythras-foundry .skill-group-add,
-.mythras-foundry .passion-add {
+.mythras-foundry .sheet-add-button {
   position: absolute;
   top: -0.45rem;
   right: 0.6rem;
@@ -678,6 +677,18 @@
   border: 1px solid var(--mythras-border);
   border-radius: 50%;
   background: var(--mythras-paper);
+}
+
+.mythras-foundry .sheet-icon-button {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.mythras-foundry .sheet-icon-button:hover,
+.mythras-foundry .sheet-add-button:hover {
+  color: var(--mythras-accent);
+  box-shadow: 0 0 0 1px var(--mythras-accent);
 }
 
 .mythras-foundry .paper-skill-header,
@@ -787,9 +798,7 @@
 }
 
 .mythras-foundry .paper-skill-row .skill-roll:hover,
-.mythras-foundry .paper-skill-row .skill-delete:hover,
-.mythras-foundry .skill-group-add:hover,
-.mythras-foundry .passion-add:hover {
+.mythras-foundry .paper-skill-row .skill-delete:hover {
   color: var(--mythras-accent);
   box-shadow: 0 0 0 1px var(--mythras-accent);
 }
@@ -1092,10 +1101,6 @@
   position: absolute;
   top: -0.35rem;
   right: 0.55rem;
-  width: 1.65rem;
-  min-height: 1.65rem;
-  padding: 0;
-  border-radius: 50%;
 }
 
 .mythras-foundry .combat-location-head,
@@ -1156,7 +1161,9 @@
 .mythras-foundry .combat-location-line .location-current { border-radius: 0.35rem; }
 .mythras-foundry .combat-location-line .location-armor {
   height: 1.95rem;
+  border: 0;
   border-radius: 0;
+  background: rgb(255 250 232 / 45%);
   clip-path: polygon(50% 0, 92% 18%, 80% 72%, 50% 100%, 20% 72%, 8% 18%);
 }
 
@@ -1182,7 +1189,8 @@
   height: 2.1rem;
   place-items: center;
   justify-self: center;
-  border: 1.5px solid var(--mythras-accent);
+  border: 0;
+  background: rgb(255 250 232 / 45%);
   clip-path: polygon(50% 0, 92% 18%, 80% 72%, 50% 100%, 20% 72%, 8% 18%);
   font-weight: 700;
 }
@@ -1258,18 +1266,9 @@
   }
 }
 
-.mythras-foundry .tab-panel[data-tab-content="inventory"] > .section-heading {
-  margin-top: 0.85rem;
-  padding: 0.35rem 0.55rem;
-  border: 2px solid var(--mythras-accent);
-  border-bottom: 0;
-  border-radius: 0.7rem 0.7rem 0 0;
-  background: rgb(255 250 232 / 30%);
-}
-
-.mythras-foundry .tab-panel[data-tab-content="inventory"] > .section-heading:first-child { margin-top: 0; }
-.mythras-foundry .tab-panel[data-tab-content="inventory"] > .section-heading h2 { margin: 0; }
-.mythras-foundry .inventory-table { overflow-x: auto; border: 2px solid var(--mythras-accent); border-top: 0; border-radius: 0 0 0.7rem 0.7rem; }
+.mythras-foundry .inventory-panel { position: relative; margin: 0 0 0.85rem; }
+.mythras-foundry .inventory-panel-add { position: absolute; top: -0.45rem; right: 0.6rem; }
+.mythras-foundry .inventory-table { overflow-x: auto; }
 .mythras-foundry .inventory-table .item-list { margin: 0; border: 0; }
 .mythras-foundry .inventory-table-head,
 .mythras-foundry .inventory-table .item-list li {
@@ -1306,7 +1305,8 @@
 .mythras-foundry .hand-toggle[data-hands="0"] i,
 .mythras-foundry .hand-toggle[data-hands="1"] i:nth-child(2) { display: none; }
 .mythras-foundry .hand-toggle[data-hands="0"]::after { content: "—"; }
-.mythras-foundry .hand-toggle.equipped { color: var(--mythras-accent); background: rgb(114 76 34 / 18%); }
+.mythras-foundry .hand-toggle { opacity: 0.48; }
+.mythras-foundry .hand-toggle.equipped { color: var(--mythras-accent); background: transparent !important; opacity: 1; }
 .mythras-foundry .hand-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
 
 .mythras-foundry .wound-healthy { color: #285f32; }

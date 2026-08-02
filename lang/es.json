@@ -62,6 +62,8 @@
   "MYTHRASF.Armor.TotalPenalty": "Penalización total de armadura",
   "MYTHRASF.Empty.EquippedArmor": "No hay armaduras equipadas.",
   "MYTHRASF.Armor.Coverage": "Localizaciones cubiertas",
+  "MYTHRASF.Armor.Natural": "Armadura natural",
+  "MYTHRASF.Armor.AllLocations": "Todas las localizaciones",
   "MYTHRASF.Armor.Era.Label": "Época",
   "MYTHRASF.Armor.Era.ancient": "Antigua/medieval",
   "MYTHRASF.Armor.Era.modern": "Moderna",

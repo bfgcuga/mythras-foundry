@@ -187,7 +187,7 @@
           <fieldset class="paper-passions">
             <legend>{{localize "MYTHRASF.Passions"}}</legend>
             {{#if editable}}
-              <button type="button" class="passion-add"
+              <button type="button" class="passion-add sheet-add-button"
                 data-action="create-item" data-type="passion"
                 aria-label="{{localize "MYTHRASF.Add"}}"
                 title="{{localize "MYTHRASF.Add"}}">
@@ -300,38 +300,38 @@
       </section>
 
       <section class="tab-panel" data-tab-content="inventory">
-        <div class="section-heading">
-          <h2>{{localize "MYTHRASF.Equipment"}}</h2>
+        <fieldset class="inventory-panel">
+          <legend>{{localize "MYTHRASF.Equipment"}}</legend>
           {{#if editable}}
-            <button type="button" data-action="create-item" data-type="equipment">
-              {{localize "MYTHRASF.Add"}}
-            </button>
+            <button type="button" class="inventory-panel-add sheet-add-button" data-action="create-item"
+              data-type="equipment" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}">
+              <i class="fas fa-plus" aria-hidden="true"></i></button>
           {{/if}}
-        </div>
-        {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
-          items=equipment emptyKey="MYTHRASF.Empty.Equipment" equipmentTable=true}}
+          {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+            items=equipment emptyKey="MYTHRASF.Empty.Equipment" equipmentTable=true}}
+        </fieldset>
 
-        <div class="section-heading">
-          <h2>{{localize "MYTHRASF.Armors"}}</h2>
+        <fieldset class="inventory-panel">
+          <legend>{{localize "MYTHRASF.Armors"}}</legend>
           {{#if editable}}
-            <button type="button" data-action="create-item" data-type="armor">
-              {{localize "MYTHRASF.Add"}}
-            </button>
+            <button type="button" class="inventory-panel-add sheet-add-button" data-action="create-item"
+              data-type="armor" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}">
+              <i class="fas fa-plus" aria-hidden="true"></i></button>
           {{/if}}
-        </div>
-        {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
-          items=armor emptyKey="MYTHRASF.Empty.Armor" armorTable=true}}
+          {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+            items=armor emptyKey="MYTHRASF.Empty.Armor" armorTable=true}}
+        </fieldset>
 
-        <div class="section-heading">
-          <h2>{{localize "MYTHRASF.Weapons"}}</h2>
+        <fieldset class="inventory-panel">
+          <legend>{{localize "MYTHRASF.Weapons"}}</legend>
           {{#if editable}}
-            <button type="button" data-action="create-item" data-type="weapon">
-              {{localize "MYTHRASF.Add"}}
-            </button>
+            <button type="button" class="inventory-panel-add sheet-add-button" data-action="create-item"
+              data-type="weapon" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}">
+              <i class="fas fa-plus" aria-hidden="true"></i></button>
           {{/if}}
-        </div>
-        {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
-          items=weapons emptyKey="MYTHRASF.Empty.Weapons" weaponTable=true}}
+          {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
+            items=weapons emptyKey="MYTHRASF.Empty.Weapons" weaponTable=true}}
+        </fieldset>
       </section>
     </main>
 </div>

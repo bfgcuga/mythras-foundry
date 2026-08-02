@@ -1,0 +1,42 @@
+# Guía visual de las hojas de Mythras Foundry
+
+Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del sistema. Antes de crear estilos locales, se deben reutilizar las variables y componentes compartidos de `styles/mythras-foundry.css`.
+
+## Paleta y superficies
+
+- Fondo principal: `--mythras-paper` (`#dfcda8`).
+- Fondo de panel: `--mythras-panel` (`rgba(255, 249, 226, 0.42)`).
+- Texto: `--mythras-ink` (`#302e2a`).
+- Acento: `--mythras-accent` (`#3d3933`).
+- Bordes: `--mythras-border` (`#9c8766`).
+- No usar fondos grises heredados de Foundry en controles de las hojas.
+
+## Botones con iconos
+
+- Acciones integradas en filas —tirar, equipar, eliminar y similares— usan `sheet-icon-button`. Su fondo es transparente.
+- La acción de añadir dentro de un panel usa `sheet-add-button`, es circular y emplea el fondo `--mythras-paper`.
+- Añadir siempre se representa con `<i class="fas fa-plus" aria-hidden="true"></i>`; no usar un carácter `+` suelto.
+- Eliminar se representa con `fas fa-trash`; no usar `×` cuando la acción sea un botón de icono.
+- Todo botón de icono debe tener `aria-label`; si su significado puede no ser evidente, también `title`.
+- Las clases funcionales (`combat-panel-add`, `skill-group-add`, etc.) pueden acompañar a las clases compartidas, pero no deben redefinir colores, fondo, borde o iconografía.
+
+## Coherencia entre pestañas
+
+- Una misma acción debe conservar icono, clase visual, estado hover y significado en Character, Combate e Inventario.
+- Los estilos específicos de una pestaña se limitan a colocación, dimensiones o distribución. La apariencia común vive en las clases compartidas.
+- Los estados activos se indican preferentemente mediante color, opacidad o el propio icono, manteniendo transparente el fondo de los botones integrados.
+
+## Paneles y recuadros
+
+- El recuadro estándar es un `fieldset` con un `legend` como hijo directo.
+- El `legend` contiene únicamente el título, queda centrado y abre de forma nativa un hueco en la línea superior del marco.
+- No simular este patrón mediante un encabezado separado y bordes parciales en elementos consecutivos.
+- Los paneles reutilizan los estilos globales de `fieldset` y `legend`; las clases locales solo ajustan distribución o espaciado.
+- Si el panel permite añadir elementos, el botón `sheet-add-button` se coloca en la esquina superior derecha sin desplazar el `legend`.
+
+## Implementación
+
+- Variables de tema y componentes compartidos se definen una sola vez en `styles/mythras-foundry.css`.
+- Antes de añadir CSS, comprobar si el patrón ya existe. Si será usado en dos o más lugares, crear o ampliar una clase compartida.
+- Las nuevas vistas deben usar elementos semánticos, textos localizados y controles accesibles.
+- Los valores derivados que aparecen en una hoja y participan en reglas deben proceder del mismo ayudante puro. No duplicar cálculos entre la preparación de contexto, plantillas y resolución de combate.

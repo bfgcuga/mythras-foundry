@@ -1,7 +1,7 @@
 <fieldset class="paper-skill-group" data-skill-group="{{group.key}}">
   <legend>{{localize group.label}}</legend>
   {{#if editable}}
-    <button type="button" class="skill-group-add"
+    <button type="button" class="skill-group-add sheet-add-button"
       data-action="{{#if group.isCombat}}create-combat-style{{else}}add-skill-from-pack{{/if}}"
       data-skill-group="{{group.key}}"
       aria-label="{{localize "MYTHRASF.Skill.AddToGroup"}}"

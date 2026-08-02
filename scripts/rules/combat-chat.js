@@ -1,6 +1,7 @@
 import { classifyRoll } from "../documents/mythras-item.js";
 import { applyArmor, damageModifierFormula, difficultyTarget } from "./combat.js";
 import { findHitLocation, woundLevel } from "./hit-locations.js";
+import { totalArmorPoints } from "./armor.js";
 
 export async function createAttackMessage({ actor, weapon, resolution, target }) {
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
@@ -82,7 +83,8 @@ async function rollDamage(message, button) {
     if (location) {
       data.locationId = location.id;
       data.locationName = location.name;
-      data.armorPoints = Number(location.system.armorPoints ?? 0);
+      const wornArmor = target.items.filter((item) => item.type === "armor");
+      data.armorPoints = totalArmorPoints(location, wornArmor);
       data.penetratingDamage = applyArmor(data.damage, data.armorPoints);
     }
   }

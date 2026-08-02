@@ -37,6 +37,7 @@ import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
+import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -106,6 +107,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equipment = items.filter((item) => item.type === "equipment");
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
+    const equippedArmor = armor.filter((item) => item.system.equipped);
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -177,6 +179,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       weapons,
       armor,
       hitLocations,
+      combatHitLocations: hitLocations.map((item) => ({
+        item,
+        naturalArmor: Number(item.system.armorPoints ?? 0),
+        wornArmor: wornArmorPoints(item, equippedArmor),
+        totalArmor: totalArmorPoints(item, equippedArmor)
+      })),
       combatStyles: combatStyles.map((style) => ({
         item: style,
         weapons: (style.system.weaponProfiles ?? [])
@@ -186,8 +194,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         traits: style.system.traits,
         total: Number(style.system.total ?? 0)
       })),
-      wornArmor: armor.filter((item) => item.system.equipped),
-      wornArmorPenalty: armor.filter((item) => item.system.equipped).reduce((total, item) => (
+      wornArmor: equippedArmor.map((item) => ({
+        item,
+        coverageLabel: item.system.coverage || game.i18n.localize("MYTHRASF.Armor.AllLocations")
+      })),
+      wornArmorPenalty: equippedArmor.reduce((total, item) => (
         total + Number(item.system.penalty ?? 0) * Number(item.system.quantity ?? 1)
       ), 0),
       combatWeapons: weapons.map((weapon) => this.#prepareCombatWeapon(weapon, combatStyles)),

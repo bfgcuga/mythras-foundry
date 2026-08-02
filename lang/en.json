@@ -62,6 +62,8 @@
   "MYTHRASF.Armor.TotalPenalty": "Total armor penalty",
   "MYTHRASF.Empty.EquippedArmor": "No armor is equipped.",
   "MYTHRASF.Armor.Coverage": "Covered locations",
+  "MYTHRASF.Armor.Natural": "Natural armor",
+  "MYTHRASF.Armor.AllLocations": "All locations",
   "MYTHRASF.Armor.Era.Label": "Era",
   "MYTHRASF.Armor.Era.ancient": "Ancient/medieval",
   "MYTHRASF.Armor.Era.modern": "Modern",
