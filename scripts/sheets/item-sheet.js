@@ -1,5 +1,5 @@
 const { ItemSheetV2 } = foundry.applications.sheets;
-const { HandlebarsApplicationMixin } = foundry.applications.api;
+const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 import {
   PASSION_OBJECT_TYPES,
   PASSION_VERBS,
@@ -7,6 +7,7 @@ import {
 } from "../rules/passions.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "../rules/combat.js";
 import { modeKeysAreUnique, nextModeKey, normalizeModeKey, weaponModes } from "../rules/weapon-modes.js";
+import { manualWeaponProfiles, mergeWeaponProfiles, removeWeaponProfile, weaponProfileOptions } from "../rules/combat-style-weapons.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -90,10 +91,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       weaponModes: this.item.type === "weapon" ? weaponModes(this.item) : [],
       isArmor: this.item.type === "armor",
       isHitLocation: this.item.type === "hitLocation",
-      combatStyleWeaponNames: this.item.type === "combatStyle"
-        ? (this.item.system.weaponProfiles ?? []).map((profile) => profile.name).join(", ")
-          || this.item.system.weapons
-        : "",
+      combatStyleWeaponProfiles: this.item.type === "combatStyle"
+        ? (this.item.system.weaponProfiles ?? []) : [],
       groupChoices: [
         ["", "MYTHRASF.Skill.GroupAutomatic"],
         ["basic", "MYTHRASF.Skill.GroupBasic"],
@@ -157,6 +156,76 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       button.addEventListener("click", (event) => this.#deleteWeaponMode(event)));
     this.element.querySelectorAll("[data-action='move-weapon-mode']").forEach((button) =>
       button.addEventListener("click", (event) => this.#moveWeaponMode(event)));
+    this.element.querySelector("[data-action='add-combat-style-profile']")
+      ?.addEventListener("click", () => this.#addManualCombatStyleProfiles());
+    this.element.querySelector("[data-combat-style-profile-input]")
+      ?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { event.preventDefault(); this.#addManualCombatStyleProfiles(); }
+      });
+    this.element.querySelectorAll("[data-action='delete-combat-style-profile']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#deleteCombatStyleProfile(event)));
+  }
+
+  async _onDropDocument(event, document) {
+    if (this.item.type !== "combatStyle") return super._onDropDocument(event, document);
+    if (!this.isEditable) return null;
+    if (!event.target?.closest?.(".combat-style-weapons-editor")) return null;
+    if (document?.documentName !== "Item" || document.type !== "weapon") {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.DropWeaponOnly"));
+      return null;
+    }
+    const options = weaponProfileOptions(document);
+    if (!options.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.WeaponWithoutProfile"));
+      return null;
+    }
+    const selected = options.length === 1 ? options : await this.#selectWeaponProfiles(options);
+    if (!selected?.length) return null;
+    await this.#addCombatStyleProfiles(selected);
+    return document;
+  }
+
+  async #selectWeaponProfiles(options) {
+    const escape = foundry.utils.escapeHTML;
+    return DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.CombatStyle.SelectWeaponProfiles") },
+      content: `<fieldset><legend>${game.i18n.localize("MYTHRASF.CombatStyle.Weapons")}</legend>
+        <div class="combat-style-profile-dialog">${options.map((profile) => `<label>
+          <input type="checkbox" name="profiles" value="${escape(profile.key)}" checked>
+          <span>${escape(profile.name)}</span></label>`).join("")}</div></fieldset>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Add"), icon: "fas fa-plus",
+        callback: (dialogEvent, button) => {
+          const keys = new Set(new FormData(button.form).getAll("profiles"));
+          return options.filter((profile) => keys.has(profile.key));
+        } }
+    });
+  }
+
+  async #addCombatStyleProfiles(incoming) {
+    const result = mergeWeaponProfiles(this.item.system.weaponProfiles, incoming);
+    if (!result.added) {
+      ui.notifications.info(game.i18n.localize("MYTHRASF.CombatStyle.ProfilesAlreadyIncluded"));
+      return;
+    }
+    await this.item.update({ "system.weaponProfiles": result.profiles });
+    if (result.duplicates) ui.notifications.info(
+      game.i18n.localize("MYTHRASF.CombatStyle.SomeProfilesAlreadyIncluded"));
+  }
+
+  async #addManualCombatStyleProfiles() {
+    if (!this.isEditable || this.item.type !== "combatStyle") return;
+    const input = this.element.querySelector("[data-combat-style-profile-input]");
+    const profiles = manualWeaponProfiles(input?.value);
+    if (!profiles.length) return;
+    await this.#addCombatStyleProfiles(profiles);
+    input.value = "";
+  }
+
+  async #deleteCombatStyleProfile(event) {
+    if (!this.isEditable || this.item.type !== "combatStyle") return;
+    const key = event.currentTarget.dataset.profileKey;
+    const profiles = removeWeaponProfile(this.item.system.weaponProfiles, key);
+    await this.item.update({ "system.weaponProfiles": profiles });
   }
 
   async #addWeaponMode() {

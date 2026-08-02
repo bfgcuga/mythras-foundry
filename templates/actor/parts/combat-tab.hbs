@@ -76,8 +76,8 @@
     {{#each combatWeapons as |row|}}
       <div class="combat-weapon-line" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
-          <button type="button" data-action="edit-item">{{row.displayName}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.mode.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+          <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span>
         <span>{{row.mode.grip}}</span><span class="combat-effects">{{row.mode.effects}}</span>

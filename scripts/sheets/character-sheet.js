@@ -36,7 +36,7 @@ import { calculateResourceValue } from "../rules/resources.js";
 import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
-import { assessWeaponEquip } from "../rules/equipment.js";
+import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
@@ -195,7 +195,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         hasMultipleModes: weaponModes(item).length > 1,
         modeOptions: weaponModes(item).map((mode) => ({ ...mode,
           displayName: weaponModeDisplayName(item, mode) })),
-        activeModeKey: findWeaponMode(item)?.key ?? "" })),
+        activeModeKey: findWeaponMode(item)?.key ?? "",
+        handsRequired: weaponHandsRequired(item) })),
       armor,
       hitLocations,
       combatHitLocations: hitLocations.map((item) => ({
@@ -252,6 +253,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       item: weapon,
       mode,
       displayName: weaponModeDisplayName(weapon, mode),
+      handsRequired: weaponHandsRequired(weapon, mode),
       prepared: Boolean(weapon.system.equipped && weapon.system.activeModeKey === mode.key),
       styleOptions: candidates.map((style) => ({
         id: style.id,

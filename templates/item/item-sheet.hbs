@@ -19,8 +19,25 @@
     <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label>
     <select name="system.characteristic2">{{selectOptions characteristicChoices selected=item.system.characteristic2 labelAttr="label" valueAttr="value"}}</select>
     {{#if isCombatStyle}}
-      <label>{{localize "MYTHRASF.CombatStyle.Weapons"}}</label>
-      <input type="text" name="system.weapons" value="{{combatStyleWeaponNames}}">
+      <fieldset class="combat-style-weapons-editor">
+        <legend>{{localize "MYTHRASF.CombatStyle.Weapons"}}</legend>
+        <div class="combat-style-weapon-drop"><i class="fas fa-hand-pointer" aria-hidden="true"></i>
+          <span>{{localize "MYTHRASF.CombatStyle.DropWeaponsHere"}}</span></div>
+        <ol class="combat-style-profile-list">
+          {{#each combatStyleWeaponProfiles as |profile|}}<li>
+            <span class="sheet-field-readonly">{{profile.name}}</span>
+            <code>{{profile.key}}</code>
+            {{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-combat-style-profile"
+              data-profile-key="{{profile.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
+          </li>{{else}}<li class="empty">{{localize "MYTHRASF.CombatStyle.NoWeaponProfiles"}}</li>{{/each}}
+        </ol>
+        {{#if editable}}<div class="combat-style-profile-manual">
+          <input type="text" class="sheet-field-editable" data-combat-style-profile-input
+            placeholder="{{localize "MYTHRASF.CombatStyle.ManualWeaponProfiles"}}">
+          <button type="button" class="sheet-add-button" data-action="add-combat-style-profile"
+            aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
+        </div>{{/if}}
+      </fieldset>
       <label>{{localize "MYTHRASF.CombatStyle.Traits"}}</label>
       <input type="text" name="system.traits" value="{{item.system.traits}}">
     {{/if}}

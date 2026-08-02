@@ -11,6 +11,14 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Bordes: `--mythras-border` (`#9c8766`).
 - No usar fondos grises heredados de Foundry en controles de las hojas.
 
+## Campos editables y de solo lectura
+
+- Los campos editables usan la superficie compartida `--mythras-field-editable` mediante la clase `sheet-field-editable`; deben distinguirse claramente del papel para comunicar que aceptan entrada.
+- Los valores de solo lectura usan `sheet-field-readonly`, sin color de fondo o con fondo transparente para integrarse visualmente con `--mythras-paper`.
+- No usar fondos de panel, tarjetas o colores alternativos para distinguir valores de solo lectura equivalentes.
+- Una misma clase debe conservar el mismo significado en encabezados, formularios, tablas y pestañas: la apariencia nunca debe depender de que el valor sea un `input`, `output` o `span`.
+- Los bordes, subrayados o formas especiales pueden expresar la función del dato, pero no deben contradecir la distinción de superficie entre editable y solo lectura.
+
 ## Botones con iconos
 
 - Acciones integradas en filas —tirar, equipar, eliminar y similares— usan `sheet-icon-button`. Su fondo es transparente.
@@ -44,3 +52,4 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Los valores derivados que aparecen en una hoja y participan en reglas deben proceder del mismo ayudante puro. No duplicar cálculos entre la preparación de contexto, plantillas y resolución de combate.
 - En celdas de tabla con altura disponible, priorizar texto multilínea mediante `overflow-wrap` y `white-space: normal`. Si el contenido variable aún desborda, puede aplicarse ajuste progresivo de fuente con un mínimo legible; no truncar con elipsis por defecto cuando la fila admite varias líneas.
 - Encabezados y valores de una tabla deben compartir exactamente la misma cuadrícula y alineación. Los iconos auxiliares se posicionan fuera del flujo cuando puedan desplazar visualmente el dato principal de su columna.
+- En listas y tablas de inventario, la acción de eliminar ocupa siempre la última columna y queda alineada al extremo derecho, independientemente de las columnas opcionales del tipo de Item.
