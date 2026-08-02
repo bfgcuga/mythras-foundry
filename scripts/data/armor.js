@@ -10,6 +10,7 @@ const armor = ({ key, name, armorPoints, era }) => ({
     location: "",
     equipped: false,
     armorPoints,
+    penalty: 0,
     era,
     coverage: "",
     description: ""

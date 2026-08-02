@@ -30,26 +30,15 @@
 
   <fieldset class="combat-paper-panel combat-paper-armor">
     <legend>{{localize "MYTHRASF.Combat.WornArmor"}}</legend>
-    <div class="combat-armor-head"><span>{{localize "MYTHRASF.HitLocation.Location"}}</span><span>{{localize "MYTHRASF.HitLocation.Armor"}}</span></div>
-    {{#each hitLocations as |location|}}
-      <div class="combat-armor-line" data-item-id="{{location.id}}">
-        <button type="button" data-action="edit-item">{{location.name}}</button>
-        <output>{{location.system.armorPoints}}</output>
+    <div class="combat-armor-head"><span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.Armor.Coverage"}}</span><span>{{localize "MYTHRASF.Item.Description"}}</span><span>{{localize "MYTHRASF.Armor.Points"}}</span><span>{{localize "MYTHRASF.Armor.PenaltyShort"}}</span></div>
+    {{#each wornArmor as |item|}}
+      <div class="combat-armor-line" data-item-id="{{item.id}}">
+        <button type="button" data-action="edit-item">{{item.name}}</button>
+        <span>{{item.system.coverage}}</span><span class="combat-armor-description">{{{item.system.description}}}</span>
+        <output>{{item.system.armorPoints}}</output><strong>{{item.system.penalty}}%</strong>
       </div>
-    {{/each}}
-    <div class="combat-paper-total"><span>{{localize "MYTHRASF.Combat.TotalArmor"}}</span><strong>{{armorTotal}}</strong></div>
-  </fieldset>
-
-  <fieldset class="combat-paper-panel combat-paper-equipment">
-    <legend>{{localize "MYTHRASF.Equipment"}}</legend>
-    <div class="combat-equipment-head"><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.Combat.Load"}}</span></div>
-    {{#each combatGear as |row|}}
-      <div class="combat-equipment-line" data-item-id="{{row.item.id}}">
-        <button type="button" data-action="edit-item">{{row.item.name}} × {{row.item.system.quantity}}</button>
-        <output>{{row.load}}</output>
-      </div>
-    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.Equipment"}}</p>{{/each}}
-    <div class="combat-paper-total"><span>{{localize "MYTHRASF.Combat.TotalLoad"}}</span><strong>{{combatGearLoad}}</strong></div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.EquippedArmor"}}</p>{{/each}}
+    <div class="combat-paper-total"><span>{{localize "MYTHRASF.Armor.TotalPenalty"}}</span><strong>{{wornArmorPenalty}}%</strong></div>
   </fieldset>
 
   <fieldset class="combat-paper-panel combat-paper-styles">
@@ -92,6 +81,6 @@
         <button type="button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
           aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
       </div>
-    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.EquippedWeapons"}}</p>{{/each}}
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.Weapons"}}</p>{{/each}}
   </fieldset>
 </div>

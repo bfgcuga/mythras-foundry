@@ -309,7 +309,7 @@
           {{/if}}
         </div>
         {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
-          items=equipment emptyKey="MYTHRASF.Empty.Equipment"}}
+          items=equipment emptyKey="MYTHRASF.Empty.Equipment" equipmentTable=true}}
 
         <div class="section-heading">
           <h2>{{localize "MYTHRASF.Armors"}}</h2>
@@ -320,7 +320,7 @@
           {{/if}}
         </div>
         {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
-          items=armor emptyKey="MYTHRASF.Empty.Armor"}}
+          items=armor emptyKey="MYTHRASF.Empty.Armor" armorTable=true}}
 
         <div class="section-heading">
           <h2>{{localize "MYTHRASF.Weapons"}}</h2>
@@ -331,7 +331,7 @@
           {{/if}}
         </div>
         {{> "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs"
-          items=weapons emptyKey="MYTHRASF.Empty.Weapons"}}
+          items=weapons emptyKey="MYTHRASF.Empty.Weapons" weaponTable=true}}
       </section>
     </main>
 </div>

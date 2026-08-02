@@ -185,22 +185,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         traits: style.system.traits,
         total: Number(style.system.total ?? 0)
       })),
-      armorTotal: hitLocations.reduce((total, location) => (
-        total + Number(location.system.armorPoints ?? 0)
+      wornArmor: armor.filter((item) => item.system.equipped),
+      wornArmorPenalty: armor.filter((item) => item.system.equipped).reduce((total, item) => (
+        total + Number(item.system.penalty ?? 0) * Number(item.system.quantity ?? 1)
       ), 0),
-      combatGear: [...equipment, ...armor].map((item) => ({
-        item,
-        load: Number(item.system.quantity ?? 0) * Number(item.system.weight ?? 0)
-      })),
-      combatGearLoad: [...equipment, ...armor].reduce((total, item) => (
-        total + Number(item.system.quantity ?? 0) * Number(item.system.weight ?? 0)
-      ), 0) + weapons.reduce((total, weapon) => (
-        total + Number(weapon.system.quantity ?? 0) * Number(
-          weapon.system.encumbrance || weapon.system.weight || 0
-        )
-      ), 0),
-      combatWeapons: weapons.filter((item) => item.system.equipped)
-        .map((weapon) => this.#prepareCombatWeapon(weapon, combatStyles)),
+      combatWeapons: weapons.map((weapon) => this.#prepareCombatWeapon(weapon, combatStyles)),
       familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))
     }, { inplace: false });
@@ -308,6 +297,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-action='delete-item']").forEach((button) => {
       button.addEventListener("click", (event) => this.#deleteItem(event));
     });
+    this.element.querySelectorAll("[data-action='toggle-equipped']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#toggleEquipped(event));
+    });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
     });
@@ -370,6 +362,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-tab-content]").forEach((section) => {
       section.classList.toggle("active", section.dataset.tabContent === tab);
     });
+  }
+
+  async #toggleEquipped(event) {
+    if (!this.isEditable) return;
+    const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (!item || !["weapon", "armor"].includes(item.type)) return;
+    await item.update({ "system.equipped": !item.system.equipped });
   }
 
   async #updateWeaponCombatChoice(event) {

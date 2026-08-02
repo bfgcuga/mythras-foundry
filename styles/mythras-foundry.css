@@ -1056,10 +1056,10 @@
 .mythras-foundry .combat-paper-layout {
   display: grid;
   grid-template-areas:
-    "locations armor equipment"
-    "styles styles equipment"
-    "weapons weapons weapons";
-  grid-template-columns: minmax(18rem, 1.05fr) minmax(14rem, 0.8fr) minmax(16rem, 0.9fr);
+    "locations armor"
+    "styles styles"
+    "weapons weapons";
+  grid-template-columns: minmax(24rem, 1fr) minmax(24rem, 1fr);
   align-items: stretch;
   gap: 0.75rem;
 }
@@ -1085,7 +1085,6 @@
 
 .mythras-foundry .combat-paper-locations { grid-area: locations; }
 .mythras-foundry .combat-paper-armor { grid-area: armor; }
-.mythras-foundry .combat-paper-equipment { grid-area: equipment; }
 .mythras-foundry .combat-paper-styles { grid-area: styles; }
 .mythras-foundry .combat-paper-weapons { grid-area: weapons; overflow-x: auto; }
 
@@ -1170,11 +1169,9 @@
 }
 
 .mythras-foundry .combat-armor-head,
-.mythras-foundry .combat-armor-line,
-.mythras-foundry .combat-equipment-head,
-.mythras-foundry .combat-equipment-line {
+.mythras-foundry .combat-armor-line {
   display: grid;
-  grid-template-columns: minmax(7rem, 1fr) 3rem;
+  grid-template-columns: minmax(7rem, 1fr) minmax(6rem, 0.8fr) minmax(9rem, 1.4fr) 3rem 3rem;
   align-items: center;
   gap: 0.4rem;
 }
@@ -1189,6 +1186,16 @@
   clip-path: polygon(50% 0, 92% 18%, 80% 72%, 50% 100%, 20% 72%, 8% 18%);
   font-weight: 700;
 }
+
+.mythras-foundry .combat-armor-line > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mythras-foundry .combat-armor-line > strong { text-align: center; }
+.mythras-foundry .combat-armor-description > :first-child { margin-top: 0; }
+.mythras-foundry .combat-armor-description > :last-child { margin-bottom: 0; }
 
 .mythras-foundry .combat-paper-total {
   display: flex;
@@ -1239,17 +1246,50 @@
 
 @container (max-width: 760px) {
   .mythras-foundry .combat-paper-layout {
-    grid-template-areas: "locations armor" "styles styles" "equipment equipment" "weapons weapons";
+    grid-template-areas: "locations armor" "styles styles" "weapons weapons";
     grid-template-columns: minmax(18rem, 1fr) minmax(14rem, 0.8fr);
   }
 }
 
 @container (max-width: 520px) {
   .mythras-foundry .combat-paper-layout {
-    grid-template-areas: "locations" "armor" "styles" "equipment" "weapons";
+    grid-template-areas: "locations" "armor" "styles" "weapons";
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.mythras-foundry .tab-panel[data-tab-content="inventory"] > .section-heading {
+  margin-top: 0.85rem;
+  padding: 0.35rem 0.55rem;
+  border: 2px solid var(--mythras-accent);
+  border-bottom: 0;
+  border-radius: 0.7rem 0.7rem 0 0;
+  background: rgb(255 250 232 / 30%);
+}
+
+.mythras-foundry .tab-panel[data-tab-content="inventory"] > .section-heading:first-child { margin-top: 0; }
+.mythras-foundry .tab-panel[data-tab-content="inventory"] > .section-heading h2 { margin: 0; }
+.mythras-foundry .inventory-table { overflow-x: auto; border: 2px solid var(--mythras-accent); border-top: 0; border-radius: 0 0 0.7rem 0.7rem; }
+.mythras-foundry .inventory-table .item-list { margin: 0; border: 0; }
+.mythras-foundry .inventory-table-head,
+.mythras-foundry .inventory-table .item-list li {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) 5rem 5rem minmax(9rem, 1fr) 2rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 38rem;
+}
+.mythras-foundry .inventory-weapons .inventory-table-head,
+.mythras-foundry .inventory-weapons .item-list li,
+.mythras-foundry .inventory-armor .inventory-table-head,
+.mythras-foundry .inventory-armor .item-list li {
+  grid-template-columns: minmax(12rem, 1fr) 5rem 4rem minmax(8rem, 0.8fr) 5rem 2rem;
+  min-width: 45rem;
+}
+.mythras-foundry .inventory-table-head { min-height: 1.8rem; padding: 0.25rem 0.35rem; color: var(--color-text-subtle); font-size: 0.72rem; font-weight: 700; text-align: center; }
+.mythras-foundry .inventory-table .item-list li { padding: 0.35rem; }
+.mythras-foundry .inventory-table .item-list li > span { overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.mythras-foundry .inventory-table .equip-toggle { width: 2rem; min-height: 1.8rem; padding: 0; }
 
 .mythras-foundry .wound-healthy { color: #285f32; }
 .mythras-foundry .wound-minor { color: #916b17; }

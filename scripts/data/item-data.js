@@ -188,6 +188,7 @@ export class ArmorData extends EquipmentData {
     return {
       ...super.defineSchema(),
       armorPoints: nonNegativeNumber(0, true),
+      penalty: nonNegativeNumber(0, true),
       era: new StringField({ required: true, nullable: false, initial: "ancient",
         choices: ["ancient", "modern", "futuristic"] }),
       coverage: textField()

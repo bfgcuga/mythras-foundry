@@ -1,13 +1,22 @@
-<ol class="item-list">
-  {{#each items as |item|}}
-    <li data-item-id="{{item.id}}">
-      <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
-      <span>{{item.system.quantity}} × {{item.system.weight}}</span>
-      {{#if @root.editable}}
-        <button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>
-      {{/if}}
-    </li>
-  {{else}}
-    <li class="empty">{{localize emptyKey}}</li>
-  {{/each}}
-</ol>
+<div class="inventory-table {{#if weaponTable}}inventory-weapons{{/if}} {{#if armorTable}}inventory-armor{{/if}}">
+  <div class="inventory-table-head">
+    <span>{{localize "MYTHRASF.Weapon.Name"}}</span>
+    {{#if equipmentTable}}<span>{{localize "MYTHRASF.Item.Quantity"}}</span><span>{{localize "MYTHRASF.Item.Weight"}}</span><span>{{localize "MYTHRASF.Item.Location"}}</span>{{/if}}
+    {{#if weaponTable}}<span>{{localize "MYTHRASF.Weapon.Damage"}}</span><span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span>{{/if}}
+    {{#if armorTable}}<span>{{localize "MYTHRASF.Armor.Points"}}</span><span>{{localize "MYTHRASF.Armor.Coverage"}}</span><span>{{localize "MYTHRASF.Armor.PenaltyShort"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span>{{/if}}
+    <span></span>
+  </div>
+  <ol class="item-list">
+    {{#each items as |item|}}
+      <li data-item-id="{{item.id}}">
+        <button type="button" class="item-name" data-action="edit-item">{{item.name}}</button>
+        {{#if ../equipmentTable}}<span>{{item.system.quantity}}</span><span>{{item.system.weight}}</span><span>{{item.system.location}}</span>{{/if}}
+        {{#if ../weaponTable}}<span>{{item.system.damage}}</span><span>{{item.system.size}}</span><span>{{item.system.armorPoints}} / {{item.system.currentHitPoints}}–{{item.system.maxHitPoints}}</span><button type="button" data-action="toggle-equipped" class="equip-toggle" aria-pressed="{{item.system.equipped}}">{{#if item.system.equipped}}✓{{else}}○{{/if}}</button>{{/if}}
+        {{#if ../armorTable}}<span>{{item.system.armorPoints}}</span><span>{{item.system.coverage}}</span><span>{{item.system.penalty}}%</span><button type="button" data-action="toggle-equipped" class="equip-toggle" aria-pressed="{{item.system.equipped}}">{{#if item.system.equipped}}✓{{else}}○{{/if}}</button>{{/if}}
+        {{#if @root.editable}}<button type="button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}">×</button>{{/if}}
+      </li>
+    {{else}}
+      <li class="empty">{{localize emptyKey}}</li>
+    {{/each}}
+  </ol>
+</div>

@@ -21,6 +21,7 @@ test("cada armadura tiene clave única, era y puntos de armadura", () => {
     assert.equal(source.type, "armor");
     assert.ok(["ancient", "modern", "futuristic"].includes(source.system.era));
     assert.ok(source.system.armorPoints > 0);
+    assert.equal(source.system.penalty, 0);
   }
 });
 
