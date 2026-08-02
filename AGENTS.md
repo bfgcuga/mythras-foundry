@@ -36,6 +36,13 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Los controles de equipación usan `equipment-state-toggle`: atenuados cuando están inactivos y a opacidad completa cuando están equipados. El icono debe representar el objeto (`fas fa-hand` para manos, `fas fa-vest` para armadura), nunca un check genérico.
 - Cuando una misma colección se gestiona desde Inventario y otra pestaña operativa, ambas vistas deben ofrecer el mismo control de equipación y mostrar el conjunto completo; el estado equipado filtra efectos y cálculos, no la visibilidad del objeto.
 
+## Selectores compactos de estado
+
+- Los estados booleanos o las alternativas mutuamente excluyentes que se presentan como una casilla compacta usan la clase compartida `sheet-state-box`.
+- `sheet-state-box` conserva el recuadro, la marca interior, el foco y los colores empleados por «Entrenado» y «Pifia», tanto sobre `checkbox` como sobre `radio`.
+- Cuando solo puede elegirse una opción de una lista se usa semánticamente `input type="radio"` con un mismo `name`; la apariencia cuadrada no debe sustituir esa semántica.
+- Cada selector debe tener una etiqueta visible asociada o un `aria-label` localizado.
+
 ## Paneles y recuadros
 
 - El recuadro estándar es un `fieldset` con un `legend` como hijo directo.
