@@ -380,6 +380,10 @@ async function migrateEmbeddedItemIcons(actor) {
 }
 
 function getLegacyItemIconUpdate(item) {
+  if (item.type === "armor" && ["icons/svg/breastplate.svg", "icons/svg/item-bag.svg",
+    "icons/svg/mystery-man.svg"].includes(item.img)) {
+    return { _id: item.id, img: defaultItemIcon("armor") };
+  }
   if (item.type === "passion" && item.img === "icons/svg/heart.svg") {
     return { _id: item.id, img: defaultItemIcon("passion") };
   }

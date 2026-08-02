@@ -12,7 +12,8 @@ test("cada tipo de Item del sistema tiene un icono predeterminado", () => {
   }
   assert.notEqual(defaultItemIcon("skill"), defaultItemIcon("passion"));
   assert.notEqual(defaultItemIcon("culture"), defaultItemIcon("profession"));
-  for (const icon of [defaultItemIcon("passion"), defaultItemIcon("combatStyle")]) {
+  for (const icon of [defaultItemIcon("passion"), defaultItemIcon("combatStyle"),
+    defaultItemIcon("armor")]) {
     const relative = icon.replace("systems/mythras-foundry/", "../");
     assert.ok(existsSync(new URL(relative, import.meta.url)), `${icon} debe existir`);
   }

@@ -185,6 +185,10 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element.querySelectorAll("[data-combat-style-tab]").forEach((button) =>
       button.addEventListener("click", (event) => this.#activateCombatStyleTab(event)));
     this.#showCombatStyleTab(this._activeCombatStyleTab);
+    this._activeArmorTab ??= "characteristics";
+    this.element.querySelectorAll("[data-armor-tab]").forEach((button) =>
+      button.addEventListener("click", (event) => this.#activateArmorTab(event)));
+    this.#showArmorTab(this._activeArmorTab);
 
     if (!this.isEditable) {
       this.element.querySelectorAll("input[name], textarea[name], select[name]")
@@ -251,6 +255,19 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       button.classList.toggle("active", button.dataset.combatStyleTab === tab));
     this.element.querySelectorAll("[data-combat-style-tab-content]").forEach((panel) =>
       panel.classList.toggle("active", panel.dataset.combatStyleTabContent === tab));
+  }
+
+  #activateArmorTab(event) {
+    event.preventDefault();
+    this._activeArmorTab = event.currentTarget.dataset.armorTab;
+    this.#showArmorTab(this._activeArmorTab);
+  }
+
+  #showArmorTab(tab) {
+    this.element.querySelectorAll("[data-armor-tab]").forEach((button) =>
+      button.classList.toggle("active", button.dataset.armorTab === tab));
+    this.element.querySelectorAll("[data-armor-tab-content]").forEach((panel) =>
+      panel.classList.toggle("active", panel.dataset.armorTabContent === tab));
   }
 
   async #updateArmorCoverage(event) {

@@ -2,7 +2,7 @@ const armor = ({ key, name, armorPoints, era, baseEncumbrance = 0, baseValue = 0
   buildKey: key,
   name,
   type: "armor",
-  img: "icons/svg/breastplate.svg",
+  img: "systems/mythras-foundry/assets/icons/armor.svg",
   system: {
     quantity: 1,
     weight: 0,
