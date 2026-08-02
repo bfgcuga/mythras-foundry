@@ -97,13 +97,13 @@
 
 .mythras-foundry .portrait-frame {
   position: relative;
-  width: 128px;
-  height: 128px;
+  width: 160px;
+  height: 160px;
 }
 
 .mythras-foundry .portrait-view {
-  width: 128px;
-  height: 128px;
+  width: 160px;
+  height: 160px;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--mythras-border);
@@ -141,8 +141,8 @@
 }
 
 .mythras-foundry .character-sheet-content .sheet-header {
-  grid-template-columns: 128px 1fr;
-  min-height: 128px;
+  grid-template-columns: 160px minmax(0, 1fr) minmax(15rem, 0.55fr);
+  min-height: 160px;
 }
 
 .mythras-foundry .item-sheet-content .sheet-header img {
@@ -185,6 +185,36 @@
   background: transparent;
   font-size: 1rem;
   font-weight: 400;
+}
+
+.mythras-foundry .header-status {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-self: stretch;
+  gap: 0.4rem 0.65rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--mythras-border);
+}
+
+.mythras-foundry .header-status label {
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mythras-foundry .header-status output {
+  display: grid;
+  min-height: 2rem;
+  padding: 0.25rem 0.4rem;
+  place-items: center;
+  border-bottom: 1px solid var(--mythras-border);
+  background: var(--mythras-panel);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .mythras-foundry .identity-fields .identity-readonly {

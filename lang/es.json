@@ -191,6 +191,8 @@
   "MYTHRASF.Fatigue.Recovery": "Recuperación",
   "MYTHRASF.Fatigue.NoActivity": "No es posible realizar actividades",
   "MYTHRASF.Fatigue.NoPenalty": "Sin penalización",
+  "MYTHRASF.Header.Status": "Estado actual del personaje",
+  "MYTHRASF.Header.Encumbrance": "Carga",
   "MYTHRASF.Fatigue.Level.fresh": "Fresco",
   "MYTHRASF.Fatigue.Level.winded": "Fatigado",
   "MYTHRASF.Fatigue.Level.tired": "Cansado",

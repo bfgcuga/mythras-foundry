@@ -23,6 +23,15 @@ export function woundLevel(current, maximum) {
   return "major";
 }
 
+export function worstWoundLevel(locations) {
+  const severity = { healthy: 0, minor: 1, serious: 2, major: 3 };
+  return (locations ?? []).reduce((worst, location) => {
+    const system = location?.system ?? location ?? {};
+    const level = woundLevel(system.currentHitPoints, system.maxHitPoints);
+    return severity[level] > severity[worst] ? level : worst;
+  }, "healthy");
+}
+
 export function findHitLocation(locations, roll) {
   const value = Number(roll);
   return locations.find((location) => value >= Number(location.system.rangeStart)

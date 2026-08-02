@@ -33,6 +33,14 @@
         <output class="identity-readonly">{{actor.system.identity.profession.name}}</output>
       </label>
     </div>
+    <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
+      <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output>{{headerStatus.actionPoints}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output>{{headerStatus.magicPoints}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output>{{headerStatus.luckPoints}}</output></label>
+      <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
+      <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
+      <label><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output>{{headerStatus.encumbrance}}</output></label>
+    </section>
   </header>
 
     <nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">

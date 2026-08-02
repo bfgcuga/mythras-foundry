@@ -12,7 +12,8 @@ import {
   calculateLocationHitPoints,
   findHitLocation,
   humanHitLocationData,
-  woundLevel
+  woundLevel,
+  worstWoundLevel
 } from "../scripts/rules/hit-locations.js";
 
 function style(id, total, keys) {
@@ -85,6 +86,14 @@ test("los umbrales de herida usan los PV máximos", () => {
   assert.equal(woundLevel(0, 4), "serious");
   assert.equal(woundLevel(-3, 4), "serious");
   assert.equal(woundLevel(-4, 4), "major");
+});
+
+test("el estado general usa la herida más grave de todas las localizaciones", () => {
+  const locations = [{ system: { currentHitPoints: 3, maxHitPoints: 3 } },
+    { system: { currentHitPoints: 1, maxHitPoints: 4 } },
+    { system: { currentHitPoints: -4, maxHitPoints: 4 } }];
+  assert.equal(worstWoundLevel(locations), "major");
+  assert.equal(worstWoundLevel([]), "healthy");
 });
 
 test("una tirada localiza el rango correspondiente o devuelve null", () => {

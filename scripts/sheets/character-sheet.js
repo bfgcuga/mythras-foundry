@@ -40,6 +40,7 @@ import { assessWeaponEquip } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { worstWoundLevel } from "../rules/hit-locations.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -110,6 +111,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
     const equippedArmor = armor.filter((item) => item.system.equipped);
+    const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
+    const currentWound = worstWoundLevel(hitLocations);
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -160,6 +163,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       editable: this.isEditable,
       characteristicRows,
       editMode: Boolean(this._editMode),
+      headerStatus: {
+        actionPoints: `${this.actor.system.resources.actionPoints.value}/${this.actor.system.attributes.actionPointsMax}`,
+        magicPoints: `${this.actor.system.resources.magicPoints.value}/${this.actor.system.attributes.magicPointsMax}`,
+        luckPoints: `${this.actor.system.resources.luckPoints.value}/${this.actor.system.attributes.luckPointsMax}`,
+        fatigue: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`),
+        fatigueKey: currentFatigue.key,
+        wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
+        woundKey: currentWound,
+        encumbrance: ""
+      },
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
