@@ -229,9 +229,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const escape = foundry.utils.escapeHTML;
     return DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.CombatStyle.SelectWeaponProfiles") },
-      content: `<fieldset><legend>${game.i18n.localize("MYTHRASF.CombatStyle.Weapons")}</legend>
+      content: `<fieldset class="mythras-foundry"><legend>${game.i18n.localize("MYTHRASF.CombatStyle.Weapons")}</legend>
         <div class="combat-style-profile-dialog">${options.map((profile) => `<label>
-          <input type="checkbox" name="profiles" value="${escape(profile.key)}" checked>
+          <input type="checkbox" class="sheet-state-box" name="profiles" value="${escape(profile.key)}" checked>
           <span>${escape(profile.name)}</span></label>`).join("")}</div></fieldset>`,
       ok: { label: game.i18n.localize("MYTHRASF.Add"), icon: "fas fa-plus",
         callback: (dialogEvent, button) => {

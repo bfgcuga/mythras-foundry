@@ -55,7 +55,7 @@
       <p class="passion-legacy-note">{{localize "MYTHRASF.Passion.LegacyHelp"}}</p>
       <label>{{localize "MYTHRASF.Passion.Value"}}</label><input type="number" min="0" name="system.value" value="{{item.system.value}}">
     {{/if}}
-    <label class="checkbox"><input type="checkbox" name="system.structured" {{checked item.system.structured}}>{{localize "MYTHRASF.Passion.Structured"}}</label>
+    <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.structured" {{checked item.system.structured}}>{{localize "MYTHRASF.Passion.Structured"}}</label>
     <label>{{localize "MYTHRASF.Passion.VerbLabel"}}</label><select name="system.verb">{{selectOptions passionVerbChoices selected=item.system.verb labelAttr="label" valueAttr="value"}}</select>
     {{#if isCustomPassionVerb}}<label>{{localize "MYTHRASF.Passion.CustomVerb"}}</label><input type="text" name="system.customVerb" value="{{item.system.customVerb}}">{{/if}}
     <label>{{localize "MYTHRASF.Passion.ObjectType"}}</label><select name="system.objectType">{{selectOptions passionObjectChoices selected=item.system.objectType labelAttr="label" valueAttr="value"}}</select>
@@ -70,7 +70,7 @@
     <label>{{localize "MYTHRASF.Item.Weight"}}</label><input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
     <label>{{localize "MYTHRASF.Item.Value"}}</label><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}">
     <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
-    <label class="checkbox"><input type="checkbox" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>
+    <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>
   {{/if}}
 
   {{#if isWeapon}}
@@ -111,7 +111,7 @@
     <label>{{localize "MYTHRASF.HitLocation.Range"}}</label><div><input type="number" min="1" max="20" name="system.rangeStart" value="{{item.system.rangeStart}}"> – <input type="number" min="1" max="20" name="system.rangeEnd" value="{{item.system.rangeEnd}}"></div>
     <label>{{localize "MYTHRASF.HitLocation.Category.Label"}}</label><select name="system.category">{{selectOptions locationCategoryChoices selected=item.system.category labelAttr="label" valueAttr="value"}}</select>
     <label>{{localize "MYTHRASF.HitLocation.HpClass.Label"}}</label><select name="system.hpClass">{{selectOptions locationHpClassChoices selected=item.system.hpClass labelAttr="label" valueAttr="value"}}</select>
-    <label class="checkbox"><input type="checkbox" name="system.autoCalculate" {{checked item.system.autoCalculate}}>{{localize "MYTHRASF.HitLocation.AutoCalculate"}}</label>
+    <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.autoCalculate" {{checked item.system.autoCalculate}}>{{localize "MYTHRASF.HitLocation.AutoCalculate"}}</label>
     <label>{{localize "MYTHRASF.HitLocation.MaxHitPoints"}}</label><input type="number" min="1" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
     <label>{{localize "MYTHRASF.HitLocation.CurrentHitPoints"}}</label><input type="number" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
     <label>{{localize "MYTHRASF.Armor.Natural"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">

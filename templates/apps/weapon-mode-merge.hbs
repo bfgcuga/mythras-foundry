@@ -1,6 +1,6 @@
 <div class="weapon-mode-merge-tool"><p>{{localize "MYTHRASF.Weapon.MergeHelp"}}</p>
 {{#each groups as |group|}}<fieldset data-actor-id="{{group.actor.id}}"><legend>{{group.actor.name}} — {{group.profileKey}}</legend>
 <label>{{localize "MYTHRASF.Weapon.Keeper"}} <select data-keeper>{{#each group.weapons as |weapon|}}<option value="{{weapon.id}}">{{weapon.name}}</option>{{/each}}</select></label>
-<div>{{localize "MYTHRASF.Weapon.Donors"}}: {{#each group.weapons as |weapon|}}<label><input type="checkbox" data-donor value="{{weapon.id}}">{{weapon.name}}</label>{{/each}}</div>
+<div>{{localize "MYTHRASF.Weapon.Donors"}}: {{#each group.weapons as |weapon|}}<label><input type="checkbox" class="sheet-state-box" data-donor value="{{weapon.id}}">{{weapon.name}}</label>{{/each}}</div>
 {{#if group.conflicts.length}}<p class="warning">{{localize "MYTHRASF.Weapon.PhysicalConflicts"}}: {{group.conflicts}}</p>{{/if}}<button type="button" data-action="merge">{{localize "MYTHRASF.Weapon.Merge"}}</button></fieldset>
 {{else}}<p>{{localize "MYTHRASF.Weapon.NoMergeCandidates"}}</p>{{/each}}</div>

@@ -54,8 +54,8 @@
   box-shadow: none !important;
 }
 
-.mythras-foundry input[type="checkbox"],
-.mythras-foundry input.sheet-state-box {
+.mythras-foundry input[type="checkbox"].sheet-state-box,
+.mythras-foundry input[type="radio"].sheet-state-box {
   display: inline-grid;
   width: 1rem;
   height: 1rem;
@@ -69,46 +69,35 @@
   filter: none !important;
 }
 
-.mythras-foundry input[type="checkbox"]::before,
-.mythras-foundry input.sheet-state-box::before {
+.mythras-foundry input[type="checkbox"].sheet-state-box::before,
+.mythras-foundry input[type="radio"].sheet-state-box::before {
   width: 0.65rem;
   height: 0.65rem;
   content: "";
-  background: var(--mythras-ink);
+  background: var(--mythras-ink) !important;
   clip-path: polygon(14% 44%, 0 59%, 40% 100%, 100% 18%, 84% 4%, 38% 70%);
   transform: scale(0);
 }
 
-.mythras-foundry input[type="checkbox"]:checked::before,
-.mythras-foundry input.sheet-state-box:checked::before {
+.mythras-foundry input[type="checkbox"].sheet-state-box:checked::before,
+.mythras-foundry input[type="radio"].sheet-state-box:checked::before {
   transform: scale(1);
 }
 
-.mythras-foundry input[type="checkbox"]:checked,
-.mythras-foundry input.sheet-state-box:checked {
+.mythras-foundry input[type="checkbox"].sheet-state-box:checked,
+.mythras-foundry input[type="radio"].sheet-state-box:checked {
   border-color: var(--mythras-ink) !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
-.mythras-foundry input[type="checkbox"]:focus-visible,
-.mythras-foundry input.sheet-state-box:focus-visible {
+.mythras-foundry input[type="checkbox"].sheet-state-box:focus-visible,
+.mythras-foundry input[type="radio"].sheet-state-box:focus-visible {
   outline: 2px solid var(--mythras-accent);
   outline-offset: 1px;
 }
 
-.mythras-foundry input[type="radio"].sheet-state-box {
-  border: 1px solid var(--mythras-border) !important;
-  border-radius: 0.15rem !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.mythras-foundry input[type="radio"].sheet-state-box::before {
-  background: var(--mythras-ink) !important;
-}
-
-.mythras-foundry input[type="radio"].sheet-state-box::after {
+.mythras-foundry input.sheet-state-box::after {
   display: none !important;
   content: none !important;
 }
@@ -190,7 +179,7 @@
 
 .mythras-foundry .identity-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem 0.75rem;
 }
 
@@ -203,7 +192,7 @@
 }
 
 .mythras-foundry .identity-fields .identity-name {
-  grid-column: 1 / -1;
+  grid-column: auto;
 }
 
 .mythras-foundry .identity-fields input,

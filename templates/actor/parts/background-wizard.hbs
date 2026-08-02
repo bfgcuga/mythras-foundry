@@ -40,7 +40,7 @@
           <div class="background-options">
             {{#each choice.options as |option|}}
               <label>
-                <input type="checkbox" {{checked option.checked}}
+                <input type="checkbox" class="sheet-state-box" {{checked option.checked}}
                   data-background-choice
                   data-phase="{{option.phase}}"
                   data-group="{{option.groupId}}" data-slug="{{option.slug}}">
@@ -59,7 +59,7 @@
         <div class="background-options">
           {{#each wizard.selected.professional as |option|}}
             <label>
-              <input type="checkbox" {{checked option.checked}}
+              <input type="checkbox" class="sheet-state-box" {{checked option.checked}}
                 data-background-professional
                 data-phase="{{option.phase}}"
                 data-option="{{option.id}}">
