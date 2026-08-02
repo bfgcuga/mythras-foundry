@@ -45,6 +45,7 @@ import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel
 import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
+import { nextNumberedItemName } from "../rules/item-names.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -1518,7 +1519,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       await this.#createPassion();
       return;
     }
-    const name = game.i18n.localize(`MYTHRASF.Item.New.${type}`);
+    const name = nextNumberedItemName(type, this.actor.items,
+      (key) => game.i18n.localize(key));
     const [item] = await this.actor.createEmbeddedDocuments("Item", [{ name, type }]);
     item?.sheet.render(true);
   }

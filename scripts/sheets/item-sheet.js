@@ -115,6 +115,12 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isHitLocation: this.item.type === "hitLocation",
       combatStyleWeaponProfiles: this.item.type === "combatStyle"
         ? (this.item.system.weaponProfiles ?? []) : [],
+      combatStyleCharacteristic1: this.item.type === "combatStyle"
+        ? game.i18n.localize(`MYTHRASF.Characteristic.${this.item.system.characteristic1}`) : "",
+      combatStyleCharacteristic2: this.item.type === "combatStyle"
+        ? game.i18n.localize(`MYTHRASF.Characteristic.${this.item.system.characteristic2}`) : "",
+      combatStyleSourceType: this.item.type === "combatStyle"
+        ? (this.item.system.sourceType || game.i18n.localize("MYTHRASF.CombatStyle.SourceManual")) : "",
       groupChoices: [
         ["", "MYTHRASF.Skill.GroupAutomatic"],
         ["basic", "MYTHRASF.Skill.GroupBasic"],
@@ -171,6 +177,15 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onRender(context, options) {
     super._onRender(context, options);
 
+    this._activeWeaponTab ??= "characteristics";
+    this.element.querySelectorAll("[data-weapon-tab]").forEach((button) =>
+      button.addEventListener("click", (event) => this.#activateWeaponTab(event)));
+    this.#showWeaponTab(this._activeWeaponTab);
+    this._activeCombatStyleTab ??= "description";
+    this.element.querySelectorAll("[data-combat-style-tab]").forEach((button) =>
+      button.addEventListener("click", (event) => this.#activateCombatStyleTab(event)));
+    this.#showCombatStyleTab(this._activeCombatStyleTab);
+
     if (!this.isEditable) {
       this.element.querySelectorAll("input[name], textarea[name], select[name]")
         .forEach((field) => { field.disabled = true; });
@@ -210,6 +225,32 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       dropZone.classList.remove("drag-over");
       this.#handleCombatStyleWeaponDrop(event).catch((error) => this.#notifyProfileError(error));
     });
+  }
+
+  #activateWeaponTab(event) {
+    event.preventDefault();
+    this._activeWeaponTab = event.currentTarget.dataset.weaponTab;
+    this.#showWeaponTab(this._activeWeaponTab);
+  }
+
+  #showWeaponTab(tab) {
+    this.element.querySelectorAll("[data-weapon-tab]").forEach((button) =>
+      button.classList.toggle("active", button.dataset.weaponTab === tab));
+    this.element.querySelectorAll("[data-weapon-tab-content]").forEach((panel) =>
+      panel.classList.toggle("active", panel.dataset.weaponTabContent === tab));
+  }
+
+  #activateCombatStyleTab(event) {
+    event.preventDefault();
+    this._activeCombatStyleTab = event.currentTarget.dataset.combatStyleTab;
+    this.#showCombatStyleTab(this._activeCombatStyleTab);
+  }
+
+  #showCombatStyleTab(tab) {
+    this.element.querySelectorAll("[data-combat-style-tab]").forEach((button) =>
+      button.classList.toggle("active", button.dataset.combatStyleTab === tab));
+    this.element.querySelectorAll("[data-combat-style-tab-content]").forEach((panel) =>
+      panel.classList.toggle("active", panel.dataset.combatStyleTabContent === tab));
   }
 
   async #updateArmorCoverage(event) {

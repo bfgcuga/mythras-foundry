@@ -6,7 +6,6 @@ const baseSystem = Object.freeze({
   equipped: false,
   damageModifierMode: "full",
   reach: "",
-  hitPoints: 0,
   encumbrance: 0,
   effects: "",
   grip: "",

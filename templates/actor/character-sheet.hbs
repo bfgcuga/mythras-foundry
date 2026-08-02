@@ -44,6 +44,11 @@
       <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.fatiguePenalty}}</output></label>
       <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrancePenalty}}</output></label>
     </section>
+    <label class="header-experience-rolls">
+      <span>{{localize "MYTHRASF.Header.ExperienceRolls"}}</span>
+      <input type="number" min="0" step="1" class="sheet-field-editable"
+        name="system.experienceRolls" value="{{actor.system.experienceRolls}}">
+    </label>
   </header>
 
     <nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">

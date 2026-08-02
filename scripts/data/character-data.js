@@ -79,6 +79,13 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
       }),
       fatigueLevel: new StringField({ required: true, nullable: false, initial: "fresh",
         choices: FATIGUE_LEVELS.map((level) => level.key) }),
+      experienceRolls: new NumberField({
+        required: true,
+        nullable: false,
+        integer: true,
+        initial: 0,
+        min: 0
+      }),
       ...characteristics,
       identity: new SchemaField({
         playerName: textField(),

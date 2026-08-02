@@ -11,15 +11,31 @@
         <option value="basic" {{#if item.system.isBasic}}selected{{/if}}>{{localize "MYTHRASF.Skill.Basic"}}</option>
         <option value="professional" {{#if item.system.isProfessional}}selected{{/if}}>{{localize "MYTHRASF.Skill.Professional"}}</option>
       </select>
+      <label>{{localize "MYTHRASF.Skill.Group"}}</label>
+      <select name="system.group">{{selectOptions groupChoices selected=item.system.group labelAttr="label" valueAttr="value"}}</select>
+      <label>{{localize "MYTHRASF.Item.Characteristic1"}}</label>
+      <select name="system.characteristic1">{{selectOptions characteristicChoices selected=item.system.characteristic1 labelAttr="label" valueAttr="value"}}</select>
+      <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label>
+      <select name="system.characteristic2">{{selectOptions characteristicChoices selected=item.system.characteristic2 labelAttr="label" valueAttr="value"}}</select>
     {{/if}}
-    <label>{{localize "MYTHRASF.Skill.Group"}}</label>
-    <select name="system.group">{{selectOptions groupChoices selected=item.system.group labelAttr="label" valueAttr="value"}}</select>
-    <label>{{localize "MYTHRASF.Item.Characteristic1"}}</label>
-    <select name="system.characteristic1">{{selectOptions characteristicChoices selected=item.system.characteristic1 labelAttr="label" valueAttr="value"}}</select>
-    <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label>
-    <select name="system.characteristic2">{{selectOptions characteristicChoices selected=item.system.characteristic2 labelAttr="label" valueAttr="value"}}</select>
     {{#if isCombatStyle}}
-      <fieldset class="combat-style-weapons-editor">
+      <nav class="combat-style-sheet-tabs" aria-label="{{localize "MYTHRASF.CombatStyle.Tabs.Label"}}">
+        <button type="button" class="active" data-combat-style-tab="description">{{localize "MYTHRASF.CombatStyle.Tabs.Description"}}</button>
+        <button type="button" data-combat-style-tab="weapons">{{localize "MYTHRASF.CombatStyle.Tabs.Weapons"}}</button>
+        <button type="button" data-combat-style-tab="configuration">{{localize "MYTHRASF.CombatStyle.Tabs.Configuration"}}</button>
+      </nav>
+
+      <section class="combat-style-tab-panel active" data-combat-style-tab-content="description">
+        <fieldset class="combat-style-description-editor"><legend>{{localize "MYTHRASF.CombatStyle.Description"}}</legend>
+          <label>{{localize "MYTHRASF.CombatStyle.Traits"}}</label>
+          <input type="text" name="system.traits" value="{{item.system.traits}}">
+          <label>{{localize "MYTHRASF.Item.Description"}}</label>
+          <textarea name="system.description">{{item.system.description}}</textarea>
+        </fieldset>
+      </section>
+
+      <section class="combat-style-tab-panel" data-combat-style-tab-content="weapons">
+        <fieldset class="combat-style-weapons-editor">
         <legend>{{localize "MYTHRASF.CombatStyle.Weapons"}}</legend>
         <div class="combat-style-weapon-drop" data-combat-style-weapon-drop><i class="fas fa-hand-pointer" aria-hidden="true"></i>
           <span>{{localize "MYTHRASF.CombatStyle.DropWeaponsHere"}}</span></div>
@@ -39,9 +55,25 @@
           <button type="button" class="sheet-add-button" data-action="add-combat-style-profile"
             aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
         </div>{{/if}}
-      </fieldset>
-      <label>{{localize "MYTHRASF.CombatStyle.Traits"}}</label>
-      <input type="text" name="system.traits" value="{{item.system.traits}}">
+        </fieldset>
+      </section>
+
+      <section class="combat-style-tab-panel" data-combat-style-tab-content="configuration">
+        <fieldset class="combat-style-configuration"><legend>{{localize "MYTHRASF.CombatStyle.Configuration"}}</legend>
+          <label>{{localize "MYTHRASF.Item.Category"}}</label><output class="sheet-field-readonly">{{localize "MYTHRASF.Skill.Professional"}}</output>
+          <label>{{localize "MYTHRASF.Skill.Group"}}</label><output class="sheet-field-readonly">{{localize "MYTHRASF.Skill.GroupCombat"}}</output>
+          <label>{{localize "MYTHRASF.Item.Characteristic1"}}</label><output class="sheet-field-readonly">{{combatStyleCharacteristic1}}</output>
+          <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label><output class="sheet-field-readonly">{{combatStyleCharacteristic2}}</output>
+          <label>{{localize "MYTHRASF.Skill.Base"}}</label><output class="sheet-field-readonly">{{item.system.base}}%</output>
+          <label>{{localize "MYTHRASF.CombatStyle.SourceType"}}</label><output class="sheet-field-readonly">{{combatStyleSourceType}}</output>
+          <label>{{localize "MYTHRASF.Skill.BaseBonus"}}</label><output class="sheet-field-readonly">{{item.system.baseBonus}}</output>
+          <label>{{localize "MYTHRASF.Skill.CulturePoints"}}</label><output class="sheet-field-readonly">{{item.system.culturePoints}}</output>
+          <label>{{localize "MYTHRASF.Skill.ProfessionPoints"}}</label><output class="sheet-field-readonly">{{item.system.professionPoints}}</output>
+          <label>{{localize "MYTHRASF.Skill.FreePoints"}}</label><output class="sheet-field-readonly">{{item.system.freePoints}}</output>
+          <label>{{localize "MYTHRASF.Skill.ExperiencePoints"}}</label><output class="sheet-field-readonly">{{item.system.experiencePoints}}</output>
+          <label>{{localize "MYTHRASF.Skill.Total"}}</label><output class="sheet-field-readonly">{{item.system.total}}%</output>
+        </fieldset>
+      </section>
     {{/if}}
   {{/if}}
 
@@ -66,20 +98,37 @@
   {{/if}}
 
   {{#if isEquipment}}
+    {{#unless isWeapon}}
     <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
     {{#unless isArmor}}<label>{{localize "MYTHRASF.Item.Weight"}}</label><input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
     <label>{{localize "MYTHRASF.Item.Value"}}</label><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}">{{/unless}}
     <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
     {{#unless isArmor}}<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>{{/unless}}
+    {{/unless}}
   {{/if}}
 
   {{#if isWeapon}}
-    <label>{{localize "MYTHRASF.Weapon.ProfileKey"}}</label><input type="text" name="system.profileKey" value="{{item.system.profileKey}}">
-    <label>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
-    <label>{{localize "MYTHRASF.Weapon.HitPoints"}}</label><div><input type="number" min="0" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}"> / <input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}"></div>
-    <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}">
-    <label>{{localize "MYTHRASF.Weapon.PreparedMode"}}</label><select name="system.activeModeKey">{{selectOptions weaponModes selected=item.system.activeModeKey labelAttr="name" valueAttr="key"}}</select>
-    <fieldset class="weapon-modes-editor"><legend>{{localize "MYTHRASF.Weapon.Modes"}}</legend>
+    <nav class="weapon-sheet-tabs" aria-label="{{localize "MYTHRASF.Weapon.Tabs.Label"}}">
+      <button type="button" class="active" data-weapon-tab="characteristics">{{localize "MYTHRASF.Weapon.Tabs.Characteristics"}}</button>
+      <button type="button" data-weapon-tab="modes">{{localize "MYTHRASF.Weapon.Tabs.Modes"}}</button>
+      <button type="button" data-weapon-tab="instance">{{localize "MYTHRASF.Weapon.Tabs.Instance"}}</button>
+      <button type="button" data-weapon-tab="coding">{{localize "MYTHRASF.Weapon.Tabs.Coding"}}</button>
+    </nav>
+
+    <section class="weapon-tab-panel active" data-weapon-tab-content="characteristics">
+      <fieldset class="weapon-characteristics-editor"><legend>{{localize "MYTHRASF.Weapon.Characteristics"}}</legend>
+        <label>{{localize "MYTHRASF.Item.Weight"}}</label><input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
+        <label>{{localize "MYTHRASF.Item.Value"}}</label><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}">
+        <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}">
+        <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
+        <label>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
+        <label>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</label><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
+        <label>{{localize "MYTHRASF.Item.Description"}}</label><textarea name="system.description">{{item.system.description}}</textarea>
+      </fieldset>
+    </section>
+
+    <section class="weapon-tab-panel" data-weapon-tab-content="modes">
+      <fieldset class="weapon-modes-editor"><legend>{{localize "MYTHRASF.Weapon.Modes"}}</legend>
       <button type="button" class="sheet-add-button" data-action="add-weapon-mode" aria-label="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus"></i></button>
       {{#each weaponModes as |mode|}}<section class="weapon-mode-editor">
         <div class="weapon-mode-actions"><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="-1" aria-label="{{localize "MYTHRASF.MoveUp"}}"><i class="fas fa-arrow-up"></i></button><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="1" aria-label="{{localize "MYTHRASF.MoveDown"}}"><i class="fas fa-arrow-down"></i></button><button type="button" class="sheet-icon-button" data-action="delete-weapon-mode" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash"></i></button></div>
@@ -97,7 +146,23 @@
         <label>{{localize "MYTHRASF.Weapon.Reload"}}</label><input name="system.modes.{{@index}}.reload" value="{{mode.reload}}">
         <label>{{localize "MYTHRASF.Weapon.Effects"}}</label><textarea name="system.modes.{{@index}}.effects">{{mode.effects}}</textarea>
       </section>{{/each}}
-    </fieldset>
+      </fieldset>
+    </section>
+
+    <section class="weapon-tab-panel" data-weapon-tab-content="instance">
+      <fieldset class="weapon-instance-editor"><legend>{{localize "MYTHRASF.Weapon.InstanceValues"}}</legend>
+        <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
+        <label>{{localize "MYTHRASF.Weapon.CurrentHitPoints"}}</label><input type="number" min="0" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
+        <label>{{localize "MYTHRASF.Weapon.PreparedMode"}}</label><select name="system.activeModeKey">{{selectOptions weaponModes selected=item.system.activeModeKey labelAttr="name" valueAttr="key"}}</select>
+        <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>
+      </fieldset>
+    </section>
+
+    <section class="weapon-tab-panel" data-weapon-tab-content="coding">
+      <fieldset class="weapon-instance-editor"><legend>{{localize "MYTHRASF.Weapon.CodingValues"}}</legend>
+        <label>{{localize "MYTHRASF.Weapon.ProfileKey"}}</label><input type="text" name="system.profileKey" value="{{item.system.profileKey}}">
+      </fieldset>
+    </section>
   {{/if}}
 
   {{#if isArmor}}
@@ -134,6 +199,6 @@
     <label>{{localize "MYTHRASF.HitLocation.ArmorCostPercentage"}}</label><input type="number" min="0" step="any" name="system.armorCostPercentage" value="{{item.system.armorCostPercentage}}">
   {{/if}}
 
-  <label>{{localize "MYTHRASF.Item.Description"}}</label>
-  <textarea name="system.description">{{item.system.description}}</textarea>
+  {{#unless isWeapon}}{{#unless isCombatStyle}}<label>{{localize "MYTHRASF.Item.Description"}}</label>
+  <textarea name="system.description">{{item.system.description}}</textarea>{{/unless}}{{/unless}}
 </div>

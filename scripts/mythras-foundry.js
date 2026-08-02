@@ -25,6 +25,7 @@ import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
+import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -119,11 +120,24 @@ Hooks.on("preCreateItem", (item, data) => {
   }
   const type = data.type ?? item.type;
   const system = data.system ?? item.system ?? {};
+  if (isGenericItemName(data.name ?? item.name, type, (key) => game.i18n.localize(key))) {
+    const documents = item.parent?.items ?? game.items ?? [];
+    item.updateSource({ name: nextNumberedItemName(
+      type, documents, (key) => game.i18n.localize(key)
+    ) });
+  }
   if (type === "combatStyle" && !(system.weaponProfiles?.length) && system.weapons) {
     item.updateSource({ "system.weaponProfiles": parseWeaponProfileReferences(system.weapons) });
   }
   if (type === "weapon" && !system.profileKey) {
     item.updateSource({ "system.profileKey": normalizeWeaponProfile(data.name ?? item.name) });
+  }
+  if (type === "weapon" && Number(system.hitPoints ?? 0) > 0
+    && !Number(system.maxHitPoints ?? 0)) {
+    item.updateSource({
+      "system.maxHitPoints": Number(system.hitPoints),
+      "system.currentHitPoints": Number(system.hitPoints)
+    });
   }
   if (type === "weapon" && !(system.modes?.length)) {
     const mode = legacyWeaponMode({ name: data.name ?? item.name, system });
@@ -307,10 +321,15 @@ async function migrateCombatItems(actor) {
         update["system.profileKey"] = normalizeWeaponProfile(item.name);
         changed = true;
       }
-      const legacy = Number(item.system.hitPoints ?? 0);
+      const hasLegacyHitPoints = foundry.utils.hasProperty(item._source, "system.hitPoints");
+      const legacy = Number(foundry.utils.getProperty(item._source, "system.hitPoints") ?? 0);
       if (!item.system.maxHitPoints && legacy) {
         update["system.maxHitPoints"] = legacy;
         update["system.currentHitPoints"] = legacy;
+        changed = true;
+      }
+      if (hasLegacyHitPoints) {
+        update["system.-=hitPoints"] = null;
         changed = true;
       }
       const requiredHands = weaponHandsRequired(item);
@@ -340,11 +359,13 @@ async function migrateWorldCombatItem(item) {
     update["system.activeModeKey"] = weaponModes(item)[0].key;
   }
   if (!item.system.profileKey) update["system.profileKey"] = normalizeWeaponProfile(item.name);
-  const legacy = Number(item.system.hitPoints ?? 0);
+  const hasLegacyHitPoints = foundry.utils.hasProperty(item._source, "system.hitPoints");
+  const legacy = Number(foundry.utils.getProperty(item._source, "system.hitPoints") ?? 0);
   if (!item.system.maxHitPoints && legacy) {
     update["system.maxHitPoints"] = legacy;
     update["system.currentHitPoints"] = legacy;
   }
+  if (hasLegacyHitPoints) update["system.-=hitPoints"] = null;
   const requiredHands = weaponHandsRequired(item);
   if (!foundry.utils.hasProperty(item._source, "system.handsRequired")
     || Number(item.system.handsRequired) !== requiredHands) {

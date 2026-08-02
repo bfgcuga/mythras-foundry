@@ -192,7 +192,6 @@ export class WeaponData extends EquipmentData {
         choices: ["full", "half", "none"] }),
       size: textField(),
       reach: textField(),
-      hitPoints: nonNegativeNumber(0, true),
       maxHitPoints: nonNegativeNumber(0, true),
       currentHitPoints: nonNegativeNumber(0, true),
       armorPoints: nonNegativeNumber(0, true),
