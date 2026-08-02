@@ -8,6 +8,7 @@ import {
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "../rules/combat.js";
 import { modeKeysAreUnique, nextModeKey, normalizeModeKey, weaponModes } from "../rules/weapon-modes.js";
 import { manualWeaponProfiles, mergeWeaponProfiles, removeWeaponProfile, weaponProfileOptions } from "../rules/combat-style-weapons.js";
+import { armorPhysicalTotals } from "../rules/armor.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -55,6 +56,14 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         }
       }
     }
+    if (this.item.type === "armor") {
+      update.system.profileKey = normalizeWeaponProfile(
+        update.system?.profileKey || this.item.system.profileKey || update.name || this.item.name
+      );
+      update.system.profileName = update.system?.profileName || this.item.system.profileName
+        || update.name || this.item.name;
+      update.system.coverageMigrated = true;
+    }
     if (this.item.type === "passion" && update.system?.structured) {
       if (!this.item.system.structured) {
         const base = calculatePassionBase(
@@ -77,6 +86,11 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
+    const armorLocations = this.item.type === "armor" && this.item.actor
+      ? this.item.actor.items.filter((candidate) => candidate.type === "hitLocation") : [];
+    const selectedArmorLocations = new Set(this.item.system.coveredLocationIds ?? []);
+    const armorTotals = this.item.type === "armor"
+      ? armorPhysicalTotals(this.item, armorLocations) : null;
     return foundry.utils.mergeObject(context, {
       item: this.item,
       editable: this.isEditable,
@@ -90,6 +104,13 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isWeapon: this.item.type === "weapon",
       weaponModes: this.item.type === "weapon" ? weaponModes(this.item) : [],
       isArmor: this.item.type === "armor",
+      armorLocations: armorLocations.map((location) => ({
+        id: location.id,
+        name: location.name,
+        multiplier: location.system.armorMultiplier,
+        selected: selectedArmorLocations.has(location.id)
+      })),
+      armorTotals,
       isHitLocation: this.item.type === "hitLocation",
       combatStyleWeaponProfiles: this.item.type === "combatStyle"
         ? (this.item.system.weaponProfiles ?? []) : [],
@@ -170,6 +191,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
     this.element.querySelectorAll("[data-action='delete-combat-style-profile']").forEach((button) =>
       button.addEventListener("click", (event) => this.#deleteCombatStyleProfile(event)));
+    this.element.querySelectorAll("[data-armor-location-id]").forEach((field) =>
+      field.addEventListener("change", (event) => this.#updateArmorCoverage(event)));
     const dropZone = this.element.querySelector("[data-combat-style-weapon-drop]");
     dropZone?.addEventListener("dragover", (event) => {
       event.preventDefault();
@@ -182,6 +205,18 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       event.stopPropagation();
       dropZone.classList.remove("drag-over");
       this.#handleCombatStyleWeaponDrop(event).catch((error) => this.#notifyProfileError(error));
+    });
+  }
+
+  async #updateArmorCoverage(event) {
+    if (!this.isEditable || this.item.type !== "armor") return;
+    const id = event.currentTarget.dataset.armorLocationId;
+    const selected = new Set(this.item.system.coveredLocationIds ?? []);
+    event.currentTarget.checked ? selected.add(id) : selected.delete(id);
+    await this.item.update({
+      "system.coveredLocationIds": [...selected],
+      "system.coverageMigrated": true,
+      "system.equipped": false
     });
   }
 

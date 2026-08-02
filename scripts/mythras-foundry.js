@@ -128,6 +128,18 @@ Hooks.on("preCreateItem", (item, data) => {
     const mode = legacyWeaponMode({ name: data.name ?? item.name, system });
     item.updateSource({ "system.modes": [mode], "system.activeModeKey": mode.key });
   }
+  if (type === "armor") {
+    item.updateSource({
+      "system.profileKey": system.profileKey || normalizeWeaponProfile(data.name ?? item.name),
+      "system.profileName": system.profileName || data.name || item.name,
+      "system.coverageMigrated": true
+    });
+  }
+});
+
+Hooks.on("createItem", (item, options, userId) => {
+  if (userId !== game.user.id || item.type !== "armor" || item.parent?.type !== "character") return;
+  if ((item.system.coveredLocationIds?.length ?? 0) === 0) item.sheet?.render(true);
 });
 
 Hooks.on("createActor", async (actor, options, userId) => {
@@ -151,6 +163,9 @@ Hooks.once("ready", async () => {
   for (const item of game.items.filter((candidate) => ["combatStyle", "weapon"].includes(candidate.type))) {
     await migrateWorldCombatItem(item);
   }
+  for (const item of game.items.filter((candidate) => candidate.type === "armor")) {
+    await migrateWorldArmor(item);
+  }
 
   for (const actor of game.actors.filter((candidate) => candidate.type === "character")) {
     const legacyEmbeddedSkills = actor.items.filter(
@@ -167,6 +182,7 @@ Hooks.once("ready", async () => {
     await migrateEmbeddedItemIcons(actor);
     await migrateCombatItems(actor);
     await ensureHumanHitLocations(actor);
+    await migrateActorArmor(actor);
   }
   const worldIconUpdates = game.items
     .map(getLegacyItemIconUpdate)
@@ -202,6 +218,49 @@ async function ensureHumanHitLocations(actor) {
     actor.system,
     (key) => game.i18n.localize(key)
   ));
+}
+
+function defaultArmorMultiplier(location) {
+  if (location.system.category === "chest") return 3;
+  if (location.system.category === "abdomen") return 2;
+  if (location.system.category === "head") return 1.5;
+  if (location.system.hpClass === "arm") return 1;
+  return 1.5;
+}
+
+async function migrateActorArmor(actor) {
+  const updates = [];
+  for (const item of actor.items) {
+    if (item.type === "hitLocation"
+      && !foundry.utils.hasProperty(item._source, "system.armorMultiplier")) {
+      updates.push({ _id: item.id, "system.armorMultiplier": defaultArmorMultiplier(item) });
+    }
+    if (item.type === "armor"
+      && !foundry.utils.hasProperty(item._source, "system.coverageMigrated")) {
+      updates.push({
+        _id: item.id,
+        "system.profileKey": normalizeWeaponProfile(item.name),
+        "system.profileName": item.name,
+        "system.coveredLocationIds": [],
+        "system.coverageMigrated": true,
+        "system.coverage": "",
+        "system.equipped": false
+      });
+    }
+  }
+  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+}
+
+async function migrateWorldArmor(item) {
+  if (foundry.utils.hasProperty(item._source, "system.coverageMigrated")) return;
+  await item.update({
+    "system.profileKey": normalizeWeaponProfile(item.name),
+    "system.profileName": item.name,
+    "system.coveredLocationIds": [],
+    "system.coverageMigrated": true,
+    "system.coverage": "",
+    "system.equipped": false
+  });
 }
 
 async function migrateCombatItems(actor) {

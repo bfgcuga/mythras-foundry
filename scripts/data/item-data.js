@@ -217,7 +217,15 @@ export class ArmorData extends EquipmentData {
   static defineSchema() {
     return {
       ...super.defineSchema(),
+      profileKey: textField(),
+      profileName: textField(),
       armorPoints: nonNegativeNumber(0, true),
+      baseEncumbrance: nonNegativeNumber(),
+      baseValue: nonNegativeNumber(),
+      coveredLocationIds: new ArrayField(textField(), {
+        required: true, nullable: false, initial: []
+      }),
+      coverageMigrated: new BooleanField({ required: true, nullable: false, initial: false }),
       penalty: nonNegativeNumber(0, true),
       era: new StringField({ required: true, nullable: false, initial: "ancient",
         choices: ["ancient", "modern", "futuristic"] }),
@@ -239,6 +247,7 @@ export class HitLocationData extends foundry.abstract.TypeDataModel {
       maxHitPoints: nonNegativeNumber(1, true),
       currentHitPoints: new NumberField({ required: true, nullable: false, integer: true, initial: 1 }),
       armorPoints: nonNegativeNumber(0, true),
+      armorMultiplier: nonNegativeNumber(1),
       disabled: new BooleanField({ required: true, nullable: false, initial: false }),
       description: descriptionField()
     };

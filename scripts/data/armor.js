@@ -1,4 +1,4 @@
-const armor = ({ key, name, armorPoints, era }) => ({
+const armor = ({ key, name, armorPoints, era, baseEncumbrance = 0, baseValue = 0 }) => ({
   buildKey: key,
   name,
   type: "armor",
@@ -9,7 +9,13 @@ const armor = ({ key, name, armorPoints, era }) => ({
     value: 0,
     location: "",
     equipped: false,
+    profileKey: key,
+    profileName: name,
     armorPoints,
+    baseEncumbrance,
+    baseValue,
+    coveredLocationIds: [],
+    coverageMigrated: true,
     penalty: 0,
     era,
     coverage: "",

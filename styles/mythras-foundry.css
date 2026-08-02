@@ -1132,6 +1132,22 @@
   grid-column: 1 / -1;
 }
 
+.mythras-foundry .armor-coverage-editor {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem 0.75rem;
+}
+
+.mythras-foundry .armor-location-choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mythras-foundry .armor-location-choice small { color: var(--mythras-accent); }
+
 .mythras-foundry .item-sheet-content textarea {
   min-height: 10rem;
   resize: vertical;
@@ -1427,9 +1443,18 @@
 }
 .mythras-foundry .inventory-armor .inventory-table-head,
 .mythras-foundry .inventory-armor .item-list li {
-  grid-template-columns: minmax(12rem, 1fr) 5rem 4rem minmax(8rem, 0.8fr) 5rem 2rem;
-  min-width: 45rem;
+  grid-template-columns: minmax(11rem, 1fr) 4.5rem minmax(9rem, 1fr) 5rem 5rem 4rem 5rem 2rem;
+  min-width: 56rem;
 }
+
+.mythras-foundry .armor-piece-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: normal;
+}
+
+.mythras-foundry .armor-piece-name small { color: var(--mythras-accent); font-size: 0.85em; }
 .mythras-foundry .inventory-weapons .inventory-table-head,
 .mythras-foundry .inventory-weapons .item-list li {
   grid-template-columns: minmax(12rem, 1fr) minmax(8rem, 0.8fr) 5rem 5rem 2rem;

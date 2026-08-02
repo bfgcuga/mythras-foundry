@@ -38,10 +38,11 @@ import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
-import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
+import { armorCoverageLocations, armorEquipConflicts, armorPhysicalTotals,
+  totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
   FATIGUE_LEVELS, worsenDifficulty } from "../rules/fatigue.js";
-import { hasDisabledSeriousWound, worstWoundLevel,
+import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 
@@ -245,10 +246,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           difficultyTarget(Number(style.system.total ?? 0), currentCondition.skillDifficulty)
         )
       })),
-      combatArmor: armor.map((item) => ({
-        item,
-        coverageLabel: item.system.coverage || game.i18n.localize("MYTHRASF.Armor.AllLocations")
-      })),
+      combatArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
+      inventoryArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
         selected: level.key === this.actor.system.fatigueLevel,
         levelLabel: game.i18n.localize(`MYTHRASF.Fatigue.Level.${level.key}`),
@@ -483,6 +482,23 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
     if (item.type === "armor") {
+      if (!item.system.equipped) {
+        const locationIds = new Set(this.actor.items
+          .filter((candidate) => candidate.type === "hitLocation").map((location) => location.id));
+        const selectedIds = Array.from(item.system.coveredLocationIds ?? [])
+          .filter((id) => locationIds.has(id));
+        if (!selectedIds.length) {
+          ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.CoverageRequired"));
+          return;
+        }
+        const conflicts = armorEquipConflicts(item,
+          this.actor.items.filter((candidate) => candidate.type === "armor"));
+        if (conflicts.length) {
+          const names = conflicts.map((id) => this.actor.items.get(id)?.name ?? id).join(", ");
+          ui.notifications.warn(game.i18n.format("MYTHRASF.Armor.CoverageConflict", { locations: names }));
+          return;
+        }
+      }
       await item.update({ "system.equipped": !Boolean(item.system.equipped) });
       return;
     }
@@ -503,6 +519,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const samePrepared = item.system.equipped && modeKey === item.system.activeModeKey;
     await item.update({ "system.equipped": !samePrepared, "system.activeModeKey": modeKey });
+  }
+
+  #prepareArmor(item, hitLocations) {
+    const locations = armorCoverageLocations(item, hitLocations);
+    const totals = armorPhysicalTotals(item, hitLocations);
+    return {
+      item,
+      coverageLabel: locations.map((location) => location.name).join(", ")
+        || game.i18n.localize("MYTHRASF.Armor.Unassigned"),
+      profileLabel: item.system.profileName || item.name,
+      showProfile: Boolean(item.system.profileName && item.system.profileName !== item.name),
+      ...totals
+    };
   }
 
   async #prepareWeaponMode(event) {
@@ -550,7 +579,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #applySeriousWoundPenalty(difficulty) {
     const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    if (!hasDisabledSeriousWound(locations)) return difficulty;
+    if (!hasSeriousWound(locations)) return difficulty;
     const applyPenalty = await DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
       content: `<p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p>`,

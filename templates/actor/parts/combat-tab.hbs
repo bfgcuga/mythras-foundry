@@ -42,7 +42,7 @@
     <div class="combat-armor-head"><span>{{localize "TYPES.Item.armor"}}</span><span>{{localize "MYTHRASF.Armor.Coverage"}}</span><span>{{localize "MYTHRASF.Item.Description"}}</span><span>{{localize "MYTHRASF.Armor.Points"}}</span><span>{{localize "MYTHRASF.Armor.PenaltyShort"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span></div>
     {{#each combatArmor as |row|}}
       <div class="combat-armor-line" data-item-id="{{row.item.id}}">
-        <button type="button" data-action="edit-item">{{row.item.name}}</button>
+        <button type="button" class="armor-piece-name" data-action="edit-item"><span>{{row.item.name}}</span>{{#if row.showProfile}}<small>{{row.profileLabel}}</small>{{/if}}</button>
         <span>{{row.coverageLabel}}</span><span class="combat-armor-description">{{{row.item.system.description}}}</span>
         <output>{{row.item.system.armorPoints}}</output><strong>{{row.item.system.penalty}}%</strong>
         <button type="button" data-action="toggle-equipped" class="sheet-icon-button equipment-state-toggle armor-toggle {{#if row.item.system.equipped}}equipped{{/if}}" aria-pressed="{{row.item.system.equipped}}" title="{{localize "MYTHRASF.Armor.ToggleEquipped"}}"><i class="fas fa-vest" aria-hidden="true"></i></button>

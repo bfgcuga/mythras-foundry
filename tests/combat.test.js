@@ -12,7 +12,7 @@ import {
   calculateLocationHitPoints,
   findHitLocation,
   humanHitLocationData,
-  hasDisabledSeriousWound,
+  hasSeriousWound,
   woundLevel,
   woundPenaltyKey,
   worstWoundLevel
@@ -82,6 +82,12 @@ test("la tabla humana calcula los siete valores para CON 10 y TAM 10", () => {
   assert.equal(calculateLocationHitPoints(10, 10, "chest"), 6);
 });
 
+test("las localizaciones humanas incluyen los multiplicadores de armadura", () => {
+  const locations = humanHitLocationData({ constitution: 10, size: 10 });
+  assert.deepEqual(locations.map(({ system }) => system.armorMultiplier),
+    [1.5, 1.5, 2, 3, 1, 1, 1.5]);
+});
+
 test("los umbrales de herida usan los PV máximos", () => {
   assert.equal(woundLevel(4, 4), "healthy");
   assert.equal(woundLevel(1, 4), "minor");
@@ -105,12 +111,12 @@ test("la penalizacion del encabezado deriva del nivel de herida", () => {
   assert.equal(woundPenaltyKey("major"), "incapacitated");
 });
 
-test("solo una herida grave marcada deja una localizacion inutilizada", () => {
-  assert.equal(hasDisabledSeriousWound([
-    { system: { currentHitPoints: 0, maxHitPoints: 4, disabled: true } }
+test("cualquier herida grave activa la consulta situacional", () => {
+  assert.equal(hasSeriousWound([
+    { system: { currentHitPoints: 0, maxHitPoints: 4, disabled: false } }
   ]), true);
-  assert.equal(hasDisabledSeriousWound([
-    { system: { currentHitPoints: 0, maxHitPoints: 4, disabled: false } },
+  assert.equal(hasSeriousWound([
+    { system: { currentHitPoints: 1, maxHitPoints: 4, disabled: true } },
     { system: { currentHitPoints: -4, maxHitPoints: 4, disabled: true } }
   ]), false);
 });

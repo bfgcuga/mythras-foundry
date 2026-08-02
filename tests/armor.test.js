@@ -22,6 +22,9 @@ test("cada armadura tiene clave única, era y puntos de armadura", () => {
     assert.ok(["ancient", "modern", "futuristic"].includes(source.system.era));
     assert.ok(source.system.armorPoints > 0);
     assert.equal(source.system.penalty, 0);
+    assert.equal(source.system.profileKey, source.buildKey);
+    assert.deepEqual(source.system.coveredLocationIds, []);
+    assert.equal(source.system.coverageMigrated, true);
   }
 });
 
