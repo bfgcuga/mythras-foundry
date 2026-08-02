@@ -2,6 +2,9 @@
   --mythras-accent: #3d3933;
   --mythras-border: #9c8766;
   --mythras-field-editable: #eadbb8;
+  --mythras-font-size-auxiliary: 0.72rem;
+  --mythras-font-size-section: 0.9rem;
+  --mythras-font-size-table: 0.8rem;
   --mythras-ink: #302e2a;
   --mythras-paper: #dfcda8;
   --mythras-panel: rgba(255, 249, 226, 0.42);
@@ -1179,7 +1182,7 @@
 .mythras-foundry .combat-style-head,
 .mythras-foundry .combat-weapon-head {
   color: var(--color-text-subtle);
-  font-size: 0.68rem;
+  font-size: var(--mythras-font-size-table);
   font-weight: 700;
   text-align: center;
 }
@@ -1192,8 +1195,8 @@
   gap: 0.25rem;
   min-width: 28rem;
 }
-.mythras-foundry .combat-fatigue-head { color: var(--color-text-subtle); font-size: 0.65rem; font-weight: 700; text-align: center; }
-.mythras-foundry .combat-fatigue-line { min-height: 1.65rem; border-bottom: 1px solid rgb(61 57 51 / 25%); font-size: 0.7rem; text-align: center; }
+.mythras-foundry .combat-fatigue-head { color: var(--color-text-subtle); font-size: var(--mythras-font-size-table); font-weight: 700; text-align: center; }
+.mythras-foundry .combat-fatigue-line { min-height: 1.9rem; border-bottom: 1px solid rgb(61 57 51 / 25%); font-size: var(--mythras-font-size-table); text-align: center; }
 .mythras-foundry .combat-fatigue-line > span:first-child { text-align: left; }
 
 .mythras-foundry .combat-location-line,
@@ -1322,7 +1325,7 @@
 .mythras-foundry .combat-weapon-section-title {
   margin: 0.55rem 0 0.25rem;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.88rem;
+  font-size: var(--mythras-font-size-section);
   text-align: center;
 }
 
@@ -1331,15 +1334,16 @@
   display: grid;
   align-items: center;
   gap: 0.35rem;
-  min-width: 55rem;
+  min-width: 0;
+  font-size: var(--mythras-font-size-table);
 }
 
 .mythras-foundry .combat-weapon-melee {
-  grid-template-columns: minmax(7rem, 1fr) 4rem 3.2rem 3.5rem 4rem minmax(6rem, 0.8fr) 5.5rem minmax(9rem, 1.1fr) 3.5rem 2rem;
+  grid-template-columns: minmax(6.5rem, 1fr) 3.5rem 2.8rem 3.2rem 3.6rem minmax(5.5rem, 0.8fr) 5rem minmax(7.5rem, 1.1fr) 6rem 1.8rem;
 }
 
 .mythras-foundry .combat-weapon-ranged {
-  grid-template-columns: minmax(7rem, 1fr) 4rem 3.2rem 5.5rem minmax(6rem, 0.8fr) 4rem minmax(6rem, 0.8fr) 5.5rem minmax(9rem, 1.1fr) 3.5rem 2rem;
+  grid-template-columns: minmax(6.5rem, 1fr) 3.5rem 2.5rem 4.6rem minmax(5.5rem, 0.8fr) 3.2rem minmax(5.5rem, 0.8fr) 4.8rem minmax(7.5rem, 1.1fr) 6rem 1.8rem;
 }
 
 .mythras-foundry .combat-weapon-line { padding: 0.25rem 0; }
@@ -1351,7 +1355,7 @@
 }
 
 .mythras-foundry .combat-style-choice { display: grid; gap: 0.15rem; min-width: 0; }
-.mythras-foundry .combat-style-choice select { min-width: 0; font-size: 0.72rem; }
+.mythras-foundry .combat-style-choice select { min-width: 0; font-size: var(--mythras-font-size-table); }
 
 @container (max-width: 760px) {
   .mythras-foundry .combat-paper-layout {
@@ -1441,7 +1445,7 @@
 .mythras-foundry .combat-style-profile-manual .sheet-add-button { position: static; }
 .mythras-foundry .combat-style-profile-dialog { display: grid; gap: 0.45rem; }
 .mythras-foundry .combat-style-profile-dialog label { display: flex; align-items: center; gap: 0.5rem; }
-.mythras-foundry .inventory-table-head { min-height: 1.8rem; padding: 0.25rem 0.35rem; color: var(--color-text-subtle); font-size: 0.72rem; font-weight: 700; text-align: center; }
+.mythras-foundry .inventory-table-head { min-height: 1.8rem; padding: 0.25rem 0.35rem; color: var(--color-text-subtle); font-size: var(--mythras-font-size-table); font-weight: 700; text-align: center; }
 .mythras-foundry .inventory-table .item-list li { padding: 0.35rem; }
 .mythras-foundry .inventory-table .item-list li > span { overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .mythras-foundry .inventory-table .equip-toggle { width: 2rem; min-height: 1.8rem; padding: 0; }

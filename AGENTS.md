@@ -19,6 +19,13 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Una misma clase debe conservar el mismo significado en encabezados, formularios, tablas y pestañas: la apariencia nunca debe depender de que el valor sea un `input`, `output` o `span`.
 - Los bordes, subrayados o formas especiales pueden expresar la función del dato, pero no deben contradecir la distinción de superficie entre editable y solo lectura.
 
+## Tipografía de datos
+
+- Las tablas, sus cabeceras, sus valores y sus controles usan `--mythras-font-size-table` (`0.8rem`). Una misma tabla no reduce por separado encabezados, selectores o filas.
+- Los subtítulos que separan bloques dentro de un panel usan `--mythras-font-size-section` (`0.9rem`).
+- `--mythras-font-size-auxiliary` (`0.72rem`) se reserva para notas, ayudas o metadatos secundarios; no se usa para información operativa ni para hacer que una tabla entre.
+- Si una tabla no cabe al tamaño normal de la hoja, se ajustan primero la cuadrícula, los espacios y el reparto de columnas. No se reduce la tipografía de forma local para evitar el desbordamiento.
+
 ## Botones con iconos
 
 - Acciones integradas en filas —tirar, equipar, eliminar y similares— usan `sheet-icon-button`. Su fondo es transparente.

@@ -401,5 +401,6 @@
   "MYTHRASF.Combat.NoStyles": "No hay estilos de combate.",
   "MYTHRASF.Combat.WeaponsAndShields": "Armas y escudos",
   "MYTHRASF.Combat.MeleeWeaponsAndShields": "Armas cuerpo a cuerpo y escudos",
-  "MYTHRASF.Combat.RangedWeapons": "Armas a distancia"
+  "MYTHRASF.Combat.RangedWeapons": "Armas a distancia",
+  "MYTHRASF.Combat.BaseAndTarget": "Base / objetivo"
 }

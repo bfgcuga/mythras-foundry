@@ -280,6 +280,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) })),
       difficulty: resolution.difficulty,
       difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${resolution.difficulty}`),
+      baseTarget: resolution.target,
       effectiveTarget: difficultyTarget(resolution.target, resolution.difficulty),
       canAttack: resolution.difficulty !== "impossible" && weapon.system.equipped && weapon.system.activeModeKey === mode.key
         && (Boolean(resolution.style) || resolution.usesBase)
@@ -453,9 +454,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
+    if (item.type === "armor") {
+      await item.update({ "system.equipped": !Boolean(item.system.equipped) });
+      return;
+    }
     const modeKey = event.currentTarget.closest("[data-mode-key]")?.dataset.modeKey
       || item.system.activeModeKey || findWeaponMode(item)?.key;
-    if (item.type === "weapon" && (!item.system.equipped || modeKey !== item.system.activeModeKey)) {
+    if (!item.system.equipped || modeKey !== item.system.activeModeKey) {
       const assessment = assessWeaponEquip(
         item,
         this.actor.items.filter((candidate) => candidate.type === "weapon"), modeKey

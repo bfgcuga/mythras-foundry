@@ -401,5 +401,6 @@
   "MYTHRASF.Combat.NoStyles": "No combat styles.",
   "MYTHRASF.Combat.WeaponsAndShields": "Weapons & Shields",
   "MYTHRASF.Combat.MeleeWeaponsAndShields": "Melee Weapons & Shields",
-  "MYTHRASF.Combat.RangedWeapons": "Ranged Weapons"
+  "MYTHRASF.Combat.RangedWeapons": "Ranged Weapons",
+  "MYTHRASF.Combat.BaseAndTarget": "Base / target"
 }
