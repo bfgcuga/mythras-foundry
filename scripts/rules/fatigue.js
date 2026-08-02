@@ -17,8 +17,22 @@ export function fatigueLevel(key) {
   return FATIGUE_LEVELS.find((level) => level.key === key) ?? FATIGUE_LEVELS[0];
 }
 
+export function combinedConditionLevel(fatigueKey, woundLevel = "healthy") {
+  const fatigueIndex = Math.max(0, FATIGUE_LEVELS.findIndex((level) => level.key === fatigueKey));
+  const woundIndex = woundLevel === "major"
+    ? FATIGUE_LEVELS.findIndex((level) => level.key === "incapacitated")
+    : 0;
+  return FATIGUE_LEVELS[Math.max(fatigueIndex, woundIndex)] ?? FATIGUE_LEVELS[0];
+}
+
 export function combineDifficulties(left = "standard", right = "standard") {
   return DIFFICULTY_ORDER[Math.max(DIFFICULTY_ORDER.indexOf(left), DIFFICULTY_ORDER.indexOf(right))] ?? "standard";
+}
+
+export function worsenDifficulty(difficulty = "standard", steps = 1) {
+  const index = Math.max(0, DIFFICULTY_ORDER.indexOf(difficulty));
+  return DIFFICULTY_ORDER[Math.min(DIFFICULTY_ORDER.length - 1,
+    index + Math.max(0, Number(steps) || 0))];
 }
 
 export function applyFatigue(attributes, levelKey) {

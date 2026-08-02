@@ -112,6 +112,7 @@
     <label>{{localize "MYTHRASF.HitLocation.Category.Label"}}</label><select name="system.category">{{selectOptions locationCategoryChoices selected=item.system.category labelAttr="label" valueAttr="value"}}</select>
     <label>{{localize "MYTHRASF.HitLocation.HpClass.Label"}}</label><select name="system.hpClass">{{selectOptions locationHpClassChoices selected=item.system.hpClass labelAttr="label" valueAttr="value"}}</select>
     <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.autoCalculate" {{checked item.system.autoCalculate}}>{{localize "MYTHRASF.HitLocation.AutoCalculate"}}</label>
+    <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.disabled" {{checked item.system.disabled}}>{{localize "MYTHRASF.HitLocation.Disabled"}}</label>
     <label>{{localize "MYTHRASF.HitLocation.MaxHitPoints"}}</label><input type="number" min="1" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
     <label>{{localize "MYTHRASF.HitLocation.CurrentHitPoints"}}</label><input type="number" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
     <label>{{localize "MYTHRASF.Armor.Natural"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">

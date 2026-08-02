@@ -33,9 +33,17 @@ export function worstWoundLevel(locations) {
 }
 
 export function woundPenaltyKey(level) {
-  if (level === "serious") return "locationDisabled";
-  if (level === "major") return "possibleIncapacitation";
+  if (level === "serious") return "situationalDifficulty";
+  if (level === "major") return "incapacitated";
   return "none";
+}
+
+export function hasDisabledSeriousWound(locations) {
+  return (locations ?? []).some((location) => {
+    const system = location?.system ?? location ?? {};
+    return Boolean(system.disabled)
+      && woundLevel(system.currentHitPoints, system.maxHitPoints) === "serious";
+  });
 }
 
 export function findHitLocation(locations, roll) {
@@ -62,7 +70,8 @@ export function humanHitLocationData(actorSystem, localize = (key) => key) {
         autoCalculate: true,
         maxHitPoints: maximum,
         currentHitPoints: maximum,
-        armorPoints: 0
+        armorPoints: 0,
+        disabled: false
       }
     };
   });

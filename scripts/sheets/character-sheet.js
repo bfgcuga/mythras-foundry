@@ -39,8 +39,10 @@ import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
-import { applyFatigue, combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
-import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
+  FATIGUE_LEVELS, worsenDifficulty } from "../rules/fatigue.js";
+import { hasDisabledSeriousWound, worstWoundLevel,
+  woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -114,9 +116,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
+    const currentCondition = combinedConditionLevel(currentFatigue.key, currentWound);
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system);
-    const effectiveAttributes = this.actor.system.attributes;
+    const effectiveAttributes = applyFatigue(baseAttributes, currentCondition.key);
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
       baseAttributes.actionPointsMax,
@@ -225,7 +228,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         item,
         naturalArmor: Number(item.system.armorPoints ?? 0),
         wornArmor: wornArmorPoints(item, equippedArmor),
-        totalArmor: totalArmorPoints(item, equippedArmor)
+        totalArmor: totalArmorPoints(item, equippedArmor),
+        showDisabledControl: item.system.woundLevel === "serious",
+        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled)
       })),
       combatStyles: combatStyles.map((style) => ({
         item: style,
@@ -237,7 +242,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         total: Number(style.system.total ?? 0),
         totalDisplay: penalizedValue(
           Number(style.system.total ?? 0),
-          difficultyTarget(Number(style.system.total ?? 0), currentFatigue.skillDifficulty)
+          difficultyTarget(Number(style.system.total ?? 0), currentCondition.skillDifficulty)
         )
       })),
       combatArmor: armor.map((item) => ({
@@ -277,7 +282,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarity: mode.familiarity
     });
     resolution.difficulty = combineDifficulties(resolution.difficulty,
-      fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
+      this.#conditionLevel().skillDifficulty);
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
     const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
     return {
@@ -389,6 +394,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-fatigue-level]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateFatigue(event));
+    });
+    this.element.querySelectorAll("[data-location-disabled]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateLocationDisabled(event));
     });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
@@ -517,13 +525,39 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable || !event.currentTarget.checked) return;
     const levelKey = event.currentTarget.value;
     const baseAttributes = calculateDerivedAttributes(this.actor.system);
-    const effectiveAttributes = applyFatigue(baseAttributes, levelKey);
+    const effectiveAttributes = applyFatigue(baseAttributes,
+      this.#conditionLevel(levelKey).key);
     const currentActionPoints = Number(this.actor.system.resources.actionPoints.value ?? 0);
     await this.actor.update({
       "system.fatigueLevel": levelKey,
       "system.resources.actionPoints.value": Math.min(
         currentActionPoints, effectiveAttributes.actionPointsMax)
     });
+  }
+
+  async #updateLocationDisabled(event) {
+    if (!this.isEditable) return;
+    const location = this.actor.items.get(
+      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (location?.type !== "hitLocation") return;
+    await location.update({ "system.disabled": event.currentTarget.checked });
+  }
+
+  #conditionLevel(fatigueKey = this.actor.system.fatigueLevel) {
+    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
+    return combinedConditionLevel(fatigueKey, worstWoundLevel(locations));
+  }
+
+  async #applySeriousWoundPenalty(difficulty) {
+    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
+    if (!hasDisabledSeriousWound(locations)) return difficulty;
+    const applyPenalty = await DialogV2.confirm({
+      window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
+      content: `<p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p>`,
+      yes: { label: game.i18n.localize("MYTHRASF.Wound.ApplyPenalty") },
+      no: { label: game.i18n.localize("MYTHRASF.Wound.IgnorePenalty") }
+    });
+    return applyPenalty ? worsenDifficulty(difficulty) : difficulty;
   }
 
   async #updateWeaponCombatChoice(event) {
@@ -562,7 +596,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         ?? mode.familiarity
     });
     resolution.difficulty = combineDifficulties(resolution.difficulty,
-      fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
+      this.#conditionLevel().skillDifficulty);
+    resolution.difficulty = await this.#applySeriousWoundPenalty(resolution.difficulty);
     if (resolution.difficulty === "impossible") {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Fatigue.NoActivity"));
       return;
@@ -842,7 +877,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       type: item.type,
       system: item.system,
       totalDisplay: penalizedValue(total, difficultyTarget(
-        total, fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty))
+      total, this.#conditionLevel().skillDifficulty))
     };
     if (!draft) return row;
 
@@ -1499,8 +1534,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
-    const difficulty = combineDifficulties(row?.querySelector("[data-difficulty]")?.value ?? "standard",
-      fatigueLevel(this.actor.system.fatigueLevel).skillDifficulty);
+    let difficulty = combineDifficulties(
+      row?.querySelector("[data-difficulty]")?.value ?? "standard",
+      this.#conditionLevel().skillDifficulty);
+    difficulty = await this.#applySeriousWoundPenalty(difficulty);
     await item?.rollSkill({ difficulty });
   }
 

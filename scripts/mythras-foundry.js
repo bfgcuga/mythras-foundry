@@ -12,7 +12,8 @@ import {
   WeaponData
 } from "./data/item-data.js";
 import { MythrasItem } from "./documents/mythras-item.js";
-import { calculateLocationHitPoints, humanHitLocationData } from "./rules/hit-locations.js";
+import { calculateLocationHitPoints, humanHitLocationData,
+  worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
 import { styleAbilityKey } from "./rules/background-generation.js";
@@ -22,6 +23,7 @@ import { activateCombatCard } from "./rules/combat-chat.js";
 import { weaponHandsRequired } from "./rules/equipment.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
+import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -86,11 +88,27 @@ Hooks.on("preUpdateActor", (actor, changed) => {
     expanded.system ?? {},
     { inplace: false }
   );
-  const attributes = calculateDerivedAttributes(candidate);
+  const baseAttributes = calculateDerivedAttributes(candidate);
+  const condition = combinedConditionLevel(candidate.fatigueLevel,
+    worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")));
+  const attributes = applyFatigue(baseAttributes, condition.key);
 
   clampResource(changed, candidate, "actionPoints", attributes.actionPointsMax);
   clampResource(changed, candidate, "luckPoints", attributes.luckPointsMax);
   clampResource(changed, candidate, "magicPoints", attributes.magicPointsMax);
+});
+
+Hooks.on("updateItem", async (item, changed, options, userId) => {
+  const actor = item.parent;
+  if (userId !== game.user.id || item.type !== "hitLocation" || actor?.type !== "character") return;
+  const baseAttributes = calculateDerivedAttributes(actor.system);
+  const condition = combinedConditionLevel(actor.system.fatigueLevel,
+    worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")));
+  const maximum = applyFatigue(baseAttributes, condition.key).actionPointsMax;
+  const current = Number(actor.system.resources.actionPoints.value ?? 0);
+  if (current > maximum) {
+    await actor.update({ "system.resources.actionPoints.value": maximum });
+  }
 });
 
 Hooks.on("preCreateItem", (item, data) => {

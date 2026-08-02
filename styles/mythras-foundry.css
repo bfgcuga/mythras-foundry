@@ -1252,6 +1252,37 @@
   font-weight: 700;
 }
 
+.mythras-foundry .combat-location-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mythras-foundry .combat-location-name > button {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow-wrap: anywhere;
+  text-align: left;
+  white-space: normal;
+}
+
+.mythras-foundry .location-disabled-state {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 700;
+}
+
+.mythras-foundry .location-disabled-state.active,
+.mythras-foundry .location-disabled-state.active span {
+  color: #a1241b !important;
+}
+
 .mythras-foundry .combat-location-line .location-max { border-radius: 50%; }
 .mythras-foundry .combat-location-line .location-current { border-radius: 0.35rem; }
 .mythras-foundry .combat-location-line .location-armor {

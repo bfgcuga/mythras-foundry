@@ -12,6 +12,7 @@ import {
   calculateLocationHitPoints,
   findHitLocation,
   humanHitLocationData,
+  hasDisabledSeriousWound,
   woundLevel,
   woundPenaltyKey,
   worstWoundLevel
@@ -100,8 +101,18 @@ test("el estado general usa la herida más grave de todas las localizaciones", (
 test("la penalizacion del encabezado deriva del nivel de herida", () => {
   assert.equal(woundPenaltyKey("healthy"), "none");
   assert.equal(woundPenaltyKey("minor"), "none");
-  assert.equal(woundPenaltyKey("serious"), "locationDisabled");
-  assert.equal(woundPenaltyKey("major"), "possibleIncapacitation");
+  assert.equal(woundPenaltyKey("serious"), "situationalDifficulty");
+  assert.equal(woundPenaltyKey("major"), "incapacitated");
+});
+
+test("solo una herida grave marcada deja una localizacion inutilizada", () => {
+  assert.equal(hasDisabledSeriousWound([
+    { system: { currentHitPoints: 0, maxHitPoints: 4, disabled: true } }
+  ]), true);
+  assert.equal(hasDisabledSeriousWound([
+    { system: { currentHitPoints: 0, maxHitPoints: 4, disabled: false } },
+    { system: { currentHitPoints: -4, maxHitPoints: 4, disabled: true } }
+  ]), false);
 });
 
 test("una tirada localiza el rango correspondiente o devuelve null", () => {

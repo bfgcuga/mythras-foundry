@@ -12,7 +12,16 @@
     {{#each combatHitLocations as |row|}}
       <div class="combat-location-line" data-item-id="{{row.item.id}}">
         <span>{{row.item.system.rangeStart}}–{{row.item.system.rangeEnd}}</span>
-        <button type="button" data-action="edit-item">{{row.item.name}}</button>
+        <div class="combat-location-name">
+          <button type="button" data-action="edit-item">{{row.item.name}}</button>
+          {{#if row.showDisabledControl}}
+            {{#if @root.editable}}<label class="location-disabled-state {{#if row.disabled}}active{{/if}}">
+              <input type="checkbox" class="sheet-state-box" data-location-disabled
+                {{checked row.disabled}} aria-label="{{localize "MYTHRASF.HitLocation.Disabled"}}">
+              <span>{{localize "MYTHRASF.HitLocation.Disabled"}}</span>
+            </label>{{else if row.disabled}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Disabled"}}</span>{{/if}}
+          {{else if row.disabled}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Disabled"}}</span>{{/if}}
+        </div>
         <output class="location-max">{{row.item.system.maxHitPoints}}</output>
         <output class="location-current wound-{{row.item.system.woundLevel}}">{{row.item.system.currentHitPoints}}</output>
         <output class="location-armor" title="{{localize "MYTHRASF.Armor.Natural"}}: {{row.naturalArmor}} + {{localize "MYTHRASF.Combat.WornArmor"}}: {{row.wornArmor}}">{{row.totalArmor}}</output>

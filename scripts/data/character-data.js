@@ -2,7 +2,8 @@ import {
   CHARACTERISTIC_KEYS,
   calculateDerivedAttributes
 } from "../rules/derived-attributes.js";
-import { applyFatigue, FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { applyFatigue, combinedConditionLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { worstWoundLevel } from "../rules/hit-locations.js";
 
 const {
   BooleanField,
@@ -96,7 +97,10 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
     super.prepareDerivedData();
 
     this.baseAttributes = calculateDerivedAttributes(this);
-    this.attributes = applyFatigue(this.baseAttributes, this.fatigueLevel);
+    const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
+    this.conditionLevel = combinedConditionLevel(
+      this.fatigueLevel, worstWoundLevel(locations));
+    this.attributes = applyFatigue(this.baseAttributes, this.conditionLevel.key);
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;
