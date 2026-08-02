@@ -82,10 +82,12 @@ test("la tabla humana calcula los siete valores para CON 10 y TAM 10", () => {
   assert.equal(calculateLocationHitPoints(10, 10, "chest"), 6);
 });
 
-test("las localizaciones humanas incluyen los multiplicadores de armadura", () => {
+test("las localizaciones humanas separan carga y porcentaje de precio de armadura", () => {
   const locations = humanHitLocationData({ constitution: 10, size: 10 });
-  assert.deepEqual(locations.map(({ system }) => system.armorMultiplier),
+  assert.deepEqual(locations.map(({ system }) => system.armorEncumbranceMultiplier),
     [1.5, 1.5, 2, 3, 1, 1, 1.5]);
+  assert.deepEqual(locations.map(({ system }) => system.armorCostPercentage),
+    [15, 15, 20, 30, 10, 10, 15]);
 });
 
 test("los umbrales de herida usan los PV máximos", () => {

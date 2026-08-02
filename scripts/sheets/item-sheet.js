@@ -107,7 +107,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       armorLocations: armorLocations.map((location) => ({
         id: location.id,
         name: location.name,
-        multiplier: location.system.armorMultiplier,
+        encumbranceMultiplier: location.system.armorEncumbranceMultiplier,
+        costPercentage: location.system.armorCostPercentage,
         selected: selectedArmorLocations.has(location.id)
       })),
       armorTotals,

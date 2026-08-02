@@ -247,7 +247,8 @@ export class HitLocationData extends foundry.abstract.TypeDataModel {
       maxHitPoints: nonNegativeNumber(1, true),
       currentHitPoints: new NumberField({ required: true, nullable: false, integer: true, initial: 1 }),
       armorPoints: nonNegativeNumber(0, true),
-      armorMultiplier: nonNegativeNumber(1),
+      armorEncumbranceMultiplier: nonNegativeNumber(1),
+      armorCostPercentage: nonNegativeNumber(10),
       disabled: new BooleanField({ required: true, nullable: false, initial: false }),
       description: descriptionField()
     };

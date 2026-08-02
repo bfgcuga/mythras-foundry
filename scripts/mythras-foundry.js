@@ -220,20 +220,26 @@ async function ensureHumanHitLocations(actor) {
   ));
 }
 
-function defaultArmorMultiplier(location) {
-  if (location.system.category === "chest") return 3;
-  if (location.system.category === "abdomen") return 2;
-  if (location.system.category === "head") return 1.5;
-  if (location.system.hpClass === "arm") return 1;
-  return 1.5;
+function defaultArmorFactors(location) {
+  if (location.system.category === "chest") return { encumbrance: 3, cost: 30 };
+  if (location.system.category === "abdomen") return { encumbrance: 2, cost: 20 };
+  if (location.system.category === "head") return { encumbrance: 1.5, cost: 15 };
+  if (location.system.hpClass === "arm") return { encumbrance: 1, cost: 10 };
+  return { encumbrance: 1.5, cost: 15 };
 }
 
 async function migrateActorArmor(actor) {
   const updates = [];
   for (const item of actor.items) {
     if (item.type === "hitLocation"
-      && !foundry.utils.hasProperty(item._source, "system.armorMultiplier")) {
-      updates.push({ _id: item.id, "system.armorMultiplier": defaultArmorMultiplier(item) });
+      && (!foundry.utils.hasProperty(item._source, "system.armorEncumbranceMultiplier")
+        || !foundry.utils.hasProperty(item._source, "system.armorCostPercentage"))) {
+      const factors = defaultArmorFactors(item);
+      updates.push({
+        _id: item.id,
+        "system.armorEncumbranceMultiplier": factors.encumbrance,
+        "system.armorCostPercentage": factors.cost
+      });
     }
     if (item.type === "armor"
       && !foundry.utils.hasProperty(item._source, "system.coverageMigrated")) {

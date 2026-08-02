@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { armorCoversLocation, armorCoverageFactor, armorEquipConflicts,
+import { armorCoversLocation, armorCostPercentage, armorEncumbranceFactor, armorEquipConflicts,
   armorPhysicalTotals, totalArmorPoints, wornArmorPoints } from "../scripts/rules/armor.js";
 
 const location = (name, category, armorPoints = 0) => ({ name, system: { category, armorPoints } });
@@ -37,16 +37,17 @@ test("una pieza nueva solo protege las localizaciones seleccionadas", () => {
   assert.equal(totalArmorPoints(chest, [helmet]), 0);
 });
 
-test("carga y precio suman los multiplicadores de las localizaciones cubiertas", () => {
+test("la carga usa multiplicadores y el precio porcentajes de la armadura completa", () => {
   const locations = [
-    { id: "left-leg", system: { armorMultiplier: 1.5 } },
-    { id: "right-leg", system: { armorMultiplier: 1.5 } },
-    { id: "chest", system: { armorMultiplier: 3 } }
+    { id: "left-leg", system: { armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 } },
+    { id: "right-leg", system: { armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 } },
+    { id: "chest", system: { armorEncumbranceMultiplier: 3, armorCostPercentage: 30 } }
   ];
   const greaves = piece("greaves", 6, ["left-leg", "right-leg"]);
-  assert.equal(armorCoverageFactor(greaves, locations), 3);
+  assert.equal(armorEncumbranceFactor(greaves, locations), 3);
+  assert.equal(armorCostPercentage(greaves, locations), 30);
   assert.deepEqual(armorPhysicalTotals(greaves, locations), {
-    factor: 3, encumbrance: 6, value: 30
+    encumbranceFactor: 3, costPercentage: 30, encumbrance: 6, value: 3
   });
 });
 

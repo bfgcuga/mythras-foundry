@@ -30,17 +30,24 @@ export function armorCoverageLocations(armor, locations) {
   return (locations ?? []).filter((location) => ids.has(location.id ?? location._id));
 }
 
-export function armorCoverageFactor(armor, locations) {
+export function armorEncumbranceFactor(armor, locations) {
   return armorCoverageLocations(armor, locations).reduce((total, location) =>
-    total + Math.max(0, Number(location.system?.armorMultiplier ?? 0)), 0);
+    total + Math.max(0, Number(location.system?.armorEncumbranceMultiplier ?? 0)), 0);
+}
+
+export function armorCostPercentage(armor, locations) {
+  return armorCoverageLocations(armor, locations).reduce((total, location) =>
+    total + Math.max(0, Number(location.system?.armorCostPercentage ?? 0)), 0);
 }
 
 export function armorPhysicalTotals(armor, locations) {
-  const factor = armorCoverageFactor(armor, locations);
+  const encumbranceFactor = armorEncumbranceFactor(armor, locations);
+  const costPercentage = armorCostPercentage(armor, locations);
   return {
-    factor,
-    encumbrance: factor * Math.max(0, Number(armor?.system?.baseEncumbrance ?? 0)),
-    value: factor * Math.max(0, Number(armor?.system?.baseValue ?? 0))
+    encumbranceFactor,
+    costPercentage,
+    encumbrance: encumbranceFactor * Math.max(0, Number(armor?.system?.baseEncumbrance ?? 0)),
+    value: costPercentage / 100 * Math.max(0, Number(armor?.system?.baseValue ?? 0))
   };
 }
 

@@ -111,10 +111,11 @@
     <fieldset class="armor-coverage-editor"><legend>{{localize "MYTHRASF.Armor.Coverage"}}</legend>
       {{#each armorLocations as |location|}}<label class="armor-location-choice">
         <input type="checkbox" class="sheet-state-box" data-armor-location-id="{{location.id}}" {{checked location.selected}}>
-        <span>{{location.name}}</span><small>Ã—{{location.multiplier}}</small>
+        <span>{{location.name}}</span><small>{{localize "MYTHRASF.Armor.EncumbranceShort"}} &times;{{location.encumbranceMultiplier}} · {{localize "MYTHRASF.Armor.PriceShort"}} {{location.costPercentage}}%</small>
       </label>{{else}}<p class="empty">{{localize "MYTHRASF.Armor.CoverageActorRequired"}}</p>{{/each}}
     </fieldset>
-    <label>{{localize "MYTHRASF.Armor.CoverageFactor"}}</label><output class="sheet-field-readonly">Ã—{{armorTotals.factor}}</output>
+    <label>{{localize "MYTHRASF.Armor.EncumbranceFactor"}}</label><output class="sheet-field-readonly">&times;{{armorTotals.encumbranceFactor}}</output>
+    <label>{{localize "MYTHRASF.Armor.PricePercentage"}}</label><output class="sheet-field-readonly">{{armorTotals.costPercentage}}%</output>
     <label>{{localize "MYTHRASF.Armor.TotalEncumbrance"}}</label><output class="sheet-field-readonly">{{armorTotals.encumbrance}}</output>
     <label>{{localize "MYTHRASF.Armor.TotalValue"}}</label><output class="sheet-field-readonly">{{armorTotals.value}}</output>
   {{/if}}
@@ -128,7 +129,8 @@
     <label>{{localize "MYTHRASF.HitLocation.MaxHitPoints"}}</label><input type="number" min="1" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
     <label>{{localize "MYTHRASF.HitLocation.CurrentHitPoints"}}</label><input type="number" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
     <label>{{localize "MYTHRASF.Armor.Natural"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
-    <label>{{localize "MYTHRASF.HitLocation.ArmorMultiplier"}}</label><input type="number" min="0" step="0.5" name="system.armorMultiplier" value="{{item.system.armorMultiplier}}">
+    <label>{{localize "MYTHRASF.HitLocation.ArmorEncumbranceMultiplier"}}</label><input type="number" min="0" step="0.5" name="system.armorEncumbranceMultiplier" value="{{item.system.armorEncumbranceMultiplier}}">
+    <label>{{localize "MYTHRASF.HitLocation.ArmorCostPercentage"}}</label><input type="number" min="0" step="any" name="system.armorCostPercentage" value="{{item.system.armorCostPercentage}}">
   {{/if}}
 
   <label>{{localize "MYTHRASF.Item.Description"}}</label>

@@ -1,11 +1,11 @@
 export const HUMAN_HIT_LOCATIONS = Object.freeze([
-  { nameKey: "rightLeg", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard", armorMultiplier: 1.5 },
-  { nameKey: "leftLeg", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard", armorMultiplier: 1.5 },
-  { nameKey: "abdomen", rangeStart: 7, rangeEnd: 9, category: "abdomen", hpClass: "abdomen", armorMultiplier: 2 },
-  { nameKey: "chest", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest", armorMultiplier: 3 },
-  { nameKey: "rightArm", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm", armorMultiplier: 1 },
-  { nameKey: "leftArm", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm", armorMultiplier: 1 },
-  { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorMultiplier: 1.5 }
+  { nameKey: "rightLeg", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
+  { nameKey: "leftLeg", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
+  { nameKey: "abdomen", rangeStart: 7, rangeEnd: 9, category: "abdomen", hpClass: "abdomen", armorEncumbranceMultiplier: 2, armorCostPercentage: 20 },
+  { nameKey: "chest", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest", armorEncumbranceMultiplier: 3, armorCostPercentage: 30 },
+  { nameKey: "rightArm", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 10 },
+  { nameKey: "leftArm", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 10 },
+  { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 }
 ]);
 
 export function calculateLocationHitPoints(constitution, size, hpClass = "standard") {
@@ -70,7 +70,8 @@ export function humanHitLocationData(actorSystem, localize = (key) => key) {
         maxHitPoints: maximum,
         currentHitPoints: maximum,
         armorPoints: 0,
-        armorMultiplier: location.armorMultiplier,
+        armorEncumbranceMultiplier: location.armorEncumbranceMultiplier,
+        armorCostPercentage: location.armorCostPercentage,
         disabled: false
       }
     };
