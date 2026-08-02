@@ -25,6 +25,8 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Una misma acción debe conservar icono, clase visual, estado hover y significado en Character, Combate e Inventario.
 - Los estilos específicos de una pestaña se limitan a colocación, dimensiones o distribución. La apariencia común vive en las clases compartidas.
 - Los estados activos se indican preferentemente mediante color, opacidad o el propio icono, manteniendo transparente el fondo de los botones integrados.
+- Los controles de equipación usan `equipment-state-toggle`: atenuados cuando están inactivos y a opacidad completa cuando están equipados. El icono debe representar el objeto (`fas fa-hand` para manos, `fas fa-vest` para armadura), nunca un check genérico.
+- Cuando una misma colección se gestiona desde Inventario y otra pestaña operativa, ambas vistas deben ofrecer el mismo control de equipación y mostrar el conjunto completo; el estado equipado filtra efectos y cálculos, no la visibilidad del objeto.
 
 ## Paneles y recuadros
 
@@ -40,3 +42,5 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Antes de añadir CSS, comprobar si el patrón ya existe. Si será usado en dos o más lugares, crear o ampliar una clase compartida.
 - Las nuevas vistas deben usar elementos semánticos, textos localizados y controles accesibles.
 - Los valores derivados que aparecen en una hoja y participan en reglas deben proceder del mismo ayudante puro. No duplicar cálculos entre la preparación de contexto, plantillas y resolución de combate.
+- En celdas de tabla con altura disponible, priorizar texto multilínea mediante `overflow-wrap` y `white-space: normal`. Si el contenido variable aún desborda, puede aplicarse ajuste progresivo de fuente con un mínimo legible; no truncar con elipsis por defecto cuando la fila admite varias líneas.
+- Encabezados y valores de una tabla deben compartir exactamente la misma cuadrícula y alineación. Los iconos auxiliares se posicionan fuera del flujo cuando puedan desplazar visualmente el dato principal de su columna.

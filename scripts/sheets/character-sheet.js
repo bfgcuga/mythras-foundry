@@ -194,7 +194,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         traits: style.system.traits,
         total: Number(style.system.total ?? 0)
       })),
-      wornArmor: equippedArmor.map((item) => ({
+      combatArmor: armor.map((item) => ({
         item,
         coverageLabel: item.system.coverage || game.i18n.localize("MYTHRASF.Armor.AllLocations")
       })),
@@ -345,6 +345,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-action='roll-weapon-attack']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollWeaponAttack(event));
     });
+    this.#fitCombatEffects();
 
     if (context.backgroundWizard && !this._backgroundSyncing) {
       const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
@@ -365,6 +366,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const tab = event.currentTarget.dataset.tab;
     this._activeTab = tab;
     this.#showTab(tab);
+    if (tab === "combat") this.#fitCombatEffects();
   }
 
   #showTab(tab) {
@@ -374,6 +376,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-tab-content]").forEach((section) => {
       section.classList.toggle("active", section.dataset.tabContent === tab);
     });
+  }
+
+  #fitCombatEffects() {
+    for (const element of this.element.querySelectorAll(".combat-effects")) {
+      element.style.fontSize = "";
+      if (element.clientWidth === 0 || element.clientHeight === 0) continue;
+      let size = Number.parseFloat(getComputedStyle(element).fontSize);
+      const minimum = 9;
+      while ((element.scrollHeight > element.clientHeight + 1
+        || element.scrollWidth > element.clientWidth + 1) && size > minimum) {
+        size -= 0.5;
+        element.style.fontSize = `${size}px`;
+      }
+    }
   }
 
   async #toggleEquipped(event) {

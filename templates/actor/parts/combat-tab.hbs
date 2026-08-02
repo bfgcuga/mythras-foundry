@@ -29,15 +29,16 @@
   </fieldset>
 
   <fieldset class="combat-paper-panel combat-paper-armor">
-    <legend>{{localize "MYTHRASF.Combat.WornArmor"}}</legend>
-    <div class="combat-armor-head"><span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.Armor.Coverage"}}</span><span>{{localize "MYTHRASF.Item.Description"}}</span><span>{{localize "MYTHRASF.Armor.Points"}}</span><span>{{localize "MYTHRASF.Armor.PenaltyShort"}}</span></div>
-    {{#each wornArmor as |row|}}
+    <legend>{{localize "MYTHRASF.Armors"}}</legend>
+    <div class="combat-armor-head"><span>{{localize "TYPES.Item.armor"}}</span><span>{{localize "MYTHRASF.Armor.Coverage"}}</span><span>{{localize "MYTHRASF.Item.Description"}}</span><span>{{localize "MYTHRASF.Armor.Points"}}</span><span>{{localize "MYTHRASF.Armor.PenaltyShort"}}</span><span>{{localize "MYTHRASF.Item.Equipped"}}</span></div>
+    {{#each combatArmor as |row|}}
       <div class="combat-armor-line" data-item-id="{{row.item.id}}">
         <button type="button" data-action="edit-item">{{row.item.name}}</button>
         <span>{{row.coverageLabel}}</span><span class="combat-armor-description">{{{row.item.system.description}}}</span>
         <output>{{row.item.system.armorPoints}}</output><strong>{{row.item.system.penalty}}%</strong>
+        <button type="button" data-action="toggle-equipped" class="sheet-icon-button equipment-state-toggle armor-toggle {{#if row.item.system.equipped}}equipped{{/if}}" aria-pressed="{{row.item.system.equipped}}" title="{{localize "MYTHRASF.Armor.ToggleEquipped"}}"><i class="fas fa-vest" aria-hidden="true"></i></button>
       </div>
-    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.EquippedArmor"}}</p>{{/each}}
+    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.Armor"}}</p>{{/each}}
     <div class="combat-paper-total"><span>{{localize "MYTHRASF.Armor.TotalPenalty"}}</span><strong>{{wornArmorPenalty}}%</strong></div>
   </fieldset>
 
@@ -66,10 +67,10 @@
       <div class="combat-weapon-line" data-item-id="{{row.item.id}}">
         <div class="combat-weapon-name">
           <button type="button" data-action="edit-item">{{row.item.name}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.item.system.handsRequired}}" class="sheet-icon-button hand-toggle {{#if row.item.system.equipped}}equipped{{/if}}" aria-pressed="{{row.item.system.equipped}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.item.system.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.item.system.equipped}}equipped{{/if}}" aria-pressed="{{row.item.system.equipped}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
         </div>
         <span>{{row.item.system.damage}}</span><span>{{row.item.system.size}}</span><span>{{row.item.system.reach}}</span>
-        <span>{{row.item.system.grip}}</span><span>{{row.item.system.effects}}</span>
+        <span>{{row.item.system.grip}}</span><span class="combat-effects">{{row.item.system.effects}}</span>
         <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>
         <div class="combat-style-choice">
           <select data-combat-style aria-label="{{localize "MYTHRASF.Combat.Style"}}">
