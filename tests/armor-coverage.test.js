@@ -41,7 +41,7 @@ test("la carga usa multiplicadores y el precio porcentajes de la armadura comple
   const locations = [
     { id: "left-leg", system: { armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 } },
     { id: "right-leg", system: { armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 } },
-    { id: "chest", system: { armorEncumbranceMultiplier: 3, armorCostPercentage: 30 } }
+    { id: "chest", system: { armorEncumbranceMultiplier: 3, armorCostPercentage: 25 } }
   ];
   const greaves = piece("greaves", 6, ["left-leg", "right-leg"]);
   assert.equal(armorEncumbranceFactor(greaves, locations), 3);

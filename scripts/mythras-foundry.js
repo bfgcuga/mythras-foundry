@@ -12,7 +12,7 @@ import {
   WeaponData
 } from "./data/item-data.js";
 import { MythrasItem } from "./documents/mythras-item.js";
-import { calculateLocationHitPoints, humanHitLocationData,
+import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
   worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
@@ -227,10 +227,10 @@ async function ensureHumanHitLocations(actor) {
 }
 
 function defaultArmorFactors(location) {
-  if (location.system.category === "chest") return { encumbrance: 3, cost: 30 };
+  if (location.system.category === "chest") return { encumbrance: 3, cost: 25 };
   if (location.system.category === "abdomen") return { encumbrance: 2, cost: 20 };
-  if (location.system.category === "head") return { encumbrance: 1.5, cost: 15 };
-  if (location.system.hpClass === "arm") return { encumbrance: 1, cost: 10 };
+  if (location.system.category === "head") return { encumbrance: 1.5, cost: 10 };
+  if (location.system.hpClass === "arm") return { encumbrance: 1, cost: 7.5 };
   return { encumbrance: 1.5, cost: 15 };
 }
 
@@ -238,13 +238,21 @@ async function migrateActorArmor(actor) {
   const updates = [];
   for (const item of actor.items) {
     if (item.type === "hitLocation"
-      && (!foundry.utils.hasProperty(item._source, "system.armorEncumbranceMultiplier")
-        || !foundry.utils.hasProperty(item._source, "system.armorCostPercentage"))) {
-      const factors = defaultArmorFactors(item);
+      && Number(item._source.system?.armorFactorsVersion ?? 0) < 2) {
+      const humanFactors = humanArmorFactors(item);
+      const factors = humanFactors ? {
+        encumbrance: humanFactors.armorEncumbranceMultiplier,
+        cost: humanFactors.armorCostPercentage
+      } : {
+        encumbrance: Number(item.system.armorEncumbranceMultiplier
+          ?? defaultArmorFactors(item).encumbrance),
+        cost: Number(item.system.armorCostPercentage ?? defaultArmorFactors(item).cost)
+      };
       updates.push({
         _id: item.id,
         "system.armorEncumbranceMultiplier": factors.encumbrance,
-        "system.armorCostPercentage": factors.cost
+        "system.armorCostPercentage": factors.cost,
+        "system.armorFactorsVersion": 2
       });
     }
     if (item.type === "armor"

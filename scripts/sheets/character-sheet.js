@@ -230,6 +230,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         naturalArmor: Number(item.system.armorPoints ?? 0),
         wornArmor: wornArmorPoints(item, equippedArmor),
         totalArmor: totalArmorPoints(item, equippedArmor),
+        armorOptions: armor.filter((piece) =>
+          (piece.system.coveredLocationIds ?? []).includes(item.id))
+          .map((piece) => ({ value: piece.id, label: piece.name })),
+        equippedArmorId: equippedArmor.find((piece) =>
+          (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
         showDisabledControl: item.system.woundLevel === "serious",
         disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled)
       })),
@@ -246,7 +251,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           difficultyTarget(Number(style.system.total ?? 0), currentCondition.skillDifficulty)
         )
       })),
-      combatArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
       inventoryArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
         selected: level.key === this.actor.system.fatigueLevel,
@@ -258,9 +262,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         actionPointLabel: level.skillDifficulty === "impossible" ? game.i18n.localize("MYTHRASF.Fatigue.NoActivity") : level.actionPointPenalty ? `-${level.actionPointPenalty}` : "—",
         recoveryLabel: game.i18n.localize(`MYTHRASF.Fatigue.RecoveryValue.${level.recovery}`)
       })),
-      wornArmorPenalty: equippedArmor.reduce((total, item) => (
-        total + Number(item.system.penalty ?? 0) * Number(item.system.quantity ?? 1)
-      ), 0),
       combatWeapons,
       meleeCombatWeapons: combatWeapons.filter((row) => row.mode.weaponType !== "ranged"),
       rangedCombatWeapons: combatWeapons.filter((row) => row.mode.weaponType === "ranged")
@@ -397,6 +398,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-location-disabled]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateLocationDisabled(event));
     });
+    this.element.querySelectorAll("[data-location-armor]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateLocationArmor(event));
+    });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
     });
@@ -482,23 +486,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
     if (item.type === "armor") {
-      if (!item.system.equipped) {
-        const locationIds = new Set(this.actor.items
-          .filter((candidate) => candidate.type === "hitLocation").map((location) => location.id));
-        const selectedIds = Array.from(item.system.coveredLocationIds ?? [])
-          .filter((id) => locationIds.has(id));
-        if (!selectedIds.length) {
-          ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.CoverageRequired"));
-          return;
-        }
-        const conflicts = armorEquipConflicts(item,
-          this.actor.items.filter((candidate) => candidate.type === "armor"));
-        if (conflicts.length) {
-          const names = conflicts.map((id) => this.actor.items.get(id)?.name ?? id).join(", ");
-          ui.notifications.warn(game.i18n.format("MYTHRASF.Armor.CoverageConflict", { locations: names }));
-          return;
-        }
-      }
+      if (!item.system.equipped && !this.#canEquipArmor(item)) return;
       await item.update({ "system.equipped": !Boolean(item.system.equipped) });
       return;
     }
@@ -519,6 +507,44 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const samePrepared = item.system.equipped && modeKey === item.system.activeModeKey;
     await item.update({ "system.equipped": !samePrepared, "system.activeModeKey": modeKey });
+  }
+
+  #canEquipArmor(item) {
+    const locationIds = new Set(this.actor.items
+      .filter((candidate) => candidate.type === "hitLocation").map((location) => location.id));
+    const selectedIds = Array.from(item.system.coveredLocationIds ?? [])
+      .filter((id) => locationIds.has(id));
+    if (!selectedIds.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.CoverageRequired"));
+      return false;
+    }
+    const conflicts = armorEquipConflicts(item,
+      this.actor.items.filter((candidate) => candidate.type === "armor"));
+    if (conflicts.length) {
+      const names = conflicts.map((id) => this.actor.items.get(id)?.name ?? id).join(", ");
+      ui.notifications.warn(game.i18n.format("MYTHRASF.Armor.CoverageConflict", { locations: names }));
+      return false;
+    }
+    return true;
+  }
+
+  async #updateLocationArmor(event) {
+    if (!this.isEditable) return;
+    const locationId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
+    const armors = this.actor.items.filter((item) => item.type === "armor");
+    const current = armors.find((item) => item.system.equipped
+      && (item.system.coveredLocationIds ?? []).includes(locationId));
+    const selected = armors.find((item) => item.id === event.currentTarget.value);
+    if (!selected) {
+      if (current) await current.update({ "system.equipped": false });
+      return;
+    }
+    if (selected.id === current?.id || selected.system.equipped) return;
+    if (!this.#canEquipArmor(selected)) {
+      event.currentTarget.value = current?.id ?? "";
+      return;
+    }
+    await selected.update({ "system.equipped": true });
   }
 
   #prepareArmor(item, hitLocations) {

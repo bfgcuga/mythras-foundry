@@ -2,11 +2,20 @@ export const HUMAN_HIT_LOCATIONS = Object.freeze([
   { nameKey: "rightLeg", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
   { nameKey: "leftLeg", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
   { nameKey: "abdomen", rangeStart: 7, rangeEnd: 9, category: "abdomen", hpClass: "abdomen", armorEncumbranceMultiplier: 2, armorCostPercentage: 20 },
-  { nameKey: "chest", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest", armorEncumbranceMultiplier: 3, armorCostPercentage: 30 },
-  { nameKey: "rightArm", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 10 },
-  { nameKey: "leftArm", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 10 },
-  { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 }
+  { nameKey: "chest", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest", armorEncumbranceMultiplier: 3, armorCostPercentage: 25 },
+  { nameKey: "rightArm", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 7.5 },
+  { nameKey: "leftArm", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 7.5 },
+  { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 10 }
 ]);
+
+export function humanArmorFactors(location) {
+  const system = location?.system ?? location ?? {};
+  return HUMAN_HIT_LOCATIONS.find((candidate) =>
+    Number(system.rangeStart) === candidate.rangeStart
+    && Number(system.rangeEnd) === candidate.rangeEnd
+    && system.category === candidate.category
+    && system.hpClass === candidate.hpClass) ?? null;
+}
 
 export function calculateLocationHitPoints(constitution, size, hpClass = "standard") {
   const band = Math.max(1, Math.ceil((Number(constitution) + Number(size)) / 5));
@@ -72,6 +81,7 @@ export function humanHitLocationData(actorSystem, localize = (key) => key) {
         armorPoints: 0,
         armorEncumbranceMultiplier: location.armorEncumbranceMultiplier,
         armorCostPercentage: location.armorCostPercentage,
+        armorFactorsVersion: 2,
         disabled: false
       }
     };

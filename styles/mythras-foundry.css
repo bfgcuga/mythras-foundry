@@ -1184,7 +1184,7 @@
 .mythras-foundry .combat-paper-layout {
   display: grid;
   grid-template-areas:
-    "locations armor"
+    "locations locations"
     "styles styles"
     "meleeWeapons meleeWeapons"
     "rangedWeapons rangedWeapons"
@@ -1214,7 +1214,6 @@
 }
 
 .mythras-foundry .combat-paper-locations { grid-area: locations; }
-.mythras-foundry .combat-paper-armor { grid-area: armor; }
 .mythras-foundry .combat-paper-fatigue { grid-area: fatigue; }
 .mythras-foundry .combat-paper-styles { grid-area: styles; }
 .mythras-foundry .combat-paper-melee-weapons { grid-area: meleeWeapons; overflow-x: auto; }
@@ -1229,9 +1228,14 @@
 .mythras-foundry .combat-location-head,
 .mythras-foundry .combat-location-line {
   display: grid;
-  grid-template-columns: 2.8rem minmax(6rem, 1fr) 2.2rem 2.2rem 2.2rem 1.5rem;
+  grid-template-columns: 3rem minmax(9rem, 1fr) 3rem 3rem minmax(12rem, 1.2fr) 3rem 1.5rem;
   align-items: center;
   gap: 0.25rem;
+}
+
+.mythras-foundry .combat-location-line > select {
+  width: 100%;
+  min-width: 0;
 }
 
 .mythras-foundry .combat-location-head,
@@ -1441,14 +1445,14 @@
 
 @container (max-width: 760px) {
   .mythras-foundry .combat-paper-layout {
-    grid-template-areas: "locations armor" "styles styles" "meleeWeapons meleeWeapons" "rangedWeapons rangedWeapons" "fatigue fatigue";
+    grid-template-areas: "locations locations" "styles styles" "meleeWeapons meleeWeapons" "rangedWeapons rangedWeapons" "fatigue fatigue";
     grid-template-columns: minmax(18rem, 1fr) minmax(14rem, 0.8fr);
   }
 }
 
 @container (max-width: 520px) {
   .mythras-foundry .combat-paper-layout {
-    grid-template-areas: "locations" "armor" "styles" "meleeWeapons" "rangedWeapons" "fatigue";
+    grid-template-areas: "locations" "styles" "meleeWeapons" "rangedWeapons" "fatigue";
     grid-template-columns: minmax(0, 1fr);
   }
 }

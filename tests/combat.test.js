@@ -87,7 +87,8 @@ test("las localizaciones humanas separan carga y porcentaje de precio de armadur
   assert.deepEqual(locations.map(({ system }) => system.armorEncumbranceMultiplier),
     [1.5, 1.5, 2, 3, 1, 1, 1.5]);
   assert.deepEqual(locations.map(({ system }) => system.armorCostPercentage),
-    [15, 15, 20, 30, 10, 10, 15]);
+    [15, 15, 20, 25, 7.5, 7.5, 10]);
+  assert.ok(locations.every(({ system }) => system.armorFactorsVersion === 2));
 });
 
 test("los umbrales de herida usan los PV máximos", () => {
