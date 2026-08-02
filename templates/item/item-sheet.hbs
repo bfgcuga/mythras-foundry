@@ -103,6 +103,7 @@
   {{#if isArmor}}
     <label>{{localize "MYTHRASF.Armor.ProfileKey"}}</label><input type="text" name="system.profileKey" value="{{item.system.profileKey}}">
     <label>{{localize "MYTHRASF.Armor.ProfileName"}}</label><input type="text" name="system.profileName" value="{{item.system.profileName}}">
+    <label>{{localize "MYTHRASF.Armor.Piece.TypeLabel"}}</label><select name="system.pieceType">{{selectOptions armorPieceTypeChoices selected=item.system.pieceType labelAttr="label" valueAttr="value"}}</select>
     <label>{{localize "MYTHRASF.Armor.Points"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
     <label>{{localize "MYTHRASF.Armor.BaseEncumbrance"}}</label><input type="number" min="0" step="any" name="system.baseEncumbrance" value="{{item.system.baseEncumbrance}}">
     <label>{{localize "MYTHRASF.Armor.BaseValue"}}</label><input type="number" min="0" step="any" name="system.baseValue" value="{{item.system.baseValue}}">

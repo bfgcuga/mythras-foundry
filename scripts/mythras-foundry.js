@@ -24,6 +24,7 @@ import { weaponHandsRequired } from "./rules/equipment.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
+import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -139,7 +140,12 @@ Hooks.on("preCreateItem", (item, data) => {
 
 Hooks.on("createItem", (item, options, userId) => {
   if (userId !== game.user.id || item.type !== "armor" || item.parent?.type !== "character") return;
-  if ((item.system.coveredLocationIds?.length ?? 0) === 0) item.sheet?.render(true);
+  if ((item.system.coveredLocationIds?.length ?? 0) === 0) {
+    configureNewArmorPiece(item).catch((error) => {
+      console.error("Mythras Foundry | Error configuring armor piece", error);
+      ui.notifications.error(game.i18n.localize("MYTHRASF.Armor.Piece.ConfigureError"));
+    });
+  }
 });
 
 Hooks.on("createActor", async (actor, options, userId) => {

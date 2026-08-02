@@ -156,6 +156,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       armorEraChoices: ["ancient", "modern", "futuristic"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Armor.Era.${value}`)
       })),
+      armorPieceTypeChoices: ["helmet", "cuirass", "greaves", "bracers", "other"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${value}`)
+      })),
       locationCategoryChoices: ["limb", "head", "chest", "abdomen", "other"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.HitLocation.Category.${value}`)
       })),

@@ -7,6 +7,7 @@ import {
   FUTURISTIC_ARMOR_SOURCES,
   MODERN_ARMOR_SOURCES
 } from "../scripts/data/armor.js";
+import { ARMOR_PIECE_TYPES, armorPieceDefaultName } from "../scripts/apps/armor-piece-configurator.js";
 
 test("el compendio contiene las veinte armaduras de muestra de Imperativo", () => {
   assert.equal(ANCIENT_ARMOR_SOURCES.length, 7);
@@ -31,4 +32,11 @@ test("cada armadura tiene clave única, era y puntos de armadura", () => {
 test("el catálogo conserva los extremos de protección de la tabla", () => {
   assert.equal(ARMOR_SOURCES.find(({ buildKey }) => buildKey === "pieles-cueros").system.armorPoints, 1);
   assert.equal(ARMOR_SOURCES.find(({ buildKey }) => buildKey === "armadura-asalto-completa").system.armorPoints, 12);
+});
+
+test("el configurador ofrece los tipos fisicos de armadura", () => {
+  assert.deepEqual(ARMOR_PIECE_TYPES, ["helmet", "cuirass", "greaves", "bracers", "other"]);
+  assert.equal(armorPieceDefaultName("helmet", "Cota de malla", (key, data) =>
+    `Casco de ${data.profile}`), "Casco de Cota de malla");
+  assert.equal(armorPieceDefaultName("other", "Cota de malla"), "Cota de malla");
 });

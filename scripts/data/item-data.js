@@ -219,6 +219,8 @@ export class ArmorData extends EquipmentData {
       ...super.defineSchema(),
       profileKey: textField(),
       profileName: textField(),
+      pieceType: new StringField({ required: true, nullable: false, initial: "other",
+        choices: ["helmet", "cuirass", "greaves", "bracers", "other"] }),
       armorPoints: nonNegativeNumber(0, true),
       baseEncumbrance: nonNegativeNumber(),
       baseValue: nonNegativeNumber(),

@@ -1148,6 +1148,30 @@
 
 .mythras-foundry .armor-location-choice small { color: var(--mythras-accent); }
 
+.mythras-foundry.armor-piece-config-dialog {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mythras-foundry.armor-piece-config-dialog > label {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(12rem, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.mythras-foundry .armor-piece-location-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 0.75rem;
+}
+
+.mythras-foundry .armor-piece-location-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .mythras-foundry .item-sheet-content textarea {
   min-height: 10rem;
   resize: vertical;
