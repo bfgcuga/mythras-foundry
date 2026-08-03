@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 globalThis.Item = class {};
 
-const { classifyRoll } = await import("../scripts/documents/mythras-item.js");
+const { classifyRoll, rollThresholdRanges } = await import("../scripts/documents/mythras-item.js");
 
 test("01-05 siempre tiene éxito y el umbral crítico prevalece", () => {
   assert.equal(classifyRoll(4, 3, 1), "success");
@@ -19,4 +19,15 @@ test("99 y 00 son pifia hasta 100%; por encima solo 00", () => {
   assert.equal(classifyRoll(99, 65, 7), "fumble");
   assert.equal(classifyRoll(99, 110, 11), "failure");
   assert.equal(classifyRoll(100, 110, 11), "fumble");
+});
+
+test("la leyenda muestra los rangos de crítico y pifia aplicados", () => {
+  assert.deepEqual(rollThresholdRanges(65, 7), {
+    critical: "01–07",
+    fumble: "99–00"
+  });
+  assert.deepEqual(rollThresholdRanges(110, 11), {
+    critical: "01–11",
+    fumble: "00"
+  });
 });

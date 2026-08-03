@@ -66,6 +66,7 @@ export class MythrasItem extends Item {
     );
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, target, criticalTarget);
+    const ranges = rollThresholdRanges(target, criticalTarget);
 
     const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
@@ -77,9 +78,9 @@ export class MythrasItem extends Item {
             <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)}</strong></div>
             <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${baseTarget}%</strong></div>
             ${target !== baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${target}%</strong></div>` : ""}
-            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.SkillRoll")} (1d100)</span><strong>${roll.total}</strong></div>
+            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.SkillRoll")} (1d100)</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div>
           </div>
-          <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong></div>
+          ${renderRollResult(result, ranges)}
         </section>
       `
     };
@@ -97,6 +98,7 @@ export class MythrasItem extends Item {
     const criticalTarget = Math.max(1, Math.ceil(target / 10));
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, target, criticalTarget);
+    const ranges = rollThresholdRanges(target, criticalTarget);
     const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
       rolls: [roll],
@@ -104,9 +106,9 @@ export class MythrasItem extends Item {
         <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
         <div class="mythras-chat-details">
           <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Target")}</span><strong>${target}%</strong></div>
-          <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.PassionRoll")} (1d100)</span><strong>${roll.total}</strong></div>
+          <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.PassionRoll")} (1d100)</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div>
         </div>
-        <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong></div>
+        ${renderRollResult(result, ranges)}
       </section>`
     };
     ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
@@ -119,4 +121,29 @@ export function classifyRoll(value, target, criticalTarget) {
   if (value <= 5 || (value <= target && value <= 95)) return "success";
   if (value === 100 || (target <= 100 && value === 99)) return "fumble";
   return "failure";
+}
+
+export function rollThresholdRanges(target, criticalTarget) {
+  const criticalMaximum = Math.max(1, Math.min(100, Number(criticalTarget) || 1));
+  return {
+    critical: `01–${formatD100(criticalMaximum)}`,
+    fumble: Number(target) <= 100 ? "99–00" : "00"
+  };
+}
+
+export function renderRollResult(result, ranges) {
+  return `<div class="mythras-chat-result-block">
+    <div class="mythras-chat-total mythras-chat-result mythras-chat-result--${result}">
+      <span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span>
+      <strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong>
+    </div>
+    <div class="mythras-chat-roll-legend">
+      <span>${game.i18n.localize("MYTHRASF.Chat.CriticalRange")}: <strong>${ranges.critical}</strong></span>
+      <span>${game.i18n.localize("MYTHRASF.Chat.FumbleRange")}: <strong>${ranges.fumble}</strong></span>
+    </div>
+  </div>`;
+}
+
+function formatD100(value) {
+  return value >= 100 ? "00" : String(Math.trunc(value)).padStart(2, "0");
 }

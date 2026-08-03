@@ -1,4 +1,8 @@
-import { classifyRoll } from "../documents/mythras-item.js";
+import {
+  classifyRoll,
+  renderRollResult,
+  rollThresholdRanges
+} from "../documents/mythras-item.js";
 import { applyArmor, damageModifierFormula, difficultyTarget } from "./combat.js";
 import { findHitLocation, woundLevel } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
@@ -8,7 +12,8 @@ import { activateDelayedTooltips } from "../ui/tooltips.js";
 export async function createAttackMessage({ actor, weapon, mode, resolution, target }) {
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
   const roll = await new Roll("1d100").evaluate();
-  const result = classifyRoll(roll.total, targetValue, Math.max(1, Math.ceil(targetValue / 10)));
+  const criticalTarget = Math.max(1, Math.ceil(targetValue / 10));
+  const result = classifyRoll(roll.total, targetValue, criticalTarget);
   const data = {
     actorUuid: actor.uuid,
     weaponId: weapon.id,
@@ -23,6 +28,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     difficulty: resolution.difficulty,
     baseTargetValue: resolution.target,
     targetValue,
+    criticalTarget,
     attackRoll: roll.total,
     result,
     damageRolled: false,
@@ -138,6 +144,10 @@ async function applyDamage(message) {
 function renderAttackCard(data, actor, weapon, target = null) {
   const escape = foundry.utils.escapeHTML;
   const successful = ["critical", "success"].includes(data.result);
+  const ranges = rollThresholdRanges(
+    data.targetValue,
+    data.criticalTarget ?? Math.max(1, Math.ceil(data.targetValue / 10))
+  );
   const resolvedTarget = target ?? (data.targetName ? { name: data.targetName } : null);
   const targetLocations = target?.items?.filter((item) => item.type === "hitLocation") ?? [];
   const options = targetLocations.map((location) => (
@@ -146,7 +156,7 @@ function renderAttackCard(data, actor, weapon, target = null) {
   const damageSection = data.damageRolled ? `
     <div class="combat-card-damage">
       <div class="mythras-chat-details">
-        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Damage")}</span><strong>${data.damage}</strong></div>
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Damage")}</span><strong class="mythras-chat-roll-value">${data.damage}</strong></div>
         <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Armor")}</span><strong>${data.armorPoints ?? "—"}</strong></div>
         <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.HitLocation")}</span><strong>${escape(data.locationName || game.i18n.localize("MYTHRASF.Combat.NoLocation"))}</strong></div>
       </div>
@@ -173,9 +183,9 @@ function renderAttackCard(data, actor, weapon, target = null) {
       <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${data.baseTargetValue ?? data.targetValue}%</strong></div>
       ${data.baseTargetValue !== undefined && data.baseTargetValue !== data.targetValue ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${data.targetValue}%</strong></div>` : ""}
       ${resolvedTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Combat.Target")}</span><strong>${escape(resolvedTarget.name)}</strong></div>` : ""}
-      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.AttackRoll")} (1d100)</span><strong>${data.attackRoll}</strong></div>
+      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.AttackRoll")} (1d100)</span><strong class="mythras-chat-roll-value">${data.attackRoll}</strong></div>
     </div>
-    <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${data.result}`)}</strong></div>
+    ${renderRollResult(data.result, ranges)}
     ${damageSection}
   </section>`;
 }
