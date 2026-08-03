@@ -1958,7 +1958,8 @@
 .mythras-foundry .npc-skills-layout,
 .mythras-foundry .npc-ability-grid,
 .mythras-foundry .npc-locations-panel,
-.mythras-foundry .npc-attacks-panel { margin-top: 0.65rem; }
+.mythras-foundry .npc-attacks-panel,
+.mythras-foundry .tab-panel[data-tab-content="combat"] .npc-combat-styles-panel { margin-top: 0.65rem; }
 .mythras-foundry .npc-description-panel textarea,
 .mythras-foundry .npc-magic-panel textarea {
   display: block;
@@ -2003,11 +2004,21 @@
 .mythras-foundry .npc-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem; }
 .mythras-foundry .npc-row-actions select { min-width: 6.5rem; }
 .mythras-foundry .npc-location-header,
-.mythras-foundry .npc-location-row { display: grid; grid-template-columns: 4rem minmax(8rem, 1fr) 4rem 4rem 4rem 4rem 2rem; align-items: center; gap: 0.35rem; text-align: center; }
+.mythras-foundry .npc-location-row { display: grid; grid-template-columns: 4rem minmax(8rem, 1fr) 4rem 4rem 4rem 4rem minmax(6rem, 0.7fr) 2rem; align-items: center; gap: 0.35rem; text-align: center; }
 .mythras-foundry .npc-attack-header,
-.mythras-foundry .npc-attack-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) minmax(7rem, 1fr) 5rem 3rem 3rem 4rem 4rem; align-items: center; gap: 0.3rem; text-align: center; }
+.mythras-foundry .npc-attack-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) minmax(7rem, 1fr) 4rem 5rem 3rem 3rem 4rem 4rem; align-items: center; gap: 0.3rem; text-align: center; }
 .mythras-foundry .npc-attack-row .npc-item-name { text-align: left; }
 .mythras-foundry .npc-attack-row > span { overflow-wrap: anywhere; white-space: normal; }
+.mythras-foundry .npc-location-row,
+.mythras-foundry .npc-attack-row,
+.mythras-foundry .tab-panel[data-tab-content="combat"] .npc-compact-row {
+  min-height: 1.7rem;
+  padding: 0.08rem 0;
+}
+.mythras-foundry .npc-location-row input,
+.mythras-foundry .npc-location-row output { min-width: 0; text-align: center; }
+.mythras-foundry .npc-location-row output[class*="wound-"] { padding: 0.12rem 0.25rem; border-radius: 0.25rem; }
+.mythras-foundry .npc-locations-panel .combat-wound-legend { margin-top: 0.35rem; }
 .mythras-foundry .item-generation-fields { display: grid; grid-template-columns: minmax(8rem, 0.8fr) minmax(0, 1fr); align-items: center; gap: 0.35rem; margin-top: 0.65rem; }
 
 @media (max-width: 780px) {

@@ -1,5 +1,5 @@
 import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
-import { combineDifficulties, fatigueLevel } from "../rules/fatigue.js";
+import { combineDifficulties, fatigueLevel, worsenDifficulty } from "../rules/fatigue.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
@@ -9,7 +9,7 @@ import { nextNumberedItemName } from "../rules/item-names.js";
 import { armorEquipConflicts, totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { npcWeaponDurability, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
-import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { hasSeriousWound, worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -135,6 +135,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       combatWeapons,
       hitLocations: hitLocations.map((item) => ({
         item,
+        woundKey: item.system.woundLevel,
+        woundLabel: game.i18n.localize(`MYTHRASF.Wound.${item.system.woundLevel}`),
         wornArmor: wornArmorPoints(item, equippedArmor),
         totalArmor: totalArmorPoints(item, equippedArmor)
       })),
@@ -315,8 +317,9 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
-    const difficulty = combineDifficulties(
+    let difficulty = combineDifficulties(
       "standard", this.actor.system.conditionLevel?.skillDifficulty ?? "standard");
+    difficulty = await this.#applySeriousWoundPenalty(difficulty);
     await item?.rollSkill({ difficulty });
   }
 
@@ -342,12 +345,25 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     resolution.difficulty = combineDifficulties(
       resolution.difficulty, this.actor.system.conditionLevel?.skillDifficulty ?? "standard");
+    resolution.difficulty = await this.#applySeriousWoundPenalty(resolution.difficulty);
     if (resolution.difficulty === "impossible" || (!resolution.style && !resolution.usesBase)) {
       return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
     }
     const targets = Array.from(game.user.targets ?? []);
     if (targets.length > 1) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.OneTarget"));
     await createAttackMessage({ actor: this.actor, weapon, mode, resolution, target: targets[0] });
+  }
+
+  async #applySeriousWoundPenalty(difficulty) {
+    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
+    if (!hasSeriousWound(locations)) return difficulty;
+    const applyPenalty = await DialogV2.confirm({
+      window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
+      content: `<p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p>`,
+      yes: { label: game.i18n.localize("MYTHRASF.Wound.ApplyPenalty") },
+      no: { label: game.i18n.localize("MYTHRASF.Wound.IgnorePenalty") }
+    });
+    return applyPenalty ? worsenDifficulty(difficulty) : difficulty;
   }
 
   async #toggleEquipped(event) {
