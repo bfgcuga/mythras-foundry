@@ -1711,6 +1711,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #addSkillFromPack(event) {
     event.preventDefault();
     if (!this.isEditable) return;
+    const group = event.currentTarget.dataset.skillGroup;
 
     const ignoresExperienceCost = Boolean(this._editMode);
     const acquisition = skillAcquisition({
@@ -1734,7 +1735,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (!proceed) return;
     }
 
-    const group = event.currentTarget.dataset.skillGroup;
     const pack = game.packs.get("mythras-foundry.skills");
     if (!pack) {
       ui.notifications.error(game.i18n.localize("MYTHRASF.Skill.PackMissing"));
