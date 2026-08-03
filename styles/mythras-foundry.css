@@ -1846,7 +1846,11 @@
 .mythras-foundry .hand-toggle[data-hands="0"] i,
 .mythras-foundry .hand-toggle[data-hands="1"] i:nth-child(2) { display: none; }
 .mythras-foundry .hand-toggle[data-hands="0"]::after { content: "—"; }
-.mythras-foundry .equipment-state-toggle { color: var(--mythras-accent); opacity: 0.42; }
+.mythras-foundry .equipment-state-toggle {
+  color: rgb(61 57 51 / 28%);
+  opacity: 1;
+}
+.mythras-foundry .equipment-state-toggle:not(.equipped):hover { color: rgb(61 57 51 / 48%); }
 .mythras-foundry .equipment-state-toggle.equipped { color: var(--mythras-accent); background: transparent !important; opacity: 1; }
 .mythras-foundry .equipment-state-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
 .mythras-foundry .armor-toggle { font-size: 1rem; }
@@ -1976,8 +1980,6 @@
 .mythras-foundry .npc-attack-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) minmax(7rem, 1fr) 5rem 3rem 3rem 4rem 4rem; align-items: center; gap: 0.3rem; text-align: center; }
 .mythras-foundry .npc-attack-row .npc-item-name { text-align: left; }
 .mythras-foundry .npc-attack-row > span { overflow-wrap: anywhere; white-space: normal; }
-.mythras-foundry .equipment-state-toggle.inactive { opacity: 0.42; }
-.mythras-foundry .equipment-state-toggle:not(.inactive) { opacity: 1; }
 .mythras-foundry .item-generation-fields { display: grid; grid-template-columns: minmax(8rem, 0.8fr) minmax(0, 1fr); align-items: center; gap: 0.35rem; margin-top: 0.65rem; }
 
 @media (max-width: 780px) {
