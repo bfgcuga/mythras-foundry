@@ -23,6 +23,8 @@ import { activateCombatCard } from "./rules/combat-chat.js";
 import { weaponHandsRequired } from "./rules/equipment.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
+import { PartyManager } from "./apps/party-manager.js";
+import { createPartyApi } from "./api/party-api.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
 import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
@@ -49,11 +51,33 @@ Hooks.once("init", async () => {
   CONFIG.Item.dataModels.weapon = WeaponData;
   CONFIG.Item.dataModels.armor = ArmorData;
   CONFIG.Item.dataModels.hitLocation = HitLocationData;
+  game.settings.register("mythras-foundry", "parties", {
+    scope: "world", config: false, type: Object,
+    default: { version: 1, activePartyId: "", parties: [] }
+  });
+  game.settings.registerMenu("mythras-foundry", "partyManager", {
+    name: "MYTHRASF.Party.Manager", label: "MYTHRASF.Party.ManagerOpen",
+    hint: "MYTHRASF.Party.ManagerHint", icon: "fas fa-users",
+    type: PartyManager, restricted: true
+  });
   game.settings.registerMenu("mythras-foundry", "weaponModeMerge", {
     name: "MYTHRASF.Weapon.MergeTool", label: "MYTHRASF.Weapon.MergeTool",
     hint: "MYTHRASF.Weapon.MergeHelp", icon: "fas fa-object-group",
     type: WeaponModeMergeTool, restricted: true
   });
+  game.mythrasFoundry = {
+    ...(game.mythrasFoundry ?? {}),
+    party: createPartyApi({
+      getConfig: () => game.settings.get("mythras-foundry", "parties"),
+      getActors: () => game.actors,
+      openManager: () => {
+        if (!game.user.isGM) return null;
+        const manager = new PartyManager();
+        manager.render({ force: true });
+        return manager;
+      }
+    })
+  };
 
   foundry.documents.collections.Actors.registerSheet(
     "mythras-foundry",

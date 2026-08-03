@@ -356,6 +356,42 @@
   gap: 1rem;
 }
 
+.mythras-foundry.party-manager .window-content { background: var(--mythras-paper); }
+.mythras-foundry .party-manager-content { display: grid; gap: 0.75rem; }
+.mythras-foundry .party-manager-actions,
+.mythras-foundry .party-heading { display: flex; align-items: center; gap: 0.5rem; }
+.mythras-foundry .party-manager-actions { justify-content: flex-end; }
+.mythras-foundry .party-heading > label:first-child {
+  display: grid; flex: 1; grid-template-columns: auto minmax(8rem, 1fr);
+  align-items: center; gap: 0.5rem;
+}
+.mythras-foundry .party-active-choice,
+.mythras-foundry .party-member { display: flex; align-items: center; gap: 0.4rem; }
+.mythras-foundry .party-member-list {
+  display: grid; grid-template-columns: repeat(2, minmax(10rem, 1fr));
+  gap: 0.35rem 0.75rem; margin-top: 0.65rem;
+}
+.mythras-foundry .party-member img {
+  width: 2rem; height: 2rem; border: 1px solid var(--mythras-border);
+  border-radius: 50%; object-fit: cover;
+}
+.mythras-foundry .party-name-dialog {
+  display: grid; grid-template-columns: auto minmax(12rem, 1fr);
+  align-items: center; gap: 0.5rem;
+}
+
+.mythras-foundry.party-experience-dialog {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mythras-foundry.party-experience-dialog > label {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(5rem, auto);
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .mythras-foundry fieldset {
   min-width: 0;
   padding: 0.65rem;

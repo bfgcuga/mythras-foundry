@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 
 import {
   calculateSkillValues,
-  resolveExperienceImprovement
+  NEW_SKILL_EXPERIENCE_COST,
+  resolveExperienceImprovement,
+  skillAcquisition
 } from "../scripts/rules/skills.js";
 
 test("separa la base de las mejoras por fase", () => {
@@ -91,4 +93,22 @@ test("la mejora es +1 si falla y suma otro +1 por pifia", () => {
   assert.equal(result.rolledIncrease, 1);
   assert.equal(result.fumbleBonus, 1);
   assert.equal(result.increase, 2);
+});
+
+test("adquirir una habilidad cuesta tres tiradas de experiencia", () => {
+  assert.equal(NEW_SKILL_EXPERIENCE_COST, 3);
+  assert.deepEqual(skillAcquisition({ experienceRolls: 2 }), {
+    cost: 3,
+    available: 2,
+    allowed: false
+  });
+  assert.equal(skillAcquisition({ experienceRolls: 3 }).allowed, true);
+});
+
+test("el modo de edición permite adquirir habilidades sin coste", () => {
+  assert.deepEqual(skillAcquisition({ experienceRolls: 0, editMode: true }), {
+    cost: 0,
+    available: 0,
+    allowed: true
+  });
 });

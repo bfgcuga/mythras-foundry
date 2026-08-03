@@ -37,3 +37,15 @@ export function resolveExperienceImprovement({
     increase: rolledIncrease + fumbleBonus
   };
 }
+
+export const NEW_SKILL_EXPERIENCE_COST = 3;
+
+export function skillAcquisition({ experienceRolls, editMode = false }) {
+  const cost = editMode ? 0 : NEW_SKILL_EXPERIENCE_COST;
+  const available = Math.max(0, Number(experienceRolls ?? 0));
+  return {
+    cost,
+    available,
+    allowed: editMode || available >= cost
+  };
+}

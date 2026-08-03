@@ -1,0 +1,48 @@
+<div class="party-manager-content">
+  <p>{{localize "MYTHRASF.Party.Help"}}</p>
+  <div class="party-manager-actions">
+    <button type="button" data-action="create">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+      {{localize "MYTHRASF.Party.Create"}}
+    </button>
+    <button type="button" data-action="save">
+      <i class="fas fa-save" aria-hidden="true"></i>
+      {{localize "MYTHRASF.Party.Save"}}
+    </button>
+  </div>
+  {{#each parties as |party|}}
+    <fieldset data-party-id="{{party.id}}">
+      <legend>{{party.name}}</legend>
+      <div class="party-heading">
+        <label>
+          <span>{{localize "MYTHRASF.Party.Name"}}</span>
+          <input type="text" class="sheet-field-editable" data-party-name value="{{party.name}}">
+        </label>
+        <label class="party-active-choice">
+          <input type="radio" class="sheet-state-box" name="activeParty"
+            data-party-active value="{{party.id}}" {{checked party.active}}>
+          <span>{{localize "MYTHRASF.Party.Active"}}</span>
+        </label>
+        <button type="button" class="sheet-icon-button" data-action="delete"
+          aria-label="{{localize "MYTHRASF.Party.Delete"}}"
+          title="{{localize "MYTHRASF.Party.Delete"}}">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="party-member-list">
+        {{#each party.actors as |actor|}}
+          <label class="party-member">
+            <input type="checkbox" class="sheet-state-box" data-party-member
+              value="{{actor.id}}" {{checked actor.member}}>
+            <img src="{{actor.img}}" alt="">
+            <span>{{actor.name}}</span>
+          </label>
+        {{else}}
+          <p class="empty">{{localize "MYTHRASF.Party.NoCharacters"}}</p>
+        {{/each}}
+      </div>
+    </fieldset>
+  {{else}}
+    <p class="empty">{{localize "MYTHRASF.Party.None"}}</p>
+  {{/each}}
+</div>

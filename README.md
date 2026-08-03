@@ -47,6 +47,18 @@ la coherencia entre la versión y la URL de descarga.
 de habilidades en un compendio LevelDB compatible con V13. Las descripciones
 del catálogo son resúmenes originales, no copias literales del manual.
 
+### Grupos activos y macros
+
+El gestor de grupos de los ajustes del sistema permite seleccionar un grupo activo.
+Las macros pueden obtener sus personajes sin depender de las carpetas de actores:
+
+```js
+const party = game.mythrasFoundry.party.getActiveMembers();
+for (const actor of party) {
+  // Operación de la macro.
+}
+```
+
 ## Publicación
 
 Las releases se crean automáticamente al subir una etiqueta:

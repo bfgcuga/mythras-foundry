@@ -62,6 +62,10 @@
         {{localize "MYTHRASF.Tab.Inventory"}}
       </button>
       {{#if editable}}
+        <button type="button" class="sheet-train-skill" data-action="train-skill">
+          <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+          {{localize "MYTHRASF.Skill.Train"}}
+        </button>
         <button type="button" class="sheet-edit-toggle {{#if editMode}}active{{/if}}"
           data-action="toggle-edit-mode" aria-pressed="{{editMode}}">
           <i class="fas {{#if editMode}}fa-check{{else}}fa-pen{{/if}}" aria-hidden="true"></i>
