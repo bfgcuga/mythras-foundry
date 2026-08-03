@@ -143,14 +143,17 @@ function renderAttackCard(data, actor, weapon, target = null) {
   )).join("");
   const damageSection = data.damageRolled ? `
     <div class="combat-card-damage">
-      <p>${game.i18n.format("MYTHRASF.Combat.DamageSummary", {
-        damage: data.damage, armor: data.armorPoints ?? "—", penetrating: data.penetratingDamage ?? "—"
-      })}</p>
-      <p>${escape(data.locationName || game.i18n.localize("MYTHRASF.Combat.NoLocation"))}</p>
-      ${data.applied ? `<p class="combat-card-applied">${game.i18n.format("MYTHRASF.Combat.Applied", {
-        before: data.beforeHitPoints, after: data.afterHitPoints,
-        wound: game.i18n.localize(`MYTHRASF.Wound.${data.woundLevel}`)
-      })}</p>${["serious", "major"].includes(data.woundLevel) ? `<p class="combat-card-warning">${game.i18n.localize(`MYTHRASF.Combat.WoundWarning.${data.woundLevel}`)}</p>` : ""}`
+      <div class="mythras-chat-details">
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Damage")}</span><strong>${data.damage}</strong></div>
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Armor")}</span><strong>${data.armorPoints ?? "—"}</strong></div>
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.HitLocation")}</span><strong>${escape(data.locationName || game.i18n.localize("MYTHRASF.Combat.NoLocation"))}</strong></div>
+      </div>
+      <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.PenetratingDamage")}</span><strong>${data.penetratingDamage ?? "—"}</strong></div>
+      ${data.applied ? `<div class="mythras-chat-details combat-card-applied">
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.HitPointsBefore")}</span><strong>${data.beforeHitPoints}</strong></div>
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.HitPointsAfter")}</span><strong>${data.afterHitPoints}</strong></div>
+        <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Wound")}</span><strong>${game.i18n.localize(`MYTHRASF.Wound.${data.woundLevel}`)}</strong></div>
+      </div>${["serious", "major"].includes(data.woundLevel) ? `<p class="combat-card-warning">${game.i18n.localize(`MYTHRASF.Combat.WoundWarning.${data.woundLevel}`)}</p>` : ""}`
       : data.locationId ? `<button type="button" data-combat-action="apply-damage">${game.i18n.localize("MYTHRASF.Combat.ApplyDamage")}</button>`
       : `<p>${game.i18n.localize("MYTHRASF.Combat.TargetMissing")}</p>`}
     </div>` : successful ? `
@@ -158,13 +161,17 @@ function renderAttackCard(data, actor, weapon, target = null) {
       <select data-hit-location><option value="">${game.i18n.localize("MYTHRASF.Combat.RollLocation")}</option>${options}</select>
     </label>` : ""}
     <button type="button" data-combat-action="roll-damage">${game.i18n.localize("MYTHRASF.Combat.RollDamage")}</button>` : "";
-  return `<section class="mythras-combat-card">
-    <h3>${escape(actor?.name ?? "")} — ${escape(weapon?.name ?? "")}${data.modeName ? ` (${escape(data.modeName)})` : ""}</h3>
-    <p>${escape(data.styleName)} · ${game.i18n.localize(`MYTHRASF.Difficulty.${data.difficulty}`)}
-      <span class="penalized-value">${data.baseTargetValue ?? data.targetValue}%${data.baseTargetValue !== undefined && data.baseTargetValue !== data.targetValue
-        ? ` <span class="penalized-value-modifier">(${data.targetValue}%)</span>` : ""}</span></p>
-    ${resolvedTarget ? `<p>${game.i18n.localize("MYTHRASF.Combat.Target")}: ${escape(resolvedTarget.name)}</p>` : ""}
-    <p><strong>${data.attackRoll}</strong> — ${game.i18n.localize(`MYTHRASF.RollResult.${data.result}`)}</p>
+  return `<section class="mythras-combat-card mythras-chat-card">
+    <div class="mythras-chat-title">${escape(actor?.name ?? "")} — ${escape(weapon?.name ?? "")}${data.modeName ? ` (${escape(data.modeName)})` : ""}</div>
+    <div class="mythras-chat-details">
+      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Style")}</span><strong>${escape(data.styleName)}</strong></div>
+      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${data.difficulty}`)}</strong></div>
+      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${data.baseTargetValue ?? data.targetValue}%</strong></div>
+      ${data.baseTargetValue !== undefined && data.baseTargetValue !== data.targetValue ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${data.targetValue}%</strong></div>` : ""}
+      ${resolvedTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Combat.Target")}</span><strong>${escape(resolvedTarget.name)}</strong></div>` : ""}
+      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.AttackRoll")}</span><strong>${data.attackRoll}</strong></div>
+    </div>
+    <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${data.result}`)}</strong></div>
     ${damageSection}
   </section>`;
 }

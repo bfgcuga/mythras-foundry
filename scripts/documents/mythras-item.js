@@ -70,11 +70,15 @@ export class MythrasItem extends Item {
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
       flavor: `
-        <strong>${foundry.utils.escapeHTML(this.name)}</strong>
-        — ${game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)}
-        <span class="penalized-value">${baseTarget}%${target !== baseTarget
-          ? ` <span class="penalized-value-modifier">(${target}%)</span>` : ""}</span>:
-        ${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}
+        <section class="mythras-chat-card">
+          <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
+          <div class="mythras-chat-details">
+            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)}</strong></div>
+            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${baseTarget}%</strong></div>
+            ${target !== baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${target}%</strong></div>` : ""}
+          </div>
+          <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong></div>
+        </section>
       `
     });
 
@@ -91,9 +95,11 @@ export class MythrasItem extends Item {
     const result = classifyRoll(roll.total, target, criticalTarget);
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      flavor: `<strong>${foundry.utils.escapeHTML(this.name)}</strong> (${target}%): ${
-        game.i18n.localize(`MYTHRASF.RollResult.${result}`)
-      }`
+      flavor: `<section class="mythras-chat-card">
+        <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
+        <div class="mythras-chat-details"><div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Target")}</span><strong>${target}%</strong></div></div>
+        <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong></div>
+      </section>`
     });
   }
 }

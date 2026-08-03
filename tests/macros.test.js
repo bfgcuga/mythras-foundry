@@ -13,6 +13,9 @@ test("el compendio incluye la macro de experiencia del grupo", () => {
   assert.match(macro.command, /getActiveMembers/);
   assert.match(macro.command, /experienceModifier/);
   assert.match(macro.command, /system\.experienceRolls/);
+  assert.match(macro.command, /MYTHRASF\.Chat\.Awarded/);
+  assert.match(macro.command, /MYTHRASF\.Chat\.ExperienceModifier/);
+  assert.match(macro.command, /mythras-chat-total/);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });

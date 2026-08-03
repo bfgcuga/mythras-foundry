@@ -72,6 +72,33 @@
   color: #a1241b !important;
 }
 
+.chat-message .mythras-chat-card { display: grid; gap: 0.5rem; }
+.chat-message .mythras-chat-title {
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid var(--mythras-border, #9c8766);
+  font-size: 1.08em;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+.chat-message .mythras-chat-details { display: grid; gap: 0.2rem; }
+.chat-message .mythras-chat-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+}
+.chat-message .mythras-chat-row > :last-child { text-align: right; }
+.chat-message .mythras-chat-total {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  border: 2px solid var(--mythras-border, #9c8766);
+  border-radius: 0.35rem;
+  background: rgba(255, 249, 226, 0.42);
+  font-weight: 700;
+}
+.chat-message .mythras-chat-member {
+  display: grid; gap: 0.2rem; padding-top: 0.35rem;
+  border-top: 1px solid var(--mythras-border, #9c8766);
+}
+
 .mythras-foundry input[type="checkbox"].sheet-state-box,
 .mythras-foundry input[type="radio"].sheet-state-box {
   display: inline-grid;

@@ -65,6 +65,14 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Los paneles reutilizan los estilos globales de `fieldset` y `legend`; las clases locales solo ajustan distribución o espaciado.
 - Si el panel permite añadir elementos, el botón `sheet-add-button` se coloca en la esquina superior derecha sin desplazar el `legend`.
 
+## Mensajes de chat
+
+- Los mensajes usan `mythras-chat-card`, con un título `mythras-chat-title` ligeramente mayor y subrayado.
+- Bonificaciones, penalizaciones, objetivos, tiradas y recursos se muestran en filas `mythras-chat-row` con una etiqueta explícita; nunca se presentan números sin indicar qué representan.
+- Los datos relacionados se separan mediante filas y espacios visuales, no como una frase continua.
+- El resultado o total operativo usa `mythras-chat-total`, con borde y valor en negrita.
+- Las tarjetas interactivas de combate conservan sus controles, pero siguen la misma jerarquía de título, desglose etiquetado y total destacado.
+
 ## Implementación
 
 - Variables de tema y componentes compartidos se definen una sola vez en `styles/mythras-foundry.css`.

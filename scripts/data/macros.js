@@ -52,14 +52,18 @@ await Promise.all(awards.map(({ actor, award }) => actor.update({
   "system.experienceRolls": Number(actor.system.experienceRolls ?? 0) + award
 })));
 
-const rows = awards.map(({ actor, modifier, award }) =>
-  \`<li><strong>\${foundry.utils.escapeHTML(actor.name)}</strong>: +\${award}\${
-    result.applyModifier ? \` (\${result.amount} \${modifier >= 0 ? "+" : "−"} \${Math.abs(modifier)})\` : ""
-  }</li>\`).join("");
+const rows = awards.map(({ actor, modifier, award }) => \`
+  <div class="mythras-chat-member">
+    <strong>\${foundry.utils.escapeHTML(actor.name)}</strong>
+    <div class="mythras-chat-row"><span>\${game.i18n.localize("MYTHRASF.Chat.Awarded")}</span><span>+\${result.amount}</span></div>
+    <div class="mythras-chat-row"><span>\${game.i18n.localize("MYTHRASF.Chat.ExperienceModifier")}</span><span>\${modifier >= 0 ? "+" : "−"}\${Math.abs(modifier)}</span></div>
+    <div class="mythras-chat-total"><span>\${game.i18n.localize("MYTHRASF.Chat.Total")}</span><strong>+\${award}</strong></div>
+  </div>\`).join("");
 await ChatMessage.create({
-  content: \`<strong>\${game.i18n.format("MYTHRASF.Macro.Experience.ChatTitle", {
-    party: foundry.utils.escapeHTML(activeParty.name)
-  })}</strong><br><br><ul>\${rows}</ul>\`,
+  content: \`<section class="mythras-chat-card">
+    <div class="mythras-chat-title">\${game.i18n.format("MYTHRASF.Macro.Experience.ChatTitle", {
+      party: foundry.utils.escapeHTML(activeParty.name)
+    })}</div>\${rows}</section>\`,
   speaker: ChatMessage.getSpeaker()
 });
 `;
