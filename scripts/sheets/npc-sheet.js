@@ -1,5 +1,5 @@
 import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
-import { combineDifficulties } from "../rules/fatigue.js";
+import { combineDifficulties, fatigueLevel } from "../rules/fatigue.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
@@ -9,6 +9,8 @@ import { nextNumberedItemName } from "../rules/item-names.js";
 import { armorEquipConflicts, totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { npcWeaponDurability, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
+import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -50,6 +52,15 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const intelligenceKind = this.actor.system.intelligenceKind === "instinct"
       ? "instinct" : "intelligence";
+    const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
+    const currentWound = worstWoundLevel(hitLocations);
+    const baseAttributes = this.actor.system.baseAttributes ?? this.actor.system.attributes;
+    const effectiveAttributes = this.actor.system.attributes;
+    const actionPointsDisplay = penalizedResource(
+      this.actor.system.resources.actionPoints.value,
+      baseAttributes.actionPointsMax,
+      effectiveAttributes.actionPointsMax
+    );
 
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
@@ -73,8 +84,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         manual: override.mode === "manual",
         value: override.value,
         formula: override.formula,
-        resolved: this.actor.system.baseAttributes?.[attributeKey]
-          ?? this.actor.system.attributes?.[attributeKey]
+        resolved: baseAttributes?.[attributeKey],
+        display: penalizedValue(baseAttributes?.[attributeKey], effectiveAttributes?.[attributeKey])
       };
     });
     const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon)
@@ -92,8 +103,30 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       damageModifierLabel: typeof this.actor.system.attributes.damageModifier === "string"
         ? this.actor.system.attributes.damageModifier
         : this.actor.system.attributes.damageModifier.label,
-      skills: skills.map((item) => ({ item, total: Number(item.system.total ?? 0) })),
-      combatStyles: combatStyles.map((item) => ({ item, total: Number(item.system.total ?? 0) })),
+      headerStatus: {
+        actionPoints: actionPointsDisplay,
+        magicPoints: `${this.actor.system.resources.magicPoints.value}/${effectiveAttributes.magicPointsMax}`,
+        luckPoints: `${this.actor.system.resources.luckPoints.value}/${effectiveAttributes.luckPointsMax}`,
+        fatigue: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`),
+        fatigueKey: currentFatigue.key,
+        wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
+        woundKey: currentWound,
+        woundPenalty: game.i18n.localize(
+          `MYTHRASF.Header.WoundPenalty.${woundPenaltyKey(currentWound)}`),
+        fatiguePenalty: currentFatigue.skillDifficulty === "standard"
+          ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
+          : game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`)
+      },
+      skills: skills.map((item) => {
+        const total = Number(item.system.total ?? 0);
+        return { item, total, display: penalizedValue(total,
+          difficultyTarget(total, this.actor.system.conditionLevel?.skillDifficulty ?? "standard")) };
+      }),
+      combatStyles: combatStyles.map((item) => {
+        const total = Number(item.system.total ?? 0);
+        return { item, total, display: penalizedValue(total,
+          difficultyTarget(total, this.actor.system.conditionLevel?.skillDifficulty ?? "standard")) };
+      }),
       passions: items.filter((item) => item.type === "passion"),
       traits: items.filter((item) => item.type === "trait"),
       equipment: items.filter((item) => item.type === "equipment"),
@@ -108,10 +141,6 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       fatigueChoices: ["fresh", "winded", "tired", "wearied", "exhausted", "debilitated",
         "incapacitated", "semiConscious", "comatose", "dead"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Fatigue.Level.${value}`)
-      })),
-      difficultyChoices: ["automatic", "veryEasy", "easy", "standard", "hard",
-        "formidable", "herculean", "impossible"].map((value) => ({
-        value, label: game.i18n.localize(`MYTHRASF.Difficulty.${value}`)
       })),
       resourceRows: [
         ["actionPoints", "MYTHRASF.Attribute.ActionPoints"],
@@ -287,8 +316,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
     const difficulty = combineDifficulties(
-      row?.querySelector("[data-difficulty]")?.value ?? "standard",
-      this.actor.system.conditionLevel?.skillDifficulty ?? "standard");
+      "standard", this.actor.system.conditionLevel?.skillDifficulty ?? "standard");
     await item?.rollSkill({ difficulty });
   }
 

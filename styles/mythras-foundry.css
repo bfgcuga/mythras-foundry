@@ -1878,7 +1878,7 @@
 }
 .mythras-foundry .npc-sheet-header {
   display: grid;
-  grid-template-columns: 7rem minmax(18rem, 1fr) minmax(14rem, 0.7fr);
+  grid-template-columns: 7rem minmax(18rem, 1fr) minmax(25rem, 1.2fr);
   align-items: stretch;
   gap: 0.75rem;
 }
@@ -1889,22 +1889,32 @@
 .mythras-foundry .npc-identity-fields label > span { font-weight: 700; }
 .mythras-foundry .npc-identity-fields input,
 .mythras-foundry .npc-identity-fields select { width: 100%; min-width: 0; }
-.mythras-foundry .npc-identity-fields input { font-size: 1.1rem; }
+.mythras-foundry .npc-identity-fields input { font-size: 1rem; }
 .mythras-foundry .npc-header-status {
-  display: grid;
-  align-content: center;
-  gap: 0.35rem;
-  padding: 0.45rem;
-  border: 1px solid var(--mythras-border);
-  background: var(--mythras-panel);
+  align-content: stretch;
+  padding: 0 0 0 0.75rem;
+  border: 0;
+  border-left: 1px solid var(--mythras-border);
+  background: transparent;
 }
-.mythras-foundry .npc-header-status span { display: flex; justify-content: space-between; gap: 0.5rem; }
 .mythras-foundry .sheet-tabs .npc-regenerate { margin-left: auto; }
 .mythras-foundry .npc-general-grid,
 .mythras-foundry .npc-ability-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.65rem; }
+.mythras-foundry .npc-traits-passions-layout { grid-template-columns: minmax(0, 1fr); }
 .mythras-foundry .npc-characteristic-header,
 .mythras-foundry .npc-characteristic-row { display: grid; grid-template-columns: minmax(5rem, 0.7fr) 4rem minmax(6rem, 1fr); align-items: center; gap: 0.35rem; }
 .mythras-foundry .npc-characteristic-row.resolved { grid-template-columns: minmax(5rem, 1fr) 5rem; }
+.mythras-foundry .npc-characteristic-row.resolved,
+.mythras-foundry .npc-attribute-row.resolved { min-height: 1.65rem; padding: 0.08rem 0; }
+.mythras-foundry .npc-characteristic-row.resolved output,
+.mythras-foundry .npc-attribute-row.resolved output {
+  width: auto;
+  min-height: 0;
+  justify-self: end;
+  justify-content: flex-end;
+  padding: 0;
+  text-align: right;
+}
 .mythras-foundry .npc-characteristic-header,
 .mythras-foundry .npc-skill-header,
 .mythras-foundry .npc-location-header,
@@ -1925,10 +1935,24 @@
 .mythras-foundry .npc-attribute-row label { font-weight: 700; }
 .mythras-foundry .npc-attribute-row { display: grid; grid-template-columns: minmax(7rem, 1fr) 5rem 4rem minmax(5rem, 0.8fr); align-items: center; gap: 0.3rem; }
 .mythras-foundry .npc-attribute-row.npc-damage-modifier { grid-template-columns: minmax(7rem, 1fr) 5rem minmax(5rem, 1fr); }
+.mythras-foundry .npc-attribute-row.resolved,
+.mythras-foundry .npc-attribute-row.npc-damage-modifier.resolved { grid-template-columns: minmax(7rem, 1fr) auto; }
 .mythras-foundry .npc-attribute-row output { text-align: center; }
 .mythras-foundry .npc-resource-list { display: grid; gap: 0.12rem; margin-top: 0.4rem; }
 .mythras-foundry .npc-resource-row { display: grid; grid-template-columns: minmax(7rem, 1fr) 1.8rem 4.5rem 1.8rem 1.8rem; align-items: center; gap: 0.2rem; }
 .mythras-foundry .npc-resource-row output { text-align: center; font-weight: 700; }
+.mythras-foundry .npc-resource-row button {
+  display: grid;
+  width: 1.55rem;
+  min-height: 1.55rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0.3rem;
+  background: #eadbb8;
+  font-weight: 700;
+}
+.mythras-foundry .npc-resource-row button:hover { box-shadow: 0 0 0 1px var(--mythras-accent); }
 .mythras-foundry .npc-description-panel,
 .mythras-foundry .npc-magic-panel,
 .mythras-foundry .npc-skills-layout,
@@ -1967,9 +1991,11 @@
 .mythras-foundry .npc-skill-header,
 .mythras-foundry .npc-skill-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) 4rem minmax(5rem, 0.75fr) minmax(7rem, auto); align-items: center; gap: 0.3rem; }
 .mythras-foundry .npc-skill-header.resolved,
-.mythras-foundry .npc-skill-row.resolved { grid-template-columns: 2rem minmax(5rem, 1fr) 3.5rem minmax(8.5rem, auto); }
+.mythras-foundry .npc-skill-row.resolved { grid-template-columns: 2rem minmax(5rem, 1fr) auto 2rem; }
 .mythras-foundry .npc-skill-row > input { width: 100%; min-width: 0; box-sizing: border-box; }
 .mythras-foundry .npc-skill-row .npc-row-actions { width: 100%; min-width: 0; }
+.mythras-foundry .npc-skill-row.resolved > output,
+.mythras-foundry .npc-combat-styles-panel output { justify-self: end; justify-content: flex-end; text-align: right; }
 .mythras-foundry .npc-compact-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) minmax(4rem, 1fr) 2rem; align-items: center; gap: 0.35rem; }
 .mythras-foundry .npc-compact-row > img { width: 1.5rem; height: 1.5rem; border: 0; object-fit: contain; }
 .mythras-foundry .npc-item-name { min-width: 0; padding: 0; border: 0; background: transparent; overflow-wrap: anywhere; text-align: left; white-space: normal; }

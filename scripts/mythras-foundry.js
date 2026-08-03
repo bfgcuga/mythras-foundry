@@ -35,7 +35,7 @@ import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
 import { managedMacroUpdate } from "./data/macros.js";
 import { calculateNpcAttributes } from "./rules/npc.js";
-import { prepareNpcToken } from "./rules/npc-token.js";
+import { regenerateNpcActor } from "./rules/npc-token.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -215,8 +215,11 @@ Hooks.on("preCreateActor", (actor, data) => {
   actor.updateSource({ "prototypeToken.actorLink": false });
 });
 
-Hooks.on("preCreateToken", async (token) => {
-  await prepareNpcToken(token);
+Hooks.on("createToken", async (token, options, userId) => {
+  if (userId !== game.user.id || token.actorLink || token.isLinked) return;
+  const actor = token.actor;
+  if (actor?.type !== "npc" || actor.system.generatedInstance) return;
+  await regenerateNpcActor(actor, { notify: false });
 });
 
 Hooks.on("createActor", async (actor, options, userId) => {

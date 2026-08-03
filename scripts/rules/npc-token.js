@@ -25,7 +25,7 @@ export async function prepareNpcToken(token) {
   }
 }
 
-export async function regenerateNpcActor(actor) {
+export async function regenerateNpcActor(actor, { notify = true } = {}) {
   if (!game.user.isGM || actor?.type !== "npc" || !actor.isToken || actor.token?.isLinked) {
     return false;
   }
@@ -35,7 +35,7 @@ export async function regenerateNpcActor(actor) {
     await actor.update({ system: generated.system });
     const updates = generated.items.map((item) => ({ ...item, _id: item._id ?? item.id }));
     if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
-    ui.notifications.info(game.i18n.localize("MYTHRASF.Npc.Regenerated"));
+    if (notify) ui.notifications.info(game.i18n.localize("MYTHRASF.Npc.Regenerated"));
     return true;
   } catch (error) {
     notifyGenerationError(error);
