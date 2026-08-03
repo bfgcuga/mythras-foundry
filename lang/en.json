@@ -180,6 +180,8 @@
   "MYTHRASF.Skill.Fumbled": "Fumbled since the last improvement",
   "MYTHRASF.Skill.Roll": "Roll skill",
   "MYTHRASF.Skill.Improve": "Spend an experience roll to improve",
+  "MYTHRASF.Skill.ImproveConfirmTitle": "Improve skill",
+  "MYTHRASF.Skill.ImproveConfirm": "One experience roll will be spent to improve <strong>{skill}</strong>. Do you want to continue?",
   "MYTHRASF.Skill.Train": "Train skill",
   "MYTHRASF.Skill.TrainingPlaceholder": "Training is not currently implemented. This dialog is only a placeholder.",
   "MYTHRASF.Skill.AddExperienceTitle": "Acquire a new skill",

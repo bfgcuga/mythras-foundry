@@ -3,6 +3,7 @@ import { applyArmor, damageModifierFormula, difficultyTarget } from "./combat.js
 import { findHitLocation, woundLevel } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { findWeaponMode } from "./weapon-modes.js";
+import { activateDelayedTooltips } from "../ui/tooltips.js";
 
 export async function createAttackMessage({ actor, weapon, mode, resolution, target }) {
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
@@ -39,6 +40,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
 
 export function activateCombatCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
+  activateDelayedTooltips(root);
   if (!root || root.dataset.mythrasCombatActivated) return;
   root.dataset.mythrasCombatActivated = "true";
   root?.querySelector("[data-combat-action='roll-damage']")

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   calculateSkillValues,
+  fumbledSkillUpdatesAtZero,
   NEW_SKILL_EXPERIENCE_COST,
   resolveExperienceImprovement,
   skillAcquisition
@@ -111,4 +112,18 @@ test("el modo de edición permite adquirir habilidades y estilos sin coste", () 
     available: 0,
     allowed: true
   });
+});
+
+test("al llegar a cero se limpian las pifias de habilidades y estilos", () => {
+  const items = [
+    { id: "skill", type: "skill", system: { fumbled: true } },
+    { id: "style", type: "combatStyle", system: { fumbled: true } },
+    { id: "clean", type: "skill", system: { fumbled: false } },
+    { id: "weapon", type: "weapon", system: { fumbled: true } }
+  ];
+  assert.deepEqual(fumbledSkillUpdatesAtZero(0, items), [
+    { _id: "skill", "system.fumbled": false },
+    { _id: "style", "system.fumbled": false }
+  ]);
+  assert.deepEqual(fumbledSkillUpdatesAtZero(1, items), []);
 });

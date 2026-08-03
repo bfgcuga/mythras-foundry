@@ -99,6 +99,21 @@
   border-top: 1px solid var(--mythras-border, #9c8766);
 }
 
+.mythras-delayed-tooltip {
+  position: fixed;
+  z-index: 100000;
+  max-width: 18rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #9c8766;
+  border-radius: 0.3rem;
+  background: #302e2a;
+  color: #fff;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 35%);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
 .mythras-foundry input[type="checkbox"].sheet-state-box,
 .mythras-foundry input[type="radio"].sheet-state-box {
   display: inline-grid;

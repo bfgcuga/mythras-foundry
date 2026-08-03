@@ -49,3 +49,10 @@ export function skillAcquisition({ experienceRolls, editMode = false }) {
     allowed: editMode || available >= cost
   };
 }
+
+export function fumbledSkillUpdatesAtZero(experienceRolls, items = []) {
+  if (Number(experienceRolls ?? 0) !== 0) return [];
+  return items
+    .filter((item) => ["skill", "combatStyle"].includes(item.type) && item.system?.fumbled)
+    .map((item) => ({ _id: item.id, "system.fumbled": false }));
+}

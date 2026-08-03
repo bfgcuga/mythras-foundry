@@ -1629,8 +1629,22 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const button = event.currentTarget;
     const itemId = button.closest("[data-item-id]")?.dataset.itemId;
     const item = this.actor.items.get(itemId);
-    const experienceRolls = Number(this.actor.system.experienceRolls ?? 0);
+    let experienceRolls = Number(this.actor.system.experienceRolls ?? 0);
     if (!item || !["skill", "combatStyle"].includes(item.type) || experienceRolls < 1) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Skill.NoExperienceRolls"));
+      this.render();
+      return;
+    }
+
+    const confirmed = await DialogV2.confirm({
+      window: { title: game.i18n.localize("MYTHRASF.Skill.ImproveConfirmTitle") },
+      content: `<p>${game.i18n.format("MYTHRASF.Skill.ImproveConfirm", {
+        skill: foundry.utils.escapeHTML(item.name)
+      })}</p>`
+    });
+    if (!confirmed) return;
+    experienceRolls = Number(this.actor.system.experienceRolls ?? 0);
+    if (experienceRolls < 1) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Skill.NoExperienceRolls"));
       this.render();
       return;

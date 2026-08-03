@@ -28,6 +28,8 @@ import { createPartyApi } from "./api/party-api.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
 import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
+import { activateDelayedTooltips } from "./ui/tooltips.js";
+import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -104,6 +106,8 @@ Hooks.once("init", async () => {
 
 Hooks.on("renderChatMessageHTML", (message, html) => activateCombatCard(message, html));
 Hooks.on("renderChatMessage", (message, html) => activateCombatCard(message, html));
+Hooks.on("renderApplicationV2", (application, element) => activateDelayedTooltips(element));
+Hooks.on("renderApplication", (application, html) => activateDelayedTooltips(html));
 
 Hooks.on("preUpdateActor", (actor, changed) => {
   if (actor.type !== "character") return;
@@ -238,6 +242,11 @@ Hooks.once("ready", async () => {
 
 Hooks.on("updateActor", async (actor, changed, options, userId) => {
   if (userId !== game.user.id || actor.type !== "character") return;
+  if (foundry.utils.hasProperty(changed, "system.experienceRolls")
+    && Number(actor.system.experienceRolls ?? 0) === 0) {
+    const fumbleUpdates = fumbledSkillUpdatesAtZero(actor.system.experienceRolls, actor.items);
+    if (fumbleUpdates.length) await actor.updateEmbeddedDocuments("Item", fumbleUpdates);
+  }
   if (!foundry.utils.hasProperty(changed, "system.constitution")
     && !foundry.utils.hasProperty(changed, "system.size")) return;
   const updates = actor.items.filter((item) => item.type === "hitLocation"

@@ -180,6 +180,8 @@
   "MYTHRASF.Skill.Fumbled": "Pifiada desde la Ãºltima mejora",
   "MYTHRASF.Skill.Roll": "Tirar habilidad",
   "MYTHRASF.Skill.Improve": "Gastar una tirada de experiencia para mejorar",
+  "MYTHRASF.Skill.ImproveConfirmTitle": "Mejorar habilidad",
+  "MYTHRASF.Skill.ImproveConfirm": "Se gastará una tirada de experiencia para mejorar <strong>{skill}</strong>. ¿Quieres continuar?",
   "MYTHRASF.Skill.Train": "Entrenar habilidad",
   "MYTHRASF.Skill.TrainingPlaceholder": "El entrenamiento no está implementado actualmente. Este diálogo es solo un marcador de posición.",
   "MYTHRASF.Skill.AddExperienceTitle": "Adquirir una nueva habilidad",

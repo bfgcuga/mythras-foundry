@@ -41,6 +41,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - Eliminar se representa con `fas fa-trash`; no usar `×` cuando la acción sea un botón de icono.
 - Todo botón de icono debe tener `aria-label`; si su significado puede no ser evidente, también `title`.
 - Las clases funcionales (`combat-panel-add`, `skill-group-add`, etc.) pueden acompañar a las clases compartidas, pero no deben redefinir colores, fondo, borde o iconografía.
+- Todos los botones deben proporcionar un tooltip descriptivo mediante `title`, `aria-label` o texto visible. El sistema lo muestra tras mantener el puntero durante más de un segundo; no crear tooltips locales con otro retardo o apariencia.
 
 ## Coherencia entre pestañas
 
