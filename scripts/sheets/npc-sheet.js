@@ -23,7 +23,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     form: {
       handler: NpcSheet._onSubmitForm,
       closeOnSubmit: false,
-      submitOnChange: true
+      submitOnChange: false
     }
   };
 
@@ -185,10 +185,14 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#toggleEquipped(event)));
     this.element.querySelectorAll("[data-resource-action]").forEach((button) =>
       button.addEventListener("click", (event) => this.#adjustResource(event)));
+    this.element.querySelectorAll("input[name], textarea[name], select[name]").forEach((field) =>
+      field.addEventListener("change", (event) => this.#updateActorField(event)));
     this.element.querySelectorAll("[data-manual-value]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateManualValue(event)));
     this.element.querySelectorAll("[data-item-field]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateItemField(event)));
+    this.element.querySelectorAll("[data-combat-style]").forEach((field) =>
+      field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event)));
 
     if (!this.isEditable) {
       this.element.querySelectorAll("input[name], textarea[name], select[name]")
@@ -364,6 +368,15 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.actor.update({ [`system.resources.${key}.value`]: value });
   }
 
+  async #updateActorField(event) {
+    if (!this.isEditable) return;
+    const field = event.currentTarget;
+    if (!field.name) return;
+    let value = field.type === "checkbox" ? field.checked : field.value;
+    if (field.type === "number") value = Number(value);
+    await this.actor.update({ [field.name]: value });
+  }
+
   async #updateManualValue(event) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
@@ -380,5 +393,17 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let value = field.type === "checkbox" ? field.checked : field.value;
     if (field.type === "number") value = Number(value);
     await item.update({ [`system.${field.dataset.itemField}`]: value });
+  }
+
+  async #updateWeaponCombatChoice(event) {
+    if (!this.isEditable) return;
+    const row = event.currentTarget.closest("[data-item-id]");
+    const weapon = this.actor.items.get(row?.dataset.itemId);
+    if (!weapon || weapon.type !== "weapon") return;
+    const modes = weaponModes(weapon).map((mode) => ({ ...mode }));
+    const mode = modes.find((entry) => entry.key === row.dataset.modeKey);
+    if (!mode) return;
+    mode.preferredCombatStyleId = event.currentTarget.value;
+    await weapon.update({ "system.modes": modes });
   }
 }
