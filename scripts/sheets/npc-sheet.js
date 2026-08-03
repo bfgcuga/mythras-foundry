@@ -143,14 +143,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       fatigueChoices: ["fresh", "winded", "tired", "wearied", "exhausted", "debilitated",
         "incapacitated", "semiConscious", "comatose", "dead"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Fatigue.Level.${value}`)
-      })),
-      resourceRows: [
-        ["actionPoints", "MYTHRASF.Attribute.ActionPoints"],
-        ["magicPoints", "MYTHRASF.Attribute.MagicPoints"],
-        ["luckPoints", "MYTHRASF.Attribute.LuckPoints"]
-      ].map(([key, label]) => ({ key, label: game.i18n.localize(label),
-        value: this.actor.system.resources[key].value,
-        max: this.actor.system.resources[key].max }))
+      }))
     }, { inplace: false });
   }
 
