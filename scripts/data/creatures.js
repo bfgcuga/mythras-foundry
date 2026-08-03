@@ -126,7 +126,7 @@ export const CREATURE_SOURCES = Object.freeze([
     formulas: { strength: "2d6+9", constitution: "2d6+6", size: "2d6+9",
       dexterity: "2d6+6", intelligence: "2d6+6", power: "3d6", charisma: "2d6" },
     actionPoints: 3, movement: 6, armorNotes: "Escamas duras.",
-    magicNotes: "Algunos especialistas pueden practicar Animismo o Teísmo." }), [
+    magicNotes: "Algunos individuos pueden usar magia." }), [
     traitItem("cold-blooded"), traitItem("night-vision"),
     ...commonAnimalSkills({ aguante: 66, artesania: 56, atletismo: 59, conocimiento_local: 66,
       costumbres: 56, evadir: 56, musculo: 62, nadar: 69, pelea: 59, percepcion: 54,
