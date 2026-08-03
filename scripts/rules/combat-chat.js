@@ -164,14 +164,16 @@ function renderAttackCard(data, actor, weapon, target = null) {
     </label>` : ""}
     <button type="button" data-combat-action="roll-damage">${game.i18n.localize("MYTHRASF.Combat.RollDamage")}</button>` : "";
   return `<section class="mythras-combat-card mythras-chat-card">
-    <div class="mythras-chat-title">${escape(actor?.name ?? "")} — ${escape(weapon?.name ?? "")}${data.modeName ? ` (${escape(data.modeName)})` : ""}</div>
+    <div class="mythras-chat-title">${game.i18n.format("MYTHRASF.Combat.AttackWith", {
+      weapon: escape(weapon?.name ?? "")
+    })}${data.modeName ? ` (${escape(data.modeName)})` : ""}</div>
     <div class="mythras-chat-details">
       <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Style")}</span><strong>${escape(data.styleName)}</strong></div>
       <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${data.difficulty}`)}</strong></div>
       <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${data.baseTargetValue ?? data.targetValue}%</strong></div>
       ${data.baseTargetValue !== undefined && data.baseTargetValue !== data.targetValue ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${data.targetValue}%</strong></div>` : ""}
       ${resolvedTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Combat.Target")}</span><strong>${escape(resolvedTarget.name)}</strong></div>` : ""}
-      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.AttackRoll")}</span><strong>${data.attackRoll}</strong></div>
+      <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.AttackRoll")} (1d100)</span><strong>${data.attackRoll}</strong></div>
     </div>
     <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${data.result}`)}</strong></div>
     ${damageSection}

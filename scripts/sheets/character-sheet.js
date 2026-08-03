@@ -1683,9 +1683,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           intelligence,
           modified: result.modifiedRoll,
           target: skillTotal,
-          outcome: game.i18n.format(`MYTHRASF.Skill.Improvement${
+          outcome: game.i18n.localize(`MYTHRASF.Skill.Improvement${
             result.succeeded ? "Success" : "Failure"
-          }`, { bonus: result.rolledIncrease }),
+          }`),
+          improvementRollLine: result.succeeded
+            ? game.i18n.format("MYTHRASF.Skill.ImprovementRollLine", {
+              roll: Number(improvementRoll.total)
+            })
+            : "",
+          baseIncreaseLine: game.i18n.format(
+            result.succeeded
+              ? "MYTHRASF.Skill.ImprovementFixedBonus"
+              : "MYTHRASF.Skill.ImprovementFailureBonus",
+            { bonus: 1 }
+          ),
           fumbleLine: result.fumbleBonus
             ? game.i18n.format("MYTHRASF.Skill.ImprovementFumbleBonus", {
               bonus: result.fumbleBonus

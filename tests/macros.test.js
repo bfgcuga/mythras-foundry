@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { MACRO_SOURCES } from "../scripts/data/macros.js";
+import { MACRO_SOURCES, managedMacroUpdate } from "../scripts/data/macros.js";
 
 test("el compendio incluye la macro de experiencia del grupo", () => {
   const macro = MACRO_SOURCES.find((source) => (
@@ -27,4 +27,22 @@ test("el compendio incluye una macro GM para abrir el gestor de grupos", () => {
   assert.match(macro.command, /party\?\.openManager/);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
+test("las copias antiguas de macros oficiales reciben el formato actualizado", () => {
+  const update = managedMacroUpdate({
+    id: "world-macro",
+    flags: { "mythras-foundry": {
+      macroKey: "award-party-experience-rolls", macroVersion: 1
+    } }
+  });
+  assert.equal(update._id, "world-macro");
+  assert.equal(update.flags["mythras-foundry"].macroVersion, 2);
+  assert.match(update.command, /mythras-chat-card/);
+  assert.equal(managedMacroUpdate({
+    id: "current",
+    flags: { "mythras-foundry": {
+      macroKey: "award-party-experience-rolls", macroVersion: 2
+    } }
+  }), null);
 });

@@ -74,7 +74,9 @@ export const MACRO_SOURCES = [{
   type: "script",
   img: "icons/svg/upgrade.svg",
   command: AWARD_PARTY_EXPERIENCE_COMMAND,
-  flags: { "mythras-foundry": { macroKey: "award-party-experience-rolls" } }
+  flags: { "mythras-foundry": {
+    macroKey: "award-party-experience-rolls", macroVersion: 2
+  } }
 }, {
   buildKey: "manage-parties",
   name: "Gestionar grupos de personajes",
@@ -90,5 +92,25 @@ if (!manager) {
   ui.notifications.error(game.i18n.localize("MYTHRASF.Macro.PartyManager.Unavailable"));
 }
 `,
-  flags: { "mythras-foundry": { macroKey: "manage-parties" } }
+  flags: { "mythras-foundry": { macroKey: "manage-parties", macroVersion: 2 } }
 }];
+
+export function managedMacroUpdate(macro) {
+  const flags = macro.flags?.["mythras-foundry"] ?? {};
+  const key = macro.getFlag?.("mythras-foundry", "macroKey") ?? flags.macroKey;
+  const version = Number(
+    macro.getFlag?.("mythras-foundry", "macroVersion") ?? flags.macroVersion ?? 0
+  );
+  const source = MACRO_SOURCES.find((candidate) => candidate.buildKey === key);
+  const sourceVersion = Number(source?.flags?.["mythras-foundry"]?.macroVersion ?? 0);
+  if (!source || version >= sourceVersion) return null;
+  return {
+    _id: macro.id,
+    name: source.name,
+    type: source.type,
+    img: source.img,
+    scope: "global",
+    command: source.command,
+    flags: source.flags
+  };
+}

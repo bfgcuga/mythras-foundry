@@ -72,14 +72,29 @@
   color: #a1241b !important;
 }
 
-.chat-message .mythras-chat-card { display: grid; gap: 0.5rem; }
+.chat-message .mythras-chat-card {
+  display: grid;
+  gap: 0.5rem;
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
 .chat-message .mythras-chat-title {
   padding-bottom: 0.15rem;
   border-bottom: 1px solid var(--mythras-border, #9c8766);
-  font-size: 1.08em;
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
   font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 0.16em;
+}
+.chat-message .mythras-chat-card button,
+.chat-message .mythras-chat-card input,
+.chat-message .mythras-chat-card select,
+.chat-message .mythras-chat-card strong,
+.chat-message .mythras-chat-card span,
+.chat-message .dice-formula,
+.chat-message .dice-total {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
 }
 .chat-message .mythras-chat-details { display: grid; gap: 0.2rem; }
 .chat-message .mythras-chat-row {

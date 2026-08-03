@@ -68,8 +68,9 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 
 ## Mensajes de chat
 
-- Los mensajes usan `mythras-chat-card`, con un título `mythras-chat-title` ligeramente mayor y subrayado.
+- Los mensajes usan `mythras-chat-card`, con un título `mythras-chat-title` ligeramente mayor y separado por una línea horizontal, sin subrayado adicional.
 - Bonificaciones, penalizaciones, objetivos, tiradas y recursos se muestran en filas `mythras-chat-row` con una etiqueta explícita; nunca se presentan números sin indicar qué representan.
+- Todas las tiradas usan el mismo patrón: una fila etiquetada con el tipo de tirada y su fórmula entre paréntesis, seguida del resultado. No se mezclan tarjetas con representaciones automáticas de dados diferentes.
 - Los datos relacionados se separan mediante filas y espacios visuales, no como una frase continua.
 - El resultado o total operativo usa `mythras-chat-total`, con borde y valor en negrita.
 - Las tarjetas interactivas de combate conservan sus controles, pero siguen la misma jerarquía de título, desglose etiquetado y total destacado.

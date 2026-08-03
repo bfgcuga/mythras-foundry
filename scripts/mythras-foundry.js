@@ -30,6 +30,7 @@ import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
 import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
 import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
+import { managedMacroUpdate } from "./data/macros.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -201,6 +202,9 @@ Hooks.on("createActor", async (actor, options, userId) => {
 
 Hooks.once("ready", async () => {
   if (!isPrimaryActiveGM()) return;
+
+  const macroUpdates = game.macros.map(managedMacroUpdate).filter(Boolean);
+  if (macroUpdates.length) await Macro.updateDocuments(macroUpdates);
 
   const legacyWorldSkills = game.items.filter(
     (item) => item.type === "skill"

@@ -67,20 +67,24 @@ export class MythrasItem extends Item {
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, target, criticalTarget);
 
-    await roll.toMessage({
+    const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      flavor: `
+      rolls: [roll],
+      content: `
         <section class="mythras-chat-card">
           <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
           <div class="mythras-chat-details">
             <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)}</strong></div>
             <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${baseTarget}%</strong></div>
             ${target !== baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${target}%</strong></div>` : ""}
+            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.SkillRoll")} (1d100)</span><strong>${roll.total}</strong></div>
           </div>
           <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong></div>
         </section>
       `
-    });
+    };
+    ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
+    await ChatMessage.create(messageData);
 
     if (result === "fumble" && !this.system.fumbled) {
       await this.update({ "system.fumbled": true });
@@ -93,14 +97,20 @@ export class MythrasItem extends Item {
     const criticalTarget = Math.max(1, Math.ceil(target / 10));
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, target, criticalTarget);
-    await roll.toMessage({
+    const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      flavor: `<section class="mythras-chat-card">
+      rolls: [roll],
+      content: `<section class="mythras-chat-card">
         <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
-        <div class="mythras-chat-details"><div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Target")}</span><strong>${target}%</strong></div></div>
+        <div class="mythras-chat-details">
+          <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Target")}</span><strong>${target}%</strong></div>
+          <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.PassionRoll")} (1d100)</span><strong>${roll.total}</strong></div>
+        </div>
         <div class="mythras-chat-total"><span>${game.i18n.localize("MYTHRASF.Chat.Result")}</span><strong>${game.i18n.localize(`MYTHRASF.RollResult.${result}`)}</strong></div>
       </section>`
-    });
+    };
+    ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
+    await ChatMessage.create(messageData);
   }
 }
 
