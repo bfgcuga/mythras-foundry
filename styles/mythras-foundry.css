@@ -1967,7 +1967,9 @@
 .mythras-foundry .npc-skill-header,
 .mythras-foundry .npc-skill-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) 4rem minmax(5rem, 0.75fr) minmax(7rem, auto); align-items: center; gap: 0.3rem; }
 .mythras-foundry .npc-skill-header.resolved,
-.mythras-foundry .npc-skill-row.resolved { grid-template-columns: 2rem minmax(7rem, 1fr) 4rem minmax(7rem, auto); }
+.mythras-foundry .npc-skill-row.resolved { grid-template-columns: 2rem minmax(5rem, 1fr) 3.5rem minmax(8.5rem, auto); }
+.mythras-foundry .npc-skill-row > input { width: 100%; min-width: 0; box-sizing: border-box; }
+.mythras-foundry .npc-skill-row .npc-row-actions { width: 100%; min-width: 0; }
 .mythras-foundry .npc-compact-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) minmax(4rem, 1fr) 2rem; align-items: center; gap: 0.35rem; }
 .mythras-foundry .npc-compact-row > img { width: 1.5rem; height: 1.5rem; border: 0; object-fit: contain; }
 .mythras-foundry .npc-item-name { min-width: 0; padding: 0; border: 0; background: transparent; overflow-wrap: anywhere; text-align: left; white-space: normal; }
