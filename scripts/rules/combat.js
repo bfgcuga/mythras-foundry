@@ -73,6 +73,12 @@ export function applyArmor(damage, armorPoints) {
 }
 
 export function damageModifierFormula(modifier, mode = "full") {
+  if (typeof modifier === "string") {
+    const formula = modifier.trim().replace(/^\+/, "");
+    if (!formula || formula === "0" || mode === "none") return "0";
+    if (mode === "half") return `floor((${formula}) / 2)`;
+    return formula;
+  }
   const formula = String(modifier?.label ?? modifier ?? "").trim().replace(/^\+/, "");
   if (!formula || formula === "0" || formula === "None" || mode === "none") return "";
   if (mode === "half") return `floor((${formula}) / 2)`;

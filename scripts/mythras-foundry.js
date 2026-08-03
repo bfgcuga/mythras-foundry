@@ -1,4 +1,5 @@
 import { CharacterData } from "./data/character-data.js";
+import { NpcData } from "./data/npc-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
 import { defaultItemIcon } from "./data/item-icons.js";
 import {
@@ -9,6 +10,7 @@ import {
   HitLocationData,
   PassionData,
   SkillData,
+  TraitData,
   WeaponData
 } from "./data/item-data.js";
 import { MythrasItem } from "./documents/mythras-item.js";
@@ -18,6 +20,7 @@ import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/co
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
 import { styleAbilityKey } from "./rules/background-generation.js";
 import { CharacterSheet } from "./sheets/character-sheet.js";
+import { NpcSheet } from "./sheets/npc-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
 import { weaponHandsRequired } from "./rules/equipment.js";
@@ -31,6 +34,8 @@ import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
 import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
 import { managedMacroUpdate } from "./data/macros.js";
+import { calculateNpcAttributes } from "./rules/npc.js";
+import { prepareNpcToken } from "./rules/npc-token.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -44,6 +49,7 @@ Hooks.once("init", async () => {
   console.log("Mythras Foundry | Inicializando sistema");
 
   CONFIG.Actor.dataModels.character = CharacterData;
+  CONFIG.Actor.dataModels.npc = NpcData;
   CONFIG.Item.documentClass = MythrasItem;
   CONFIG.Item.dataModels.skill = SkillData;
   CONFIG.Item.dataModels.combatStyle = CombatStyleData;
@@ -54,6 +60,7 @@ Hooks.once("init", async () => {
   CONFIG.Item.dataModels.weapon = WeaponData;
   CONFIG.Item.dataModels.armor = ArmorData;
   CONFIG.Item.dataModels.hitLocation = HitLocationData;
+  CONFIG.Item.dataModels.trait = TraitData;
   game.settings.register("mythras-foundry", "parties", {
     scope: "world", config: false, type: Object,
     default: { version: 1, activePartyId: "", parties: [] }
@@ -92,11 +99,21 @@ Hooks.once("init", async () => {
     }
   );
 
+  foundry.documents.collections.Actors.registerSheet(
+    "mythras-foundry",
+    NpcSheet,
+    {
+      types: ["npc"],
+      makeDefault: true,
+      label: "MYTHRASF.Sheet.Npc"
+    }
+  );
+
   foundry.documents.collections.Items.registerSheet(
     "mythras-foundry",
     MythrasItemSheet,
     {
-      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "armor", "hitLocation"],
+      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "armor", "hitLocation", "trait"],
       makeDefault: true,
       label: "MYTHRASF.Sheet.Item"
     }
@@ -111,7 +128,7 @@ Hooks.on("renderApplicationV2", (application, element) => activateDelayedTooltip
 Hooks.on("renderApplication", (application, html) => activateDelayedTooltips(html));
 
 Hooks.on("preUpdateActor", (actor, changed) => {
-  if (actor.type !== "character") return;
+  if (!isCombatActor(actor)) return;
 
   const expanded = foundry.utils.expandObject(changed);
   const candidate = foundry.utils.mergeObject(
@@ -119,7 +136,8 @@ Hooks.on("preUpdateActor", (actor, changed) => {
     expanded.system ?? {},
     { inplace: false }
   );
-  const baseAttributes = calculateDerivedAttributes(candidate);
+  const baseAttributes = actor.type === "npc"
+    ? calculateNpcAttributes(candidate) : calculateDerivedAttributes(candidate);
   const condition = combinedConditionLevel(candidate.fatigueLevel,
     worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")));
   const attributes = applyFatigue(baseAttributes, condition.key);
@@ -131,8 +149,9 @@ Hooks.on("preUpdateActor", (actor, changed) => {
 
 Hooks.on("updateItem", async (item, changed, options, userId) => {
   const actor = item.parent;
-  if (userId !== game.user.id || item.type !== "hitLocation" || actor?.type !== "character") return;
-  const baseAttributes = calculateDerivedAttributes(actor.system);
+  if (userId !== game.user.id || item.type !== "hitLocation" || !isCombatActor(actor)) return;
+  const baseAttributes = actor.type === "npc"
+    ? calculateNpcAttributes(actor.system) : calculateDerivedAttributes(actor.system);
   const condition = combinedConditionLevel(actor.system.fatigueLevel,
     worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")));
   const maximum = applyFatigue(baseAttributes, condition.key).actionPointsMax;
@@ -182,13 +201,22 @@ Hooks.on("preCreateItem", (item, data) => {
 });
 
 Hooks.on("createItem", (item, options, userId) => {
-  if (userId !== game.user.id || item.type !== "armor" || item.parent?.type !== "character") return;
+  if (userId !== game.user.id || item.type !== "armor" || !isCombatActor(item.parent)) return;
   if ((item.system.coveredLocationIds?.length ?? 0) === 0) {
     configureNewArmorPiece(item).catch((error) => {
       console.error("Mythras Foundry | Error configuring armor piece", error);
       ui.notifications.error(game.i18n.localize("MYTHRASF.Armor.Piece.ConfigureError"));
     });
   }
+});
+
+Hooks.on("preCreateActor", (actor, data) => {
+  if ((data.type ?? actor.type) !== "npc") return;
+  actor.updateSource({ "prototypeToken.actorLink": false });
+});
+
+Hooks.on("preCreateToken", async (token) => {
+  await prepareNpcToken(token);
 });
 
 Hooks.on("createActor", async (actor, options, userId) => {
@@ -219,7 +247,7 @@ Hooks.once("ready", async () => {
     await migrateWorldArmor(item);
   }
 
-  for (const actor of game.actors.filter((candidate) => candidate.type === "character")) {
+  for (const actor of game.actors.filter((candidate) => isCombatActor(candidate))) {
     const legacyEmbeddedSkills = actor.items.filter(
       (item) => item.type === "skill"
     );
@@ -229,11 +257,13 @@ Hooks.once("ready", async () => {
     if (legacyUpdates.length > 0) {
       await actor.updateEmbeddedDocuments("Item", legacyUpdates);
     }
-    await ensureBasicSkills(actor);
-    await deduplicateBackgroundAbilities(actor);
+    if (actor.type === "character") {
+      await ensureBasicSkills(actor);
+      await deduplicateBackgroundAbilities(actor);
+    }
     await migrateEmbeddedItemIcons(actor);
     await migrateCombatItems(actor);
-    await ensureHumanHitLocations(actor);
+    if (actor.type === "character") await ensureHumanHitLocations(actor);
     await migrateActorArmor(actor);
   }
   const worldIconUpdates = game.items
@@ -245,8 +275,8 @@ Hooks.once("ready", async () => {
 });
 
 Hooks.on("updateActor", async (actor, changed, options, userId) => {
-  if (userId !== game.user.id || actor.type !== "character") return;
-  if (foundry.utils.hasProperty(changed, "system.experienceRolls")
+  if (userId !== game.user.id || !isCombatActor(actor)) return;
+  if (actor.type === "character" && foundry.utils.hasProperty(changed, "system.experienceRolls")
     && Number(actor.system.experienceRolls ?? 0) === 0) {
     const fumbleUpdates = fumbledSkillUpdatesAtZero(actor.system.experienceRolls, actor.items);
     if (fumbleUpdates.length) await actor.updateEmbeddedDocuments("Item", fumbleUpdates);
@@ -533,4 +563,8 @@ function clampResource(changed, candidate, key, maximum) {
   const current = Number(candidate.resources?.[key]?.value ?? 0);
   if (current <= maximum) return;
   foundry.utils.setProperty(changed, `system.resources.${key}.value`, maximum);
+}
+
+function isCombatActor(actor) {
+  return Boolean(actor && ["character", "npc"].includes(actor.type));
 }

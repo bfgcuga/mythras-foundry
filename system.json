@@ -2,16 +2,17 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.63/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.64/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
   },
   "documentTypes": {
     "Actor": {
-      "character": {}
+      "character": {},
+      "npc": {}
     },
     "Item": {
       "skill": {},
@@ -22,7 +23,8 @@
       "equipment": {},
       "weapon": {},
       "armor": {},
-      "hitLocation": {}
+      "hitLocation": {},
+      "trait": {}
     }
   },
   "authors": [
@@ -89,6 +91,20 @@
       "label": "Macros de Mythras Foundry",
       "path": "packs/macros",
       "type": "Macro",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "traits",
+      "label": "Rasgos de criaturas de Mythras",
+      "path": "packs/traits",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "creatures",
+      "label": "Criaturas de Mythras Imperativo",
+      "path": "packs/creatures",
+      "type": "Actor",
       "system": "mythras-foundry"
     }
   ]

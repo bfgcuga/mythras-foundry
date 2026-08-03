@@ -101,7 +101,15 @@ export class SkillData extends foundry.abstract.TypeDataModel {
         nullable: false,
         initial: false
       }),
-      description: descriptionField()
+      description: descriptionField(),
+      valueMode: new StringField({
+        required: true,
+        nullable: false,
+        initial: "derived",
+        choices: ["derived", "manual"]
+      }),
+      manualValue: nonNegativeNumber(0, true),
+      generationFormula: textField()
     };
   }
 }
@@ -147,6 +155,7 @@ export class EquipmentData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
       quantity: nonNegativeNumber(1, true),
+      quantityFormula: textField(),
       weight: nonNegativeNumber(),
       value: nonNegativeNumber(),
       location: textField(),
@@ -173,6 +182,7 @@ export class PassionData extends foundry.abstract.TypeDataModel {
       manualAdjustment: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
       // Legacy total retained so existing actors keep exactly the same value.
       value: nonNegativeNumber(0, true),
+      generationFormula: textField(),
       description: descriptionField()
     };
   }
@@ -193,8 +203,13 @@ export class WeaponData extends EquipmentData {
       size: textField(),
       reach: textField(),
       maxHitPoints: nonNegativeNumber(0, true),
+      maxHitPointsFormula: textField(),
       currentHitPoints: nonNegativeNumber(0, true),
       armorPoints: nonNegativeNumber(0, true),
+      armorPointsFormula: textField(),
+      durabilitySource: new StringField({ required: true, nullable: false, initial: "independent",
+        choices: ["independent", "hitLocation"] }),
+      linkedLocationId: textField(),
       encumbrance: nonNegativeNumber(),
       effects: textField(),
       grip: textField(),
@@ -221,6 +236,7 @@ export class ArmorData extends EquipmentData {
       pieceType: new StringField({ required: true, nullable: false, initial: "other",
         choices: ["helmet", "cuirass", "greaves", "bracers", "other"] }),
       armorPoints: nonNegativeNumber(0, true),
+      armorPointsFormula: textField(),
       baseEncumbrance: nonNegativeNumber(),
       baseValue: nonNegativeNumber(),
       coveredLocationIds: new ArrayField(textField(), {
@@ -246,12 +262,22 @@ export class HitLocationData extends foundry.abstract.TypeDataModel {
         choices: ["arm", "standard", "abdomen", "chest"] }),
       autoCalculate: new BooleanField({ required: true, nullable: false, initial: false }),
       maxHitPoints: nonNegativeNumber(1, true),
+      maxHitPointsFormula: textField(),
       currentHitPoints: new NumberField({ required: true, nullable: false, integer: true, initial: 1 }),
       armorPoints: nonNegativeNumber(0, true),
+      armorPointsFormula: textField(),
       armorEncumbranceMultiplier: nonNegativeNumber(1),
       armorCostPercentage: nonNegativeNumber(10),
       armorFactorsVersion: nonNegativeNumber(0, true),
       disabled: new BooleanField({ required: true, nullable: false, initial: false }),
+      description: descriptionField()
+    };
+  }
+}
+
+export class TraitData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
       description: descriptionField()
     };
   }

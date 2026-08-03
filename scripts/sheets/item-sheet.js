@@ -113,6 +113,16 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       })),
       armorTotals,
       isHitLocation: this.item.type === "hitLocation",
+      isTrait: this.item.type === "trait",
+      weaponLocationChoices: this.item.type === "weapon" && this.item.actor
+        ? this.item.actor.items.filter((candidate) => candidate.type === "hitLocation")
+          .map((location) => ({ value: location.id, label: location.name })) : [],
+      skillValueModeChoices: ["derived", "manual"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Skill.ValueMode.${value}`)
+      })),
+      weaponDurabilityChoices: ["independent", "hitLocation"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Weapon.Durability.${value}`)
+      })),
       combatStyleWeaponProfiles: this.item.type === "combatStyle"
         ? (this.item.system.weaponProfiles ?? []) : [],
       combatStyleCharacteristic1: this.item.type === "combatStyle"

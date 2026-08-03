@@ -1,0 +1,144 @@
+<div class="npc-sheet-content">
+  <header class="sheet-header npc-sheet-header">
+    <div class="portrait-frame">
+      <button type="button" class="portrait-view" data-action="view-portrait"
+        aria-label="{{localize "MYTHRASF.Identity.ViewPortrait"}}" title="{{localize "MYTHRASF.Identity.ViewPortrait"}}">
+        <img src="{{actor.img}}" alt="{{actor.name}}">
+      </button>
+      {{#if editable}}<button type="button" class="portrait-edit" data-action="choose-portrait"
+        aria-label="{{localize "MYTHRASF.Identity.ChoosePortrait"}}" title="{{localize "MYTHRASF.Identity.ChoosePortrait"}}">
+        <i class="fas fa-camera" aria-hidden="true"></i></button>{{/if}}
+    </div>
+    <div class="npc-identity-fields">
+      <label><span>{{localize "MYTHRASF.Identity.CharacterName"}}</span>
+        <input class="sheet-field-editable" type="text" name="name" value="{{actor.name}}"></label>
+      <label><span>{{localize "MYTHRASF.Npc.Species"}}</span>
+        <input class="sheet-field-editable" type="text" name="system.identity.species" value="{{actor.system.identity.species}}"></label>
+      <label><span>{{localize "MYTHRASF.Npc.IntelligenceType"}}</span>
+        <select class="sheet-field-editable" name="system.intelligenceKind">
+          <option value="intelligence" {{#unless isInstinct}}selected{{/unless}}>{{localize "MYTHRASF.Npc.Intelligence"}}</option>
+          <option value="instinct" {{#if isInstinct}}selected{{/if}}>{{localize "MYTHRASF.Npc.Instinct"}}</option>
+        </select></label>
+      <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span>
+        <select class="sheet-field-editable" name="system.fatigueLevel">{{selectOptions fatigueChoices selected=actor.system.fatigueLevel labelAttr="label" valueAttr="value"}}</select></label>
+    </div>
+    <div class="npc-header-status">
+      <span>{{localize "MYTHRASF.Attribute.ActionPoints"}} <b>{{actor.system.resources.actionPoints.value}}/{{actor.system.attributes.actionPointsMax}}</b></span>
+      <span>{{localize "MYTHRASF.Attribute.MagicPoints"}} <b>{{actor.system.resources.magicPoints.value}}/{{actor.system.attributes.magicPointsMax}}</b></span>
+      <span>{{localize "MYTHRASF.Attribute.DamageModifier"}} <b>{{damageModifierLabel}}</b></span>
+    </div>
+  </header>
+
+  <nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">
+    <button type="button" class="active" data-tab="general">{{localize "MYTHRASF.Npc.Tab.General"}}</button>
+    <button type="button" data-tab="combat">{{localize "MYTHRASF.Tab.Combat"}}</button>
+    {{#if canRegenerate}}<button type="button" class="npc-regenerate" data-action="regenerate-npc"
+      title="{{localize "MYTHRASF.Npc.RegenerateWarning"}}"><i class="fas fa-dice" aria-hidden="true"></i>
+      {{localize "MYTHRASF.Npc.Regenerate"}}</button>{{/if}}
+  </nav>
+
+  <main class="sheet-body">
+    <section class="tab-panel active" data-tab-content="general">
+      <div class="npc-general-grid">
+        <fieldset class="npc-characteristics-panel">
+          <legend>{{localize "MYTHRASF.Characteristics"}}</legend>
+          <div class="npc-characteristic-header" aria-hidden="true"><span>{{localize "MYTHRASF.Npc.Field"}}</span><span>{{localize "MYTHRASF.Npc.Reference"}}</span>{{#if isTemplate}}<span>{{localize "MYTHRASF.Npc.Formula"}}</span>{{/if}}</div>
+          {{#each characteristicRows as |row|}}<div class="npc-characteristic-row {{#unless ../isTemplate}}resolved{{/unless}}">
+            <label for="npc-characteristic-{{row.key}}">{{row.label}}</label>
+            <input id="npc-characteristic-{{row.key}}" class="sheet-field-editable" type="number" min="1" name="system.{{row.key}}" value="{{row.value}}">
+            {{#if ../isTemplate}}<input class="sheet-field-editable" type="text" name="system.characteristicFormulas.{{row.key}}" value="{{row.formula}}" placeholder="2d6+6">{{/if}}
+          </div>{{/each}}
+        </fieldset>
+
+        <fieldset class="npc-attributes-panel">
+          <legend>{{localize "MYTHRASF.Attributes"}}</legend>
+          {{#each attributeRows as |row|}}<div class="npc-attribute-row">
+            <label>{{row.label}}</label>
+            {{#if ../isTemplate}}<select class="sheet-field-editable" name="system.attributeOverrides.{{row.key}}.mode">
+              <option value="auto" {{#unless row.manual}}selected{{/unless}}>{{localize "MYTHRASF.Npc.Auto"}}</option>
+              <option value="manual" {{#if row.manual}}selected{{/if}}>{{localize "MYTHRASF.Npc.Manual"}}</option>
+            </select>{{/if}}
+            {{#if row.manual}}<input class="sheet-field-editable" type="number" min="0" name="system.attributeOverrides.{{row.key}}.value" value="{{row.value}}">{{else}}<output class="sheet-field-readonly">{{row.resolved}}</output>{{/if}}
+            {{#if ../isTemplate}}<input class="sheet-field-editable" type="text" name="system.attributeOverrides.{{row.key}}.formula" value="{{row.formula}}" placeholder="1d3+2">{{/if}}
+          </div>{{/each}}
+          <div class="npc-attribute-row npc-damage-modifier">
+            <label>{{localize "MYTHRASF.Attribute.DamageModifier"}}</label>
+            {{#if isTemplate}}<select class="sheet-field-editable" name="system.attributeOverrides.damageModifier.mode">
+              <option value="auto" {{#unless damageModifierManual}}selected{{/unless}}>{{localize "MYTHRASF.Npc.Auto"}}</option>
+              <option value="manual" {{#if damageModifierManual}}selected{{/if}}>{{localize "MYTHRASF.Npc.Manual"}}</option>
+            </select>{{/if}}
+            {{#if damageModifierManual}}<input class="sheet-field-editable" type="text" name="system.attributeOverrides.damageModifier.formula" value="{{actor.system.attributeOverrides.damageModifier.formula}}">{{else}}<output class="sheet-field-readonly">{{damageModifierLabel}}</output>{{/if}}
+          </div>
+          <div class="npc-resource-list">
+            {{#each resourceRows as |resource|}}<div class="npc-resource-row">
+              <span>{{resource.label}}</span>
+              <button type="button" class="sheet-icon-button" data-resource="{{resource.key}}" data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}" title="{{localize "MYTHRASF.Resource.Decrease"}}"><i class="fas fa-minus" aria-hidden="true"></i></button>
+              <output class="sheet-field-readonly">{{resource.value}}/{{resource.max}}</output>
+              <button type="button" class="sheet-icon-button" data-resource="{{resource.key}}" data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}" title="{{localize "MYTHRASF.Resource.Increase"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
+              <button type="button" class="sheet-icon-button" data-resource="{{resource.key}}" data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}" title="{{localize "MYTHRASF.Resource.Restore"}}"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+            </div>{{/each}}
+          </div>
+        </fieldset>
+      </div>
+
+      <fieldset class="npc-description-panel"><legend>{{localize "MYTHRASF.Item.Description"}}</legend>
+        <textarea class="sheet-field-editable" name="system.description">{{actor.system.description}}</textarea></fieldset>
+
+      <div class="npc-ability-grid">
+        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Skills"}}</legend>
+          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="skill" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+          <div class="npc-skill-header" aria-hidden="true"><span></span><span>{{localize "MYTHRASF.Skill.Name"}}</span><span>%</span>{{#if isTemplate}}<span>{{localize "MYTHRASF.Npc.Formula"}}</span>{{/if}}<span></span></div>
+          {{#each skills as |row|}}<div class="npc-skill-row" data-item-id="{{row.item.id}}">
+            <button type="button" class="sheet-icon-button" data-action="roll-skill" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
+            <button type="button" class="npc-item-name" data-action="edit-item">{{row.item.name}}</button>
+            <input class="sheet-field-editable" type="number" min="0" data-manual-value value="{{row.total}}" aria-label="{{localize "MYTHRASF.Skill.ManualValue"}}">
+            {{#if ../isTemplate}}<input class="sheet-field-editable" type="text" data-item-field="generationFormula" value="{{row.item.system.generationFormula}}" placeholder="1d10+50">{{/if}}
+            <div class="npc-row-actions"><select data-difficulty aria-label="{{localize "MYTHRASF.Skill.Difficulty"}}">{{selectOptions ../difficultyChoices selected="standard" labelAttr="label" valueAttr="value"}}</select>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>
+          </div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>{{/each}}
+        </fieldset>
+
+        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.CombatStyles"}}</legend>
+          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="combatStyle" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+          {{#each combatStyles as |row|}}<div class="npc-compact-row" data-item-id="{{row.item.id}}">
+            <button type="button" class="sheet-icon-button" data-action="roll-skill" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
+            <button type="button" class="npc-item-name" data-action="edit-item">{{row.item.name}}</button>
+            <input class="sheet-field-editable" type="number" min="0" data-manual-value value="{{row.total}}">
+            {{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
+          </div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.CombatStyles"}}</p>{{/each}}
+        </fieldset>
+      </div>
+
+      <div class="npc-ability-grid">
+        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Npc.Traits"}}</legend>
+          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="trait" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+          {{#each traits as |item|}}<div class="npc-compact-row" data-item-id="{{item.id}}"><img src="{{item.img}}" alt=""><button type="button" class="npc-item-name" data-action="edit-item">{{item.name}}</button><span class="npc-trait-description">{{{item.system.description}}}</span>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>{{else}}<p class="empty">{{localize "MYTHRASF.Npc.EmptyTraits"}}</p>{{/each}}
+        </fieldset>
+        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Passions"}}</legend>
+          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="passion" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+          {{#each passions as |item|}}<div class="npc-compact-row" data-item-id="{{item.id}}"><button type="button" class="sheet-icon-button" data-action="roll-passion" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button><button type="button" class="npc-item-name" data-action="edit-item">{{item.name}}</button><output class="sheet-field-readonly">{{item.system.total}}%</output>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Passions"}}</p>{{/each}}
+        </fieldset>
+      </div>
+      <fieldset class="npc-magic-panel"><legend>{{localize "MYTHRASF.Npc.Magic"}}</legend><textarea class="sheet-field-editable" name="system.magicNotes">{{actor.system.magicNotes}}</textarea></fieldset>
+    </section>
+
+    <section class="tab-panel" data-tab-content="combat">
+      <fieldset class="npc-locations-panel"><legend>{{localize "MYTHRASF.HitLocations"}}</legend>
+        {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="hitLocation" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        <div class="npc-location-header" aria-hidden="true"><span>d20</span><span>{{localize "MYTHRASF.HitLocation.Location"}}</span><span>{{localize "MYTHRASF.Armor.Natural"}}</span><span>{{localize "MYTHRASF.Armor.Total"}}</span><span>{{localize "MYTHRASF.HitLocation.CurrentHitPoints"}}</span><span>{{localize "MYTHRASF.HitLocation.MaxHitPoints"}}</span><span></span></div>
+        {{#each hitLocations as |row|}}<div class="npc-location-row" data-item-id="{{row.item.id}}"><span>{{row.item.system.rangeStart}}-{{row.item.system.rangeEnd}}</span><button type="button" class="npc-item-name" data-action="edit-item">{{row.item.name}}</button><input class="sheet-field-editable" type="number" min="0" data-item-field="armorPoints" value="{{row.item.system.armorPoints}}"><output class="sheet-field-readonly">{{row.totalArmor}}</output><input class="sheet-field-editable" type="number" data-item-field="currentHitPoints" value="{{row.item.system.currentHitPoints}}"><input class="sheet-field-editable" type="number" min="1" data-item-field="maxHitPoints" value="{{row.item.system.maxHitPoints}}"><div>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div></div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.HitLocations"}}</p>{{/each}}
+      </fieldset>
+
+      <fieldset class="npc-attacks-panel"><legend>{{localize "MYTHRASF.Npc.Attacks"}}</legend>
+        {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="weapon" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        <div class="npc-attack-header" aria-hidden="true"><span></span><span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.CombatStyle.Title"}}</span><span>{{localize "MYTHRASF.Weapon.Damage"}}</span><span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.Reach"}}</span><span>{{localize "MYTHRASF.Npc.APHP"}}</span><span></span></div>
+        {{#each combatWeapons as |row|}}<div class="npc-attack-row" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}"><button type="button" class="equipment-state-toggle sheet-icon-button {{#unless row.prepared}}inactive{{/unless}}" data-action="toggle-equipped" aria-label="{{localize "MYTHRASF.Item.Equipped"}}" title="{{localize "MYTHRASF.Item.Equipped"}}"><i class="fas fa-hand" aria-hidden="true"></i></button><button type="button" class="npc-item-name" data-action="edit-item">{{row.displayName}}</button><select data-combat-style aria-label="{{localize "MYTHRASF.Combat.SelectStyle"}}">{{selectOptions row.styleOptions selected=row.mode.preferredCombatStyleId labelAttr="name" valueAttr="id"}}</select><span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span><span>{{row.durability}}</span><div class="npc-row-actions"><button type="button" class="sheet-icon-button" data-action="roll-attack" {{#unless row.canAttack}}disabled{{/unless}} aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div></div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Weapons"}}</p>{{/each}}
+      </fieldset>
+
+      <div class="npc-ability-grid">
+        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Armors"}}</legend>{{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="armor" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}{{#each armor as |item|}}<div class="npc-compact-row" data-item-id="{{item.id}}"><button type="button" class="equipment-state-toggle sheet-icon-button {{#unless item.system.equipped}}inactive{{/unless}}" data-action="toggle-equipped" aria-label="{{localize "MYTHRASF.Item.Equipped"}}" title="{{localize "MYTHRASF.Item.Equipped"}}"><i class="fas fa-vest" aria-hidden="true"></i></button><button type="button" class="npc-item-name" data-action="edit-item">{{item.name}}</button><span>{{item.system.armorPoints}} PA</span>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Armor"}}</p>{{/each}}</fieldset>
+        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Equipment"}}</legend>{{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="equipment" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}{{#each equipment as |item|}}<div class="npc-compact-row" data-item-id="{{item.id}}"><img src="{{item.img}}" alt=""><button type="button" class="npc-item-name" data-action="edit-item">{{item.name}}</button><span>&times;{{item.system.quantity}}</span>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Equipment"}}</p>{{/each}}</fieldset>
+      </div>
+      <fieldset><legend>{{localize "MYTHRASF.Npc.ArmorNotes"}}</legend><input class="sheet-field-editable" type="text" name="system.armorNotes" value="{{actor.system.armorNotes}}"></fieldset>
+    </section>
+  </main>
+</div>

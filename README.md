@@ -13,6 +13,8 @@ La primera fase incluye:
 - generación y confirmación de características;
 - atributos derivados y recursos actuales/máximos;
 - habilidades reutilizables y tiradas porcentuales;
+- PNJ y criaturas con hoja compacta, anatomías configurables y valores manuales;
+- tokens de PNJ no enlazados con generación independiente mediante fórmulas;
 - equipo y armas como tipos de Item independientes;
 - interfaz en español.
 - compendio de habilidades generado desde fuentes legibles.
@@ -44,8 +46,19 @@ npm run check
 la coherencia entre la versión y la URL de descarga.
 
 `npm run build:packs` usa la CLI oficial de Foundry para compilar las fuentes
-de habilidades en un compendio LevelDB compatible con V13. Las descripciones
+de Items, rasgos y criaturas en compendios LevelDB compatibles con V13. Las descripciones
 del catálogo son resúmenes originales, no copias literales del manual.
+
+### PNJ y criaturas
+
+El Actor `npc` conserva valores de referencia y fórmulas opcionales. Al colocar
+su prototipo no enlazado, el sistema materializa las fórmulas en el Actor sintético
+del token sin modificar la plantilla del directorio. Solo un GM puede regenerar
+una instancia existente, ya que la operación restaura recursos y puntos de golpe.
+
+Las habilidades y estilos usan los mismos Items que los personajes. El modo
+`manual` permite introducir directamente el porcentaje de una criatura, mientras
+que el modo `derived` mantiene el cálculo normal por características y mejoras.
 
 ### Grupos activos y macros
 

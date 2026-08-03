@@ -75,6 +75,15 @@
         </fieldset>
       </section>
     {{/if}}
+    <fieldset class="item-generation-fields">
+      <legend>{{localize "MYTHRASF.Npc.ValueConfiguration"}}</legend>
+      <label>{{localize "MYTHRASF.Skill.ValueMode.Label"}}</label>
+      <select name="system.valueMode">{{selectOptions skillValueModeChoices selected=item.system.valueMode labelAttr="label" valueAttr="value"}}</select>
+      <label>{{localize "MYTHRASF.Skill.ManualValue"}}</label>
+      <input type="number" min="0" name="system.manualValue" value="{{item.system.manualValue}}">
+      <label>{{localize "MYTHRASF.Npc.GenerationFormula"}}</label>
+      <input type="text" name="system.generationFormula" value="{{item.system.generationFormula}}" placeholder="1d10+50">
+    </fieldset>
   {{/if}}
 
   {{#if isBackground}}
@@ -95,9 +104,11 @@
     <label>{{localize "MYTHRASF.Passion.CreationBonus"}}</label><input type="number" name="system.creationBonus" value="{{item.system.creationBonus}}">
     <label>{{localize "MYTHRASF.Passion.ExperiencePoints"}}</label><input type="number" name="system.experiencePoints" value="{{item.system.experiencePoints}}">
     <label>{{localize "MYTHRASF.Passion.ManualAdjustment"}}</label><input type="number" name="system.manualAdjustment" value="{{item.system.manualAdjustment}}">
+    <label>{{localize "MYTHRASF.Npc.GenerationFormula"}}</label><input type="text" name="system.generationFormula" value="{{item.system.generationFormula}}">
   {{/if}}
 
   {{#if isEquipment}}
+    <label>{{localize "MYTHRASF.Npc.QuantityFormula"}}</label><input type="text" name="system.quantityFormula" value="{{item.system.quantityFormula}}">
     {{#unless isWeapon}}{{#unless isArmor}}
     <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
     <label>{{localize "MYTHRASF.Item.Weight"}}</label><input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
@@ -122,7 +133,11 @@
         <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}">
         <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
         <label>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
+        <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.ArmorPoints"}})</label><input type="text" name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}">
         <label>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</label><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
+        <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.MaxHitPoints"}})</label><input type="text" name="system.maxHitPointsFormula" value="{{item.system.maxHitPointsFormula}}">
+        <label>{{localize "MYTHRASF.Weapon.Durability.Label"}}</label><select name="system.durabilitySource">{{selectOptions weaponDurabilityChoices selected=item.system.durabilitySource labelAttr="label" valueAttr="value"}}</select>
+        <label>{{localize "MYTHRASF.Weapon.LinkedLocation"}}</label><select name="system.linkedLocationId"><option value=""></option>{{selectOptions weaponLocationChoices selected=item.system.linkedLocationId labelAttr="label" valueAttr="value"}}</select>
         <label>{{localize "MYTHRASF.Item.Description"}}</label><textarea name="system.description">{{item.system.description}}</textarea>
       </fieldset>
     </section>
@@ -176,6 +191,7 @@
       <fieldset class="armor-sheet-fields"><legend>{{localize "MYTHRASF.Armor.Characteristics"}}</legend>
         <label>{{localize "MYTHRASF.Armor.ProfileName"}}</label><input type="text" name="system.profileName" value="{{item.system.profileName}}">
         <label>{{localize "MYTHRASF.Armor.Points"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
+        <label>{{localize "MYTHRASF.Npc.GenerationFormula"}}</label><input type="text" name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}">
         <label>{{localize "MYTHRASF.Armor.BaseEncumbrance"}}</label><input type="number" min="0" step="any" name="system.baseEncumbrance" value="{{item.system.baseEncumbrance}}">
         <label>{{localize "MYTHRASF.Armor.BaseValue"}}</label><input type="number" min="0" step="any" name="system.baseValue" value="{{item.system.baseValue}}">
         <label>{{localize "MYTHRASF.Armor.Penalty"}}</label><input type="number" min="0" name="system.penalty" value="{{item.system.penalty}}">
@@ -219,8 +235,10 @@
     <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.autoCalculate" {{checked item.system.autoCalculate}}>{{localize "MYTHRASF.HitLocation.AutoCalculate"}}</label>
     <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.disabled" {{checked item.system.disabled}}>{{localize "MYTHRASF.HitLocation.Disabled"}}</label>
     <label>{{localize "MYTHRASF.HitLocation.MaxHitPoints"}}</label><input type="number" min="1" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
+    <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.HitLocation.MaxHitPoints"}})</label><input type="text" name="system.maxHitPointsFormula" value="{{item.system.maxHitPointsFormula}}">
     <label>{{localize "MYTHRASF.HitLocation.CurrentHitPoints"}}</label><input type="number" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
     <label>{{localize "MYTHRASF.Armor.Natural"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
+    <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Armor.Natural"}})</label><input type="text" name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}">
     <label>{{localize "MYTHRASF.HitLocation.ArmorEncumbranceMultiplier"}}</label><input type="number" min="0" step="0.5" name="system.armorEncumbranceMultiplier" value="{{item.system.armorEncumbranceMultiplier}}">
     <label>{{localize "MYTHRASF.HitLocation.ArmorCostPercentage"}}</label><input type="number" min="0" step="any" name="system.armorCostPercentage" value="{{item.system.armorCostPercentage}}">
   {{/if}}
