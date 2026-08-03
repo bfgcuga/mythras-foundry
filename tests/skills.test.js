@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { calculateSkillValues } from "../scripts/rules/skills.js";
+import {
+  calculateSkillValues,
+  resolveExperienceImprovement
+} from "../scripts/rules/skills.js";
 
 test("separa la base de las mejoras por fase", () => {
   const result = calculateSkillValues({
@@ -58,4 +61,34 @@ test("una pifia concede un +1 a la futura mejora de experiencia", () => {
 
   assert.equal(result.experienceImprovementBonus, 1);
   assert.equal(result.total, 23);
+});
+
+test("la mejora usa 1d4+1 cuando 1d100+INT alcanza la habilidad", () => {
+  assert.deepEqual(resolveExperienceImprovement({
+    skillTotal: 63,
+    intelligence: 13,
+    checkRoll: 50,
+    improvementRoll: 3
+  }), {
+    modifiedRoll: 63,
+    succeeded: true,
+    rolledIncrease: 4,
+    fumbleBonus: 0,
+    increase: 4
+  });
+});
+
+test("la mejora es +1 si falla y suma otro +1 por pifia", () => {
+  const result = resolveExperienceImprovement({
+    skillTotal: 64,
+    intelligence: 13,
+    checkRoll: 50,
+    improvementRoll: 4,
+    fumbled: true
+  });
+
+  assert.equal(result.succeeded, false);
+  assert.equal(result.rolledIncrease, 1);
+  assert.equal(result.fumbleBonus, 1);
+  assert.equal(result.increase, 2);
 });

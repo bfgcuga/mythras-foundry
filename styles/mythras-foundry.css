@@ -798,7 +798,7 @@
 .mythras-foundry .paper-skill-row {
   display: grid;
   grid-template-columns:
-    1.55rem minmax(5.5rem, 1fr) 2.8rem 2.8rem
+    3.35rem minmax(5.5rem, 1fr) 2.8rem 2.8rem
     2.2rem 2.2rem 3.1rem 1.55rem;
   align-items: center;
   gap: 0.25rem;
@@ -890,7 +890,8 @@
 }
 
 .mythras-foundry .paper-skill-row .skill-roll,
-.mythras-foundry .paper-skill-row .skill-delete {
+.mythras-foundry .paper-skill-row .skill-delete,
+.mythras-foundry .paper-skill-row .skill-improve {
   display: grid;
   width: 1.55rem;
   min-height: 1.55rem;
@@ -901,9 +902,19 @@
 }
 
 .mythras-foundry .paper-skill-row .skill-roll:hover,
-.mythras-foundry .paper-skill-row .skill-delete:hover {
+.mythras-foundry .paper-skill-row .skill-delete:hover,
+.mythras-foundry .paper-skill-row .skill-improve:hover {
   color: var(--mythras-accent);
   box-shadow: 0 0 0 1px var(--mythras-accent);
+}
+
+.mythras-foundry .skill-leading-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.mythras-foundry .skill-improve {
+  color: var(--mythras-accent);
 }
 
 .mythras-foundry .paper-resources {

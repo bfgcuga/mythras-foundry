@@ -46,6 +46,7 @@ import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
+import { resolveExperienceImprovement } from "../rules/skills.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -109,6 +110,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options);
     const items = [...this.actor.items];
     const skills = items.filter((item) => ["skill", "combatStyle"].includes(item.type));
+    const canImproveSkills = this.isEditable
+      && Number(this.actor.system.experienceRolls ?? 0) > 0;
     const combatStyles = items.filter((item) => item.type === "combatStyle");
     const hitLocations = items.filter((item) => item.type === "hitLocation")
       .sort((left, right) => left.system.rangeStart - right.system.rangeStart);
@@ -213,6 +216,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         && generationMethod === "randomSwap",
       backgroundWizard,
       skillGroups,
+      canImproveSkills,
       basicSkillGroup,
       combatSkillGroup,
       secondarySkillGroups,
@@ -404,6 +408,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollSkill(event));
+    });
+    this.element.querySelectorAll("[data-action='improve-skill']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#improveSkill(event));
     });
     this.element.querySelectorAll("[data-action='roll-passion']").forEach((button) => {
       button.addEventListener("click", (event) => this.#rollPassion(event));
@@ -1596,6 +1603,67 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this.#conditionLevel().skillDifficulty);
     difficulty = await this.#applySeriousWoundPenalty(difficulty);
     await item?.rollSkill({ difficulty });
+  }
+
+  async #improveSkill(event) {
+    event.preventDefault();
+    if (!this.isEditable || this._experienceImprovementPending) return;
+
+    const button = event.currentTarget;
+    const itemId = button.closest("[data-item-id]")?.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    const experienceRolls = Number(this.actor.system.experienceRolls ?? 0);
+    if (!item || !["skill", "combatStyle"].includes(item.type) || experienceRolls < 1) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Skill.NoExperienceRolls"));
+      this.render();
+      return;
+    }
+
+    button.disabled = true;
+    this._experienceImprovementPending = true;
+    try {
+      const checkRoll = await new Roll("1d100").evaluate();
+      const checkTotal = Number(checkRoll.total);
+      const intelligence = Number(this.actor.system.intelligence ?? 0);
+      const skillTotal = Number(item.system.total ?? 0);
+      const checkSucceeded = checkTotal + intelligence >= skillTotal;
+      const improvementRoll = checkSucceeded ? await new Roll("1d4").evaluate() : null;
+      const result = resolveExperienceImprovement({
+        skillTotal,
+        intelligence,
+        checkRoll: checkTotal,
+        improvementRoll: improvementRoll?.total,
+        fumbled: item.system.fumbled
+      });
+
+      await item.update({
+        "system.experiencePoints": Number(item.system.experiencePoints ?? 0) + result.increase,
+        "system.trained": false,
+        "system.fumbled": false
+      });
+      await this.actor.update({ "system.experienceRolls": experienceRolls - 1 });
+
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        rolls: [checkRoll, ...(improvementRoll ? [improvementRoll] : [])],
+        content: game.i18n.format("MYTHRASF.Skill.ImprovementResult", {
+          skill: foundry.utils.escapeHTML(item.name),
+          roll: checkTotal,
+          intelligence,
+          modified: result.modifiedRoll,
+          target: skillTotal,
+          outcome: game.i18n.localize(`MYTHRASF.Skill.Improvement${
+            result.succeeded ? "Success" : "Failure"
+          }`),
+          rolled: result.rolledIncrease,
+          fumble: result.fumbleBonus,
+          increase: result.increase
+        })
+      });
+    } finally {
+      this._experienceImprovementPending = false;
+      button.disabled = false;
+    }
   }
 
   async #rollPassion(event) {

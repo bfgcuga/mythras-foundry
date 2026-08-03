@@ -54,11 +54,21 @@
       </div>
     {{else}}
       <div class="paper-skill-row" data-item-id="{{item.id}}">
-        <button type="button" class="skill-roll" data-action="roll-skill"
-          aria-label="{{localize "MYTHRASF.Skill.Roll"}}"
-          title="{{localize "MYTHRASF.Skill.Roll"}}">
-          <i class="fas fa-dice-d20" aria-hidden="true"></i>
-        </button>
+        <div class="skill-leading-actions">
+          <button type="button" class="skill-roll sheet-icon-button" data-action="roll-skill"
+            aria-label="{{localize "MYTHRASF.Skill.Roll"}}"
+            title="{{localize "MYTHRASF.Skill.Roll"}}">
+            <i class="fas fa-dice-d20" aria-hidden="true"></i>
+          </button>
+          {{#if ../canImproveSkills}}
+            <button type="button" class="skill-improve sheet-icon-button"
+              data-action="improve-skill"
+              aria-label="{{localize "MYTHRASF.Skill.Improve"}}"
+              title="{{localize "MYTHRASF.Skill.Improve"}}">
+              <i class="fas fa-angles-up" aria-hidden="true"></i>
+            </button>
+          {{/if}}
+        </div>
         <button type="button" class="skill-name" data-action="edit-item">{{item.name}}</button>
         <output>{{item.system.base}}</output>
         <output>{{item.system.allocatedBonus}}</output>

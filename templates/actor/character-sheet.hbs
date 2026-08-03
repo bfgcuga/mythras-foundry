@@ -190,14 +190,17 @@
         <section class="paper-skill-columns {{#if editMode}}skills-editing{{/if}}">
           <div class="paper-skill-column paper-skill-column-basic">
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-              group=basicSkillGroup editable=editable skillsEditing=editMode}}
+              group=basicSkillGroup editable=editable skillsEditing=editMode
+              canImproveSkills=canImproveSkills}}
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-              group=combatSkillGroup editable=editable skillsEditing=editMode}}
+              group=combatSkillGroup editable=editable skillsEditing=editMode
+              canImproveSkills=canImproveSkills}}
           </div>
           <div class="paper-skill-column paper-skill-column-secondary">
             {{#each secondarySkillGroups as |group|}}
               {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-                group=group editable=../editable skillsEditing=../editMode}}
+                group=group editable=../editable skillsEditing=../editMode
+                canImproveSkills=../canImproveSkills}}
             {{/each}}
 
           <fieldset class="paper-passions">
@@ -287,6 +290,14 @@
                 {{item.totalDisplay.base}}%{{#if item.totalDisplay.penalized}} <span class="penalized-value-modifier">({{item.totalDisplay.effective}}%)</span>{{/if}}
               </strong>
               <div class="skill-actions">
+                {{#if ../../canImproveSkills}}
+                  <button type="button" class="skill-improve sheet-icon-button"
+                    data-action="improve-skill"
+                    aria-label="{{localize "MYTHRASF.Skill.Improve"}}"
+                    title="{{localize "MYTHRASF.Skill.Improve"}}">
+                    <i class="fas fa-angles-up" aria-hidden="true"></i>
+                  </button>
+                {{/if}}
                 <select data-difficulty aria-label="{{localize "MYTHRASF.Skill.Difficulty"}}">
                   <option value="automatic">{{localize "MYTHRASF.Difficulty.automatic"}}</option>
                   <option value="veryEasy">{{localize "MYTHRASF.Difficulty.veryEasy"}}</option>

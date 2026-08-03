@@ -16,3 +16,24 @@ export function calculateSkillValues(system, characteristics = {}) {
     experienceImprovementBonus: system.fumbled ? 1 : 0
   };
 }
+
+export function resolveExperienceImprovement({
+  skillTotal,
+  intelligence,
+  checkRoll,
+  improvementRoll = 0,
+  fumbled = false
+}) {
+  const modifiedRoll = Number(checkRoll) + Number(intelligence ?? 0);
+  const succeeded = modifiedRoll >= Number(skillTotal);
+  const rolledIncrease = succeeded ? Number(improvementRoll) + 1 : 1;
+  const fumbleBonus = fumbled ? 1 : 0;
+
+  return {
+    modifiedRoll,
+    succeeded,
+    rolledIncrease,
+    fumbleBonus,
+    increase: rolledIncrease + fumbleBonus
+  };
+}
