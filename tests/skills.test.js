@@ -95,7 +95,7 @@ test("la mejora es +1 si falla y suma otro +1 por pifia", () => {
   assert.equal(result.increase, 2);
 });
 
-test("adquirir una habilidad cuesta tres tiradas de experiencia", () => {
+test("adquirir una habilidad o estilo de combate cuesta tres tiradas de experiencia", () => {
   assert.equal(NEW_SKILL_EXPERIENCE_COST, 3);
   assert.deepEqual(skillAcquisition({ experienceRolls: 2 }), {
     cost: 3,
@@ -105,7 +105,7 @@ test("adquirir una habilidad cuesta tres tiradas de experiencia", () => {
   assert.equal(skillAcquisition({ experienceRolls: 3 }).allowed, true);
 });
 
-test("el modo de edición permite adquirir habilidades sin coste", () => {
+test("el modo de edición permite adquirir habilidades y estilos sin coste", () => {
   assert.deepEqual(skillAcquisition({ experienceRolls: 0, editMode: true }), {
     cost: 0,
     available: 0,

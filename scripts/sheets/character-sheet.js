@@ -1729,9 +1729,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         window: { title: game.i18n.localize("MYTHRASF.Skill.AddExperienceTitle") },
         content: `<p>${game.i18n.format("MYTHRASF.Skill.AddExperienceConfirm", {
           cost: acquisition.cost
-        })}</p>`,
-        yes: { label: game.i18n.localize("MYTHRASF.Confirm") },
-        no: { label: game.i18n.localize("MYTHRASF.Cancel") }
+        })}</p>`
       });
       if (!proceed) return;
     }
@@ -1856,6 +1854,27 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #createCombatStyle() {
     if (!this.isEditable) return;
+    const ignoresExperienceCost = Boolean(this._editMode);
+    const acquisition = skillAcquisition({
+      experienceRolls: this.actor.system.experienceRolls,
+      editMode: ignoresExperienceCost
+    });
+    if (!acquisition.allowed) {
+      ui.notifications.warn(game.i18n.format("MYTHRASF.Skill.AddExperienceUnavailable", {
+        cost: acquisition.cost,
+        available: acquisition.available
+      }));
+      return;
+    }
+    if (!ignoresExperienceCost) {
+      const proceed = await DialogV2.confirm({
+        window: { title: game.i18n.localize("MYTHRASF.Skill.AddExperienceTitle") },
+        content: `<p>${game.i18n.format("MYTHRASF.Skill.AddExperienceConfirm", {
+          cost: acquisition.cost
+        })}</p>`
+      });
+      if (!proceed) return;
+    }
     const result = await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.CombatStyle.Create") },
       content: `
@@ -1879,6 +1898,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     });
     if (!result?.name) return;
+    if (!ignoresExperienceCost) {
+      const currentExperience = Number(this.actor.system.experienceRolls ?? 0);
+      if (currentExperience < NEW_SKILL_EXPERIENCE_COST) {
+        ui.notifications.warn(game.i18n.format("MYTHRASF.Skill.AddExperienceUnavailable", {
+          cost: NEW_SKILL_EXPERIENCE_COST,
+          available: currentExperience
+        }));
+        return;
+      }
+    }
     const key = styleAbilityKey(result.name);
     const data = this.#createBackgroundAbilityData({
       key,
@@ -1889,6 +1918,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       prompt: ""
     }, { culturePoints: 0, professionPoints: 0, freePoints: 0 });
     await this.actor.createEmbeddedDocuments("Item", [data]);
+    if (!ignoresExperienceCost) {
+      const remainingExperience = Number(this.actor.system.experienceRolls ?? 0)
+        - NEW_SKILL_EXPERIENCE_COST;
+      await this.actor.update({ "system.experienceRolls": remainingExperience });
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        content: game.i18n.format("MYTHRASF.Skill.AcquisitionChatMessage", {
+          skill: foundry.utils.escapeHTML(result.name),
+          cost: NEW_SKILL_EXPERIENCE_COST,
+          remaining: remainingExperience
+        })
+      });
+    }
+    await this.render({ force: true });
   }
 
   async #adjustResource(event) {
