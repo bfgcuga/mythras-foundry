@@ -84,20 +84,8 @@
       <fieldset class="npc-description-panel"><legend>{{localize "MYTHRASF.Item.Description"}}</legend>
         <textarea class="sheet-field-editable" name="system.description">{{actor.system.description}}</textarea></fieldset>
 
-      <div class="npc-ability-grid">
-        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Skills"}}</legend>
-          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="skill" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
-          <div class="npc-skill-header" aria-hidden="true"><span></span><span>{{localize "MYTHRASF.Skill.Name"}}</span><span>%</span>{{#if isTemplate}}<span>{{localize "MYTHRASF.Npc.Formula"}}</span>{{/if}}<span></span></div>
-          {{#each skills as |row|}}<div class="npc-skill-row" data-item-id="{{row.item.id}}">
-            <button type="button" class="sheet-icon-button" data-action="roll-skill" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
-            <button type="button" class="npc-item-name" data-action="edit-item">{{row.item.name}}</button>
-            <input class="sheet-field-editable" type="number" min="0" data-manual-value value="{{row.total}}" aria-label="{{localize "MYTHRASF.Skill.ManualValue"}}">
-            {{#if ../isTemplate}}<input class="sheet-field-editable" type="text" data-item-field="generationFormula" value="{{row.item.system.generationFormula}}" placeholder="1d10+50">{{/if}}
-            <div class="npc-row-actions"><select data-difficulty aria-label="{{localize "MYTHRASF.Skill.Difficulty"}}">{{selectOptions ../difficultyChoices selected="standard" labelAttr="label" valueAttr="value"}}</select>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>
-          </div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>{{/each}}
-        </fieldset>
-
-        <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.CombatStyles"}}</legend>
+      <div class="npc-skills-layout">
+        <fieldset class="npc-list-panel npc-combat-styles-panel"><legend>{{localize "MYTHRASF.CombatStyles"}}</legend>
           {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="combatStyle" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
           {{#each combatStyles as |row|}}<div class="npc-compact-row" data-item-id="{{row.item.id}}">
             <button type="button" class="sheet-icon-button" data-action="roll-skill" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
@@ -105,6 +93,23 @@
             <input class="sheet-field-editable" type="number" min="0" data-manual-value value="{{row.total}}">
             {{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
           </div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.CombatStyles"}}</p>{{/each}}
+        </fieldset>
+
+        <fieldset class="npc-list-panel npc-skills-panel"><legend>{{localize "MYTHRASF.Skills"}}</legend>
+          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="skill" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+          <div class="npc-skill-grid-headers" aria-hidden="true">
+            <div class="npc-skill-header {{#unless isTemplate}}resolved{{/unless}}"><span></span><span>{{localize "MYTHRASF.Skill.Name"}}</span><span>%</span>{{#if isTemplate}}<span>{{localize "MYTHRASF.Npc.Formula"}}</span>{{/if}}<span></span></div>
+            <div class="npc-skill-header {{#unless isTemplate}}resolved{{/unless}}"><span></span><span>{{localize "MYTHRASF.Skill.Name"}}</span><span>%</span>{{#if isTemplate}}<span>{{localize "MYTHRASF.Npc.Formula"}}</span>{{/if}}<span></span></div>
+          </div>
+          <div class="npc-skill-grid">
+            {{#each skills as |row|}}<div class="npc-skill-row {{#unless ../isTemplate}}resolved{{/unless}}" data-item-id="{{row.item.id}}">
+              <button type="button" class="sheet-icon-button" data-action="roll-skill" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
+              <button type="button" class="npc-item-name" data-action="edit-item">{{row.item.name}}</button>
+              <input class="sheet-field-editable" type="number" min="0" data-manual-value value="{{row.total}}" aria-label="{{localize "MYTHRASF.Skill.ManualValue"}}">
+              {{#if ../isTemplate}}<input class="sheet-field-editable" type="text" data-item-field="generationFormula" value="{{row.item.system.generationFormula}}" placeholder="1d10+50">{{/if}}
+              <div class="npc-row-actions"><select data-difficulty aria-label="{{localize "MYTHRASF.Skill.Difficulty"}}">{{selectOptions ../difficultyChoices selected="standard" labelAttr="label" valueAttr="value"}}</select>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>
+            </div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>{{/each}}
+          </div>
         </fieldset>
       </div>
 

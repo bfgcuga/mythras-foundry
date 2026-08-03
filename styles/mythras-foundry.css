@@ -1927,6 +1927,7 @@
 .mythras-foundry .npc-resource-row output { text-align: center; font-weight: 700; }
 .mythras-foundry .npc-description-panel,
 .mythras-foundry .npc-magic-panel,
+.mythras-foundry .npc-skills-layout,
 .mythras-foundry .npc-ability-grid,
 .mythras-foundry .npc-locations-panel,
 .mythras-foundry .npc-attacks-panel { margin-top: 0.65rem; }
@@ -1951,8 +1952,14 @@
 .mythras-foundry .npc-list-panel > .sheet-add-button,
 .mythras-foundry .npc-locations-panel > .sheet-add-button,
 .mythras-foundry .npc-attacks-panel > .sheet-add-button { position: absolute; top: -0.2rem; right: 0.35rem; }
+.mythras-foundry .npc-skills-layout { display: grid; gap: 0.65rem; }
+.mythras-foundry .npc-combat-styles-panel .npc-compact-row { grid-template-columns: 2rem minmax(10rem, 1fr) 6rem 2rem; }
+.mythras-foundry .npc-skill-grid,
+.mythras-foundry .npc-skill-grid-headers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0.65rem; }
 .mythras-foundry .npc-skill-header,
 .mythras-foundry .npc-skill-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) 4rem minmax(5rem, 0.75fr) minmax(7rem, auto); align-items: center; gap: 0.3rem; }
+.mythras-foundry .npc-skill-header.resolved,
+.mythras-foundry .npc-skill-row.resolved { grid-template-columns: 2rem minmax(7rem, 1fr) 4rem minmax(7rem, auto); }
 .mythras-foundry .npc-compact-row { display: grid; grid-template-columns: 2rem minmax(7rem, 1fr) minmax(4rem, 1fr) 2rem; align-items: center; gap: 0.35rem; }
 .mythras-foundry .npc-compact-row > img { width: 1.5rem; height: 1.5rem; border: 0; object-fit: contain; }
 .mythras-foundry .npc-item-name { min-width: 0; padding: 0; border: 0; background: transparent; overflow-wrap: anywhere; text-align: left; white-space: normal; }
@@ -1976,4 +1983,7 @@
   .mythras-foundry .npc-header-status { grid-column: 1 / -1; }
   .mythras-foundry .npc-general-grid,
   .mythras-foundry .npc-ability-grid { grid-template-columns: 1fr; }
+  .mythras-foundry .npc-skill-grid,
+  .mythras-foundry .npc-skill-grid-headers { grid-template-columns: 1fr; }
+  .mythras-foundry .npc-skill-grid-headers .npc-skill-header:last-child { display: none; }
 }
