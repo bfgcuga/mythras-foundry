@@ -36,6 +36,8 @@ import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
 import { managedMacroUpdate } from "./data/macros.js";
 import { calculateNpcAttributes } from "./rules/npc.js";
 import { regenerateNpcActor } from "./rules/npc-token.js";
+import { activateActionPointSettingVisibility, getActionPointRules,
+  getSystemSetting, registerSystemSettings, SETTING_KEYS } from "./settings.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -61,10 +63,7 @@ Hooks.once("init", async () => {
   CONFIG.Item.dataModels.armor = ArmorData;
   CONFIG.Item.dataModels.hitLocation = HitLocationData;
   CONFIG.Item.dataModels.trait = TraitData;
-  game.settings.register("mythras-foundry", "parties", {
-    scope: "world", config: false, type: Object,
-    default: { version: 1, activePartyId: "", parties: [] }
-  });
+  registerSystemSettings();
   game.settings.registerMenu("mythras-foundry", "partyManager", {
     name: "MYTHRASF.Party.Manager", label: "MYTHRASF.Party.ManagerOpen",
     hint: "MYTHRASF.Party.ManagerHint", icon: "fas fa-users",
@@ -78,7 +77,7 @@ Hooks.once("init", async () => {
   game.mythrasFoundry = {
     ...(game.mythrasFoundry ?? {}),
     party: createPartyApi({
-      getConfig: () => game.settings.get("mythras-foundry", "parties"),
+      getConfig: () => getSystemSetting(SETTING_KEYS.parties),
       getActors: () => game.actors,
       openManager: () => {
         if (!game.user.isGM) return null;
@@ -124,8 +123,14 @@ Hooks.once("init", async () => {
 
 Hooks.on("renderChatMessageHTML", (message, html) => activateCombatCard(message, html));
 Hooks.on("renderChatMessage", (message, html) => activateCombatCard(message, html));
-Hooks.on("renderApplicationV2", (application, element) => activateDelayedTooltips(element));
-Hooks.on("renderApplication", (application, html) => activateDelayedTooltips(html));
+Hooks.on("renderApplicationV2", (application, element) => {
+  activateDelayedTooltips(element);
+  activateActionPointSettingVisibility(element);
+});
+Hooks.on("renderApplication", (application, html) => {
+  activateDelayedTooltips(html);
+  activateActionPointSettingVisibility(html);
+});
 
 Hooks.on("preUpdateActor", (actor, changed) => {
   if (!isCombatActor(actor)) return;
@@ -137,7 +142,8 @@ Hooks.on("preUpdateActor", (actor, changed) => {
     { inplace: false }
   );
   const baseAttributes = actor.type === "npc"
-    ? calculateNpcAttributes(candidate) : calculateDerivedAttributes(candidate);
+    ? calculateNpcAttributes(candidate)
+    : calculateDerivedAttributes(candidate, getActionPointRules());
   const condition = combinedConditionLevel(candidate.fatigueLevel,
     worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")));
   const attributes = applyFatigue(baseAttributes, condition.key);
@@ -151,7 +157,8 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
   const actor = item.parent;
   if (userId !== game.user.id || item.type !== "hitLocation" || !isCombatActor(actor)) return;
   const baseAttributes = actor.type === "npc"
-    ? calculateNpcAttributes(actor.system) : calculateDerivedAttributes(actor.system);
+    ? calculateNpcAttributes(actor.system)
+    : calculateDerivedAttributes(actor.system, getActionPointRules());
   const condition = combinedConditionLevel(actor.system.fatigueLevel,
     worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")));
   const maximum = applyFatigue(baseAttributes, condition.key).actionPointsMax;

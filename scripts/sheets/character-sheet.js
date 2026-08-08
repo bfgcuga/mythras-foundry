@@ -1,20 +1,25 @@
 import { CHARACTERISTIC_KEYS, calculateDerivedAttributes } from "../rules/derived-attributes.js";
 import {
   CULTURES,
-  PROFESSIONS,
   getCulture,
-  getProfession
+  getProfession,
+  professionAvailableToCulture,
+  professionsForCulture
 } from "../data/backgrounds.js";
 import { BASIC_SKILL_SOURCES } from "../data/basic-skills.js";
 import { PROFESSIONAL_SKILL_SOURCES } from "../data/professional-skills.js";
 import { ALL_SKILL_SOURCES } from "../data/skills.js";
+import { calculateStartingMoney, getSocialClass, resolveSocialClass,
+  socialClassesForCulture, STARTING_MONEY_BY_CULTURE } from "../data/social-classes.js";
 import { defaultItemIcon } from "../data/item-icons.js";
 import {
   BACKGROUND_BUDGETS,
+  AGE_CATEGORIES,
   allocationRemaining as backgroundAllocationRemaining,
   createBackgroundDraft,
   freeSkillNeedsSpecialization,
   getAllAcquiredAbilities,
+  getAgeCategory,
   getFreeAbilities,
   getPhaseAbilities,
   parseBackgroundDraft,
@@ -22,8 +27,10 @@ import {
   setAllocation,
   skillAbilityKey,
   styleAbilityKey,
+  validateAgeSelection,
   validateBackgroundSelection,
-  validateFreePhase
+  validateFreePhase,
+  validateSocialClassSelection
 } from "../rules/background-generation.js";
 import {
   CHARACTERISTIC_MINIMUMS,
@@ -51,6 +58,9 @@ import {
   resolveExperienceImprovement,
   skillAcquisition
 } from "../rules/skills.js";
+import { getActionPointRules, getCultureAllocationRules,
+  getProfessionAllocationRules, getSocialClassMethod,
+  SOCIAL_CLASS_METHODS } from "../settings.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -127,7 +137,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const currentWound = worstWoundLevel(hitLocations);
     const currentCondition = combinedConditionLevel(currentFatigue.key, currentWound);
     const baseAttributes = this.actor.system.baseAttributes
-      ?? calculateDerivedAttributes(this.actor.system);
+      ?? calculateDerivedAttributes(this.actor.system, getActionPointRules());
     const effectiveAttributes = applyFatigue(baseAttributes, currentCondition.key);
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
@@ -377,6 +387,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-background-free-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateFreeSkill(event));
     });
+    this.element.querySelectorAll("[data-background-age-field]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateBackgroundAge(event));
+    });
+    this.element.querySelector("[data-background-social-class]")
+      ?.addEventListener("change", (event) => this.#selectSocialClass(event));
+    this.element.querySelector("[data-action='roll-social-class']")
+      ?.addEventListener("click", (event) => this.#rollSocialClass(event));
     this.element.querySelectorAll("[data-background-points]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateBackgroundPoints(event));
     });
@@ -604,7 +621,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #updateFatigue(event) {
     if (!this.isEditable || !event.currentTarget.checked) return;
     const levelKey = event.currentTarget.value;
-    const baseAttributes = calculateDerivedAttributes(this.actor.system);
+    const baseAttributes = calculateDerivedAttributes(this.actor.system, getActionPointRules());
     const effectiveAttributes = applyFatigue(baseAttributes,
       this.#conditionLevel(levelKey).key);
     const currentActionPoints = Number(this.actor.system.resources.actionPoints.value ?? 0);
@@ -818,6 +835,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const culture = getCulture(draft.cultureKey);
     const profession = getProfession(draft.professionKey);
     const stage = draft.stage;
+    const socialClass = getSocialClass(draft.cultureKey, draft.socialClassKey);
+    const socialClassMethod = getSocialClassMethod();
     const phase = ["culture", "profession"].includes(stage) ? stage : null;
     const selectedBackground = phase
       ? (phase === "culture" ? culture : profession)
@@ -840,6 +859,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       CORE_BASIC_SLUGS
     );
     const allocationPhase = phase ?? (stage === "free" ? "free" : null);
+    const allocationRules = allocationPhase
+      ? this.#backgroundAllocationRules(draft, allocationPhase)
+      : { budget: 0, limits: null };
     const allocationAbilities = allocationPhase === "free" ? freeAbilities : phaseAbilities;
     const allocation = allocationPhase ? draft.allocations[allocationPhase] : {};
     const allocationRows = allocationAbilities
@@ -873,17 +895,39 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return {
       stage,
       isCulture: stage === "culture",
+      isSocialClass: stage === "socialClass",
       isProfession: stage === "profession",
+      isAge: stage === "age",
       isFree: stage === "free",
       isReview: stage === "review",
       cultureName: culture?.name ?? "",
       professionName: profession?.name ?? "",
+      socialClassName: socialClass?.name ?? "",
+      socialClassRandom: socialClassMethod === SOCIAL_CLASS_METHODS.random,
+      socialClasses: socialClassesForCulture(draft.cultureKey).map((entry) => ({
+        ...entry,
+        selected: entry.key === draft.socialClassKey
+      })),
+      selectedSocialClass: socialClass,
+      socialClassRoll: Number(draft.socialClassRoll) || "",
+      startingMoney: Number(draft.startingMoney) || 0,
+      startingMoneyFormula: STARTING_MONEY_BY_CULTURE[draft.cultureKey]?.formula ?? "",
+      age: Number(draft.age) || "",
+      ageCategoryName: draft.ageCategory
+        ? game.i18n.localize(`MYTHRASF.Age.Category.${draft.ageCategory}`)
+        : "",
+      ageCategories: AGE_CATEGORIES.map((entry) => ({
+        ...entry,
+        selected: entry.key === draft.ageCategory,
+        name: game.i18n.localize(`MYTHRASF.Age.Category.${entry.key}`)
+      })),
+      selectedAgeCategory: getAgeCategory(draft.ageCategory),
       cultures: CULTURES.map((entry) => ({
         key: entry.key,
         name: entry.name,
         selected: entry.key === draft.cultureKey
       })),
-      professions: PROFESSIONS.map((entry) => ({
+      professions: professionsForCulture(draft.cultureKey).map((entry) => ({
         key: entry.key,
         name: entry.name,
         selected: entry.key === draft.professionKey
@@ -942,9 +986,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       allocationPhase,
       allocationRows,
       allocationRemaining: allocationPhase
-        ? backgroundAllocationRemaining(allocationPhase, allocation)
+        ? backgroundAllocationRemaining(allocationPhase, allocation, allocationRules.budget)
         : 0,
-      allocationBudget: allocationPhase ? BACKGROUND_BUDGETS[allocationPhase] : 0,
+      allocationBudget: allocationRules.budget,
+      allocationLimits: allocationRules.limits,
       reviewAbilities
     };
   }
@@ -963,7 +1008,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const culture = getCulture(draft.cultureKey);
     const profession = getProfession(draft.professionKey);
-    const phase = draft.stage === "review" ? "free" : draft.stage;
+    const phase = draft.stage === "review"
+      ? "free"
+      : ["culture", "profession", "free"].includes(draft.stage)
+        ? draft.stage
+        : null;
+    if (!phase) return row;
     const key = item.getFlag("mythras-foundry", "backgroundDraftAbility")
       ?? item.getFlag("mythras-foundry", "backgroundAbility")
       ?? (item.type === "combatStyle"
@@ -1039,6 +1089,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         + Number(draft.allocations.profession[key] ?? 0);
     }
     return 0;
+  }
+
+  #backgroundAllocationRules(draft, phase) {
+    if (phase === "culture") {
+      return { budget: BACKGROUND_BUDGETS.culture, limits: getCultureAllocationRules() };
+    }
+    if (phase === "profession") {
+      return { budget: BACKGROUND_BUDGETS.profession, limits: getProfessionAllocationRules() };
+    }
+    const age = getAgeCategory(draft.ageCategory);
+    return {
+      budget: age?.freePoints ?? BACKGROUND_BUDGETS.free,
+      limits: { minimum: 0, maximum: age?.maximum ?? BACKGROUND_BUDGETS.free }
+    };
   }
 
   async #saveBackgroundDraft(draft) {
@@ -1359,6 +1423,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const { phase, backgroundStyleAction: action, style } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (action === "add") {
+      if (phase === "culture") return;
       const id = `${phase}:extra-${Date.now().toString(36)}`;
       draft.extraStyles[phase].push(id);
       draft.styles[id] = { name: "", weapons: "", traits: "" };
@@ -1369,6 +1434,58 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       delete draft.styles[style];
       delete draft.allocations[phase][oldKey];
       this.#pruneBackgroundAllocation(draft, phase);
+    }
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #rollStartingMoney(draft) {
+    const roll = await new Roll("4d6").evaluate();
+    draft.startingMoneyDice = Number(roll.total);
+    draft.startingMoney = calculateStartingMoney(
+      draft.cultureKey, draft.socialClassKey, draft.startingMoneyDice
+    );
+  }
+
+  async #assignRandomSocialClass(draft) {
+    const roll = await new Roll("1d100").evaluate();
+    const socialClass = resolveSocialClass(draft.cultureKey, roll.total);
+    draft.socialClassRoll = Number(roll.total);
+    draft.socialClassKey = socialClass?.key ?? "";
+    if (socialClass) await this.#rollStartingMoney(draft);
+  }
+
+  async #selectSocialClass(event) {
+    if (!this.isEditable) return;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    draft.socialClassKey = event.currentTarget.value;
+    draft.socialClassRoll = 0;
+    draft.startingMoneyDice = 0;
+    draft.startingMoney = 0;
+    if (draft.socialClassKey) await this.#rollStartingMoney(draft);
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #rollSocialClass(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    if (getSocialClassMethod() === SOCIAL_CLASS_METHODS.random) {
+      await this.#assignRandomSocialClass(draft);
+    } else if (draft.socialClassKey) {
+      await this.#rollStartingMoney(draft);
+    }
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #updateBackgroundAge(event) {
+    if (!this.isEditable) return;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const field = event.currentTarget.dataset.backgroundAgeField;
+    if (field === "category") {
+      draft.ageCategory = event.currentTarget.value;
+      draft.allocations.free = {};
+    } else if (field === "age") {
+      draft.age = Math.max(0, Number.parseInt(event.currentTarget.value, 10) || 0);
     }
     await this.#saveBackgroundDraft(draft);
   }
@@ -1430,11 +1547,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #updateBackgroundPoints(event) {
     const { phase, ability } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const rules = this.#backgroundAllocationRules(draft, phase);
     draft.allocations[phase] = setAllocation(
       draft.allocations[phase],
       ability,
       event.currentTarget.value,
-      BACKGROUND_BUDGETS[phase]
+      rules.budget,
+      rules.limits
     );
     await this.#saveBackgroundDraft(draft);
   }
@@ -1444,11 +1563,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const { phase, ability, delta } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const current = Number(draft.allocations[phase][ability] ?? 0);
+    const rules = this.#backgroundAllocationRules(draft, phase);
     draft.allocations[phase] = setAllocation(
       draft.allocations[phase],
       ability,
       current + Number(delta),
-      BACKGROUND_BUDGETS[phase]
+      rules.budget,
+      rules.limits
     );
     await this.#saveBackgroundDraft(draft);
   }
@@ -1459,8 +1580,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (direction === "back") {
       draft.stage = {
-        profession: "culture",
-        free: "profession",
+        socialClass: "culture",
+        profession: "socialClass",
+        age: "profession",
+        free: "age",
         review: "free"
       }[draft.stage] ?? "culture";
       await this.#saveBackgroundDraft(draft);
@@ -1468,18 +1591,40 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const culture = getCulture(draft.cultureKey);
     const profession = getProfession(draft.professionKey);
+    const cultureAllocationRules = getCultureAllocationRules();
+    const professionAllocationRules = getProfessionAllocationRules();
+    const freeAllocationRules = this.#backgroundAllocationRules(draft, "free");
     const validation = draft.stage === "culture"
-      ? validateBackgroundSelection(culture, draft, "culture")
-      : draft.stage === "profession"
-        ? validateBackgroundSelection(profession, draft, "profession")
-        : validateFreePhase(culture, profession, draft, CORE_BASIC_SLUGS);
+      ? validateBackgroundSelection(culture, draft, "culture", cultureAllocationRules)
+      : draft.stage === "socialClass"
+        ? validateSocialClassSelection(draft)
+        : draft.stage === "profession"
+        ? (!professionAvailableToCulture(draft.professionKey, draft.cultureKey)
+          ? { valid: false, reason: "professionCulture" }
+          : validateBackgroundSelection(
+            profession, draft, "profession", professionAllocationRules))
+        : draft.stage === "age"
+          ? validateAgeSelection(draft)
+          : validateFreePhase(culture, profession, draft, CORE_BASIC_SLUGS, {
+            budget: freeAllocationRules.budget,
+            ...freeAllocationRules.limits
+          });
     if (!validation.valid) {
       ui.notifications.warn(game.i18n.localize(
         `MYTHRASF.Background.Validation.${validation.reason}`
       ));
       return;
     }
-    draft.stage = { culture: "profession", profession: "free", free: "review" }[draft.stage];
+    const previousStage = draft.stage;
+    draft.stage = {
+      culture: "socialClass", socialClass: "profession", profession: "age",
+      age: "free", free: "review"
+    }[draft.stage];
+    if (previousStage === "culture"
+      && getSocialClassMethod() === SOCIAL_CLASS_METHODS.random
+      && !draft.socialClassKey) {
+      await this.#assignRandomSocialClass(draft);
+    }
     await this.#saveBackgroundDraft(draft);
   }
 
@@ -1488,10 +1633,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const culture = getCulture(draft.cultureKey);
     const profession = getProfession(draft.professionKey);
+    const cultureAllocationRules = getCultureAllocationRules();
+    const professionAllocationRules = getProfessionAllocationRules();
+    const freeAllocationRules = this.#backgroundAllocationRules(draft, "free");
     if (
-      !validateBackgroundSelection(culture, draft, "culture").valid
-      || !validateBackgroundSelection(profession, draft, "profession").valid
-      || !validateFreePhase(culture, profession, draft, CORE_BASIC_SLUGS).valid
+      !validateBackgroundSelection(culture, draft, "culture", cultureAllocationRules).valid
+      || !validateSocialClassSelection(draft).valid
+      || !professionAvailableToCulture(draft.professionKey, draft.cultureKey)
+      || !validateBackgroundSelection(
+        profession, draft, "profession", professionAllocationRules).valid
+      || !validateAgeSelection(draft).valid
+      || !validateFreePhase(culture, profession, draft, CORE_BASIC_SLUGS, {
+        budget: freeAllocationRules.budget,
+        ...freeAllocationRules.limits
+      }).valid
     ) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.Validation.incomplete"));
       return;
@@ -1515,11 +1670,21 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this.#getBackgroundDocument("cultures", culture.key),
       this.#getBackgroundDocument("professions", profession.key)
     ]);
+    const socialClass = getSocialClass(draft.cultureKey, draft.socialClassKey);
     await this.actor.update({
       "system.identity.culture.name": culture.name,
       "system.identity.culture.sourceUuid": cultureDocument?.uuid ?? "",
       "system.identity.profession.name": profession.name,
       "system.identity.profession.sourceUuid": professionDocument?.uuid ?? "",
+      "system.identity.socialClass.key": socialClass.key,
+      "system.identity.socialClass.name": socialClass.name,
+      "system.identity.socialClass.titles": socialClass.titles,
+      "system.identity.socialClass.resources": socialClass.resources,
+      "system.identity.socialClass.moneyModifier": socialClass.moneyModifier,
+      "system.identity.age": Number(draft.age),
+      "system.identity.ageCategory": draft.ageCategory,
+      "system.currency.silver": Number(draft.startingMoney),
+      "system.currency.startingSilver": Number(draft.startingMoney),
       "system.backgroundComplete": true,
       "system.backgroundCreationEnabled": false,
       "system.backgroundDraft": ""

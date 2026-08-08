@@ -1,3 +1,5 @@
+import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
+
 const BASIC_SKILLS = [
   ["aguante", "Aguante", "constitution", "constitution", 0,
     "Resistir dolor, fatiga, enfermedades, venenos y esfuerzo físico."],
@@ -37,7 +39,7 @@ const BASIC_SKILLS = [
     "Observar el entorno y detectar de forma consciente detalles o amenazas."],
   ["perspicacia", "Perspicacia", "intelligence", "power", 0,
     "Interpretar conducta, lenguaje corporal, intenciones y posibles mentiras."],
-  ["primeros-auxilios", "Primeros Auxilios", "intelligence", "dexterity", 0,
+  ["primeros-auxilios", "Primeros Auxilios", "dexterity", "intelligence", 0,
     "Tratar heridas menores y estabilizar lesiones graves inmediatamente."],
   ["sigilo", "Sigilo", "dexterity", "intelligence", 0,
     "Ocultarse y moverse procurando no ser visto ni oído."],
@@ -65,6 +67,7 @@ export const BASIC_SKILL_SOURCES = BASIC_SKILLS.map(([
   system: {
     slug,
     templateSlug: slug,
+    source: MYTHRAS_REVISED_SOURCE,
     specialization: "",
     category: "basic",
     group: slug === "lengua-materna"

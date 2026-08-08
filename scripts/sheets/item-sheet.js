@@ -98,6 +98,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isSkillLike: ["skill", "combatStyle"].includes(this.item.type),
       isCombatStyle: this.item.type === "combatStyle",
       isBackground: ["culture", "profession"].includes(this.item.type),
+      isCulture: this.item.type === "culture",
       isPassion: this.item.type === "passion",
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
       isEquipment: ["equipment", "weapon", "armor"].includes(this.item.type),

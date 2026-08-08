@@ -56,6 +56,7 @@ export class SkillData extends foundry.abstract.TypeDataModel {
     return {
       slug: textField(),
       templateSlug: textField(),
+      source: textField(),
       specialization: textField(),
       category: new StringField({
         required: true,
@@ -145,6 +146,7 @@ export class BackgroundData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
       key: textField(),
+      source: textField(),
       rules: textField("{}"),
       description: descriptionField()
     };

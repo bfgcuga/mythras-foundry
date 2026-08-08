@@ -3,9 +3,11 @@
 
   <ol class="background-steps" aria-label="{{localize "MYTHRASF.Background.Progress"}}">
     <li class="{{#if wizard.isCulture}}active{{/if}}">1. {{localize "MYTHRASF.Background.Culture"}}</li>
-    <li class="{{#if wizard.isProfession}}active{{/if}}">2. {{localize "MYTHRASF.Background.Profession"}}</li>
-    <li class="{{#if wizard.isFree}}active{{/if}}">3. {{localize "MYTHRASF.Background.FreePoints"}}</li>
-    <li class="{{#if wizard.isReview}}active{{/if}}">4. {{localize "MYTHRASF.Background.Review"}}</li>
+    <li class="{{#if wizard.isSocialClass}}active{{/if}}">2. {{localize "MYTHRASF.Background.SocialClass"}}</li>
+    <li class="{{#if wizard.isProfession}}active{{/if}}">3. {{localize "MYTHRASF.Background.Profession"}}</li>
+    <li class="{{#if wizard.isAge}}active{{/if}}">4. {{localize "MYTHRASF.Background.Age"}}</li>
+    <li class="{{#if wizard.isFree}}active{{/if}}">5. {{localize "MYTHRASF.Background.FreePoints"}}</li>
+    <li class="{{#if wizard.isReview}}active{{/if}}">6. {{localize "MYTHRASF.Background.Review"}}</li>
   </ol>
 
   {{#if wizard.isCulture}}
@@ -18,6 +20,70 @@
         {{/each}}
       </select>
     </label>
+  {{/if}}
+
+  {{#if wizard.isSocialClass}}
+    <div class="background-social-class">
+      {{#if wizard.socialClassRandom}}
+        <p>{{localize "MYTHRASF.SocialClass.RandomHelp"}}</p>
+        <p><b>{{localize "MYTHRASF.SocialClass.Roll"}}:</b> {{wizard.socialClassRoll}}</p>
+      {{else}}
+        <label class="background-main-select">
+          <span>{{localize "MYTHRASF.SocialClass.Choose"}}</span>
+          <select class="sheet-field-editable" data-background-social-class>
+            <option value="">{{localize "MYTHRASF.Background.Select"}}</option>
+            {{#each wizard.socialClasses as |entry|}}
+              <option value="{{entry.key}}" {{#if entry.selected}}selected{{/if}}>
+                {{entry.name}} (×{{entry.moneyModifier}})
+              </option>
+            {{/each}}
+          </select>
+        </label>
+      {{/if}}
+      {{#if wizard.selectedSocialClass}}
+        <section class="background-social-class-summary">
+          <h4>{{wizard.selectedSocialClass.name}}</h4>
+          <p><b>{{localize "MYTHRASF.SocialClass.Titles"}}:</b> {{wizard.selectedSocialClass.titles}}</p>
+          <p><b>{{localize "MYTHRASF.SocialClass.Resources"}}:</b> {{wizard.selectedSocialClass.resources}}</p>
+          <p><b>{{localize "MYTHRASF.SocialClass.StartingMoney"}}:</b>
+            {{wizard.startingMoney}} {{localize "MYTHRASF.Currency.SilverPieces"}}
+            ({{wizard.startingMoneyFormula}} ×{{wizard.selectedSocialClass.moneyModifier}})</p>
+        </section>
+        <button type="button" class="sheet-icon-button background-social-class-roll"
+          data-action="roll-social-class"
+          title="{{localize "MYTHRASF.SocialClass.Reroll"}}"
+          aria-label="{{localize "MYTHRASF.SocialClass.Reroll"}}">
+          <i class="fas fa-dice" aria-hidden="true"></i>
+        </button>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  {{#if wizard.isAge}}
+    <div class="background-age-fields">
+      <label>
+        <span>{{localize "MYTHRASF.Age.CategoryLabel"}}</span>
+        <select class="sheet-field-editable" data-background-age-field="category">
+          <option value="">{{localize "MYTHRASF.Background.Select"}}</option>
+          {{#each wizard.ageCategories as |entry|}}
+            <option value="{{entry.key}}" {{#if entry.selected}}selected{{/if}}>
+              {{entry.name}} · {{entry.ageFormula}} · {{entry.freePoints}} / +{{entry.maximum}}
+            </option>
+          {{/each}}
+        </select>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Age.Value"}}</span>
+        <input type="number" min="1" step="1" class="sheet-field-editable"
+          value="{{wizard.age}}" data-background-age-field="age">
+      </label>
+      {{#if wizard.selectedAgeCategory}}
+        <p>{{localize "MYTHRASF.Age.Summary"
+          points=wizard.selectedAgeCategory.freePoints
+          maximum=wizard.selectedAgeCategory.maximum
+          events=wizard.selectedAgeCategory.backgroundEvents}}</p>
+      {{/if}}
+    </div>
   {{/if}}
 
   {{#if wizard.isProfession}}
@@ -123,12 +189,12 @@
           </label>
         </section>
       {{/each}}
-      <button type="button" class="background-style-add"
+      {{#unless wizard.isCulture}}<button type="button" class="background-style-add"
         data-background-style-action="add"
         data-phase="{{wizard.allocationPhase}}">
         <i class="fas fa-plus" aria-hidden="true"></i>
         {{localize "MYTHRASF.Background.AddStyle"}}
-      </button>
+      </button>{{/unless}}
     </div>
   {{/if}}
 
@@ -191,7 +257,10 @@
   {{#if wizard.isReview}}
     <div class="background-summary">
       <p><b>{{localize "MYTHRASF.Background.Culture"}}:</b> {{wizard.cultureName}}</p>
+      <p><b>{{localize "MYTHRASF.Background.SocialClass"}}:</b> {{wizard.socialClassName}}</p>
       <p><b>{{localize "MYTHRASF.Background.Profession"}}:</b> {{wizard.professionName}}</p>
+      <p><b>{{localize "MYTHRASF.SocialClass.StartingMoney"}}:</b> {{wizard.startingMoney}} {{localize "MYTHRASF.Currency.SilverPieces"}}</p>
+      <p><b>{{localize "MYTHRASF.Background.Age"}}:</b> {{wizard.age}} ({{wizard.ageCategoryName}})</p>
       <p>{{localize "MYTHRASF.Background.ReviewHelp"}}</p>
     </div>
   {{/if}}

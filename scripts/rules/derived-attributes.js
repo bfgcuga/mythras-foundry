@@ -13,16 +13,15 @@ function steppedValue(value, firstLimit, firstValue, step) {
   return firstValue + Math.ceil((value - firstLimit) / step);
 }
 
-/**
- * RULESET DIFFERENCE: Mythras Imperativo (p. 7) grants every character
- * exactly 2 Action Points. Full Mythras derives this value from INT + DEX.
- *
- * TODO(rules-profile): accept the character/rules profile here when the system
- * supports both "imperative" and "full" rules, rather than branching in sheets
- * or macros.
- */
-export function calculateActionPoints() {
-  return 2;
+export function calculateActionPoints(intelligence, dexterity, rules = {}) {
+  if (rules.method === "calculated") {
+    const total = Math.max(0, Number(intelligence) || 0)
+      + Math.max(0, Number(dexterity) || 0);
+    return Math.max(1, Math.ceil(total / 12));
+  }
+
+  const fixedValue = Math.floor(Number(rules.fixedValue));
+  return Number.isFinite(fixedValue) ? Math.max(1, fixedValue) : 2;
 }
 
 export function calculateExperienceModifier(charisma) {
@@ -78,9 +77,13 @@ export function calculateDamageModifier(strength, size) {
   return createDamageModifier(1, terms);
 }
 
-export function calculateDerivedAttributes(characteristics) {
+export function calculateDerivedAttributes(characteristics, actionPointRules) {
   return {
-    actionPointsMax: calculateActionPoints(),
+    actionPointsMax: calculateActionPoints(
+      characteristics.intelligence,
+      characteristics.dexterity,
+      actionPointRules
+    ),
     damageModifier: calculateDamageModifier(
       characteristics.strength,
       characteristics.size

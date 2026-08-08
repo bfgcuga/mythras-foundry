@@ -147,6 +147,10 @@
   display: grid; gap: 0.2rem; padding-top: 0.35rem;
   border-top: 1px solid var(--mythras-border, #9c8766);
 }
+.chat-message .mythras-chat-title + .mythras-chat-member {
+  padding-top: 0;
+  border-top: 0;
+}
 .mythras-delayed-tooltip {
   position: fixed;
   z-index: 100000;
@@ -713,7 +717,7 @@
 
 .mythras-foundry .background-steps {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 0.3rem;
   margin: 0 0 0.75rem;
   padding: 0;
@@ -735,6 +739,7 @@
 }
 
 .mythras-foundry .background-main-select,
+.mythras-foundry .background-age-fields label,
 .mythras-foundry .background-free-skill label,
 .mythras-foundry .background-style-fields label {
   display: grid;
@@ -742,6 +747,38 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.35rem;
+}
+
+.mythras-foundry .background-age-fields {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.mythras-foundry .background-age-fields p {
+  margin: 0.2rem 0 0;
+  font-size: var(--mythras-font-size-auxiliary);
+}
+
+.mythras-foundry .background-social-class {
+  position: relative;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.mythras-foundry .background-social-class-summary {
+  padding: 0.55rem;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0.4rem;
+  background: var(--mythras-panel);
+}
+
+.mythras-foundry .background-social-class-summary h4,
+.mythras-foundry .background-social-class-summary p {
+  margin: 0 0 0.35rem;
+}
+
+.mythras-foundry .background-social-class-roll {
+  justify-self: end;
 }
 
 .mythras-foundry .background-selection-grid {
@@ -973,6 +1010,12 @@
   box-shadow: 0 2px 5px rgb(48 46 42 / 25%);
   text-align: center;
   font-weight: 700;
+}
+
+.mythras-foundry .background-floating-counter small {
+  display: block;
+  font-size: var(--mythras-font-size-auxiliary);
+  font-weight: 400;
 }
 
 .mythras-foundry .combat-style-dialog {

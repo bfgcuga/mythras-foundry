@@ -13,6 +13,7 @@ import { ARMOR_SOURCES } from "../data/armor.js";
 import { MACRO_SOURCES } from "../data/macros.js";
 import { TRAIT_SOURCES } from "../data/traits.js";
 import { CREATURE_SOURCES } from "../data/creatures.js";
+import { SOCIAL_CLASS_TABLE_SOURCES } from "../data/social-classes.js";
 import { deterministicPackId } from "./pack-ids.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
@@ -141,6 +142,61 @@ async function buildActorPack(name, sources, idNamespace) {
   console.log(`Compendio ${name} generado con ${sources.length} actores.`);
 }
 
+async function buildRollTablePack(name, sources, idNamespace) {
+  const sourceDirectory = resolve(projectRoot, `.build/packs-src/${name}`);
+  const outputDirectory = resolve(projectRoot, `packs/${name}`);
+  await rm(sourceDirectory, { recursive: true, force: true });
+  await rm(outputDirectory, { recursive: true, force: true });
+  await mkdir(sourceDirectory, { recursive: true });
+
+  for (const [index, source] of sources.entries()) {
+    const tableId = deterministicPackId(`${idNamespace}.${source.buildKey}`);
+    const results = source.results.map((result, resultIndex) => {
+      const resultId = deterministicPackId(
+        `${idNamespace}.${source.buildKey}.result.${result.key}`
+      );
+      return {
+        _key: `!tables.results!${tableId}.${resultId}`,
+        _id: resultId,
+        type: 0,
+        text: `<strong>${result.name}</strong> (×${result.moneyModifier})<br>${result.resources}`,
+        img: "icons/svg/d20-grey.svg",
+        documentCollection: "",
+        documentId: null,
+        weight: result.range[1] - result.range[0] + 1,
+        range: result.range,
+        drawn: false,
+        flags: { "mythras-foundry": {
+          socialClassKey: result.key,
+          moneyModifier: result.moneyModifier,
+          titles: result.titles,
+          resources: result.resources
+        }}
+      };
+    });
+    const document = {
+      _key: `!tables!${tableId}`,
+      _id: tableId,
+      name: source.name,
+      img: "icons/svg/d20-black.svg",
+      description: `<p>Fuente: ${source.source}</p>`,
+      results,
+      formula: source.formula,
+      replacement: true,
+      displayRoll: true,
+      folder: null,
+      sort: index * 1000,
+      ownership: { default: 0 },
+      flags: { "mythras-foundry": { cultureKey: source.cultureKey } }
+    };
+    await writeFile(resolve(sourceDirectory, `${source.buildKey}_${tableId}.json`),
+      `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  }
+
+  await compilePack(sourceDirectory, outputDirectory, { log: true });
+  console.log(`Compendio ${name} generado con ${sources.length} tablas.`);
+}
+
 await buildPack("skills", ALL_SKILL_SOURCES, "skill");
 await buildPack("cultures", CULTURE_SOURCES, "culture");
 await buildPack("professions", PROFESSION_SOURCES, "profession");
@@ -149,3 +205,4 @@ await buildPack("armor", ARMOR_SOURCES, "armor");
 await buildPack("traits", TRAIT_SOURCES, "trait");
 await buildActorPack("creatures", CREATURE_SOURCES, "creature");
 await buildMacroPack("macros", MACRO_SOURCES, "macro");
+await buildRollTablePack("social-class-tables", SOCIAL_CLASS_TABLE_SOURCES, "table");

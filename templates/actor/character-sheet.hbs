@@ -32,6 +32,21 @@
         <span>{{localize "MYTHRASF.Identity.Profession"}}</span>
         <output class="identity-readonly sheet-field-readonly">{{actor.system.identity.profession.name}}</output>
       </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.SocialClass"}}</span>
+        <output class="identity-readonly sheet-field-readonly"
+          title="{{actor.system.identity.socialClass.resources}}">{{actor.system.identity.socialClass.name}}</output>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.Age"}}</span>
+        <input type="number" min="0" step="1" class="sheet-field-editable"
+          name="system.identity.age" value="{{actor.system.identity.age}}">
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Currency.Silver"}}</span>
+        <input type="number" min="0" step="0.01" class="sheet-field-editable"
+          name="system.currency.silver" value="{{actor.system.currency.silver}}">
+      </label>
     </div>
     <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
       <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>
@@ -188,6 +203,10 @@
             {{localize "MYTHRASF.Background.PointsRemaining"
               points=backgroundWizard.allocationRemaining
               total=backgroundWizard.allocationBudget}}
+            {{#if backgroundWizard.allocationLimits}}<small>{{localize
+              "MYTHRASF.Background.PointLimits"
+              minimum=backgroundWizard.allocationLimits.minimum
+              maximum=backgroundWizard.allocationLimits.maximum}}</small>{{/if}}
           </div>
         {{/if}}
 

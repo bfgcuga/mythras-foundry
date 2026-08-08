@@ -4,6 +4,7 @@ import {
 } from "../rules/derived-attributes.js";
 import { applyFatigue, combinedConditionLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
+import { getActionPointRules } from "../settings.js";
 
 const {
   BooleanField,
@@ -89,8 +90,21 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
       ...characteristics,
       identity: new SchemaField({
         playerName: textField(),
+        age: new NumberField({ required: true, nullable: false, integer: true, initial: 0, min: 0 }),
+        ageCategory: textField(),
+        socialClass: new SchemaField({
+          key: textField(),
+          name: textField(),
+          titles: textField(),
+          resources: textField(),
+          moneyModifier: new NumberField({ required: true, nullable: false, initial: 1, min: 0 })
+        }),
         culture: backgroundSelectionField(),
         profession: backgroundSelectionField()
+      }),
+      currency: new SchemaField({
+        silver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
+        startingSilver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 })
       }),
       resources: new SchemaField({
         actionPoints: resourceField(),
@@ -103,7 +117,7 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
   prepareDerivedData() {
     super.prepareDerivedData();
 
-    this.baseAttributes = calculateDerivedAttributes(this);
+    this.baseAttributes = calculateDerivedAttributes(this, getActionPointRules());
     const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
     this.conditionLevel = combinedConditionLevel(
       this.fatigueLevel, worstWoundLevel(locations));

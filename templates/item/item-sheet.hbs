@@ -13,6 +13,8 @@
       </select>
       <label>{{localize "MYTHRASF.Skill.Group"}}</label>
       <select name="system.group">{{selectOptions groupChoices selected=item.system.group labelAttr="label" valueAttr="value"}}</select>
+      <label>{{localize "MYTHRASF.Skill.Source"}}</label>
+      <input type="text" class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
       <label>{{localize "MYTHRASF.Item.Characteristic1"}}</label>
       <select name="system.characteristic1">{{selectOptions characteristicChoices selected=item.system.characteristic1 labelAttr="label" valueAttr="value"}}</select>
       <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label>
@@ -88,6 +90,7 @@
 
   {{#if isBackground}}
     <label>{{localize "MYTHRASF.Background.Key"}}</label><input type="text" name="system.key" value="{{item.system.key}}">
+    <label>{{localize "MYTHRASF.Background.Source"}}</label><input type="text" class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
     <label>{{localize "MYTHRASF.Background.Rules"}}</label><textarea name="system.rules">{{item.system.rules}}</textarea>
   {{/if}}
 

@@ -1,12 +1,14 @@
+import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
+
 const MAGIC_SKILLS = [
-  ["atadura", "Atadura", "charisma", "power", "Controlar y vincular espíritus dentro de una tradición animista."],
-  ["devocion", "Devoción", "charisma", "power", "Representar la fuerza de la devoción a un dios o culto."],
-  ["exhortacion", "Exhortación", "intelligence", "charisma", "Solicitar milagros mediante la magia teísta."],
-  ["magia-comun", "Magia Común", "charisma", "power", "Lanzar los conjuros sencillos de la magia común."],
-  ["invocacion", "Invocación", "intelligence", "intelligence", "Invocar conjuros de una escuela o grimorio de hechicería."],
-  ["meditacion", "Meditación", "intelligence", "constitution", "Alcanzar la concentración necesaria para las disciplinas místicas."],
-  ["misticismo", "Misticismo", "power", "constitution", "Activar talentos y capacidades místicas."],
-  ["moldeado", "Moldeado", "intelligence", "power", "Modificar los parámetros de un conjuro de hechicería."],
+  ["atadura", "Atadura", "power", "charisma", "Dominar, vincular y controlar espíritus dentro de una tradición animista concreta."],
+  ["devocion", "Devoción", "power", "charisma", "Medir la relación con un dios o culto concreto y recurrir a ella para solicitar milagros."],
+  ["exhortacion", "Exhortación", "intelligence", "charisma", "Invocar y encauzar el poder de los dioses mediante el conocimiento de los mitos, rituales, plegarias y prácticas de un culto teísta concreto."],
+  ["magia-comun", "Magia Común", "power", "charisma", "Usar bendiciones, talismanes, trucos y otros conjuros sencillos de magia común."],
+  ["invocacion", "Invocación", "intelligence", "intelligence", "Lanzar conjuros aprendidos de un grimorio, escuela o mentor de hechicería concreto."],
+  ["meditacion", "Meditación", "intelligence", "constitution", "Ignorar distracciones y alcanzar una concentración profunda; también permite descansar y recuperarse en condiciones normalmente inadecuadas."],
+  ["misticismo", "Misticismo", "power", "constitution", "Canalizar los recursos interiores para activar talentos místicos y realizar actos sobrehumanos."],
+  ["manipulacion", "Manipulación", "intelligence", "power", "Moldear un conjuro de hechicería ya invocado para alterar su alcance, duración, objetivos u otros parámetros."],
   ["trance", "Trance", "power", "constitution", "Percibir y viajar por el mundo espiritual."]
 ];
 
@@ -19,6 +21,7 @@ export const MAGIC_SKILL_SOURCES = MAGIC_SKILLS.map(([
   system: {
     slug,
     templateSlug: slug,
+    source: MYTHRAS_REVISED_SOURCE,
     specialization: "",
     category: "professional",
     group: "magic",

@@ -1,7 +1,7 @@
 import { normalizePartyConfig, removeParty, sanitizePartyConfig } from "../rules/parties.js";
+import { getSystemSetting, setSystemSetting, SETTING_KEYS } from "../settings.js";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const SETTING = "parties";
 
 export class PartyManager extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -24,7 +24,7 @@ export class PartyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = await super._prepareContext(options);
     const actors = game.actors.filter((actor) => actor.type === "character")
       .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
-    const config = normalizePartyConfig(game.settings.get("mythras-foundry", SETTING));
+    const config = normalizePartyConfig(getSystemSetting(SETTING_KEYS.parties));
     return {
       ...context,
       parties: config.parties.map((party) => ({
@@ -62,7 +62,7 @@ export class PartyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     const id = foundry.utils.randomID();
     config.parties.push({ id, name, memberIds: [] });
     if (!config.activePartyId) config.activePartyId = id;
-    await game.settings.set("mythras-foundry", SETTING, config);
+    await setSystemSetting(SETTING_KEYS.parties, config);
     this.render({ force: true });
   }
 
@@ -80,7 +80,7 @@ export class PartyManager extends HandlebarsApplicationMixin(ApplicationV2) {
       })}</p>`
     });
     if (!confirmed) return;
-    await game.settings.set("mythras-foundry", SETTING, removeParty(config, partyId));
+    await setSystemSetting(SETTING_KEYS.parties, removeParty(config, partyId));
     this.render({ force: true });
   }
 
@@ -88,7 +88,7 @@ export class PartyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!game.user.isGM) return;
     const config = PartyManager.#readForm.call(this);
     if (!config) return;
-    await game.settings.set("mythras-foundry", SETTING, config);
+    await setSystemSetting(SETTING_KEYS.parties, config);
     ui.notifications.info(game.i18n.localize("MYTHRASF.Party.Saved"));
     this.render({ force: true });
   }

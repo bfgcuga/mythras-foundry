@@ -12,7 +12,22 @@ import {
 } from "../scripts/rules/derived-attributes.js";
 
 test("Mythras Imperativo concede siempre dos puntos de acción", () => {
-  assert.equal(calculateActionPoints(), 2);
+  assert.equal(calculateActionPoints(10, 10), 2);
+  assert.equal(calculateActionPoints(10, 10, { method: "fixed", fixedValue: 3 }), 3);
+});
+
+test("los puntos de acción calculados siguen los tramos de INT + DES", () => {
+  const calculated = (total) => calculateActionPoints(total - 1, 1, {
+    method: "calculated"
+  });
+  assert.equal(calculated(12), 1);
+  assert.equal(calculated(13), 2);
+  assert.equal(calculated(24), 2);
+  assert.equal(calculated(25), 3);
+  assert.equal(calculated(36), 3);
+  assert.equal(calculated(37), 4);
+  assert.equal(calculated(48), 4);
+  assert.equal(calculated(49), 5);
 });
 
 test("modificador de experiencia respeta los límites de tramo", () => {
