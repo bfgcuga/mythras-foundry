@@ -10,6 +10,7 @@ import {
   allocationRemaining,
   AGE_CATEGORIES,
   createBackgroundDraft,
+  finalizeBackgroundCreation,
   getAllAcquiredAbilities,
   getAgeCategory,
   getPhaseAbilities,
@@ -214,6 +215,45 @@ test("la misma especialización de cultura y profesión se fusiona", () => {
     includeFree: false
   }).filter((ability) => ability.key === skillAbilityKey("artesania", "Carpintería"));
   assert.equal(matches.length, 1);
+});
+
+test("Magia Común adquirida por varias fases conserva una sola habilidad", () => {
+  const draft = createBackgroundDraft();
+  const profession = {
+    basic: [], choices: [], professionalChoiceCount: 1,
+    professional: [{ id: "magic", slug: "magia-comun", specializationRequired: false }],
+    styles: []
+  };
+  draft.professionProfessionals = ["magic"];
+  draft.freeProfessional = {
+    type: "skill", slug: "magia-comun", specialization: "",
+    name: "", weapons: "", traits: ""
+  };
+
+  const matches = getAllAcquiredAbilities(null, profession, draft)
+    .filter((ability) => ability.key === skillAbilityKey("magia-comun"));
+  assert.equal(matches.length, 1);
+});
+
+test("el personaje se completa antes de retirar las marcas temporales", async () => {
+  const calls = [];
+  let backgroundComplete = false;
+  let duplicates = 0;
+
+  await finalizeBackgroundCreation({
+    sync: async () => { calls.push("sync"); },
+    complete: async () => {
+      calls.push("complete");
+      backgroundComplete = true;
+    },
+    finalizeItems: async () => {
+      calls.push("finalizeItems");
+      if (!backgroundComplete) duplicates += 1;
+    }
+  });
+
+  assert.deepEqual(calls, ["sync", "complete", "finalizeItems"]);
+  assert.equal(duplicates, 0);
 });
 
 test("la asignación nunca sobrepasa el presupuesto de la fase", () => {

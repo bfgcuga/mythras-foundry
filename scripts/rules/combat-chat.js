@@ -47,6 +47,13 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
 export function activateCombatCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
   activateDelayedTooltips(root);
+  if (root?.matches?.(".mythras-chat-card")
+    || root?.querySelector?.(".mythras-chat-card")) {
+    const messageElement = root.matches?.(".chat-message")
+      ? root
+      : root.closest?.(".chat-message");
+    messageElement?.classList.add("mythras-chat-message");
+  }
   if (!root || root.dataset.mythrasCombatActivated) return;
   root.dataset.mythrasCombatActivated = "true";
   root?.querySelector("[data-combat-action='roll-damage']")

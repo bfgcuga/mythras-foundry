@@ -221,6 +221,16 @@ export function getAllAcquiredAbilities(culture, profession, draft, {
   return [...unique.values()];
 }
 
+/**
+ * Complete background creation without exposing an intermediate state where
+ * finalized abilities can be mistaken for missing wizard draft items.
+ */
+export async function finalizeBackgroundCreation({ sync, complete, finalizeItems }) {
+  await sync();
+  await complete();
+  await finalizeItems();
+}
+
 export function getFreeAbilities(culture, profession, draft, basicSlugs = []) {
   const abilities = [
     ...basicSlugs.map((slug) => ({

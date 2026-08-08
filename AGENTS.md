@@ -5,11 +5,13 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 ## Paleta y superficies
 
 - Fondo principal: `--mythras-paper` (`#dfcda8`).
+- Superficie estándar de papel: combina `--mythras-paper-overlay` y `--mythras-paper-texture` sobre `--mythras-paper`. Se aplica a todas las hojas del sistema y a los mensajes que contienen `mythras-chat-card`.
 - Fondo de panel: `--mythras-panel` (`rgba(255, 249, 226, 0.42)`).
 - Texto: `--mythras-ink` (`#302e2a`).
 - Acento: `--mythras-accent` (`#3d3933`).
 - Bordes: `--mythras-border` (`#9c8766`).
 - No usar fondos grises heredados de Foundry en controles de las hojas.
+- El color del usuario o del tipo de mensaje de Foundry no sustituye la superficie de papel de los mensajes del sistema. Los colores semánticos se reservan para resultados, avisos y estados internos de la tarjeta.
 
 ## Campos editables y de solo lectura
 

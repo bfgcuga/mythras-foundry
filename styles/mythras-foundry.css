@@ -1,4 +1,5 @@
-.mythras-foundry {
+.mythras-foundry,
+.chat-message.mythras-chat-message {
   --mythras-accent: #3d3933;
   --mythras-border: #9c8766;
   --mythras-field-editable: #eadbb8;
@@ -7,15 +8,20 @@
   --mythras-font-size-table: 0.8rem;
   --mythras-ink: #302e2a;
   --mythras-paper: #dfcda8;
+  --mythras-paper-overlay: linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18));
+  --mythras-paper-texture: url("../../../ui/parchment.jpg");
   --mythras-panel: rgba(255, 249, 226, 0.42);
+}
+
+.mythras-foundry {
   color: var(--mythras-ink);
 }
 
 .mythras-foundry .window-content {
   overflow: auto;
-  background:
-    linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18)),
-    var(--mythras-paper);
+  background-color: var(--mythras-paper) !important;
+  background-image: var(--mythras-paper-overlay), var(--mythras-paper-texture) !important;
+  background-repeat: repeat !important;
   color: var(--mythras-ink);
 }
 
@@ -70,6 +76,14 @@
 .chat-message .penalized-value-modifier {
   margin: 0;
   color: #a1241b !important;
+}
+
+.chat-message.mythras-chat-message {
+  border-color: var(--mythras-border) !important;
+  background-color: var(--mythras-paper) !important;
+  background-image: var(--mythras-paper-overlay), var(--mythras-paper-texture) !important;
+  background-repeat: repeat !important;
+  color: var(--mythras-ink) !important;
 }
 
 .chat-message .mythras-chat-card {

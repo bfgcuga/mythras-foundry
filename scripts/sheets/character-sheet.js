@@ -17,6 +17,7 @@ import {
   AGE_CATEGORIES,
   allocationRemaining as backgroundAllocationRemaining,
   createBackgroundDraft,
+  finalizeBackgroundCreation,
   freeSkillNeedsSpecialization,
   getAllAcquiredAbilities,
   getAgeCategory,
@@ -1652,43 +1653,53 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
 
-    await this.#syncBackgroundItems(draft);
-    const finalizedItems = this.actor.items
-      .filter((item) => item.getFlag("mythras-foundry", "backgroundDraftAbility"))
-      .map((item) => ({
-        _id: item.id,
-        "flags.mythras-foundry.backgroundAbility": item.getFlag(
-          "mythras-foundry",
-          "backgroundDraftAbility"
-        ),
-        "flags.mythras-foundry.-=backgroundDraftAbility": null
-      }));
-    if (finalizedItems.length > 0) {
-      await this.actor.updateEmbeddedDocuments("Item", finalizedItems);
-    }
     const [cultureDocument, professionDocument] = await Promise.all([
       this.#getBackgroundDocument("cultures", culture.key),
       this.#getBackgroundDocument("professions", profession.key)
     ]);
     const socialClass = getSocialClass(draft.cultureKey, draft.socialClassKey);
-    await this.actor.update({
-      "system.identity.culture.name": culture.name,
-      "system.identity.culture.sourceUuid": cultureDocument?.uuid ?? "",
-      "system.identity.profession.name": profession.name,
-      "system.identity.profession.sourceUuid": professionDocument?.uuid ?? "",
-      "system.identity.socialClass.key": socialClass.key,
-      "system.identity.socialClass.name": socialClass.name,
-      "system.identity.socialClass.titles": socialClass.titles,
-      "system.identity.socialClass.resources": socialClass.resources,
-      "system.identity.socialClass.moneyModifier": socialClass.moneyModifier,
-      "system.identity.age": Number(draft.age),
-      "system.identity.ageCategory": draft.ageCategory,
-      "system.currency.silver": Number(draft.startingMoney),
-      "system.currency.startingSilver": Number(draft.startingMoney),
-      "system.backgroundComplete": true,
-      "system.backgroundCreationEnabled": false,
-      "system.backgroundDraft": ""
-    });
+    this._backgroundSyncing = true;
+    try {
+      await finalizeBackgroundCreation({
+        sync: () => this.#syncBackgroundItems(draft),
+        complete: () => this.actor.update({
+          "system.identity.culture.name": culture.name,
+          "system.identity.culture.sourceUuid": cultureDocument?.uuid ?? "",
+          "system.identity.profession.name": profession.name,
+          "system.identity.profession.sourceUuid": professionDocument?.uuid ?? "",
+          "system.identity.socialClass.key": socialClass.key,
+          "system.identity.socialClass.name": socialClass.name,
+          "system.identity.socialClass.titles": socialClass.titles,
+          "system.identity.socialClass.resources": socialClass.resources,
+          "system.identity.socialClass.moneyModifier": socialClass.moneyModifier,
+          "system.identity.age": Number(draft.age),
+          "system.identity.ageCategory": draft.ageCategory,
+          "system.currency.silver": Number(draft.startingMoney),
+          "system.currency.startingSilver": Number(draft.startingMoney),
+          "system.backgroundComplete": true,
+          "system.backgroundCreationEnabled": false,
+          "system.backgroundDraft": ""
+        }),
+        finalizeItems: async () => {
+          const updates = this.actor.items
+            .filter((item) => item.getFlag(
+              "mythras-foundry", "backgroundDraftAbility"
+            ))
+            .map((item) => ({
+              _id: item.id,
+              "flags.mythras-foundry.backgroundAbility": item.getFlag(
+                "mythras-foundry", "backgroundDraftAbility"
+              ),
+              "flags.mythras-foundry.-=backgroundDraftAbility": null
+            }));
+          if (updates.length > 0) {
+            await this.actor.updateEmbeddedDocuments("Item", updates);
+          }
+        }
+      });
+    } finally {
+      this._backgroundSyncing = false;
+    }
     ui.notifications.info(game.i18n.localize("MYTHRASF.Background.Completed"));
   }
 
