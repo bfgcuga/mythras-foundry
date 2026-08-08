@@ -137,8 +137,16 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         item,
         woundKey: item.system.woundLevel,
         woundLabel: game.i18n.localize(`MYTHRASF.Wound.${item.system.woundLevel}`),
+        naturalArmor: Number(item.system.armorPoints ?? 0),
         wornArmor: wornArmorPoints(item, equippedArmor),
-        totalArmor: totalArmorPoints(item, equippedArmor)
+        totalArmor: totalArmorPoints(item, equippedArmor),
+        armorOptions: armor.filter((piece) =>
+          (piece.system.coveredLocationIds ?? []).includes(item.id))
+          .map((piece) => ({ value: piece.id, label: piece.name })),
+        equippedArmorId: equippedArmor.find((piece) =>
+          (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
+        showDisabledControl: item.system.woundLevel === "serious",
+        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled)
       })),
       fatigueChoices: ["fresh", "winded", "tired", "wearied", "exhausted", "debilitated",
         "incapacitated", "semiConscious", "comatose", "dead"].map((value) => ({
@@ -217,6 +225,10 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       field.addEventListener("change", (event) => this.#updateItemField(event)));
     this.element.querySelectorAll("[data-combat-style]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event)));
+    this.element.querySelectorAll("[data-location-disabled]").forEach((field) =>
+      field.addEventListener("change", (event) => this.#updateLocationDisabled(event)));
+    this.element.querySelectorAll("[data-location-armor]").forEach((field) =>
+      field.addEventListener("change", (event) => this.#updateLocationArmor(event)));
 
     if (!this.isEditable) {
       this.element.querySelectorAll("input[name], textarea[name], select[name]")
@@ -442,5 +454,32 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!mode) return;
     mode.preferredCombatStyleId = event.currentTarget.value;
     await weapon.update({ "system.modes": modes });
+  }
+
+  async #updateLocationDisabled(event) {
+    if (!this.isEditable) return;
+    const location = this.actor.items.get(
+      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (location?.type !== "hitLocation") return;
+    await location.update({ "system.disabled": event.currentTarget.checked });
+  }
+
+  async #updateLocationArmor(event) {
+    if (!this.isEditable) return;
+    const locationId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
+    const armors = this.actor.items.filter((item) => item.type === "armor");
+    const current = armors.find((item) => item.system.equipped
+      && (item.system.coveredLocationIds ?? []).includes(locationId));
+    const selected = armors.find((item) => item.id === event.currentTarget.value);
+    if (!selected) {
+      if (current) await current.update({ "system.equipped": false });
+      return;
+    }
+    if (selected.id === current?.id || selected.system.equipped) return;
+    if (!this.#canEquipArmor(selected)) {
+      event.currentTarget.value = current?.id ?? "";
+      return;
+    }
+    await selected.update({ "system.equipped": true });
   }
 }
