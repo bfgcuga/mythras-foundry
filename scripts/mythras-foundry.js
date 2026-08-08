@@ -121,6 +121,14 @@ Hooks.once("init", async () => {
   await loadTemplates(PARTIALS);
 });
 
+Hooks.once("setup", () => {
+  // Character documents were first prepared before world settings became
+  // readable. Re-run their derived data now so configured rules take effect.
+  game.actors?.forEach((actor) => {
+    if (actor.type === "character") actor.prepareData();
+  });
+});
+
 Hooks.on("renderChatMessageHTML", (message, html) => activateCombatCard(message, html));
 Hooks.on("renderChatMessage", (message, html) => activateCombatCard(message, html));
 Hooks.on("renderApplicationV2", (application, element) => {

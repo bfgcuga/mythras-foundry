@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.75",
+  "version": "0.0.76",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.75/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.76/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -53,63 +53,63 @@
   "packs": [
     {
       "name": "skills",
-      "label": "Habilidades de Mythras Imperativo",
+      "label": "Habilidades",
       "path": "packs/skills",
       "type": "Item",
       "system": "mythras-foundry"
     },
     {
       "name": "cultures",
-      "label": "Culturas de Mythras Imperativo",
+      "label": "Culturas",
       "path": "packs/cultures",
       "type": "Item",
       "system": "mythras-foundry"
     },
     {
       "name": "professions",
-      "label": "Profesiones de Mythras Imperativo",
+      "label": "Profesiones",
       "path": "packs/professions",
       "type": "Item",
       "system": "mythras-foundry"
     },
     {
       "name": "weapons",
-      "label": "Armas de Mythras Imperativo",
+      "label": "Armas",
       "path": "packs/weapons",
       "type": "Item",
       "system": "mythras-foundry"
     },
     {
       "name": "armor",
-      "label": "Armaduras de Mythras Imperativo",
+      "label": "Armaduras",
       "path": "packs/armor",
       "type": "Item",
       "system": "mythras-foundry"
     },
     {
       "name": "macros",
-      "label": "Macros de Mythras Foundry",
+      "label": "Macros",
       "path": "packs/macros",
       "type": "Macro",
       "system": "mythras-foundry"
     },
     {
       "name": "traits",
-      "label": "Rasgos de criaturas de Mythras",
+      "label": "Rasgos",
       "path": "packs/traits",
       "type": "Item",
       "system": "mythras-foundry"
     },
     {
       "name": "creatures",
-      "label": "Criaturas de Mythras Imperativo",
+      "label": "Criaturas",
       "path": "packs/creatures",
       "type": "Actor",
       "system": "mythras-foundry"
     },
     {
       "name": "social-class-tables",
-      "label": "Tablas de clase social de Mythras",
+      "label": "Tablas de clase social",
       "path": "packs/social-class-tables",
       "type": "RollTable",
       "system": "mythras-foundry"

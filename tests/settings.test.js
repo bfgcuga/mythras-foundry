@@ -47,6 +47,21 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
   assert.equal(socialClassMethod.options.default, SOCIAL_CLASS_METHODS.choose);
 });
 
+test("entrega a Foundry definiciones mutables sin alterar el catálogo", () => {
+  const settings = {
+    register: (namespace, key, options) => {
+      options.namespace = namespace;
+      options.key = key;
+      options.id = `${namespace}.${key}`;
+    }
+  };
+
+  assert.doesNotThrow(() => registerSystemSettings(settings));
+  assert.ok(SYSTEM_SETTING_DEFINITIONS.every(({ options }) => (
+    !("namespace" in options) && !("key" in options) && !("id" in options)
+  )));
+});
+
 test("compone y normaliza los límites de puntos profesionales", () => {
   const values = new Map([
     [`${SYSTEM_ID}.${SETTING_KEYS.professionPointMinimum}`, 0],
@@ -133,4 +148,20 @@ test("lee y escribe opciones usando siempre el identificador del sistema", async
   const value = { version: 1, activePartyId: "", parties: [] };
   await setSystemSetting(SETTING_KEYS.parties, value, settings);
   assert.deepEqual(calls, [{ namespace: SYSTEM_ID, key: SETTING_KEYS.parties, value }]);
+});
+
+test("usa valores seguros antes de que Foundry permita leer ajustes", () => {
+  const unavailableSettings = {
+    get: () => { throw new Error("Settings are not available before setup"); }
+  };
+
+  assert.deepEqual(getActionPointRules(unavailableSettings), {
+    method: ACTION_POINT_METHODS.fixed,
+    fixedValue: 2
+  });
+  assert.deepEqual(getCultureAllocationRules(unavailableSettings), {
+    minimum: 5,
+    maximum: 15
+  });
+  assert.equal(getSocialClassMethod(unavailableSettings), SOCIAL_CLASS_METHODS.choose);
 });

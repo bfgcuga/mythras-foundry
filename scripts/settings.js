@@ -134,12 +134,34 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
 /** Register every Mythras setting during Foundry's init hook. */
 export function registerSystemSettings(settings = game.settings) {
   for (const { key, options } of SYSTEM_SETTING_DEFINITIONS) {
-    settings.register(SYSTEM_ID, key, options);
+    // Foundry enriches the received configuration with fields such as
+    // namespace, key and id. Keep our exported definitions immutable while
+    // giving Foundry a mutable registration object.
+    settings.register(SYSTEM_ID, key, {
+      ...options,
+      ...(options.choices ? { choices: { ...options.choices } } : {}),
+      ...(options.range ? { range: { ...options.range } } : {}),
+      ...(options.default && typeof options.default === "object"
+        ? { default: { ...options.default } }
+        : {})
+    });
   }
 }
 
-export function getSystemSetting(key, settings = game.settings) {
-  return settings.get(SYSTEM_ID, key);
+function defaultSystemSetting(key) {
+  return SYSTEM_SETTING_DEFINITIONS.find((definition) => definition.key === key)
+    ?.options.default;
+}
+
+export function getSystemSetting(key, settings = globalThis.game?.settings) {
+  // Actor data is prepared before Foundry's setup hook, while world settings
+  // are registered but cannot yet be read. Falling back to the registered
+  // default keeps document preparation safe during that bootstrap window.
+  try {
+    return settings?.get(SYSTEM_ID, key) ?? defaultSystemSetting(key);
+  } catch {
+    return defaultSystemSetting(key);
+  }
 }
 
 export function setSystemSetting(key, value, settings = game.settings) {
