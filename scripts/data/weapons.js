@@ -1,5 +1,21 @@
 import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
 
+const WEAPON_IMAGE_NAMES = Object.freeze({
+  "bola-cadena": "bola_y_cadena",
+  "hacha-batalla": "hacha_de_batalla",
+  "lanza-caballeria": "lanza_de_caballeria",
+  "alabarda-hacha-armas": "alabarda_hacha_de_armas",
+  "cuerda-estrangular": "cuerda_de_estrangular",
+  "honda-fuste": "honda_de_fuste"
+});
+
+export function weaponImage(category, key, fallback) {
+  const filename = WEAPON_IMAGE_NAMES[key] ?? key.replaceAll("-", "_");
+  return category
+    ? `systems/mythras-foundry/assets/imagenes_256x256/${category}/${filename}.webp`
+    : fallback;
+}
+
 const baseSystem = Object.freeze({
   quantity: 1, quantityFormula: "", weight: 0, value: 0, location: "", equipped: false,
   source: MYTHRAS_REVISED_SOURCE, era: "", profileKey: "", activeModeKey: "",
@@ -44,12 +60,13 @@ const source = ({ key, name, ap, hp, enc = 0, cost = 0, era = "", traits = "",
 
 const melee = (key, name, damage, size, reach, effects, enc, ap, hp, era, cost,
   traits = "", hands = 1) => source({ key, name, ap, hp, enc, cost, era, traits,
+  img: weaponImage(`armas/${hands === 2 ? "grandes" : "comunes"}`, key),
   modes: [mode({ key: hands === 2 ? "two-handed" : "melee", damage, size, reach,
     effects, traits, hands })] });
 
 const shield = (key, name, damage, size, enc, ap, hp, era, cost, locations,
   effects = "Aturdir Localización, Golpetazo") => source({
-  key, name, ap, hp, enc, cost, era, img: "icons/svg/shield.svg",
+  key, name, ap, hp, enc, cost, era, img: weaponImage("escudos", key),
   traits: `Parar Proyectiles, Bloqueo Pasivo ${locations} Localizaciones`,
   modes: [mode({ key: "shield", type: "shield", damage, size, reach: "C", effects,
     traits: `Parar Proyectiles, Bloqueo Pasivo ${locations} Localizaciones` })]
@@ -57,7 +74,7 @@ const shield = (key, name, damage, size, enc, ap, hp, era, cost, locations,
 
 const ranged = (key, name, damage, damageModifier, power, range, reload, effects,
   impalingSize, enc, ap, hp, era, cost, traits = "") => source({
-  key, name, ap, hp, enc, cost, era, traits, img: "icons/svg/target.svg",
+  key, name, ap, hp, enc, cost, era, traits, img: weaponImage("armas/proyectil", key),
   modes: [mode({ key: "ranged", type: "ranged", damage, damageModifier, size: power,
     range, reload, effects, impalingSize, traits,
     hands: new Set(["boleadoras", "dardo", "disco", "jabalina", "piedra-roca"]).has(key) ? 1 : 2 })]
@@ -132,7 +149,7 @@ export const RANGED_WEAPON_SOURCES = [
   ranged("arco-corto", "Arco corto", "1d6", "full", "G", "15/100/200", "2", "Empalar", "P", 1, 4, 4, "P-M", 75),
   ranged("arco-largo", "Arco largo", "1d8", "full", "E", "15/125/250", "2", "Empalar", "P", 1, 4, 7, "M", 200),
   ranged("arco-recurvado", "Arco recurvado", "1d8", "full", "E", "15/125/250", "2", "Empalar", "P", 1, 4, 8, "A-M", 225),
-  source({ key: "atlatl", name: "Atlatl", ap: 1, hp: 4, enc: 1, cost: 10, era: "P", img: "icons/svg/target.svg",
+  source({ key: "atlatl", name: "Atlatl", ap: 1, hp: 4, enc: 1, cost: 10, era: "P", img: weaponImage("armas/proyectil", "atlatl"),
     modes: [mode({ key: "ranged", type: "ranged", powerModifier: 1, range: "+0/+25/+75", reload: "1" })] }),
   ranged("ballesta-ligera", "Ballesta ligera", "1d8", "none", "G", "20/100/200", "3", "Empalar", "P", 1, 4, 5, "M-I", 150),
   ranged("ballesta-pesada", "Ballesta pesada", "1d10", "none", "E", "20/150/300", "4", "Empalar, Hender Armadura", "P", 2, 4, 8, "M-I", 350),

@@ -46,6 +46,34 @@ export const ARMOR_MATERIAL_NAMES = Object.freeze({
   chitin: "quitina", silk: "seda"
 });
 
+const ARMOR_IMAGE_PROFILE_NAMES = Object.freeze({
+  "natural-cured": "natural",
+  "padded-reinforced": "acolchada",
+  laminated: "laminada",
+  scales: "escamas",
+  cuirass: "coraza",
+  mail: "mallas",
+  "plate-mail": "placa_y_mallas",
+  "articulated-plate": "articulada_de_placas"
+});
+
+const ARMOR_IMAGE_LOCATIONS = Object.freeze({
+  rightLeg: ["grebas", "grebas"],
+  leftLeg: ["grebas", "grebas"],
+  abdomen: ["faldares", "faldar"],
+  chest: ["petos", "peto"],
+  rightArm: ["brazales", "brazales"],
+  leftArm: ["brazales", "brazales"],
+  head: ["yelmos", "yelmo"]
+});
+
+export function armorImage(profileKey, referenceLocation) {
+  const location = ARMOR_IMAGE_LOCATIONS[referenceLocation];
+  const profile = ARMOR_IMAGE_PROFILE_NAMES[profileKey];
+  if (!location || !profile) return "systems/mythras-foundry/assets/icons/armor.svg";
+  return `systems/mythras-foundry/assets/imagenes_256x256/armaduras/${location[0]}/${location[1]}_${profile}.webp`;
+}
+
 export function armorDefaultName(referenceLocation, profileName) {
   const piece = ARMOR_LOCATION_NAMES[referenceLocation] ?? ARMOR_LOCATION_NAMES.special;
   const profile = String(profileName ?? "").trim();
@@ -62,7 +90,7 @@ function armorPiece(profile, referenceLocation) {
     buildKey,
     name,
     type: "armor",
-    img: "systems/mythras-foundry/assets/icons/armor.svg",
+    img: armorImage(profile.key, referenceLocation),
     system: {
       source: MYTHRAS_REVISED_SOURCE,
       quantity: 1,
