@@ -61,18 +61,20 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (this.item.type === "armor") {
       const referenceLocation = update.system?.referenceLocation
         || this.item.system.referenceLocation || "special";
-      const material = update.system?.material || this.item.system.material || "leather";
+      const profileName = update.system?.profileName || this.item.system.profileName
+        || update.name || this.item.name;
       const oldDefaultName = armorDefaultName(
-        this.item.system.referenceLocation || "special", this.item.system.material || "leather");
+        this.item.system.referenceLocation || "special",
+        this.item.system.profileName || this.item.name);
       if (!String(update.name ?? "").trim() || update.name === oldDefaultName) {
-        update.name = armorDefaultName(referenceLocation, material);
+        update.name = armorDefaultName(referenceLocation, profileName);
       }
       update.system.profileKey = normalizeWeaponProfile(
         update.system?.profileKey || this.item.system.profileKey || update.name || this.item.name
       );
-      update.system.profileName = update.system?.profileName || this.item.system.profileName
-        || update.name || this.item.name;
+      update.system.profileName = profileName;
       update.system.pieceType = armorPieceTypeForLocation(referenceLocation);
+      const material = update.system?.material || this.item.system.material || "leather";
       update.system.materialModifier = ARMOR_MATERIAL_MODIFIERS[material] ?? 1;
       update.system.coverageMigrated = true;
     }

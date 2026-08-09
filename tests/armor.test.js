@@ -9,6 +9,7 @@ test("el compendio contiene una pieza por perfil y localización", () => {
   assert.equal(ARMOR_REFERENCE_LOCATIONS.length, 8);
   assert.equal(ARMOR_SOURCES.length, 64);
   assert.equal(new Set(ARMOR_SOURCES.map(({ buildKey }) => buildKey)).size, 64);
+  assert.equal(new Set(ARMOR_SOURCES.map(({ name }) => name)).size, 64);
 });
 
 test("todas las piezas proceden de Mythras básico revisado y cubren una sola localización", () => {
@@ -17,16 +18,29 @@ test("todas las piezas proceden de Mythras básico revisado y cubren una sola lo
     assert.equal(source.system.source, "Mythras básico revisado");
     assert.ok(ARMOR_REFERENCE_LOCATIONS.includes(source.system.referenceLocation));
     assert.deepEqual(source.system.coveredLocationIds, []);
-    assert.equal(source.system.armorRulesVersion, 3);
+    assert.equal(source.system.armorRulesVersion, 4);
   }
 });
 
-test("los nombres predeterminados distinguen lado, localización y material", () => {
-  assert.equal(armorDefaultName("head", "steel"), "Yelmo de acero");
-  assert.equal(armorDefaultName("chest", "bone"), "Peto de hueso");
-  assert.equal(armorDefaultName("rightArm", "iron"), "Brazal derecho de hierro");
-  assert.equal(armorDefaultName("leftLeg", "bronze"), "Greba izquierda de bronce");
-  assert.equal(armorDefaultName("special", "leather"), "Pieza de armadura de cuero");
+test("los nombres predeterminados combinan localización y perfil, no material", () => {
+  assert.equal(armorDefaultName("head", "Armadura de escamas"),
+    "Yelmo de armadura de escamas");
+  assert.equal(armorDefaultName("chest", "Armadura laminada"),
+    "Peto de armadura laminada");
+  assert.equal(armorDefaultName("rightArm", "Armadura de mallas"),
+    "Brazal derecho de armadura de mallas");
+  assert.equal(armorDefaultName("leftLeg", "Armadura de coraza"),
+    "Greba izquierda de armadura de coraza");
+  assert.equal(armorDefaultName("special", "Armadura de escamas"),
+    "Pieza de armadura (Armadura de escamas)");
+});
+
+test("cada perfil crea ocho piezas con su material predeterminado", () => {
+  for (const profile of ARMOR_PROFILES) {
+    const pieces = ARMOR_SOURCES.filter((source) => source.system.profileKey === profile.key);
+    assert.equal(pieces.length, 8);
+    assert.ok(pieces.every((piece) => piece.system.material === profile.material));
+  }
 });
 
 test("los perfiles reproducen la tabla de PA, CRG y coste por localización", () => {

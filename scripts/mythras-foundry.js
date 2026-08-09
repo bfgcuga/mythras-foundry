@@ -219,7 +219,7 @@ Hooks.on("preCreateItem", (item, data) => {
       "system.materialModifier": ARMOR_MATERIAL_MODIFIERS[material] ?? 1,
       "system.coveredLocationIds": Array.from(system.coveredLocationIds ?? []).slice(0, 1),
       "system.coverageMigrated": true,
-      "system.armorRulesVersion": 3
+      "system.armorRulesVersion": 4
     });
   }
 });
@@ -344,6 +344,7 @@ function defaultArmorFactors(location) {
 
 async function migrateActorArmor(actor) {
   const updates = [];
+  const obsoleteArmorIds = [];
   for (const item of actor.items) {
     if (item.type === "hitLocation"
       && Number(item._source.system?.armorFactorsVersion ?? 0) < 2) {
@@ -364,32 +365,14 @@ async function migrateActorArmor(actor) {
       });
     }
     if (item.type === "armor"
-      && Number(item._source.system?.armorRulesVersion ?? 0) < 3) {
-      const referenceLocation = item.system.referenceLocation || "special";
-      const material = item.system.material || "leather";
-      updates.push({
-        _id: item.id,
-        "system.profileKey": normalizeWeaponProfile(item.name),
-        "system.profileName": item.name,
-        "system.coveredLocationIds": Array.from(item.system.coveredLocationIds ?? []).slice(0, 1),
-        "system.referenceLocation": referenceLocation,
-        "system.pieceType": armorPieceTypeForLocation(referenceLocation),
-        "system.material": material,
-        "system.materialModifier": ARMOR_MATERIAL_MODIFIERS[material] ?? 1,
-        "system.baseEncumbrance": Number(item.system.baseEncumbrance ?? item.system.weight ?? 0),
-        "system.baseValue": Number(item.system.baseValue ?? item.system.value ?? 0),
-        "system.armorRulesVersion": 3,
-        "system.coverageMigrated": true,
-        "system.coverage": "",
-        "system.equipped": false
-      });
-    }
+      && Number(item._source.system?.armorRulesVersion ?? 0) < 4) obsoleteArmorIds.push(item.id);
   }
   if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+  if (obsoleteArmorIds.length) await actor.deleteEmbeddedDocuments("Item", obsoleteArmorIds);
 }
 
 async function migrateWorldArmor(item) {
-  if (Number(item._source.system?.armorRulesVersion ?? 0) >= 3) return;
+  if (Number(item._source.system?.armorRulesVersion ?? 0) >= 4) return;
   const referenceLocation = item.system.referenceLocation || "special";
   const material = item.system.material || "leather";
   await item.update({
@@ -402,7 +385,7 @@ async function migrateWorldArmor(item) {
     "system.materialModifier": ARMOR_MATERIAL_MODIFIERS[material] ?? 1,
     "system.baseEncumbrance": Number(item.system.baseEncumbrance ?? item.system.weight ?? 0),
     "system.baseValue": Number(item.system.baseValue ?? item.system.value ?? 0),
-    "system.armorRulesVersion": 3,
+    "system.armorRulesVersion": 4,
     "system.coverageMigrated": true,
     "system.coverage": "",
     "system.equipped": false

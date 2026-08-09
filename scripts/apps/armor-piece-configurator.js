@@ -53,9 +53,9 @@ export async function configureNewArmorPiece(item) {
     return false;
   }
   const referenceLocation = item.system.referenceLocation || "special";
-  const material = item.system.material || "leather";
+  const profileName = item.system.profileName || game.i18n.localize("TYPES.Item.armor");
   await item.update({
-    name: item.name || armorDefaultName(referenceLocation, material),
+    name: armorDefaultName(referenceLocation, profileName),
     "system.pieceType": armorPieceTypeForLocation(referenceLocation),
     "system.coveredLocationIds": [result],
     "system.coverageMigrated": true,

@@ -257,7 +257,7 @@ export class ArmorData extends EquipmentData {
       baseEncumbrance: nonNegativeNumber(),
       baseValue: nonNegativeNumber(),
       locationValues: new SchemaField(locationValues),
-      armorRulesVersion: nonNegativeNumber(3, true),
+      armorRulesVersion: nonNegativeNumber(4, true),
       coveredLocationIds: new ArrayField(textField(), {
         required: true, nullable: false, initial: []
       }),
