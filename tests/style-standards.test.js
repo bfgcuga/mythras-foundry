@@ -7,6 +7,10 @@ const chatScript = readFileSync(
   new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8"
 );
 const standards = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8");
+const characterTemplate = readFileSync(
+  new URL("../templates/actor/character-sheet.hbs", import.meta.url), "utf8"
+);
+const tooltipScript = readFileSync(new URL("../scripts/ui/tooltips.js", import.meta.url), "utf8");
 const sheetSources = ["character-sheet.js", "npc-sheet.js", "item-sheet.js"]
   .map((name) => readFileSync(new URL(`../scripts/sheets/${name}`, import.meta.url), "utf8"));
 
@@ -23,4 +27,11 @@ test("la superficie compartida queda registrada como estándar visual", () => {
   assert.match(standards, /Superficie estándar de papel/);
   assert.match(standards, /Toda hoja de documento/);
   assert.match(standards, /no sustituye la superficie de papel/);
+});
+
+test("todos los atributos derivados ofrecen el tooltip retrasado compartido", () => {
+  const attributeTooltips = characterTemplate.match(/data-mythras-tooltip="{{attributeTooltips\./g) ?? [];
+  assert.equal(attributeTooltips.length, 8);
+  assert.match(tooltipScript, /button, \[data-mythras-tooltip\]/);
+  assert.match(tooltipScript, /TOOLTIP_DELAY_MS = 1100/);
 });

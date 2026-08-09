@@ -123,7 +123,7 @@
           <fieldset class="paper-attributes">
             <legend>{{localize "MYTHRASF.Attributes"}}</legend>
             <div class="paper-attribute-list">
-              <label class="resource-attribute">
+              <label class="resource-attribute" data-mythras-tooltip="{{attributeTooltips.actionPoints}}">
                 <span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span>
                 <div class="resource-control">
                   <button type="button" data-resource="actionPoints"
@@ -140,15 +140,15 @@
                   </output>
                 </div>
               </label>
-              <label><span>{{localize "MYTHRASF.Attribute.DamageModifier"}}</span>
+              <label data-mythras-tooltip="{{attributeTooltips.damageModifier}}"><span>{{localize "MYTHRASF.Attribute.DamageModifier"}}</span>
                 <output>{{actor.system.attributes.damageModifier.label}}</output></label>
-              <label><span>{{localize "MYTHRASF.Attribute.ExperienceModifier"}}</span>
+              <label data-mythras-tooltip="{{attributeTooltips.experienceModifier}}"><span>{{localize "MYTHRASF.Attribute.ExperienceModifier"}}</span>
                 <output>{{actor.system.attributes.experienceModifier}}</output></label>
-              <label><span>{{localize "MYTHRASF.Attribute.HealingRate"}}</span>
+              <label data-mythras-tooltip="{{attributeTooltips.healingRate}}"><span>{{localize "MYTHRASF.Attribute.HealingRate"}}</span>
                 <output>{{actor.system.attributes.healingRate}}</output></label>
-              <label title="{{attributePenalties.initiative.title}}"><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
+              <label data-mythras-tooltip="{{attributeTooltips.initiative}}"><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
                 <output class="penalized-value">{{attributePenalties.initiative.base}}{{#if attributePenalties.initiative.penalized}} <span class="penalized-value-modifier">({{attributePenalties.initiative.effective}})</span>{{/if}}</output></label>
-              <label class="resource-attribute">
+              <label class="resource-attribute" data-mythras-tooltip="{{attributeTooltips.luckPoints}}">
                 <span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>
                 <div class="resource-control">
                   <button type="button" data-resource="luckPoints"
@@ -165,7 +165,7 @@
                   </output>
                 </div>
               </label>
-              <label class="resource-attribute">
+              <label class="resource-attribute" data-mythras-tooltip="{{attributeTooltips.magicPoints}}">
                 <span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span>
                 <div class="resource-control">
                   <button type="button" data-resource="magicPoints"
@@ -182,7 +182,7 @@
                   </output>
                 </div>
               </label>
-              <label><span>{{localize "MYTHRASF.Attribute.MovementRate"}}</span>
+              <label data-mythras-tooltip="{{attributeTooltips.movement}}"><span>{{localize "MYTHRASF.Attribute.MovementRate"}}</span>
                 <output class="penalized-value">{{attributePenalties.movement.base}}{{#if attributePenalties.movement.penalized}} <span class="penalized-value-modifier">({{attributePenalties.movement.effective}})</span>{{/if}}</output></label>
             </div>
           </fieldset>
@@ -359,7 +359,7 @@
             <label><span>PC</span><input type="number" min="0" step="0.01" class="sheet-field-editable" {{#if section.property}}data-property-funds="copper" value="{{section.property.system.funds.copper}}"{{else}}name="system.currency.copper" value="{{@root.actor.system.currency.copper}}"{{/if}}></label>
             <label><span>PP</span><input type="number" min="0" step="0.01" class="sheet-field-editable" {{#if section.property}}data-property-funds="silver" value="{{section.property.system.funds.silver}}"{{else}}name="system.currency.silver" value="{{@root.actor.system.currency.silver}}"{{/if}}></label>
             <label><span>PO</span><input type="number" min="0" step="0.01" class="sheet-field-editable" {{#if section.property}}data-property-funds="gold" value="{{section.property.system.funds.gold}}"{{else}}name="system.currency.gold" value="{{@root.actor.system.currency.gold}}"{{/if}}></label>
-            {{#if @root.editable}}<div class="inventory-wallet-actions"><button type="button" class="sheet-icon-button" data-action="buy-item" aria-label="{{localize "MYTHRASF.Inventory.Buy"}}" title="{{localize "MYTHRASF.Inventory.Buy"}}"><i class="fas fa-cart-shopping" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="transfer-money" data-wallet-id="{{section.id}}" aria-label="{{localize "MYTHRASF.Inventory.Transfer"}}" title="{{localize "MYTHRASF.Inventory.Transfer"}}"><i class="fas fa-right-left" aria-hidden="true"></i></button>{{#unless section.property}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="equipment" data-category="property" aria-label="{{localize "MYTHRASF.Inventory.AddProperty"}}" title="{{localize "MYTHRASF.Inventory.AddProperty"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/unless}}</div>{{/if}}
+            {{#if @root.editable}}<div class="inventory-wallet-actions"><button type="button" class="sheet-icon-button" data-action="buy-item" data-wallet-id="{{section.id}}" aria-label="{{localize "MYTHRASF.Inventory.Buy"}}" title="{{localize "MYTHRASF.Inventory.Buy"}}"><i class="fas fa-cart-shopping" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="transfer-money" data-wallet-id="{{section.id}}" aria-label="{{localize "MYTHRASF.Inventory.Transfer"}}" title="{{localize "MYTHRASF.Inventory.Transfer"}}"><i class="fas fa-right-left" aria-hidden="true"></i></button>{{#unless section.property}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="equipment" data-category="property" aria-label="{{localize "MYTHRASF.Inventory.AddProperty"}}" title="{{localize "MYTHRASF.Inventory.AddProperty"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/unless}}</div>{{/if}}
           </div>
           {{> "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs" items=section.rows}}
         </fieldset>

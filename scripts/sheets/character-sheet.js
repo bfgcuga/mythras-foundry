@@ -172,11 +172,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
     const currentCondition = combinedConditionLevel(currentFatigue.key, currentWound);
+    const actionPointRules = getActionPointRules();
     const baseAttributes = this.actor.system.baseAttributes
-      ?? calculateDerivedAttributes(this.actor.system, getActionPointRules());
+      ?? calculateDerivedAttributes(this.actor.system, actionPointRules);
     const fatiguedAttributes = applyFatigue(baseAttributes, currentCondition.key);
     const effectiveAttributes = applyArmorInitiativePenalty(
       applyEncumbrance(fatiguedAttributes, loadState), equippedArmor);
+    const attributeTooltips = this.#attributeTooltips({
+      actionPointRules, baseAttributes, effectiveAttributes, fatiguedAttributes,
+      currentFatigue, currentCondition, equippedArmor, loadState
+    });
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
       baseAttributes.actionPointsMax,
@@ -260,9 +265,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       attributePenalties: {
         actionPoints: actionPointsDisplay,
         initiative: { ...penalizedValue(baseAttributes.initiative, effectiveAttributes.initiative),
-          title: this.#initiativePenaltyTitle(currentFatigue, equippedArmor) },
+          title: this.#initiativePenaltyTitle(currentCondition, equippedArmor,
+            currentCondition.key !== currentFatigue.key) },
         movement: penalizedValue(baseAttributes.movementRate, effectiveAttributes.movementRate)
       },
+      attributeTooltips,
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
@@ -490,8 +497,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       field.addEventListener("change", (event) => this.#updatePropertyFunds(event));
     });
     this.element.querySelectorAll("[data-action='buy-item']").forEach((button) => {
-      button.addEventListener("click", () => ui.notifications.info(
-        game.i18n.localize("MYTHRASF.Inventory.BuyPlaceholder")));
+      button.addEventListener("click", (event) => game.mythrasFoundry?.shop?.open?.({
+        actorUuid: this.actor.uuid,
+        destinationId: event.currentTarget.dataset.walletId ?? "person"
+      }));
     });
     this.element.querySelectorAll("[data-action='transfer-money']").forEach((button) => {
       button.addEventListener("click", (event) => this.#transferMoney(event));
@@ -734,15 +743,79 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return encumbranceState(totalCarriedEncumbrance(items), this.actor.system.strength);
   }
 
-  #initiativePenaltyTitle(fatigue, equippedArmor) {
+  #initiativePenaltyTitle(condition, equippedArmor, causedByWound = false) {
     const armorPenalty = armorInitiativePenalty(equippedArmor);
     const parts = [];
-    if (fatigue.initiativePenalty) parts.push(game.i18n.format(
-      "MYTHRASF.InitiativePenalty.Fatigue", { penalty: fatigue.initiativePenalty }));
+    if (condition.initiativePenalty) parts.push(game.i18n.format(
+      causedByWound ? "MYTHRASF.InitiativePenalty.Wound"
+        : "MYTHRASF.InitiativePenalty.Fatigue", { penalty: condition.initiativePenalty }));
     if (armorPenalty) parts.push(game.i18n.format(
       "MYTHRASF.InitiativePenalty.Armor", { penalty: armorPenalty }));
     return parts.length ? parts.join("\n")
       : game.i18n.localize("MYTHRASF.InitiativePenalty.None");
+  }
+
+  #attributeTooltips({ actionPointRules, baseAttributes, effectiveAttributes,
+    fatiguedAttributes, currentFatigue, currentCondition, equippedArmor, loadState }) {
+    const system = this.actor.system;
+    const join = (...parts) => parts.filter(Boolean).join(" ");
+    const actionPoints = actionPointRules.method === "calculated"
+      ? game.i18n.format("MYTHRASF.AttributeTooltip.ActionPointsCalculated", {
+        intelligence: system.intelligence, dexterity: system.dexterity,
+        total: Number(system.intelligence) + Number(system.dexterity),
+        result: baseAttributes.actionPointsMax
+      })
+      : game.i18n.format("MYTHRASF.AttributeTooltip.ActionPointsFixed", {
+        result: baseAttributes.actionPointsMax
+      });
+    const causedByWound = currentCondition.key !== currentFatigue.key;
+    const actionPointPenalty = currentCondition.actionPointPenalty
+      ? game.i18n.format(causedByWound
+        ? "MYTHRASF.AttributeTooltip.WoundPenalty"
+        : "MYTHRASF.AttributeTooltip.FatiguePenalty", {
+        penalty: currentCondition.actionPointPenalty,
+        effective: effectiveAttributes.actionPointsMax
+      }) : game.i18n.localize("MYTHRASF.AttributeTooltip.NoModifiers");
+    const movementFatigue = fatiguedAttributes.movementRate !== baseAttributes.movementRate
+      ? game.i18n.format(causedByWound
+        ? "MYTHRASF.AttributeTooltip.MovementWound"
+        : "MYTHRASF.AttributeTooltip.MovementFatigue", {
+        effective: fatiguedAttributes.movementRate
+      }) : "";
+    const movementLoad = effectiveAttributes.movementRate !== fatiguedAttributes.movementRate
+      ? game.i18n.format("MYTHRASF.AttributeTooltip.MovementLoad", {
+        state: game.i18n.localize(`MYTHRASF.Encumbrance.Penalty.${loadState.key}`),
+        effective: effectiveAttributes.movementRate
+      }) : "";
+    return {
+      actionPoints: join(actionPoints, actionPointPenalty),
+      damageModifier: game.i18n.format("MYTHRASF.AttributeTooltip.DamageModifier", {
+        strength: system.strength, size: system.size,
+        total: Number(system.strength) + Number(system.size),
+        result: baseAttributes.damageModifier.label
+      }),
+      experienceModifier: game.i18n.format("MYTHRASF.AttributeTooltip.ExperienceModifier", {
+        charisma: system.charisma, result: baseAttributes.experienceModifier
+      }),
+      healingRate: game.i18n.format("MYTHRASF.AttributeTooltip.HealingRate", {
+        constitution: system.constitution, result: baseAttributes.healingRate
+      }),
+      initiative: join(game.i18n.format("MYTHRASF.AttributeTooltip.Initiative", {
+        dexterity: system.dexterity, intelligence: system.intelligence,
+        result: baseAttributes.initiative
+      }), this.#initiativePenaltyTitle(currentCondition, equippedArmor, causedByWound)),
+      luckPoints: game.i18n.format("MYTHRASF.AttributeTooltip.LuckPoints", {
+        power: system.power, result: baseAttributes.luckPointsMax
+      }),
+      magicPoints: game.i18n.format("MYTHRASF.AttributeTooltip.MagicPoints", {
+        power: system.power, result: baseAttributes.magicPointsMax
+      }),
+      movement: join(game.i18n.format("MYTHRASF.AttributeTooltip.Movement", {
+        result: baseAttributes.movementRate
+      }), movementFatigue, movementLoad,
+      !movementFatigue && !movementLoad
+        ? game.i18n.localize("MYTHRASF.AttributeTooltip.NoModifiers") : "")
+    };
   }
 
   async #applySeriousWoundPenalty(difficulty) {

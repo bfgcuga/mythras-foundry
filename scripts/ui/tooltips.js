@@ -7,12 +7,12 @@ function rootElement(root) {
   return root?.[0] instanceof HTMLElement ? root[0] : null;
 }
 
-function tooltipLabel(button) {
+function tooltipLabel(target) {
   return String(
-    button.dataset.mythrasTooltip
-    || button.getAttribute("title")
-    || button.getAttribute("aria-label")
-    || button.textContent
+    target.dataset.mythrasTooltip
+    || target.getAttribute("title")
+    || target.getAttribute("aria-label")
+    || target.textContent
     || ""
   ).replace(/\s+/g, " ").trim();
 }
@@ -50,7 +50,7 @@ function showTooltip(button, label) {
 export function activateDelayedTooltips(root) {
   const element = rootElement(root);
   if (!element) return;
-  element.querySelectorAll("button").forEach((button) => {
+  element.querySelectorAll("button, [data-mythras-tooltip]").forEach((button) => {
     if (button.dataset.mythrasTooltipReady) return;
     const label = tooltipLabel(button);
     if (!label) return;

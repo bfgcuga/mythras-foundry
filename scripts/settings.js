@@ -8,6 +8,7 @@ export const SETTING_KEYS = Object.freeze({
   professionPointMinimum: "professionPointMinimum",
   professionPointMaximum: "professionPointMaximum",
   socialClassMethod: "socialClassMethod",
+  catalogSources: "catalogSources",
   parties: "parties"
 });
 
@@ -118,6 +119,15 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       }),
       default: SOCIAL_CLASS_METHODS.choose,
       requiresReload: true
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.catalogSources,
+    options: Object.freeze({
+      scope: "world",
+      config: false,
+      type: Object,
+      default: Object.freeze({ version: 1, packIds: Object.freeze([]) })
     })
   }),
   Object.freeze({

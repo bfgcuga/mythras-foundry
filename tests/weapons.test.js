@@ -12,6 +12,7 @@ import {
 
 test("el compendio contiene exclusivamente las 63 armas y escudos del documento", () => {
   assert.equal(SHIELD_SOURCES.length, 8);
+  assert.equal(SHIELD_SOURCES.every((entry) => entry.name.startsWith("Escudo ")), true);
   assert.equal(MELEE_WEAPON_SOURCES.length, 35);
   assert.equal(SIEGE_WEAPON_SOURCES.length, 6);
   assert.equal(RANGED_WEAPON_SOURCES.length, 14);

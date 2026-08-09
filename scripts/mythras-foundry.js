@@ -28,6 +28,8 @@ import { weaponHandsRequired } from "./rules/equipment.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { PartyManager } from "./apps/party-manager.js";
+import { CatalogSourceManager } from "./apps/catalog-source-manager.js";
+import { createCatalogApi } from "./apps/item-catalog.js";
 import { createPartyApi } from "./api/party-api.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
@@ -78,8 +80,14 @@ Hooks.once("init", async () => {
     hint: "MYTHRASF.Weapon.MergeHelp", icon: "fas fa-object-group",
     type: WeaponModeMergeTool, restricted: true
   });
+  game.settings.registerMenu("mythras-foundry", "catalogSources", {
+    name: "MYTHRASF.Catalog.Sources.Title", label: "MYTHRASF.Catalog.Sources.OpenManager",
+    hint: "MYTHRASF.Catalog.Sources.Hint", icon: "fas fa-store",
+    type: CatalogSourceManager, restricted: true
+  });
   game.mythrasFoundry = {
     ...(game.mythrasFoundry ?? {}),
+    shop: createCatalogApi(),
     party: createPartyApi({
       getConfig: () => getSystemSetting(SETTING_KEYS.parties),
       getActors: () => game.actors,

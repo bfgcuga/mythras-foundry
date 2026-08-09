@@ -107,14 +107,14 @@ export const ONE_HANDED_WEAPON_SOURCES = [
 ];
 
 export const SHIELD_SOURCES = [
-  shield("cometa", "Cometa", "1d4", "E", 3, 4, 15, "M", 300, 4),
-  shield("heraldo", "Heraldo", "1d4", "G", 2, 6, 12, "M", 150, 3),
-  shield("hoplon", "Hoplón", "1d4", "E", 3, 6, 15, "A-M", 300, 4),
-  shield("pelta", "Pelta", "1d4", "G", 2, 4, 12, "A-M", 150, 3),
-  shield("rodela", "Rodela", "1d3", "M", 1, 6, 9, "M-I", 50, 2),
-  shield("scutum-paves", "Scutum/Pavés", "1d4", "E", 4, 4, 18, "A-M", 450, 5),
-  shield("tarja", "Tarja", "1d3+1", "G", 2, 4, 9, "A-E", 150, 3, "Empalar, Golpetazo"),
-  shield("vikingo", "Vikingo", "1d4", "G", 3, 4, 12, "M", 300, 4)
+  shield("cometa", "Escudo cometa", "1d4", "E", 3, 4, 15, "M", 300, 4),
+  shield("heraldo", "Escudo heraldo", "1d4", "G", 2, 6, 12, "M", 150, 3),
+  shield("hoplon", "Escudo hoplón", "1d4", "E", 3, 6, 15, "A-M", 300, 4),
+  shield("pelta", "Escudo pelta", "1d4", "G", 2, 4, 12, "A-M", 150, 3),
+  shield("rodela", "Escudo rodela", "1d3", "M", 1, 6, 9, "M-I", 50, 2),
+  shield("scutum-paves", "Escudo scutum/pavés", "1d4", "E", 4, 4, 18, "A-M", 450, 5),
+  shield("tarja", "Escudo tarja", "1d3+1", "G", 2, 4, 9, "A-E", 150, 3, "Empalar, Golpetazo"),
+  shield("vikingo", "Escudo vikingo", "1d4", "G", 3, 4, 12, "M", 300, 4)
 ];
 
 export const TWO_HANDED_WEAPON_SOURCES = [

@@ -78,6 +78,16 @@ export const MACRO_SOURCES = [{
     macroKey: "award-party-experience-rolls", macroVersion: 2
   } }
 }, {
+  buildKey: "open-item-catalog",
+  name: "Abrir catálogo de objetos",
+  type: "script",
+  img: "icons/svg/coins.svg",
+  command: `
+const catalog = game.mythrasFoundry?.shop?.open?.();
+if (!catalog) ui.notifications.error(game.i18n.localize("MYTHRASF.Catalog.Unavailable"));
+`,
+  flags: { "mythras-foundry": { macroKey: "open-item-catalog", macroVersion: 1 } }
+}, {
   buildKey: "manage-parties",
   name: "Gestionar grupos de personajes",
   type: "script",

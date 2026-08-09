@@ -1,0 +1,22 @@
+<div class="catalog-source-manager-content">
+  <p>{{localize "MYTHRASF.Catalog.Sources.Help"}}</p>
+  <div class="catalog-source-actions">
+    <button type="button" data-action="createPack"><i class="fas fa-plus" aria-hidden="true"></i>{{localize "MYTHRASF.Catalog.Sources.Create"}}</button>
+    <button type="button" data-action="save"><i class="fas fa-save" aria-hidden="true"></i>{{localize "MYTHRASF.Catalog.Sources.Save"}}</button>
+  </div>
+  <fieldset><legend>{{localize "MYTHRASF.Catalog.Sources.Official"}}</legend>
+    <p>{{localize "MYTHRASF.Catalog.Sources.OfficialHelp"}}</p>
+  </fieldset>
+  <div class="catalog-source-list">
+    {{#each packs as |pack|}}
+      <fieldset data-pack-id="{{pack.id}}"><legend>{{pack.label}}</legend>
+        <div class="catalog-source-row">
+          <label><input type="checkbox" class="sheet-state-box" data-catalog-source value="{{pack.id}}" {{checked pack.selected}}><span>{{localize "MYTHRASF.Catalog.Sources.Enabled"}}</span></label>
+          <span>{{pack.packageName}}</span>
+          <button type="button" class="sheet-icon-button" data-action="openPack" title="{{localize "MYTHRASF.Catalog.Sources.Open"}}" aria-label="{{localize "MYTHRASF.Catalog.Sources.Open"}}"><i class="fas fa-book-open" aria-hidden="true"></i></button>
+          {{#if pack.world}}<button type="button" class="sheet-icon-button" data-action="createItem" title="{{localize "MYTHRASF.Catalog.Sources.NewItem"}}" aria-label="{{localize "MYTHRASF.Catalog.Sources.NewItem"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        </div>
+      </fieldset>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Catalog.Sources.Empty"}}</p>{{/each}}
+  </div>
+</div>

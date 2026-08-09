@@ -45,6 +45,10 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
   const socialClassMethod = registrations.find(
     ({ key }) => key === SETTING_KEYS.socialClassMethod);
   assert.equal(socialClassMethod.options.default, SOCIAL_CLASS_METHODS.choose);
+  const catalogSources = registrations.find(
+    ({ key }) => key === SETTING_KEYS.catalogSources);
+  assert.deepEqual(catalogSources.options.default, { version: 1, packIds: [] });
+  assert.equal(catalogSources.options.config, false);
 });
 
 test("entrega a Foundry definiciones mutables sin alterar el catálogo", () => {
