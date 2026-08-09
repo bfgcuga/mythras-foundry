@@ -12,6 +12,16 @@ export function inventoryCategory(item) {
     : item.type === "armor" ? "armor" : (item.system?.category ?? "item");
 }
 
+export function inventoryGroup(item) {
+  const category = inventoryCategory(item);
+  if (category === "weapon") return "weapons";
+  if (category === "armor") return "armor";
+  if (category === "container") return "containers";
+  if (category === "livestock") return "livestock";
+  if (category === "vehicle") return "vehicles";
+  return "miscellaneous";
+}
+
 export function sortInventoryItems(items = []) {
   return [...items].sort((left, right) => {
     const order = (INVENTORY_CATEGORY_ORDER[inventoryCategory(left)] ?? 3)
@@ -45,23 +55,33 @@ export function inventoryRows(items = []) {
   }
   const rows = [];
   const rendered = new Set();
-  const visit = (item, depth, hidden, ancestors) => {
+  const visit = (item, depth, hidden, ancestors, groupStart = false) => {
     if (ancestors.has(item.id) || rendered.has(item.id)) return;
     rendered.add(item.id);
     const children = byParent.get(item.id) ?? [];
     rows.push({ item, id: item.id, name: item.name, system: item.system, depth,
       indent: depth * 18, hidden, hasChildren: children.length > 0,
+      groupKey: inventoryGroup(item), groupStart,
       isContainer: Boolean(item.system?.isContainer),
       isWeapon: item.type === "weapon", isArmor: item.type === "armor",
       isEquipment: item.type === "equipment",
       carried: inventoryCarried(item, items) });
     const nextAncestors = new Set(ancestors).add(item.id);
+    let previousGroup = null;
     for (const child of children) {
-      visit(child, depth + 1, hidden || Boolean(item.system?.collapsed), nextAncestors);
+      const group = inventoryGroup(child);
+      visit(child, depth + 1, hidden || Boolean(item.system?.collapsed), nextAncestors,
+        group !== previousGroup);
+      previousGroup = group;
     }
   };
-  for (const root of byParent.get("") ?? []) visit(root, 0, false, new Set());
-  for (const item of items) if (!rendered.has(item.id)) visit(item, 0, false, new Set());
+  let previousRootGroup = null;
+  for (const root of byParent.get("") ?? []) {
+    const group = inventoryGroup(root);
+    visit(root, 0, false, new Set(), group !== previousRootGroup);
+    previousRootGroup = group;
+  }
+  for (const item of items) if (!rendered.has(item.id)) visit(item, 0, false, new Set(), true);
   return rows;
 }
 

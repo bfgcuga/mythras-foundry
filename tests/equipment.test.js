@@ -85,3 +85,19 @@ test("las categorías se ordenan según la presentación del inventario", () => 
   assert.deepEqual(sortInventoryItems(entries).map((item) => item.name),
     ["Daga", "Peto", "Mochila", "Carro"]);
 });
+
+test("cada categoría del inventario comienza con una separación visual", () => {
+  const entries = [
+    { id: "weapon", name: "Daga", type: "weapon", system: {} },
+    { id: "armor", name: "Peto", type: "armor", system: {} },
+    { id: "item", name: "Manta", type: "equipment", system: { category: "item" } },
+    { id: "bag", name: "Mochila", type: "equipment",
+      system: { category: "container", isContainer: true } },
+    { id: "horse", name: "Caballo", type: "equipment", system: { category: "livestock" } },
+    { id: "cart", name: "Carro", type: "equipment", system: { category: "vehicle" } }
+  ];
+  const rows = inventoryRows(entries);
+  assert.deepEqual(rows.map((row) => row.groupKey),
+    ["weapons", "armor", "miscellaneous", "containers", "livestock", "vehicles"]);
+  assert.ok(rows.every((row) => row.groupStart));
+});

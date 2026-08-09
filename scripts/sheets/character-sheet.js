@@ -149,6 +149,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       locationLabel: inventoryLocation(row.item, allInventoryItems) === "person"
         ? game.i18n.localize("MYTHRASF.Item.Carried")
         : inventoryLocation(row.item, allInventoryItems),
+      groupLabel: game.i18n.localize(`MYTHRASF.Inventory.Category.${row.groupKey}`),
       categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
         : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
           : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`) }));
@@ -466,6 +467,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-property-funds]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updatePropertyFunds(event));
+    });
+    this.element.querySelectorAll("[data-action='buy-item']").forEach((button) => {
+      button.addEventListener("click", () => ui.notifications.info(
+        game.i18n.localize("MYTHRASF.Inventory.BuyPlaceholder")));
+    });
+    this.element.querySelectorAll("[data-action='transfer-money']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#transferMoney(event));
     });
     this.#activateInventoryDragAndDrop();
     this.element.querySelectorAll("[data-active-weapon-mode]").forEach((select) => {
@@ -1921,6 +1929,53 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const denomination = event.currentTarget.dataset.propertyFunds;
     await property.update({ [`system.funds.${denomination}`]: Math.max(0,
       Number(event.currentTarget.value ?? 0)) });
+  }
+
+  async #transferMoney(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+    const sourceId = event.currentTarget.dataset.walletId;
+    const wallets = [{ id: "person", name: game.i18n.localize("MYTHRASF.Inventory.OnPerson") },
+      ...this.actor.items.filter((item) => item.type === "equipment"
+        && item.system.category === "property").map((item) => ({ id: item.id, name: item.name }))];
+    const destinations = wallets.filter((wallet) => wallet.id !== sourceId);
+    if (!destinations.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Inventory.TransferNoDestination"));
+      return;
+    }
+    const options = destinations.map((wallet) => `<option value="${wallet.id}">${
+      foundry.utils.escapeHTML(wallet.name)}</option>`).join("");
+    const result = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.Inventory.Transfer") },
+      content: `<div class="inventory-transfer-dialog">
+        <label><span>${game.i18n.localize("MYTHRASF.Inventory.TransferDestination")}</span><select name="destination">${options}</select></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Currency.Denomination")}</span><select name="denomination"><option value="copper">PC</option><option value="silver">PP</option><option value="gold">PO</option></select></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Inventory.TransferAmount")}</span><input type="number" min="0.01" step="0.01" name="amount" value="1"></label>
+      </div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Inventory.Transfer"),
+        icon: "fas fa-right-left", callback: (dialogEvent, button) => ({
+          destinationId: button.form.elements.destination.value,
+          denomination: button.form.elements.denomination.value,
+          amount: Number(button.form.elements.amount.value)
+        }) }
+    });
+    if (!result || !Number.isFinite(result.amount) || result.amount <= 0) return;
+    const walletDocument = (id) => id === "person" ? this.actor : this.actor.items.get(id);
+    const walletPath = (id, denomination) => id === "person"
+      ? `system.currency.${denomination}` : `system.funds.${denomination}`;
+    const source = walletDocument(sourceId);
+    const destination = walletDocument(result.destinationId);
+    if (!source || !destination) return;
+    const sourcePath = walletPath(sourceId, result.denomination);
+    const destinationPath = walletPath(result.destinationId, result.denomination);
+    const available = Number(foundry.utils.getProperty(source, sourcePath) ?? 0);
+    if (result.amount > available) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Inventory.TransferInsufficient"));
+      return;
+    }
+    const currentDestination = Number(foundry.utils.getProperty(destination, destinationPath) ?? 0);
+    await source.update({ [sourcePath]: available - result.amount });
+    await destination.update({ [destinationPath]: currentDestination + result.amount });
   }
 
   #propertyContaining(item) {
