@@ -12,6 +12,10 @@ import { ALL_SKILL_SOURCES } from "../data/skills.js";
 import { calculateStartingMoney, getSocialClass, resolveSocialClass,
   socialClassesForCulture, STARTING_MONEY_BY_CULTURE } from "../data/social-classes.js";
 import { defaultItemIcon } from "../data/item-icons.js";
+import { ARMOR_SOURCES } from "../data/armor.js";
+import { WEAPON_SOURCES } from "../data/weapons.js";
+import { equipmentIcon } from "../data/equipment.js";
+import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
 import {
   BACKGROUND_BUDGETS,
   AGE_CATEGORIES,
@@ -60,6 +64,8 @@ import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
+import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
+  validateStartingEquipment } from "../rules/starting-equipment.js";
 import {
   NEW_SKILL_EXPERIENCE_COST,
   resolveExperienceImprovement,
@@ -1752,6 +1758,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
 
+    const startingEquipment = await this.#chooseStartingEquipment(draft);
+    if (!startingEquipment) return;
+
     const [cultureDocument, professionDocument] = await Promise.all([
       this.#getBackgroundDocument("cultures", culture.key),
       this.#getBackgroundDocument("professions", profession.key)
@@ -1822,12 +1831,125 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (passionItems.length > 0) {
             await this.actor.createEmbeddedDocuments("Item", passionItems);
           }
+          const equipmentItems = this.#startingEquipmentItems(startingEquipment);
+          const alreadyGranted = this.actor.items.some((item) => item.getFlag(
+            "mythras-foundry", "startingEquipment"));
+          if (!alreadyGranted && equipmentItems.length > 0) {
+            await this.actor.createEmbeddedDocuments("Item", equipmentItems);
+          }
         }
       });
     } finally {
       this._backgroundSyncing = false;
     }
     ui.notifications.info(game.i18n.localize("MYTHRASF.Background.Completed"));
+  }
+
+  async #rollStartingValue(formula) {
+    if (!formula || formula === "0") return 0;
+    if (/^\d+$/.test(formula)) return Number(formula);
+    return Number((await new Roll(formula).evaluate()).total ?? 0);
+  }
+
+  async #chooseStartingEquipment(draft) {
+    const rule = startingEquipmentRule(draft.socialClassKey);
+    let rolls = draft.startingEquipment?.rolls;
+    if (!rolls) {
+      const [clothingCount, weaponCount, armorPoints, rolledLocations] = await Promise.all([
+        this.#rollStartingValue(rule.clothingFormula ?? "0"),
+        this.#rollStartingValue(rule.weaponFormula),
+        this.#rollStartingValue(rule.armorFormula),
+        this.#rollStartingValue(rule.armorLocationsFormula)
+      ]);
+      rolls = {
+        clothingCount, weaponCount: Math.max(0, weaponCount),
+        armorPoints: Math.max(0, armorPoints),
+        armorLocations: armorPoints > 0 ? Math.max(0, rolledLocations) : 0,
+        transportRequired: rule.transport.length > 0
+      };
+      draft.startingEquipment = { rolls };
+      await this.#saveBackgroundDraft(draft);
+    }
+    const weapons = WEAPON_SOURCES.filter((source) => (
+      Number(source.system.crewMinimum ?? 0) === 0
+      && (rule.weaponTier !== "simple" || SIMPLE_WEAPON_KEYS.has(source.buildKey))
+    )).sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
+    const armor = ARMOR_SOURCES.filter((source) => (
+      source.system.armorPoints === rolls.armorPoints
+      && source.system.referenceLocation !== "special"
+    ));
+    const optionList = (entries) => entries.map((entry) => (
+      `<option value="${entry.buildKey}">${foundry.utils.escapeHTML(entry.name)}</option>`
+    )).join("");
+    const weaponFields = Array.from({ length: rolls.weaponCount }, (_, index) => (
+      `<label><span>${game.i18n.format("MYTHRASF.StartingEquipment.WeaponNumber", { number: index + 1 })}</span><select name="weapon-${index}"><option value=""></option>${optionList(weapons)}</select></label>`
+    )).join("");
+    const armorFields = Array.from({ length: rolls.armorLocations }, (_, index) => (
+      `<label><span>${game.i18n.format("MYTHRASF.StartingEquipment.ArmorNumber", { number: index + 1 })}</span><select name="armor-${index}"><option value=""></option>${optionList(armor)}</select></label>`
+    )).join("");
+    const transportOptions = rule.transport.map((name) => (
+      `<option value="${foundry.utils.escapeHTML(name)}">${foundry.utils.escapeHTML(name)}</option>`
+    )).join("");
+    const clothing = replaceFormula(rule.clothing, rule.clothingFormula, rolls.clothingCount);
+    const result = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.StartingEquipment.Title") },
+      content: `<div class="starting-equipment-dialog">
+        <fieldset><legend>${game.i18n.localize("MYTHRASF.StartingEquipment.Clothing")}</legend><p>${foundry.utils.escapeHTML(clothing)}</p></fieldset>
+        <fieldset><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Weapons", { count: rolls.weaponCount })}</legend>${weaponFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>
+        <fieldset><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Armor", { points: rolls.armorPoints, count: rolls.armorLocations })}</legend>${armorFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>
+        ${rolls.transportRequired ? `<fieldset><legend>${game.i18n.localize("MYTHRASF.StartingEquipment.Transport")}</legend><select name="transport"><option value=""></option>${transportOptions}</select></fieldset>` : ""}
+      </div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Background.Confirm"), icon: "fas fa-check",
+        callback: (dialogEvent, button) => ({
+          clothing,
+          weapons: Array.from({ length: rolls.weaponCount }, (_, index) =>
+            button.form.elements[`weapon-${index}`].value),
+          armor: Array.from({ length: rolls.armorLocations }, (_, index) =>
+            button.form.elements[`armor-${index}`].value),
+          transport: rolls.transportRequired ? button.form.elements.transport.value : ""
+        }) }
+    });
+    if (!result) return null;
+    if (!validateStartingEquipment(result, rolls)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.StartingEquipment.Incomplete"));
+      return null;
+    }
+    return { rule, rolls, ...result };
+  }
+
+  #startingEquipmentItems(selection) {
+    const cloneSource = (source) => {
+      const data = foundry.utils.deepClone(source);
+      delete data.buildKey;
+      data.flags = foundry.utils.mergeObject(data.flags ?? {}, {
+        "mythras-foundry": { startingEquipment: true }
+      });
+      return data;
+    };
+    const items = [{
+      name: game.i18n.localize("MYTHRASF.StartingEquipment.Clothing"),
+      type: "equipment", img: defaultItemIcon("equipment"),
+      system: { source: MYTHRAS_REVISED_SOURCE, category: "clothing", quantity: 1,
+        description: `<p>${selection.clothing}</p>` },
+      flags: { "mythras-foundry": { startingEquipment: true } }
+    }];
+    items.push(...selection.weapons.map((key) => cloneSource(
+      WEAPON_SOURCES.find((source) => source.buildKey === key))));
+    items.push(...selection.armor.map((key) => cloneSource(
+      ARMOR_SOURCES.find((source) => source.buildKey === key))));
+    if (selection.transport && selection.transport !== "Su propia espalda") {
+      const normalized = selection.transport.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+      const livestock = /bestia|animal|montura/.test(normalized);
+      const service = /porteador|esclavo/.test(normalized);
+      const category = livestock ? "livestock" : service ? "service" : "vehicle";
+      items.push({ name: selection.transport, type: "equipment",
+        img: equipmentIcon(category), system: { source: MYTHRAS_REVISED_SOURCE,
+          category, quantity: 1, isContainer: ["livestock", "vehicle"].includes(category),
+          description: `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.TransportDescription")}</p>` },
+        flags: { "mythras-foundry": { startingEquipment: true } } });
+    }
+    return items.filter(Boolean);
   }
 
   async #getBackgroundDocument(packName, key) {

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Vehículo">
+  <path fill="#dfcda8" stroke="#302e2a" stroke-width="3" d="M7 17h39l7 24H14L7 17Z"/>
+  <path fill="none" stroke="#302e2a" stroke-width="4" stroke-linecap="round" d="M5 14h43M52 22l7-8"/>
+  <circle cx="20" cy="46" r="9" fill="#9c8766" stroke="#302e2a" stroke-width="3"/>
+  <circle cx="47" cy="46" r="9" fill="#9c8766" stroke="#302e2a" stroke-width="3"/>
+  <circle cx="20" cy="46" r="2" fill="#302e2a"/><circle cx="47" cy="46" r="2" fill="#302e2a"/>
+</svg>

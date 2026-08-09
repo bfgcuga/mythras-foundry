@@ -38,6 +38,11 @@ test("el ganado usa un icono local estable", () => {
   )));
 });
 
+test("los vehículos usan un icono local estable", () => {
+  assert.ok(EQUIPMENT_SOURCES.filter((entry) => entry.system.category === "vehicle")
+    .every((entry) => entry.img === "systems/mythras-foundry/assets/icons/vehicle.svg"));
+});
+
 test("los objetos dentro de propiedades o vehículos no cuentan como transportados", () => {
   const house = { id: "home", name: "Casa", system: { category: "property", isContainer: true } };
   const backpack = { id: "bag", name: "Mochila", system: { category: "container",

@@ -5,7 +5,7 @@ const slug = (value) => String(value).normalize("NFD").replace(/[\u0300-\u036f]/
   .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export function equipmentIcon(category, container = false) {
-  if (category === "vehicle") return "icons/svg/cart.svg";
+  if (category === "vehicle") return "systems/mythras-foundry/assets/icons/vehicle.svg";
   if (category === "livestock") return "systems/mythras-foundry/assets/icons/livestock.svg";
   if (category === "property" || container) return "icons/svg/chest.svg";
   return "icons/svg/item-bag.svg";

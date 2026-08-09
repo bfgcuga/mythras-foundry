@@ -519,6 +519,10 @@ function getLegacyItemIconUpdate(item) {
       && item.img !== equipmentIcon("livestock")) {
       return { _id: item.id, img: equipmentIcon("livestock") };
     }
+    if (item.system.category === "vehicle"
+      && item.img !== equipmentIcon("vehicle")) {
+      return { _id: item.id, img: equipmentIcon("vehicle") };
+    }
     if (item.system.category === "property"
       && (item.img !== equipmentIcon("property", true) || !item.system.isContainer)) {
       return { _id: item.id, img: equipmentIcon("property", true),
