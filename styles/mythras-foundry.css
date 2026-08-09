@@ -17,7 +17,10 @@
   color: var(--mythras-ink);
 }
 
-.mythras-foundry .window-content {
+.mythras-foundry.window-content,
+.mythras-foundry .window-content,
+.mythras-paper-sheet.window-content,
+.mythras-paper-sheet .window-content {
   overflow: auto;
   background-color: var(--mythras-paper) !important;
   background-image: var(--mythras-paper-overlay), var(--mythras-paper-texture) !important;

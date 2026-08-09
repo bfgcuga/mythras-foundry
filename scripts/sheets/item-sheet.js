@@ -12,7 +12,7 @@ import { armorPhysicalTotals } from "../rules/armor.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
-    classes: ["mythras-foundry", "item-sheet"],
+    classes: ["mythras-foundry", "mythras-paper-sheet", "item-sheet"],
     tag: "form",
     window: {
       resizable: true

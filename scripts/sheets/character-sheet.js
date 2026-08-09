@@ -95,7 +95,7 @@ const CORE_BASIC_SLUGS = BASIC_SKILL_SOURCES
 
 export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
-    classes: ["mythras-foundry", "actor-sheet", "character-sheet"],
+    classes: ["mythras-foundry", "mythras-paper-sheet", "actor-sheet", "character-sheet"],
     tag: "form",
     window: {
       resizable: true

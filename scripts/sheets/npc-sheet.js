@@ -18,7 +18,7 @@ const { FilePicker, ImagePopout } = foundry.applications.apps;
 
 export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
-    classes: ["mythras-foundry", "actor-sheet", "npc-sheet"],
+    classes: ["mythras-foundry", "mythras-paper-sheet", "actor-sheet", "npc-sheet"],
     tag: "form",
     window: { resizable: true },
     position: { width: 960, height: 760 },

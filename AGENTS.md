@@ -6,6 +6,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 
 - Fondo principal: `--mythras-paper` (`#dfcda8`).
 - Superficie estándar de papel: combina `--mythras-paper-overlay` y `--mythras-paper-texture` sobre `--mythras-paper`. Se aplica a todas las hojas del sistema y a los mensajes que contienen `mythras-chat-card`.
+- Toda hoja de documento —personaje, PNJ y objeto— incluye la clase `mythras-paper-sheet`; no se crean hojas con una superficie de ventana diferente.
 - Fondo de panel: `--mythras-panel` (`rgba(255, 249, 226, 0.42)`).
 - Texto: `--mythras-ink` (`#302e2a`).
 - Acento: `--mythras-accent` (`#3d3933`).
