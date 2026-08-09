@@ -10,7 +10,7 @@ import { modeKeysAreUnique, nextModeKey, normalizeModeKey, weaponModes } from ".
 import { manualWeaponProfiles, mergeWeaponProfiles, removeWeaponProfile, weaponProfileOptions } from "../rules/combat-style-weapons.js";
 import { armorDefaultName } from "../data/armor.js";
 import { ARMOR_MATERIAL_MODIFIERS, ARMOR_REFERENCE_LOCATIONS, armorPieceTypeForLocation,
-  armorPhysicalTotals } from "../rules/armor.js";
+  armorLocationForReference, armorPhysicalTotals } from "../rules/armor.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -74,6 +74,16 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       );
       update.system.profileName = profileName;
       update.system.pieceType = armorPieceTypeForLocation(referenceLocation);
+      if (this.item.actor) {
+        const locations = this.item.actor.items.filter((candidate) => candidate.type === "hitLocation");
+        if (referenceLocation === "special") {
+          if (this.item.system.referenceLocation !== "special") update.system.coveredLocationIds = [];
+        } else {
+          const location = armorLocationForReference(referenceLocation, locations);
+          update.system.coveredLocationIds = location ? [location.id] : [];
+        }
+        update.system.equipped = false;
+      }
       const material = update.system?.material || this.item.system.material || "leather";
       update.system.materialModifier = ARMOR_MATERIAL_MODIFIERS[material] ?? 1;
       update.system.coverageMigrated = true;
@@ -127,6 +137,10 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         selected: selectedArmorLocations.has(location.id)
       })),
       armorSelectedLocationId: Array.from(selectedArmorLocations)[0] ?? "",
+      isSpecialArmor: this.item.type === "armor"
+        && this.item.system.referenceLocation === "special",
+      armorAssignedLocationName: armorLocations.find((location) =>
+        selectedArmorLocations.has(location.id))?.name ?? "",
       armorPieceTypeLabel: this.item.type === "armor"
         ? game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${this.item.system.pieceType}`) : "",
       armorTotals,

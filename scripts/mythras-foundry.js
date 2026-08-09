@@ -30,7 +30,8 @@ import { PartyManager } from "./apps/party-manager.js";
 import { createPartyApi } from "./api/party-api.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
-import { ARMOR_MATERIAL_MODIFIERS, armorPieceTypeForLocation } from "./rules/armor.js";
+import { ARMOR_MATERIAL_MODIFIERS, armorLocationForReference,
+  armorPieceTypeForLocation } from "./rules/armor.js";
 import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
 import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
@@ -224,13 +225,22 @@ Hooks.on("preCreateItem", (item, data) => {
   }
 });
 
-Hooks.on("createItem", (item, options, userId) => {
+Hooks.on("createItem", async (item, options, userId) => {
   if (userId !== game.user.id || item.type !== "armor" || !isCombatActor(item.parent)) return;
-  if ((item.system.coveredLocationIds?.length ?? 0) === 0) {
+  if ((item.system.coveredLocationIds?.length ?? 0) > 0) return;
+  if (item.system.referenceLocation === "special") {
     configureNewArmorPiece(item).catch((error) => {
       console.error("Mythras Foundry | Error configuring armor piece", error);
       ui.notifications.error(game.i18n.localize("MYTHRASF.Armor.Piece.ConfigureError"));
     });
+    return;
+  }
+  const locations = item.parent.items.filter((candidate) => candidate.type === "hitLocation");
+  const location = armorLocationForReference(item.system.referenceLocation, locations);
+  if (location) {
+    await item.update({ "system.coveredLocationIds": [location.id], "system.equipped": false });
+  } else {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.ReferenceLocationMissing"));
   }
 });
 

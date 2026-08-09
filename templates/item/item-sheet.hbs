@@ -210,7 +210,7 @@
     <section class="armor-tab-panel" data-armor-tab-content="coverage">
       <fieldset class="armor-coverage-editor"><legend>{{localize "MYTHRASF.Armor.Coverage"}}</legend>
         <label>{{localize "MYTHRASF.Armor.ReferenceLocation.Label"}}</label><select name="system.referenceLocation">{{selectOptions armorReferenceLocationChoices selected=item.system.referenceLocation labelAttr="label" valueAttr="value"}}</select>
-        {{#if armorLocations.length}}<label>{{localize "MYTHRASF.Armor.AssignedLocation"}}</label><select data-armor-location-id><option value="">{{localize "MYTHRASF.Armor.Unassigned"}}</option>{{selectOptions armorLocations selected=armorSelectedLocationId labelAttr="name" valueAttr="id"}}</select>
+        {{#if armorLocations.length}}<label>{{localize "MYTHRASF.Armor.AssignedLocation"}}</label>{{#if isSpecialArmor}}<select data-armor-location-id><option value="">{{localize "MYTHRASF.Armor.Unassigned"}}</option>{{selectOptions armorLocations selected=armorSelectedLocationId labelAttr="name" valueAttr="id"}}</select>{{else}}<output class="sheet-field-readonly">{{armorAssignedLocationName}}</output>{{/if}}
         {{else}}<p class="empty">{{localize "MYTHRASF.Armor.CoverageActorRequired"}}</p>{{/if}}
       </fieldset>
     </section>

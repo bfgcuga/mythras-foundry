@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { applyArmorInitiativePenalty, armorFitsWearer, armorInitiativePenalty,
+  armorLocationForReference,
   armorMaterialModifier, armorPhysicalTotals, armorPieceValue, totalArmorEncumbrance,
   totalArmorPoints, wornArmorPoints } from "../scripts/rules/armor.js";
 
@@ -10,6 +11,17 @@ const piece = (id, armorPoints, coveredLocationIds, options = {}) => ({ id, syst
   armorPoints, coveredLocationIds, equipped: true, baseEncumbrance: 4, baseValue: 500,
   material: "bronze", referenceLocation: "chest", ...options
 } });
+
+test("las piezas normales resuelven automáticamente su localización humana", () => {
+  const locations = [
+    { id: "leg", system: { rangeStart: 1, rangeEnd: 3 } },
+    { id: "chest", system: { rangeStart: 10, rangeEnd: 12 } },
+    { id: "head", system: { rangeStart: 19, rangeEnd: 20 } }
+  ];
+  assert.equal(armorLocationForReference("chest", locations)?.id, "chest");
+  assert.equal(armorLocationForReference("head", locations)?.id, "head");
+  assert.equal(armorLocationForReference("special", locations), null);
+});
 
 test("varias capas aplican solo el PA más alto y conservan la armadura natural", () => {
   const chest = location("chest", 1);

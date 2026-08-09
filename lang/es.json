@@ -192,6 +192,7 @@
   "MYTHRASF.Armor.DesignedSize": "TAM para el que fue fabricada (0: sin especificar)",
   "MYTHRASF.Armor.DesignedBuild": "Complexión para la que fue fabricada",
   "MYTHRASF.Armor.SizeMismatch": "La armadura no se ajusta al TAM del portador.",
+  "MYTHRASF.Armor.ReferenceLocationMissing": "El actor no tiene la localización humana indicada por esta pieza. Usa una pieza especial para anatomías distintas.",
   "MYTHRASF.Armor.CoverageRequired": "La armadura debe cubrir al menos una localización antes de equiparse.",
   "MYTHRASF.Armor.CoverageConflict": "No se puede equipar: ya hay armadura en {locations}.",
   "MYTHRASF.Armor.Piece.ConfigureTitle": "Configurar pieza de armadura",

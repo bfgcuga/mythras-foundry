@@ -192,6 +192,7 @@
   "MYTHRASF.Armor.DesignedSize": "Designed SIZ (0: unspecified)",
   "MYTHRASF.Armor.DesignedBuild": "Designed build",
   "MYTHRASF.Armor.SizeMismatch": "The armor does not fit the wearer's SIZ.",
+  "MYTHRASF.Armor.ReferenceLocationMissing": "The actor does not have this piece's human location. Use a special piece for a different anatomy.",
   "MYTHRASF.Armor.CoverageRequired": "Armor must cover at least one location before it can be equipped.",
   "MYTHRASF.Armor.CoverageConflict": "Cannot equip: armor is already worn on {locations}.",
   "MYTHRASF.Armor.Piece.ConfigureTitle": "Configure armor piece",

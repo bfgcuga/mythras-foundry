@@ -2,6 +2,23 @@ export const ARMOR_REFERENCE_LOCATIONS = Object.freeze([
   "rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head", "special"
 ]);
 
+const HUMAN_ARMOR_LOCATION_RANGES = Object.freeze({
+  rightLeg: [1, 3],
+  leftLeg: [4, 6],
+  abdomen: [7, 9],
+  chest: [10, 12],
+  rightArm: [13, 15],
+  leftArm: [16, 18],
+  head: [19, 20]
+});
+
+export function armorLocationForReference(referenceLocation, locations = []) {
+  const range = HUMAN_ARMOR_LOCATION_RANGES[referenceLocation];
+  if (!range) return null;
+  return locations.find((location) => Number(location.system?.rangeStart) === range[0]
+    && Number(location.system?.rangeEnd) === range[1]) ?? null;
+}
+
 export const ARMOR_MATERIAL_MODIFIERS = Object.freeze({
   steel: 0.75,
   bronze: 1,
