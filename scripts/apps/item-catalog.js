@@ -126,12 +126,12 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
       itemData.system.parentContainerId = destinationId;
       const [created] = await actor.createEmbeddedDocuments("Item", [itemData]);
       try {
-        if (property) await property.update({
-          [`system.funds.${assessment.currency}`]: assessment.remaining
-        });
-        else await actor.update({
-          [`system.currency.${assessment.currency}`]: assessment.remaining
-        });
+        const balanceUpdates = Object.fromEntries(
+          Object.entries(assessment.balances).map(([currency, value]) => [
+            `${property ? "system.funds" : "system.currency"}.${currency}`, value
+          ]));
+        if (property) await property.update(balanceUpdates);
+        else await actor.update(balanceUpdates);
       } catch (error) {
         if (created) await actor.deleteEmbeddedDocuments("Item", [created.id]);
         throw error;

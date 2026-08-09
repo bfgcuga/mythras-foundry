@@ -59,13 +59,32 @@ test("elimina duplicados por UUID y normaliza fuentes configuradas", () => {
     { version: 1, packIds: ["world.shop"] });
 });
 
-test("la compra exige fondos en la misma moneda y calcula el saldo restante", () => {
+test("la compra usa la moneda del precio cuando es suficiente", () => {
   const product = { value: 12, currency: "silver" };
   assert.deepEqual(assessCatalogPurchase({ copper: 500, silver: 15, gold: 2 }, product), {
-    allowed: true, currency: "silver", price: 12, available: 15, remaining: 3
+    allowed: true, currency: "silver", price: 12, available: 35, remaining: 3,
+    balances: { copper: 500, silver: 3, gold: 2 }
   });
-  assert.equal(assessCatalogPurchase({ copper: 500, silver: 10, gold: 2 }, product).allowed,
-    false);
+});
+
+test("rompe la mínima moneda superior necesaria y devuelve las vueltas", () => {
+  assert.deepEqual(assessCatalogPurchase(
+    { copper: 0, silver: 0, gold: 2 }, { value: 12, currency: "silver" }
+  ).balances, { copper: 0, silver: 8, gold: 0 });
+  assert.deepEqual(assessCatalogPurchase(
+    { copper: 0, silver: 0, gold: 1 }, { value: 15, currency: "copper" }
+  ).balances, { copper: 5, silver: 8, gold: 0 });
+  assert.deepEqual(assessCatalogPurchase(
+    { copper: 0, silver: 0, gold: 1 }, { value: 0.5, currency: "silver" }
+  ).balances, { copper: 5, silver: 9, gold: 0 });
+});
+
+test("no usa monedas inferiores para pagar un precio superior", () => {
+  const result = assessCatalogPurchase(
+    { copper: 500, silver: 100, gold: 0 }, { value: 1, currency: "gold" }
+  );
+  assert.equal(result.allowed, false);
+  assert.deepEqual(result.balances, { copper: 500, silver: 100, gold: 0 });
 });
 
 test("la interfaz emite arrastre Item estándar y reserva la gestión homebrew al DJ", () => {

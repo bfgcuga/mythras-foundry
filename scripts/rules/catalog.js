@@ -64,7 +64,42 @@ export function mergeCatalogEntries(entries) {
 export function assessCatalogPurchase(funds, entry) {
   const currency = entry.system?.currency ?? entry.currency ?? "silver";
   const price = Math.max(0, Number(entry.system?.value ?? entry.value ?? 0));
-  const available = Math.max(0, Number(funds?.[currency] ?? 0));
-  return { allowed: available >= price, currency, price, available,
-    remaining: Math.max(0, available - price) };
+  const denominations = ["copper", "silver", "gold"];
+  const targetIndex = Math.max(0, denominations.indexOf(currency));
+  const targetValue = CURRENCY_SORT_VALUE[currency] ?? CURRENCY_SORT_VALUE.silver;
+  const round = (value) => Math.round((Number(value) + Number.EPSILON) * 1e8) / 1e8;
+  const balances = Object.fromEntries(denominations.map((key) => [
+    key, Math.max(0, Number(funds?.[key] ?? 0))
+  ]));
+  const originalBalances = { ...balances };
+  const available = round(denominations.slice(targetIndex).reduce((total, key) => (
+    total + balances[key] * CURRENCY_SORT_VALUE[key] / targetValue
+  ), 0));
+  let remainingPrice = price;
+  const sameCurrency = Math.min(balances[currency], remainingPrice);
+  balances[currency] = round(balances[currency] - sameCurrency);
+  remainingPrice = round(remainingPrice - sameCurrency);
+  let highestUsed = targetIndex;
+  for (let index = targetIndex + 1; index < denominations.length && remainingPrice > 0;
+    index += 1) {
+    const key = denominations[index];
+    const ratio = CURRENCY_SORT_VALUE[key] / targetValue;
+    const required = Math.ceil(remainingPrice / ratio - 1e-8);
+    const used = Math.min(balances[key], required);
+    balances[key] = round(balances[key] - used);
+    remainingPrice = round(remainingPrice - used * ratio);
+    if (used > 0) highestUsed = index;
+  }
+  if (remainingPrice > 0) return { allowed: false, currency, price, available,
+    remaining: originalBalances[currency], balances: originalBalances };
+  let change = round(-remainingPrice * targetValue);
+  for (let index = highestUsed - 1; index >= 0 && change > 0; index -= 1) {
+    const key = denominations[index];
+    const unit = CURRENCY_SORT_VALUE[key];
+    const returned = index === 0 ? round(change / unit) : Math.floor(change / unit + 1e-8);
+    balances[key] = round(balances[key] + returned);
+    change = round(change - returned * unit);
+  }
+  return { allowed: true, currency, price, available,
+    remaining: balances[currency], balances };
 }
