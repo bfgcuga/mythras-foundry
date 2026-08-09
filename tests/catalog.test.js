@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { catalogCategory, catalogPriceSortValue, filterCatalogEntries,
+import { assessCatalogPurchase, catalogCategory, catalogPriceSortValue, filterCatalogEntries,
   mergeCatalogEntries, normalizeCatalogConfig, normalizeCatalogText,
   prepareCatalogEntry } from "../scripts/rules/catalog.js";
 
@@ -59,11 +59,23 @@ test("elimina duplicados por UUID y normaliza fuentes configuradas", () => {
     { version: 1, packIds: ["world.shop"] });
 });
 
+test("la compra exige fondos en la misma moneda y calcula el saldo restante", () => {
+  const product = { value: 12, currency: "silver" };
+  assert.deepEqual(assessCatalogPurchase({ copper: 500, silver: 15, gold: 2 }, product), {
+    allowed: true, currency: "silver", price: 12, available: 15, remaining: 3
+  });
+  assert.equal(assessCatalogPurchase({ copper: 500, silver: 10, gold: 2 }, product).allowed,
+    false);
+});
+
 test("la interfaz emite arrastre Item estándar y reserva la gestión homebrew al DJ", () => {
   const catalog = readFileSync(new URL("../scripts/apps/item-catalog.js", import.meta.url), "utf8");
   const manager = readFileSync(
     new URL("../scripts/apps/catalog-source-manager.js", import.meta.url), "utf8");
   assert.match(catalog, /JSON\.stringify\(\{ type: "Item", uuid:/);
+  assert.match(catalog, /createEmbeddedDocuments\("Item"/);
+  assert.match(catalog, /system\.currency/);
+  assert.match(catalog, /system\.funds/);
   assert.match(catalog, /OFFICIAL_CATALOG_PACKS/);
   assert.match(manager, /if \(!game\.user\.isGM\) return;/);
   assert.match(manager, /createCompendium/);

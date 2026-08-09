@@ -35,3 +35,9 @@ test("todos los atributos derivados ofrecen el tooltip retrasado compartido", ()
   assert.match(tooltipScript, /button, \[data-mythras-tooltip\]/);
   assert.match(tooltipScript, /TOOLTIP_DELAY_MS = 1100/);
 });
+
+test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula", () => {
+  assert.match(css, /\.catalog-header,\s*\n\.mythras-foundry \.catalog-results li[^}]*grid-template-columns:/);
+  assert.match(css, /\.inventory-tree-head,\s*\n\.mythras-foundry \.inventory-tree \.item-list li[^}]*grid-template-columns:/);
+  assert.match(css, /\.inventory-tree-head \{[^}]*text-align: left/);
+});

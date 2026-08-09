@@ -15,7 +15,7 @@
   </aside>
   <section class="catalog-results">
     <div class="catalog-result-summary">{{localize "MYTHRASF.Catalog.Results" count=count}}</div>
-    <div class="catalog-header" aria-hidden="true"><span></span><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.ItemClass.Label"}}</span><span>{{localize "MYTHRASF.Item.Price"}}</span><span>{{localize "MYTHRASF.Item.Source"}}</span><span></span></div>
+    <div class="catalog-header" aria-hidden="true"><span></span><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.ItemClass.Label"}}</span><span>{{localize "MYTHRASF.Item.Price"}}</span><span>{{localize "MYTHRASF.Item.Source"}}</span><span></span><span></span></div>
     <ol class="item-list">
       {{#each entries as |entry|}}
         <li draggable="true" data-catalog-uuid="{{entry.uuid}}">
@@ -24,6 +24,7 @@
           <span>{{entry.categoryLabel}}</span>
           <span>{{entry.value}} {{lookup ../currencyLabels entry.currency}}</span>
           <span>{{entry.packLabel}}</span>
+          {{#if ../canPurchase}}<button type="button" class="sheet-icon-button catalog-purchase" data-action="purchase" title="{{localize "MYTHRASF.Inventory.Buy"}}" aria-label="{{localize "MYTHRASF.Inventory.Buy"}}"><i class="fas fa-cart-shopping" aria-hidden="true"></i></button>{{else}}<span></span>{{/if}}
           <i class="fas fa-grip-vertical" aria-hidden="true" title="{{localize "MYTHRASF.Catalog.Drag"}}"></i>
         </li>
       {{else}}<li class="empty">{{localize "MYTHRASF.Catalog.Empty"}}</li>{{/each}}

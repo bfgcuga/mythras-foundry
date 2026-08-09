@@ -1,5 +1,6 @@
 import { CATALOG_CATEGORIES, OFFICIAL_CATALOG_PACKS, filterCatalogEntries,
-  mergeCatalogEntries, normalizeCatalogConfig, prepareCatalogEntry } from "../rules/catalog.js";
+  assessCatalogPurchase, mergeCatalogEntries, normalizeCatalogConfig,
+  prepareCatalogEntry } from "../rules/catalog.js";
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -12,7 +13,7 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ["mythras-foundry", "mythras-paper-sheet", "item-catalog"],
     window: { title: "MYTHRASF.Catalog.Title", resizable: true },
     position: { width: 920, height: 720 },
-    actions: { openItem: ItemCatalog.#openItem }
+    actions: { openItem: ItemCatalog.#openItem, purchase: ItemCatalog.#purchase }
   };
 
   static PARTS = {
@@ -48,11 +49,14 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
+    const buyer = this.catalogContext.actorUuid
+      ? await fromUuid(this.catalogContext.actorUuid) : null;
     const entries = filterCatalogEntries(await this.#entries(), {
       search: this.search, categories: [...this.categories]
     }).map((entry) => ({ ...entry,
       categoryLabel: game.i18n.localize(`MYTHRASF.Catalog.Category.${entry.category}`) }));
     return { ...context, search: this.search, count: entries.length, entries,
+      canPurchase: Boolean(buyer?.isOwner),
       categories: CATALOG_CATEGORIES.map((key) => ({ key,
         label: game.i18n.localize(`MYTHRASF.Catalog.Category.${key}`),
         selected: this.categories.has(key) })),
@@ -85,6 +89,62 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #openItem(event, target) {
     const document = await fromUuid(target.closest("[data-catalog-uuid]")?.dataset.catalogUuid);
     document?.sheet?.render(true);
+  }
+
+  static async #purchase(event, target) {
+    if (this._purchasePending) return;
+    this._purchasePending = true;
+    target.disabled = true;
+    try {
+      const actor = this.catalogContext.actorUuid
+        ? await fromUuid(this.catalogContext.actorUuid) : null;
+      if (!actor?.isOwner) {
+        ui.notifications.warn(game.i18n.localize("MYTHRASF.Catalog.Purchase.NoPermission"));
+        return;
+      }
+      const source = await fromUuid(target.closest("[data-catalog-uuid]")?.dataset.catalogUuid);
+      if (!source || source.documentName !== "Item") return;
+      const destinationId = this.catalogContext.destinationId === "person"
+        ? "" : this.catalogContext.destinationId ?? "";
+      const property = destinationId ? actor.items.get(destinationId) : null;
+      if (destinationId && (!property || property.system?.category !== "property")) {
+        ui.notifications.warn(game.i18n.localize("MYTHRASF.Catalog.Purchase.InvalidDestination"));
+        return;
+      }
+      const funds = property ? property.system.funds : actor.system.currency;
+      const assessment = assessCatalogPurchase(funds, source);
+      if (!assessment.allowed) {
+        ui.notifications.warn(game.i18n.format("MYTHRASF.Catalog.Purchase.Insufficient", {
+          price: assessment.price,
+          currency: game.i18n.localize(`MYTHRASF.Currency.${assessment.currency}`)
+        }));
+        return;
+      }
+      const itemData = source.toObject();
+      delete itemData._id;
+      delete itemData.folder;
+      itemData.system.parentContainerId = destinationId;
+      const [created] = await actor.createEmbeddedDocuments("Item", [itemData]);
+      try {
+        if (property) await property.update({
+          [`system.funds.${assessment.currency}`]: assessment.remaining
+        });
+        else await actor.update({
+          [`system.currency.${assessment.currency}`]: assessment.remaining
+        });
+      } catch (error) {
+        if (created) await actor.deleteEmbeddedDocuments("Item", [created.id]);
+        throw error;
+      }
+      ui.notifications.info(game.i18n.format("MYTHRASF.Catalog.Purchase.Success", {
+        item: source.name, price: assessment.price,
+        currency: game.i18n.localize(`MYTHRASF.Currency.${assessment.currency}`)
+      }));
+      this.render({ force: true });
+    } finally {
+      this._purchasePending = false;
+      if (target.isConnected) target.disabled = false;
+    }
   }
 }
 

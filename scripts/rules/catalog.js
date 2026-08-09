@@ -60,3 +60,11 @@ export function filterCatalogEntries(entries, { search = "", categories = null }
 export function mergeCatalogEntries(entries) {
   return [...new Map(entries.filter(Boolean).map((entry) => [entry.uuid, entry])).values()];
 }
+
+export function assessCatalogPurchase(funds, entry) {
+  const currency = entry.system?.currency ?? entry.currency ?? "silver";
+  const price = Math.max(0, Number(entry.system?.value ?? entry.value ?? 0));
+  const available = Math.max(0, Number(funds?.[currency] ?? 0));
+  return { allowed: available >= price, currency, price, available,
+    remaining: Math.max(0, available - price) };
+}

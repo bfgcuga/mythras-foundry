@@ -1726,7 +1726,7 @@
 .mythras-foundry .inventory-tree { overflow-x: auto; }
 .mythras-foundry .inventory-tree-head,
 .mythras-foundry .inventory-tree .item-list li { display: grid; grid-template-columns: 1.8rem 1.6rem minmax(10rem, 1fr) 6rem 3.5rem 5rem 4rem 6rem 2rem 2rem 2rem; align-items: center; gap: 0.35rem; min-width: 50rem; min-height: 2rem; font-size: var(--mythras-font-size-table); }
-.mythras-foundry .inventory-tree-head { padding: 0.35rem; border-bottom: 1px solid var(--mythras-border); font-weight: 700; text-align: center; }
+.mythras-foundry .inventory-tree-head { padding: 0.35rem; border-bottom: 1px solid var(--mythras-border); font-weight: 700; text-align: left; }
 .mythras-foundry .inventory-tree .item-list { margin: 0; padding: 0; }
 .mythras-foundry .inventory-tree .item-list li { position: relative; border-bottom: 1px solid rgb(107 83 47 / 35%); }
 .mythras-foundry .inventory-tree .item-list li.inventory-category-heading { display: block; min-width: 50rem; min-height: 0; padding-top: 0.4rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--mythras-border); color: var(--mythras-accent); font-size: var(--mythras-font-size-section); font-weight: 700; font-variant: small-caps; }
@@ -2226,13 +2226,14 @@
 .mythras-foundry .catalog-results { min-height: 0; overflow-y: auto; }
 .mythras-foundry .catalog-result-summary { margin-bottom: 0.35rem; color: color-mix(in srgb, var(--mythras-ink) 75%, transparent); font-size: var(--mythras-font-size-auxiliary); }
 .mythras-foundry .catalog-header,
-.mythras-foundry .catalog-results li { display: grid; grid-template-columns: 2rem minmax(10rem, 1.4fr) 6.5rem 5rem minmax(7rem, 1fr) 1rem; align-items: center; gap: 0.4rem; min-height: 2.2rem; padding: 0.25rem; font-size: var(--mythras-font-size-table); }
-.mythras-foundry .catalog-header { border-bottom: 1px solid var(--mythras-border); font-weight: 700; text-align: center; }
+.mythras-foundry .catalog-results li { display: grid; grid-template-columns: 2rem minmax(10rem, 1.4fr) 6.5rem 5rem minmax(7rem, 1fr) 2rem 1rem; align-items: center; gap: 0.4rem; min-height: 2.2rem; padding: 0.25rem; font-size: var(--mythras-font-size-table); }
+.mythras-foundry .catalog-header { border-bottom: 1px solid var(--mythras-border); font-weight: 700; text-align: left; }
 .mythras-foundry .catalog-results .item-list { margin: 0; padding: 0; }
 .mythras-foundry .catalog-results li { border-bottom: 1px solid rgb(107 83 47 / 35%); cursor: grab; }
 .mythras-foundry .catalog-results li:active { cursor: grabbing; }
 .mythras-foundry .catalog-results img { width: 1.7rem; height: 1.7rem; object-fit: cover; border: 1px solid var(--mythras-border); }
-.mythras-foundry .catalog-item-name { overflow-wrap: anywhere; white-space: normal; text-align: left; }
+.mythras-foundry .catalog-item-name { border: 0; background: transparent; box-shadow: none; overflow-wrap: anywhere; white-space: normal; text-align: left; }
+.mythras-foundry .catalog-purchase { justify-self: center; }
 .mythras-foundry .catalog-source-manager-content { display: flex; min-height: 0; flex-direction: column; gap: 0.6rem; }
 .mythras-foundry .catalog-source-actions { display: flex; gap: 0.5rem; }
 .mythras-foundry .catalog-source-list { min-height: 0; overflow-y: auto; }
