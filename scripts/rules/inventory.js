@@ -2,6 +2,24 @@ export const NON_CARRIED_CATEGORIES = Object.freeze([
   "service", "vehicle", "livestock", "property"
 ]);
 
+export const INVENTORY_CATEGORY_ORDER = Object.freeze({
+  weapon: 1, armor: 2, item: 3, clothing: 3, food: 3, ammunition: 3,
+  service: 3, container: 4, livestock: 5, vehicle: 6, property: 7
+});
+
+export function inventoryCategory(item) {
+  return item.type === "weapon" ? "weapon"
+    : item.type === "armor" ? "armor" : (item.system?.category ?? "item");
+}
+
+export function sortInventoryItems(items = []) {
+  return [...items].sort((left, right) => {
+    const order = (INVENTORY_CATEGORY_ORDER[inventoryCategory(left)] ?? 3)
+      - (INVENTORY_CATEGORY_ORDER[inventoryCategory(right)] ?? 3);
+    return order || String(left.name ?? "").localeCompare(String(right.name ?? ""), "es");
+  });
+}
+
 export function inventoryCarried(item, items = []) {
   const byId = new Map(items.map((entry) => [entry.id, entry]));
   const visited = new Set();
@@ -20,7 +38,7 @@ export function inventoryCarried(item, items = []) {
 export function inventoryRows(items = []) {
   const byParent = new Map();
   const ids = new Set(items.map((item) => item.id));
-  for (const item of items) {
+  for (const item of sortInventoryItems(items)) {
     const requested = item.system?.parentContainerId;
     const parent = requested && ids.has(requested) ? requested : "";
     byParent.set(parent, [...(byParent.get(parent) ?? []), item]);
@@ -45,6 +63,39 @@ export function inventoryRows(items = []) {
   for (const root of byParent.get("") ?? []) visit(root, 0, false, new Set());
   for (const item of items) if (!rendered.has(item.id)) visit(item, 0, false, new Set());
   return rows;
+}
+
+export function inventoryLocation(item, items = []) {
+  if (!item.system?.parentContainerId) return "person";
+  return items.find((entry) => entry.id === item.system.parentContainerId)?.name ?? "person";
+}
+
+export function inventorySections(items = []) {
+  const properties = sortInventoryItems(items.filter((item) => (
+    item.type === "equipment" && item.system?.category === "property"
+  )));
+  const propertyIds = new Set(properties.map((item) => item.id));
+  const descendants = (rootId) => {
+    const selected = [];
+    const pending = [rootId];
+    const visited = new Set();
+    while (pending.length) {
+      const parentId = pending.shift();
+      if (visited.has(parentId)) continue;
+      visited.add(parentId);
+      for (const item of items) if (item.system?.parentContainerId === parentId) {
+        selected.push(item);
+        pending.push(item.id);
+      }
+    }
+    return selected;
+  };
+  const assigned = new Set(properties.flatMap((property) => descendants(property.id))
+    .map((item) => item.id));
+  return [{ id: "person", property: null, items: items.filter((item) => (
+    !propertyIds.has(item.id) && !assigned.has(item.id)
+  )) }, ...properties.map((property) => ({ id: property.id, property,
+    items: descendants(property.id) }))];
 }
 
 export function carriedInventoryEncumbrance(items = []) {

@@ -48,7 +48,8 @@ import { difficultyTarget, resolveWeaponStyle,
   UNTRAINED_COMBAT_STYLE_ID } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
-import { carriedInventoryEncumbrance, inventoryCarried, inventoryRows } from "../rules/inventory.js";
+import { carriedInventoryEncumbrance, inventoryCarried, inventoryLocation, inventoryRows,
+  inventorySections } from "../rules/inventory.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { applyArmorInitiativePenalty, armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   totalArmorEncumbrance, armorInitiativePenalty, totalArmorPoints,
@@ -139,11 +140,24 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
     const allInventoryItems = [...equipment, ...weapons, ...armor];
-    const equipmentRows = inventoryRows(allInventoryItems).map((row) => ({ ...row,
+    const prepareInventoryRows = (sectionItems) => inventoryRows(sectionItems).map((row) => ({ ...row,
       handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
+      encumbrance: row.isArmor ? armorPhysicalTotals(row.item).encumbrance
+        : Number(row.system.weight ?? 0),
+      priceLabel: `${Number(row.system.value ?? 0)} ${game.i18n.localize(
+        `MYTHRASF.Currency.${row.system.currency ?? "silver"}`)}`,
+      locationLabel: inventoryLocation(row.item, allInventoryItems) === "person"
+        ? game.i18n.localize("MYTHRASF.Item.Carried")
+        : inventoryLocation(row.item, allInventoryItems),
       categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
         : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
           : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`) }));
+    const equipmentRows = prepareInventoryRows(allInventoryItems);
+    const preparedInventorySections = inventorySections(allInventoryItems).map((section) => ({
+      ...section,
+      label: section.property?.name ?? game.i18n.localize("MYTHRASF.Inventory.OnPerson"),
+      rows: prepareInventoryRows(section.items)
+    }));
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
@@ -251,6 +265,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
       equipment: equipmentRows,
+      inventorySections: preparedInventorySections,
       weapons: weapons.map((item) => ({ item,
         hasMultipleModes: weaponModes(item).length > 1,
         modeOptions: weaponModes(item).map((mode) => ({ ...mode,
@@ -446,6 +461,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-action='toggle-container']").forEach((button) => {
       button.addEventListener("click", (event) => this.#toggleContainer(event));
     });
+    this.element.querySelectorAll("[data-action='sell-item']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#sellItem(event));
+    });
+    this.element.querySelectorAll("[data-property-funds]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updatePropertyFunds(event));
+    });
+    this.#activateInventoryDragAndDrop();
     this.element.querySelectorAll("[data-active-weapon-mode]").forEach((select) => {
       select.addEventListener("change", (event) => this.#prepareWeaponMode(event));
     });
@@ -1818,7 +1840,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const name = nextNumberedItemName(type, this.actor.items,
       (key) => game.i18n.localize(key));
-    const [item] = await this.actor.createEmbeddedDocuments("Item", [{ name, type }]);
+    const parentContainerId = event.currentTarget.dataset.parentId ?? "";
+    const category = event.currentTarget.dataset.category;
+    const [item] = await this.actor.createEmbeddedDocuments("Item", [{ name, type,
+      ...(category === "property" ? { name: game.i18n.localize("MYTHRASF.Inventory.NewProperty") } : {}),
+      system: { parentContainerId, ...(category ? { category,
+        isContainer: category === "property" } : {}) } }]);
     item?.sheet.render(true);
   }
 
@@ -1886,12 +1913,122 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await item.update({ "system.collapsed": !item.system.collapsed });
   }
 
+  async #updatePropertyFunds(event) {
+    if (!this.isEditable) return;
+    const property = this.actor.items.get(event.currentTarget
+      .closest("[data-inventory-destination]")?.dataset.inventoryDestination);
+    if (property?.system.category !== "property") return;
+    const denomination = event.currentTarget.dataset.propertyFunds;
+    await property.update({ [`system.funds.${denomination}`]: Math.max(0,
+      Number(event.currentTarget.value ?? 0)) });
+  }
+
+  #propertyContaining(item) {
+    const byId = new Map(this.actor.items.map((entry) => [entry.id, entry]));
+    const visited = new Set();
+    let current = item;
+    while (current?.system?.parentContainerId) {
+      if (visited.has(current.system.parentContainerId)) return null;
+      visited.add(current.system.parentContainerId);
+      current = byId.get(current.system.parentContainerId);
+      if (current?.system?.category === "property") return current;
+    }
+    return null;
+  }
+
+  async #sellItem(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+    const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (!item) return;
+    const value = Math.max(0, Number(item.system.value ?? 0))
+      * Math.max(1, Number(item.system.quantity ?? 1));
+    const denomination = item.system.currency ?? "silver";
+    const confirmed = await DialogV2.confirm({
+      window: { title: game.i18n.localize("MYTHRASF.Item.Sell") },
+      content: `<p>${game.i18n.format("MYTHRASF.Item.SellConfirm", {
+        item: foundry.utils.escapeHTML(item.name), value,
+        currency: game.i18n.localize(`MYTHRASF.Currency.${denomination}`)
+      })}</p>`
+    });
+    if (!confirmed) return;
+    const property = this.#propertyContaining(item);
+    if (property) await property.update({ [`system.funds.${denomination}`]:
+      Number(property.system.funds?.[denomination] ?? 0) + value });
+    else await this.actor.update({ [`system.currency.${denomination}`]:
+      Number(this.actor.system.currency?.[denomination] ?? 0) + value });
+    const childUpdates = this.actor.items.filter((candidate) => (
+      candidate.system?.parentContainerId === item.id
+    )).map((candidate) => ({ _id: candidate.id,
+      "system.parentContainerId": item.system.parentContainerId ?? "" }));
+    if (childUpdates.length) await this.actor.updateEmbeddedDocuments("Item", childUpdates);
+    await this.actor.deleteEmbeddedDocuments("Item", [item.id]);
+  }
+
+  #activateInventoryDragAndDrop() {
+    const inventory = this.element.querySelector("[data-tab-content='inventory']");
+    if (!inventory || !this.isEditable) return;
+    inventory.querySelectorAll("[data-item-id][draggable='true']").forEach((row) => {
+      row.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain",
+        JSON.stringify({ type: "Item", uuid: this.actor.items.get(row.dataset.itemId)?.uuid,
+          mythrasInventoryItemId: row.dataset.itemId })));
+    });
+    inventory.querySelectorAll("[data-inventory-destination]").forEach((target) => {
+      target.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        target.classList.add("inventory-drop-target");
+      });
+      target.addEventListener("dragleave", () => target.classList.remove("inventory-drop-target"));
+      target.addEventListener("drop", (event) => this.#dropInventoryItem(event, target));
+    });
+  }
+
+  async #dropInventoryItem(event, target) {
+    event.preventDefault();
+    event.stopPropagation();
+    target.classList.remove("inventory-drop-target");
+    let data;
+    try { data = JSON.parse(event.dataTransfer.getData("text/plain")); } catch { return; }
+    if (data.type !== "Item") return;
+    const destinationId = target.dataset.inventoryDestination === "person"
+      ? "" : target.dataset.inventoryDestination;
+    const destination = destinationId ? this.actor.items.get(destinationId) : null;
+    if (destinationId && (!destination || !destination.system.isContainer)) return;
+    const embedded = data.mythrasInventoryItemId
+      ? this.actor.items.get(data.mythrasInventoryItemId) : null;
+    if (embedded) {
+      if (embedded.id === destinationId || embedded.system.category === "property") return;
+      let ancestor = destination;
+      while (ancestor) {
+        if (ancestor.id === embedded.id) return;
+        ancestor = this.actor.items.get(ancestor.system.parentContainerId);
+      }
+      await embedded.update({ "system.parentContainerId": destinationId });
+      return;
+    }
+    const source = data.uuid ? await fromUuid(data.uuid) : null;
+    if (!source || source.documentName !== "Item") return;
+    const itemData = source.toObject();
+    delete itemData._id;
+    itemData.system.parentContainerId = destinationId;
+    await this.actor.createEmbeddedDocuments("Item", [itemData]);
+  }
+
   async #deleteItem(event) {
     event.preventDefault();
     if (!this.isEditable) return;
 
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
-    if (itemId) await this.actor.deleteEmbeddedDocuments("Item", [itemId]);
+    if (itemId) {
+      const item = this.actor.items.get(itemId);
+      const childUpdates = this.actor.items.filter((candidate) => (
+        candidate.system?.parentContainerId === itemId
+      )).map((candidate) => ({ _id: candidate.id,
+        "system.parentContainerId": item?.system?.parentContainerId ?? "" }));
+      if (childUpdates.length) await this.actor.updateEmbeddedDocuments("Item", childUpdates);
+      await this.actor.deleteEmbeddedDocuments("Item", [itemId]);
+    }
   }
 
   async #rollSkill(event) {

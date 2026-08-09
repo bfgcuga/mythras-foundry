@@ -104,7 +104,9 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         profession: backgroundSelectionField()
       }),
       currency: new SchemaField({
+        copper: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
         silver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
+        gold: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
         startingSilver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 })
       }),
       resources: new SchemaField({

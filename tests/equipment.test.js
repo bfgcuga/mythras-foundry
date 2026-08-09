@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { DEFAULT_HOME_DATA, EQUIPMENT_SOURCES } from "../scripts/data/equipment.js";
+import { ACCOMMODATION_SOURCES, DEFAULT_HOME_DATA, EQUIPMENT_SOURCES,
+  LIVESTOCK_SOURCES } from "../scripts/data/equipment.js";
 import { MYTHRAS_REVISED_SOURCE } from "../scripts/data/sources.js";
-import { carriedInventoryEncumbrance, inventoryCarried, inventoryRows }
+import { carriedInventoryEncumbrance, inventoryCarried, inventoryRows, inventorySections,
+  sortInventoryItems }
   from "../scripts/rules/inventory.js";
 
 test("el compendio clasifica todos los objetos y conserva su fuente", () => {
@@ -19,6 +21,21 @@ test("el compendio clasifica todos los objetos y conserva su fuente", () => {
 test("la casa predeterminada es una propiedad contenedora", () => {
   assert.equal(DEFAULT_HOME_DATA.system.category, "property");
   assert.equal(DEFAULT_HOME_DATA.system.isContainer, true);
+});
+
+test("viviendas alquiladas y en propiedad se comportan como propiedades", () => {
+  const dwellings = ACCOMMODATION_SOURCES.filter((entry) => (
+    /choza|cabaña|casa|villa/i.test(entry.name)
+  ));
+  assert.equal(dwellings.length, 8);
+  assert.ok(dwellings.every((entry) => entry.system.category === "property"
+    && entry.system.isContainer && entry.img === "icons/svg/chest.svg"));
+});
+
+test("el ganado usa un icono local estable", () => {
+  assert.ok(LIVESTOCK_SOURCES.every((entry) => (
+    entry.img === "systems/mythras-foundry/assets/icons/livestock.svg"
+  )));
 });
 
 test("los objetos dentro de propiedades o vehículos no cuentan como transportados", () => {
@@ -42,4 +59,29 @@ test("el inventario genera filas jerárquicas y respeta contenedores plegados", 
   assert.equal(rows[0].depth, 0);
   assert.equal(rows[1].depth, 1);
   assert.equal(rows[1].hidden, true);
+});
+
+test("el inventario separa la persona de cada propiedad", () => {
+  const home = { id: "home", name: "Casa", type: "equipment",
+    system: { category: "property", isContainer: true } };
+  const chest = { id: "chest", name: "Cofre", type: "equipment",
+    system: { category: "container", isContainer: true, parentContainerId: "home" } };
+  const stored = { id: "stored", name: "Manta", type: "equipment",
+    system: { category: "item", parentContainerId: "chest" } };
+  const carried = { id: "carried", name: "Daga", type: "weapon", system: {} };
+  const sections = inventorySections([home, chest, stored, carried]);
+  assert.deepEqual(sections.map((section) => section.id), ["person", "home"]);
+  assert.deepEqual(sections[0].items.map((item) => item.id), ["carried"]);
+  assert.deepEqual(sections[1].items.map((item) => item.id), ["chest", "stored"]);
+});
+
+test("las categorías se ordenan según la presentación del inventario", () => {
+  const entries = [
+    { name: "Carro", type: "equipment", system: { category: "vehicle" } },
+    { name: "Mochila", type: "equipment", system: { category: "container" } },
+    { name: "Peto", type: "armor", system: {} },
+    { name: "Daga", type: "weapon", system: {} }
+  ];
+  assert.deepEqual(sortInventoryItems(entries).map((item) => item.name),
+    ["Daga", "Peto", "Mochila", "Carro"]);
 });

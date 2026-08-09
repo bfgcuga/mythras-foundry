@@ -42,11 +42,6 @@
         <input type="number" min="0" step="1" class="sheet-field-editable"
           name="system.identity.age" value="{{actor.system.identity.age}}">
       </label>
-      <label>
-        <span>{{localize "MYTHRASF.Currency.Silver"}}</span>
-        <input type="number" min="0" step="0.01" class="sheet-field-editable"
-          name="system.currency.silver" value="{{actor.system.currency.silver}}">
-      </label>
     </div>
     <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
       <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>
@@ -350,15 +345,30 @@
       </section>
 
       <section class="tab-panel" data-tab-content="inventory">
-        <fieldset class="inventory-panel">
-          <legend>{{localize "MYTHRASF.Inventory.Belongings"}}</legend>
+        <section class="inventory-wallet" aria-label="{{localize "MYTHRASF.Currency.Personal"}}">
+          <h2>{{localize "MYTHRASF.Currency.Personal"}}</h2>
+          <label>PC <input type="number" min="0" step="1" class="sheet-field-editable" name="system.currency.copper" value="{{actor.system.currency.copper}}"></label>
+          <label>PP <input type="number" min="0" step="1" class="sheet-field-editable" name="system.currency.silver" value="{{actor.system.currency.silver}}"></label>
+          <label>PO <input type="number" min="0" step="1" class="sheet-field-editable" name="system.currency.gold" value="{{actor.system.currency.gold}}"></label>
+          {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="equipment" data-category="property" aria-label="{{localize "MYTHRASF.Inventory.AddProperty"}}" title="{{localize "MYTHRASF.Inventory.AddProperty"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        </section>
+        {{#each inventorySections as |section|}}
+        <fieldset class="inventory-panel inventory-location-frame" data-inventory-destination="{{section.id}}">
+          <legend>{{section.label}}</legend>
+          {{#if section.property}}<div class="inventory-property-actions" data-item-id="{{section.id}}"><button type="button" class="sheet-icon-button" data-action="edit-item" aria-label="{{localize "MYTHRASF.Edit"}}" title="{{localize "MYTHRASF.Edit"}}"><i class="fas fa-pen" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button></div>{{/if}}
           {{#if editable}}
             <button type="button" class="inventory-panel-add sheet-add-button" data-action="create-item"
-              data-type="equipment" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}">
+              data-type="equipment" data-parent-id="{{#if section.property}}{{section.id}}{{/if}}" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}">
               <i class="fas fa-plus" aria-hidden="true"></i></button>
           {{/if}}
-          {{> "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs" items=equipment}}
+          {{#if section.property}}<div class="inventory-wallet inventory-property-wallet">
+            <label>PC <input type="number" min="0" step="1" class="sheet-field-editable" data-property-funds="copper" value="{{section.property.system.funds.copper}}"></label>
+            <label>PP <input type="number" min="0" step="1" class="sheet-field-editable" data-property-funds="silver" value="{{section.property.system.funds.silver}}"></label>
+            <label>PO <input type="number" min="0" step="1" class="sheet-field-editable" data-property-funds="gold" value="{{section.property.system.funds.gold}}"></label>
+          </div>{{/if}}
+          {{> "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs" items=section.rows}}
         </fieldset>
+        {{/each}}
       </section>
     </main>
 </div>

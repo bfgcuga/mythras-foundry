@@ -1,15 +1,16 @@
 <div class="inventory-tree">
-  <div class="inventory-tree-head"><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.ItemClass.Label"}}</span><span>{{localize "MYTHRASF.Item.Quantity"}}</span><span>{{localize "MYTHRASF.Item.Weight"}}</span><span>{{localize "MYTHRASF.Item.Location"}}</span><span></span><span></span></div>
+  <div class="inventory-tree-head"><span></span><span></span><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.ItemClass.Label"}}</span><span>{{localize "MYTHRASF.Item.Quantity"}}</span><span>{{localize "MYTHRASF.Item.Price"}}</span><span>{{localize "MYTHRASF.Item.Weight"}}</span><span>{{localize "MYTHRASF.Item.Location"}}</span><span></span><span></span><span></span></div>
   <ol class="item-list">
     {{#each items as |entry|}}
-      <li data-item-id="{{entry.id}}" {{#if entry.hidden}}hidden{{/if}} class="{{#if entry.isContainer}}inventory-container-row{{/if}}">
-        {{#if entry.isContainer}}<button type="button" class="sheet-icon-button inventory-container-toggle" data-action="toggle-container" aria-expanded="{{#unless entry.system.collapsed}}true{{else}}false{{/unless}}" title="{{localize "MYTHRASF.Item.Container.Toggle"}}"><i class="fas {{#if entry.system.collapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}" aria-hidden="true"></i></button>{{/if}}
+      <li draggable="true" data-item-id="{{entry.id}}" data-inventory-destination="{{#if entry.isContainer}}{{entry.id}}{{/if}}" {{#if entry.hidden}}hidden{{/if}} class="{{#if entry.isContainer}}inventory-container-row{{/if}}">
+        <img class="inventory-item-image" src="{{entry.item.img}}" alt="">
+        {{#if entry.isContainer}}<button type="button" class="sheet-icon-button inventory-container-toggle" data-action="toggle-container" aria-expanded="{{#unless entry.system.collapsed}}true{{else}}false{{/unless}}" title="{{localize "MYTHRASF.Item.Container.Toggle"}}"><i class="fas {{#if entry.system.collapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}" aria-hidden="true"></i></button>{{else}}<span></span>{{/if}}
         <button type="button" class="item-name" data-action="edit-item" style="padding-left: {{entry.indent}}px">{{entry.name}}</button>
         <span>{{entry.categoryLabel}}</span>
-        <span>{{entry.system.quantity}}</span><span>{{entry.system.weight}}</span>
-        <span>{{#if entry.carried}}{{localize "MYTHRASF.Item.Carried"}}{{else}}{{localize "MYTHRASF.Item.Stored"}}{{/if}}</span>
+        <span>{{entry.system.quantity}}</span><span>{{entry.priceLabel}}</span><span>{{entry.encumbrance}}</span>
+        <span>{{entry.locationLabel}}</span>
         {{#if entry.isWeapon}}<button type="button" data-action="toggle-equipped" data-hands="{{entry.handsRequired}}" class="sheet-icon-button equipment-state-toggle {{#if entry.system.equipped}}equipped{{/if}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand" aria-hidden="true"></i></button>{{else}}{{#if entry.isArmor}}<button type="button" data-action="toggle-equipped" class="sheet-icon-button equipment-state-toggle {{#if entry.system.equipped}}equipped{{/if}}" title="{{localize "MYTHRASF.Armor.ToggleEquipped"}}"><i class="fas fa-vest" aria-hidden="true"></i></button>{{else}}<span></span>{{/if}}{{/if}}
-        {{#if @root.editable}}<button type="button" class="sheet-icon-button inventory-delete" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
+        {{#if @root.editable}}<button type="button" class="sheet-icon-button inventory-sell" data-action="sell-item" aria-label="{{localize "MYTHRASF.Item.Sell"}}" title="{{localize "MYTHRASF.Item.Sell"}}"><i class="fas fa-coins" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button inventory-delete" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
       </li>
     {{else}}<li class="empty">{{localize "MYTHRASF.Empty.Equipment"}}</li>{{/each}}
   </ol>

@@ -114,6 +114,7 @@
   {{#if isEquipment}}
     <label>{{localize "MYTHRASF.Npc.QuantityFormula"}}</label><input type="text" name="system.quantityFormula" value="{{item.system.quantityFormula}}">
     <label>{{localize "MYTHRASF.Item.Container.Parent"}}</label><select class="sheet-field-editable" name="system.parentContainerId"><option value="">{{localize "MYTHRASF.Item.Container.None"}}</option>{{selectOptions equipmentContainerChoices selected=item.system.parentContainerId labelAttr="label" valueAttr="value"}}</select>
+    <label>{{localize "MYTHRASF.Currency.Denomination"}}</label><select class="sheet-field-editable" name="system.currency">{{selectOptions currencyChoices selected=item.system.currency labelAttr="label" valueAttr="value"}}</select>
     {{#unless isWeapon}}{{#unless isArmor}}
     <label>{{localize "MYTHRASF.Background.Source"}}</label><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
     <label>{{localize "MYTHRASF.ItemClass.Label"}}</label><select class="sheet-field-editable" name="system.category">{{selectOptions equipmentCategoryChoices selected=item.system.category labelAttr="label" valueAttr="value"}}</select>

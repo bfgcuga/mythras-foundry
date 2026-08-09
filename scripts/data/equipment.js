@@ -4,12 +4,17 @@ const flags = { "mythras-foundry": { source: "mythras-basic-revised" } };
 const slug = (value) => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+export function equipmentIcon(category, container = false) {
+  if (category === "vehicle") return "icons/svg/cart.svg";
+  if (category === "livestock") return "systems/mythras-foundry/assets/icons/livestock.svg";
+  if (category === "property" || container) return "icons/svg/chest.svg";
+  return "icons/svg/item-bag.svg";
+}
+
 const equipment = (name, { key = slug(name), category = "item", enc = 0, value = 0,
   currency = "silver", era = "", container = false, capacity = 0, occupants = 0,
   draftAnimals = 0, cheap = 0, reasonable = 0, superior = 0, description = "" } = {}) => ({
-  buildKey: key, name, type: "equipment", img: category === "vehicle"
-    ? "icons/svg/cart.svg" : category === "livestock" ? "icons/svg/cow.svg"
-      : container || category === "property" ? "icons/svg/chest.svg" : "icons/svg/item-bag.svg",
+  buildKey: key, name, type: "equipment", img: equipmentIcon(category, container),
   system: { source: MYTHRAS_REVISED_SOURCE, category, era, quantity: 1, quantityFormula: "",
     weight: enc, value: value || reasonable || cheap, currency, location: "",
     parentContainerId: "", isContainer: container || ["vehicle", "livestock", "property"].includes(category),
@@ -25,10 +30,10 @@ export const ACCOMMODATION_SOURCES = qualityRows("service", [
   ["Suelo de la sala común o establos", 0.5, 0, 0],
   ["Habitación o dormitorio compartido", 1, 1.5, 0],
   ["Habitación privada", 2, 5, 10],
-  ["Choza o chabola alquilada (semana)", 10, 0, 0],
-  ["Cabaña o casa de campo alquilada (semana)", 15, 25, 50],
-  ["Casa o apartamento alquilado (semana)", 30, 50, 75],
-  ["Villa o mansión alquilada (semana)", 100, 250, 1000],
+  ["Choza o chabola alquilada (semana)", 10, 0, 0, { category: "property", container: true }],
+  ["Cabaña o casa de campo alquilada (semana)", 15, 25, 50, { category: "property", container: true }],
+  ["Casa o apartamento alquilado (semana)", 30, 50, 75, { category: "property", container: true }],
+  ["Villa o mansión alquilada (semana)", 100, 250, 1000, { category: "property", container: true }],
   ["Choza o chabola en propiedad", 100, 0, 0, { category: "property", container: true }],
   ["Cabaña o casa de campo en propiedad (habitación)", 750, 1250, 2500, { category: "property", container: true }],
   ["Casa o apartamento en propiedad (dos habitaciones)", 3000, 5000, 7500, { category: "property", container: true }],

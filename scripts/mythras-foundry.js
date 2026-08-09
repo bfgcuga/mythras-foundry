@@ -2,7 +2,7 @@ import { CharacterData } from "./data/character-data.js";
 import { NpcData } from "./data/npc-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
 import { defaultItemIcon } from "./data/item-icons.js";
-import { DEFAULT_HOME_DATA } from "./data/equipment.js";
+import { DEFAULT_HOME_DATA, equipmentIcon } from "./data/equipment.js";
 import {
   BackgroundData,
   ArmorData,
@@ -349,15 +349,21 @@ async function ensureHumanHitLocations(actor) {
 }
 
 async function ensureDefaultHome(actor) {
-  if (actor.type !== "character" || actor.items.some((item) => (
+  if (actor.type !== "character"
+    || actor.getFlag("mythras-foundry", "inventoryInitialized")) return;
+  if (actor.items.some((item) => (
     item.type === "equipment" && (item.getFlag("mythras-foundry", "defaultHome")
       || (item.system.category === "property" && item.name === "Casa"))
-  ))) return;
+  ))) {
+    await actor.setFlag("mythras-foundry", "inventoryInitialized", true);
+    return;
+  }
   await actor.createEmbeddedDocuments("Item", [{
     ...DEFAULT_HOME_DATA,
     flags: { ...DEFAULT_HOME_DATA.flags,
       "mythras-foundry": { ...DEFAULT_HOME_DATA.flags["mythras-foundry"], defaultHome: true } }
   }]);
+  await actor.setFlag("mythras-foundry", "inventoryInitialized", true);
 }
 
 function defaultArmorFactors(location) {
@@ -501,6 +507,24 @@ async function migrateEmbeddedItemIcons(actor) {
 }
 
 function getLegacyItemIconUpdate(item) {
+  if (item.type === "equipment") {
+    const normalizedName = String(item.name ?? "").normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const rentedDwelling = normalizedName.includes("alquilad")
+      && ["choza", "chabola", "cabana", "casa", "apartamento", "villa", "mansion"]
+        .some((word) => normalizedName.includes(word));
+    if (rentedDwelling) return { _id: item.id, img: equipmentIcon("property", true),
+      "system.category": "property", "system.isContainer": true };
+    if (item.system.category === "livestock"
+      && item.img !== equipmentIcon("livestock")) {
+      return { _id: item.id, img: equipmentIcon("livestock") };
+    }
+    if (item.system.category === "property"
+      && (item.img !== equipmentIcon("property", true) || !item.system.isContainer)) {
+      return { _id: item.id, img: equipmentIcon("property", true),
+        "system.isContainer": true };
+    }
+  }
   if (item.type === "armor" && ["icons/svg/breastplate.svg", "icons/svg/item-bag.svg",
     "icons/svg/mystery-man.svg"].includes(item.img)) {
     return { _id: item.id, img: defaultItemIcon("armor") };

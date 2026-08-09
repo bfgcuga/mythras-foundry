@@ -138,6 +138,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
       isPersonPassion: this.item.type === "passion" && this.item.system.objectType === "person",
       isEquipment: ["equipment", "weapon", "armor"].includes(this.item.type),
+      currencyChoices: ["copper", "silver", "gold"].map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.Currency.${value}`) })),
       equipmentCategoryChoices: ["item", "service", "vehicle", "livestock", "container",
         "property", "clothing", "food", "ammunition"].map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.ItemClass.${value}`) })),

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ganado">
+  <path fill="#dfcda8" stroke="#302e2a" stroke-width="3" d="M16 18 7 10l1 13 8 5m32-10 9-8-1 13-8 5M17 20c7-8 23-8 30 0 6 7 5 24-2 31-6 6-20 6-26 0-7-7-8-24-2-31Z"/>
+  <path fill="#302e2a" d="M20 30a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm24 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+  <path fill="#9c8766" stroke="#302e2a" stroke-width="2" d="M21 39c4-5 18-5 22 0 2 4-1 11-11 11s-13-7-11-11Z"/>
+  <circle cx="27" cy="43" r="2" fill="#302e2a"/><circle cx="37" cy="43" r="2" fill="#302e2a"/>
+</svg>
