@@ -42,7 +42,8 @@ import {
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
-import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
+import { difficultyTarget, resolveWeaponStyle,
+  UNTRAINED_COMBAT_STYLE_ID } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
@@ -311,13 +312,21 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       displayName: weaponModeDisplayName(weapon, mode),
       handsRequired: weaponHandsRequired(weapon, mode),
       prepared: Boolean(weapon.system.equipped && weapon.system.activeModeKey === mode.key),
-      styleOptions: candidates.map((style) => ({
-        id: style.id,
-        name: style.name,
-        selected: style.id === resolution.style?.id
-      })),
+      styleOptions: [
+        ...candidates.map((style) => ({
+          id: style.id,
+          name: style.name,
+          selected: style.id === resolution.style?.id
+        })),
+        ...(resolution.matching.length === 0 ? [{
+          id: UNTRAINED_COMBAT_STYLE_ID,
+          name: game.i18n.localize("MYTHRASF.Combat.Untrained"),
+          selected: resolution.untrained
+        }] : [])
+      ],
       hasDirectStyle: resolution.matching.length > 0,
-      needsStyleChoice: !resolution.style,
+      usesUntrained: resolution.untrained,
+      needsStyleChoice: !resolution.style && !resolution.untrained,
       familiarity: resolution.familiarity,
       familiarityOptions: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, selected: value === resolution.familiarity,

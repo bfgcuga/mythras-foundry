@@ -6,6 +6,8 @@ export const FAMILIARITY_LEVELS = Object.freeze([
   "substantiallyDifferent"
 ]);
 
+export const UNTRAINED_COMBAT_STYLE_ID = "__untrained__";
+
 export function normalizeWeaponProfile(value) {
   return String(value ?? "")
     .normalize("NFD")
@@ -31,12 +33,25 @@ export function styleIncludesWeapon(style, weapon) {
 
 export function resolveWeaponStyle({ weapon, styles, selectedStyleId, familiarity }) {
   const matching = styles.filter((style) => styleIncludesWeapon(style, weapon));
+  const base = Number(weapon?.actor?.system?.strength ?? 0)
+    + Number(weapon?.actor?.system?.dexterity ?? 0);
+  if (matching.length === 0 && selectedStyleId === UNTRAINED_COMBAT_STYLE_ID) {
+    return {
+      style: null,
+      matching,
+      familiarity: "untrained",
+      difficulty: "standard",
+      target: base,
+      usesBase: true,
+      untrained: true
+    };
+  }
   const selected = styles.find((style) => style.id === selectedStyleId);
   const directStyle = matching.find((style) => style.id === selectedStyleId)
     ?? (matching.length === 1 ? matching[0] : null);
   if (directStyle) {
     return { style: directStyle, matching, familiarity: "included", difficulty: "standard",
-      target: Number(directStyle.system.total ?? 0), usesBase: false };
+      target: Number(directStyle.system.total ?? 0), usesBase: false, untrained: false };
   }
 
   const fallback = selected && !matching.includes(selected) ? selected : null;
@@ -50,15 +65,14 @@ export function resolveWeaponStyle({ weapon, styles, selectedStyleId, familiarit
     substantiallyDifferent: "standard"
   };
   const usesBase = level === "substantiallyDifferent";
-  const base = Number(weapon?.actor?.system?.strength ?? 0)
-    + Number(weapon?.actor?.system?.dexterity ?? 0);
   return {
     style: fallback,
     matching,
     familiarity: level,
     difficulty: difficulties[level],
     target: usesBase ? base : Number(fallback?.system?.total ?? base),
-    usesBase
+    usesBase,
+    untrained: false
   };
 }
 

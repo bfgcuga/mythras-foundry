@@ -6,7 +6,8 @@ import {
   difficultyTarget,
   normalizeWeaponProfile,
   parseWeaponProfileReferences,
-  resolveWeaponStyle
+  resolveWeaponStyle,
+  UNTRAINED_COMBAT_STYLE_ID
 } from "../scripts/rules/combat.js";
 import {
   calculateLocationHitPoints,
@@ -68,6 +69,30 @@ test("un arma sustancialmente diferente usa FUE + DES", () => {
     selectedStyleId: "a", familiarity: "substantiallyDifferent" });
   assert.equal(result.target, 26);
   assert.equal(result.usesBase, true);
+});
+
+test("un arma sin estilo puede usarse sin entrenamiento con FUE + DES", () => {
+  const result = resolveWeaponStyle({
+    weapon: weapon("garrote"),
+    styles: [style("a", 75, ["lanza"])],
+    selectedStyleId: UNTRAINED_COMBAT_STYLE_ID,
+    familiarity: "similar"
+  });
+  assert.equal(result.style, null);
+  assert.equal(result.target, 26);
+  assert.equal(result.difficulty, "standard");
+  assert.equal(result.usesBase, true);
+  assert.equal(result.untrained, true);
+});
+
+test("sin entrenamiento no sustituye un estilo que incluye el arma", () => {
+  const compatible = style("a", 72, ["espada-ancha"]);
+  const result = resolveWeaponStyle({
+    weapon: weapon(), styles: [compatible], selectedStyleId: UNTRAINED_COMBAT_STYLE_ID
+  });
+  assert.equal(result.style, compatible);
+  assert.equal(result.target, 72);
+  assert.notEqual(result.untrained, true);
 });
 
 test("la armadura nunca produce daño negativo", () => {

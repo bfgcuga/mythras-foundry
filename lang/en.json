@@ -557,6 +557,7 @@
   "MYTHRASF.Combat.SelectStyle": "Select a combat style.",
   "MYTHRASF.Combat.OneTarget": "Select no more than one target.",
   "MYTHRASF.Combat.BaseStyle": "Base combat style (STR + DEX)",
+  "MYTHRASF.Combat.Untrained": "Untrained",
   "MYTHRASF.Combat.Target": "Target",
   "MYTHRASF.Combat.AttackWith": "Attack with {weapon}",
   "MYTHRASF.Combat.HitLocation": "Hit location",

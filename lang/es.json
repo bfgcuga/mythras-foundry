@@ -557,6 +557,7 @@
   "MYTHRASF.Combat.SelectStyle": "Selecciona un estilo de combate.",
   "MYTHRASF.Combat.OneTarget": "Selecciona como máximo un objetivo.",
   "MYTHRASF.Combat.BaseStyle": "Estilo de combate base (FUE + DES)",
+  "MYTHRASF.Combat.Untrained": "Sin entrenamiento",
   "MYTHRASF.Combat.Target": "Objetivo",
   "MYTHRASF.Combat.AttackWith": "Ataque con {weapon}",
   "MYTHRASF.Combat.HitLocation": "Localización",

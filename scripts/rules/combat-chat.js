@@ -21,7 +21,9 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     modeName: mode.name,
     targetActorUuid: target?.actor?.uuid ?? "",
     targetName: target?.name ?? "",
-    styleName: resolution.usesBase
+    styleName: resolution.untrained
+      ? game.i18n.localize("MYTHRASF.Combat.Untrained")
+      : resolution.usesBase
       ? game.i18n.localize("MYTHRASF.Combat.BaseStyle")
       : resolution.style?.name ?? "",
     familiarity: resolution.familiarity,
