@@ -52,11 +52,13 @@ import { difficultyTarget, resolveWeaponStyle,
   UNTRAINED_COMBAT_STYLE_ID } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
-import { carriedInventoryEncumbrance, inventoryCarried, inventoryLocation, inventoryRows,
+import { inventoryCarried, inventoryLocation, inventoryRows,
   inventorySections } from "../rules/inventory.js";
+import { applyEncumbrance, encumbranceState, itemEncumbrance,
+  skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { applyArmorInitiativePenalty, armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
-  totalArmorEncumbrance, armorInitiativePenalty, totalArmorPoints,
+  armorInitiativePenalty, totalArmorPoints,
   wornArmorPoints } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
   FATIGUE_LEVELS, worsenDifficulty } from "../rules/fatigue.js";
@@ -148,8 +150,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const allInventoryItems = [...equipment, ...weapons, ...armor];
     const prepareInventoryRows = (sectionItems) => inventoryRows(sectionItems).map((row) => ({ ...row,
       handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
-      encumbrance: row.isArmor ? armorPhysicalTotals(row.item).encumbrance
-        : Number(row.system.weight ?? 0),
+      encumbrance: itemEncumbrance(row.item),
       priceLabel: `${Number(row.system.value ?? 0)} ${game.i18n.localize(
         `MYTHRASF.Currency.${row.system.currency ?? "silver"}`)}`,
       locationLabel: inventoryLocation(row.item, allInventoryItems) === "person"
@@ -166,13 +167,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rows: prepareInventoryRows(section.items)
     }));
     const equippedArmor = armor.filter((item) => item.system.equipped);
+    const carriedEncumbrance = totalCarriedEncumbrance(allInventoryItems);
+    const loadState = encumbranceState(carriedEncumbrance, this.actor.system.strength);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
     const currentCondition = combinedConditionLevel(currentFatigue.key, currentWound);
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, getActionPointRules());
+    const fatiguedAttributes = applyFatigue(baseAttributes, currentCondition.key);
     const effectiveAttributes = applyArmorInitiativePenalty(
-      applyFatigue(baseAttributes, currentCondition.key), equippedArmor);
+      applyEncumbrance(fatiguedAttributes, loadState), equippedArmor);
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
       baseAttributes.actionPointsMax,
@@ -243,14 +247,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         fatiguePenalty: currentFatigue.skillDifficulty === "standard"
           ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
           : game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
-        encumbrance: totalArmorEncumbrance(equippedArmor)
-          + carriedInventoryEncumbrance(allInventoryItems),
-        encumbrancePenalty: armorInitiativePenalty(equippedArmor)
-          ? `-${armorInitiativePenalty(equippedArmor)}` : "—"
+        encumbrance: `${carriedEncumbrance}/${loadState.easyLimit}`,
+        encumbranceTitle: game.i18n.format("MYTHRASF.Encumbrance.Summary", {
+          total: carriedEncumbrance, easy: loadState.easyLimit,
+          overloaded: loadState.overloadedLimit, maximum: loadState.maximum
+        }),
+        encumbrancePenalty: game.i18n.localize(
+          `MYTHRASF.Encumbrance.Penalty.${loadState.key}`),
+        encumbrancePenaltyTitle: game.i18n.localize(
+          `MYTHRASF.Encumbrance.Detail.${loadState.key}`)
       },
       attributePenalties: {
         actionPoints: actionPointsDisplay,
-        initiative: penalizedValue(baseAttributes.initiative, effectiveAttributes.initiative),
+        initiative: { ...penalizedValue(baseAttributes.initiative, effectiveAttributes.initiative),
+          title: this.#initiativePenaltyTitle(currentFatigue, equippedArmor) },
         movement: penalizedValue(baseAttributes.movementRate, effectiveAttributes.movementRate)
       },
       generationMethod,
@@ -304,7 +314,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         total: Number(style.system.total ?? 0),
         totalDisplay: penalizedValue(
           Number(style.system.total ?? 0),
-          difficultyTarget(Number(style.system.total ?? 0), currentCondition.skillDifficulty)
+          difficultyTarget(Number(style.system.total ?? 0), worsenDifficulty(
+            currentCondition.skillDifficulty, loadState.difficultySteps))
         )
       })),
       inventoryArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
@@ -339,6 +350,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     resolution.difficulty = combineDifficulties(resolution.difficulty,
       this.#conditionLevel().skillDifficulty);
+    resolution.difficulty = worsenDifficulty(resolution.difficulty,
+      this.#loadState().difficultySteps);
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
     const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
     return {
@@ -438,6 +451,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-background-age-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateBackgroundAge(event));
     });
+    this.element.querySelector("[data-action='roll-background-age']")
+      ?.addEventListener("click", (event) => this.#rollBackgroundAge(event));
     this.element.querySelector("[data-background-social-class]")
       ?.addEventListener("change", (event) => this.#selectSocialClass(event));
     this.element.querySelector("[data-action='roll-social-class']")
@@ -713,6 +728,23 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return combinedConditionLevel(fatigueKey, worstWoundLevel(locations));
   }
 
+  #loadState() {
+    const items = this.actor.items.filter((item) => ["equipment", "weapon", "armor"]
+      .includes(item.type));
+    return encumbranceState(totalCarriedEncumbrance(items), this.actor.system.strength);
+  }
+
+  #initiativePenaltyTitle(fatigue, equippedArmor) {
+    const armorPenalty = armorInitiativePenalty(equippedArmor);
+    const parts = [];
+    if (fatigue.initiativePenalty) parts.push(game.i18n.format(
+      "MYTHRASF.InitiativePenalty.Fatigue", { penalty: fatigue.initiativePenalty }));
+    if (armorPenalty) parts.push(game.i18n.format(
+      "MYTHRASF.InitiativePenalty.Armor", { penalty: armorPenalty }));
+    return parts.length ? parts.join("\n")
+      : game.i18n.localize("MYTHRASF.InitiativePenalty.None");
+  }
+
   async #applySeriousWoundPenalty(difficulty) {
     const locations = this.actor.items.filter((item) => item.type === "hitLocation");
     if (!hasSeriousWound(locations)) return difficulty;
@@ -762,6 +794,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     resolution.difficulty = combineDifficulties(resolution.difficulty,
       this.#conditionLevel().skillDifficulty);
+    resolution.difficulty = worsenDifficulty(resolution.difficulty,
+      this.#loadState().difficultySteps);
     resolution.difficulty = await this.#applySeriousWoundPenalty(resolution.difficulty);
     if (resolution.difficulty === "impossible") {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Fatigue.NoActivity"));
@@ -1016,6 +1050,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           selected: value === passion.objectType
         }))
       })),
+      showPassionSummary: !["culture", "passions"].includes(stage)
+        && draft.passions.length > 0,
       professions: professionsForCulture(draft.cultureKey).map((entry) => ({
         key: entry.key,
         name: entry.name,
@@ -1052,7 +1088,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         : null,
       selectedProfessionalCount: selectedProfessionals.size,
-      freeProfessionalOptions: ALL_SKILL_SOURCES.map((source) => ({
+      freeProfessionalOptions: ALL_SKILL_SOURCES.filter((source) => (
+        source.system.category === "professional"
+      )).map((source) => ({
         slug: source.system.slug,
         name: source.name,
         group: source.system.group,
@@ -1085,13 +1123,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   #prepareSkillRow(item, draft) {
     const total = Number(item.system.total ?? 0);
+    const conditionDifficulty = this.#conditionLevel().skillDifficulty;
+    const difficulty = skillUsesStrengthOrDexterity(item)
+      ? worsenDifficulty(conditionDifficulty, this.#loadState().difficultySteps)
+      : conditionDifficulty;
     const row = {
       id: item.id,
       name: item.name,
       type: item.type,
       system: item.system,
-      totalDisplay: penalizedValue(total, difficultyTarget(
-      total, this.#conditionLevel().skillDifficulty))
+      totalDisplay: penalizedValue(total, difficultyTarget(total, difficulty))
     };
     if (!draft) return row;
 
@@ -1592,6 +1633,17 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.#saveBackgroundDraft(draft);
   }
 
+  async #rollBackgroundAge(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const category = getAgeCategory(draft.ageCategory);
+    if (!category) return;
+    const roll = await new Roll(category.ageFormula).evaluate();
+    draft.age = Number(roll.total);
+    await this.#saveBackgroundDraft(draft);
+  }
+
   async #updateFreeSkill(event) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const field = event.currentTarget.dataset.backgroundFreeField;
@@ -1896,7 +1948,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       content: `<div class="starting-equipment-dialog">
         <fieldset><legend>${game.i18n.localize("MYTHRASF.StartingEquipment.Clothing")}</legend><p>${foundry.utils.escapeHTML(clothing)}</p></fieldset>
         <fieldset><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Weapons", { count: rolls.weaponCount })}</legend>${weaponFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>
-        <fieldset><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Armor", { points: rolls.armorPoints, count: rolls.armorLocations })}</legend>${armorFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>
+        <fieldset class="starting-equipment-armor"><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Armor", { points: rolls.armorPoints, count: rolls.armorLocations })}</legend>${armorFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>
         ${rolls.transportRequired ? `<fieldset><legend>${game.i18n.localize("MYTHRASF.StartingEquipment.Transport")}</legend><select name="transport"><option value=""></option>${transportOptions}</select></fieldset>` : ""}
       </div>`,
       ok: { label: game.i18n.localize("MYTHRASF.Background.Confirm"), icon: "fas fa-check",
@@ -2232,6 +2284,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let difficulty = combineDifficulties(
       row?.querySelector("[data-difficulty]")?.value ?? "standard",
       this.#conditionLevel().skillDifficulty);
+    if (skillUsesStrengthOrDexterity(item)) {
+      difficulty = worsenDifficulty(difficulty, this.#loadState().difficultySteps);
+    }
     difficulty = await this.#applySeriousWoundPenalty(difficulty);
     await item?.rollSkill({ difficulty });
   }

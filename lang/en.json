@@ -26,6 +26,8 @@
   "MYTHRASF.StartingEquipment.TransportDescription": "Transport obtained during character creation.",
   "MYTHRASF.StartingEquipment.None": "None.",
   "MYTHRASF.StartingEquipment.Incomplete": "Select every required weapon, armor piece, and transport option. The same armor location cannot be selected twice.",
+  "MYTHRASF.Age.Roll": "Roll age",
+  "MYTHRASF.Age.RollFormula": "Roll age ({formula})",
   "MYTHRASF.Edit": "Edit",
   "MYTHRASF.Currency.Personal": "Money on person",
   "MYTHRASF.Currency.Reserve": "Money reserve",
@@ -730,5 +732,17 @@
   "MYTHRASF.CombatStyles": "Combat styles",
   "MYTHRASF.CombatStyle.Title": "Style",
   "MYTHRASF.Armor.Total": "Total AP",
-  "MYTHRASF.Empty.CombatStyles": "No combat styles."
+  "MYTHRASF.Empty.CombatStyles": "No combat styles.",
+  "MYTHRASF.Encumbrance.Penalty.unencumbered": "No penalty",
+  "MYTHRASF.Encumbrance.Penalty.loaded": "+1 grade",
+  "MYTHRASF.Encumbrance.Penalty.overloaded": "+2 grades",
+  "MYTHRASF.Encumbrance.Penalty.excess": "Limit exceeded",
+  "MYTHRASF.Encumbrance.Detail.unencumbered": "No encumbrance penalty.",
+  "MYTHRASF.Encumbrance.Detail.loaded": "Encumbered: +1 difficulty grade to skills based on STR or DEX; Movement -2; cannot Sprint; Moderate exertion.",
+  "MYTHRASF.Encumbrance.Detail.overloaded": "Overloaded: +2 difficulty grades to skills based on STR or DEX; half Movement; may only Walk; Strenuous exertion.",
+  "MYTHRASF.Encumbrance.Detail.excess": "Exceeds STR x4 and cannot be carried except for very short distances. Overloaded effects are displayed.",
+  "MYTHRASF.Encumbrance.Summary": "ENC {total}. No penalty up to {easy}; Overloaded above {overloaded}; maximum carried load {maximum}.",
+  "MYTHRASF.InitiativePenalty.Fatigue": "Fatigue: -{penalty}",
+  "MYTHRASF.InitiativePenalty.Armor": "Armour: -{penalty}",
+  "MYTHRASF.InitiativePenalty.None": "No initiative penalties."
 }

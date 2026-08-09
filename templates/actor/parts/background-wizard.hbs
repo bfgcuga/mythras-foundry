@@ -23,6 +23,15 @@
     </label>
   {{/if}}
 
+  {{#if wizard.showPassionSummary}}
+    <fieldset class="background-passion-summary">
+      <legend>{{localize "MYTHRASF.Background.Passions"}}</legend>
+      {{#each wizard.passionRows as |passion|}}
+        <p><strong>{{passion.number}}. {{passion.objectDescription}}</strong><span>{{passion.total}}%</span></p>
+      {{/each}}
+    </fieldset>
+  {{/if}}
+
   {{#if wizard.isPassions}}
     <p class="background-passion-help">{{localize "MYTHRASF.Background.PassionHelp"}}</p>
     <div class="background-passion-list">
@@ -109,10 +118,12 @@
           {{/each}}
         </select>
       </label>
-      <label>
+      <label class="background-age-value">
         <span>{{localize "MYTHRASF.Age.Value"}}</span>
-        <input type="number" min="1" step="1" class="sheet-field-editable"
+        <span class="background-age-control"><input type="number" min="1" step="1" class="sheet-field-editable"
           value="{{wizard.age}}" data-background-age-field="age">
+          {{#if wizard.selectedAgeCategory}}<button type="button" class="sheet-icon-button" data-action="roll-background-age" aria-label="{{localize "MYTHRASF.Age.Roll"}}" title="{{localize "MYTHRASF.Age.RollFormula" formula=wizard.selectedAgeCategory.ageFormula}}"><i class="fas fa-dice" aria-hidden="true"></i></button>{{/if}}
+        </span>
       </label>
       {{#if wizard.selectedAgeCategory}}
         <p>{{localize "MYTHRASF.Age.Summary"

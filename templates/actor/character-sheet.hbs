@@ -49,10 +49,10 @@
       <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly penalized-value">{{headerStatus.actionPoints.base}}{{#if headerStatus.actionPoints.penalized}} <span class="penalized-value-modifier">({{headerStatus.actionPoints.effective}})</span>{{/if}}</output></label>
       <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
       <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
-      <label><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
+      <label title="{{headerStatus.encumbranceTitle}}"><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
       <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.woundPenalty}}</output></label>
       <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.fatiguePenalty}}</output></label>
-      <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrancePenalty}}</output></label>
+      <label class="header-penalty" title="{{headerStatus.encumbrancePenaltyTitle}}"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrancePenalty}}</output></label>
     </section>
     <label class="header-experience-rolls">
       <span><i class="fas fa-dice" aria-hidden="true"></i>{{localize "MYTHRASF.Header.ExperienceRolls"}}</span>
@@ -146,7 +146,7 @@
                 <output>{{actor.system.attributes.experienceModifier}}</output></label>
               <label><span>{{localize "MYTHRASF.Attribute.HealingRate"}}</span>
                 <output>{{actor.system.attributes.healingRate}}</output></label>
-              <label><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
+              <label title="{{attributePenalties.initiative.title}}"><span>{{localize "MYTHRASF.Attribute.Initiative"}}</span>
                 <output class="penalized-value">{{attributePenalties.initiative.base}}{{#if attributePenalties.initiative.penalized}} <span class="penalized-value-modifier">({{attributePenalties.initiative.effective}})</span>{{/if}}</output></label>
               <label class="resource-attribute">
                 <span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span>

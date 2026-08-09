@@ -26,6 +26,8 @@
   "MYTHRASF.StartingEquipment.TransportDescription": "Transporte obtenido durante la creación del personaje.",
   "MYTHRASF.StartingEquipment.None": "Ninguno.",
   "MYTHRASF.StartingEquipment.Incomplete": "Selecciona todas las armas, piezas de armadura y el transporte indicados. No se puede repetir una misma localización de armadura.",
+  "MYTHRASF.Age.Roll": "Tirar edad",
+  "MYTHRASF.Age.RollFormula": "Tirar edad ({formula})",
   "MYTHRASF.Edit": "Editar",
   "MYTHRASF.Currency.Personal": "Dinero en persona",
   "MYTHRASF.Currency.Reserve": "Reserva de dinero",
@@ -730,5 +732,17 @@
   "MYTHRASF.CombatStyles": "Estilos de combate",
   "MYTHRASF.CombatStyle.Title": "Estilo",
   "MYTHRASF.Armor.Total": "PA totales",
-  "MYTHRASF.Empty.CombatStyles": "No hay estilos de combate."
+  "MYTHRASF.Empty.CombatStyles": "No hay estilos de combate.",
+  "MYTHRASF.Encumbrance.Penalty.unencumbered": "Sin penalización",
+  "MYTHRASF.Encumbrance.Penalty.loaded": "+1 grado",
+  "MYTHRASF.Encumbrance.Penalty.overloaded": "+2 grados",
+  "MYTHRASF.Encumbrance.Penalty.excess": "Límite superado",
+  "MYTHRASF.Encumbrance.Detail.unencumbered": "Sin penalización por carga.",
+  "MYTHRASF.Encumbrance.Detail.loaded": "Cargado: +1 grado de dificultad a habilidades basadas en FUE o DES; Movimiento -2; no puede Esprintar; esfuerzo Moderado.",
+  "MYTHRASF.Encumbrance.Detail.overloaded": "Sobrecargado: +2 grados de dificultad a habilidades basadas en FUE o DES; Movimiento a la mitad; solo puede Caminar; esfuerzo Extenuante.",
+  "MYTHRASF.Encumbrance.Detail.excess": "Supera FUE x4 y no puede transportar esta carga salvo durante distancias muy breves. Se muestran los efectos de Sobrecargado.",
+  "MYTHRASF.Encumbrance.Summary": "CRG {total}. Sin penalización hasta {easy}; Sobrecargado por encima de {overloaded}; máximo transportable {maximum}.",
+  "MYTHRASF.InitiativePenalty.Fatigue": "Fatiga: -{penalty}",
+  "MYTHRASF.InitiativePenalty.Armor": "Armadura: -{penalty}",
+  "MYTHRASF.InitiativePenalty.None": "Sin penalizaciones a la iniciativa."
 }
