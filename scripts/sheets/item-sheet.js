@@ -8,7 +8,9 @@ import {
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "../rules/combat.js";
 import { modeKeysAreUnique, nextModeKey, normalizeModeKey, weaponModes } from "../rules/weapon-modes.js";
 import { manualWeaponProfiles, mergeWeaponProfiles, removeWeaponProfile, weaponProfileOptions } from "../rules/combat-style-weapons.js";
-import { armorPhysicalTotals } from "../rules/armor.js";
+import { armorDefaultName } from "../data/armor.js";
+import { ARMOR_MATERIAL_MODIFIERS, ARMOR_REFERENCE_LOCATIONS, armorPieceTypeForLocation,
+  armorPhysicalTotals } from "../rules/armor.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -57,11 +59,21 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
     }
     if (this.item.type === "armor") {
+      const referenceLocation = update.system?.referenceLocation
+        || this.item.system.referenceLocation || "special";
+      const material = update.system?.material || this.item.system.material || "leather";
+      const oldDefaultName = armorDefaultName(
+        this.item.system.referenceLocation || "special", this.item.system.material || "leather");
+      if (!String(update.name ?? "").trim() || update.name === oldDefaultName) {
+        update.name = armorDefaultName(referenceLocation, material);
+      }
       update.system.profileKey = normalizeWeaponProfile(
         update.system?.profileKey || this.item.system.profileKey || update.name || this.item.name
       );
       update.system.profileName = update.system?.profileName || this.item.system.profileName
         || update.name || this.item.name;
+      update.system.pieceType = armorPieceTypeForLocation(referenceLocation);
+      update.system.materialModifier = ARMOR_MATERIAL_MODIFIERS[material] ?? 1;
       update.system.coverageMigrated = true;
     }
     if (this.item.type === "passion" && update.system?.structured) {
@@ -112,6 +124,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         costPercentage: location.system.armorCostPercentage,
         selected: selectedArmorLocations.has(location.id)
       })),
+      armorSelectedLocationId: Array.from(selectedArmorLocations)[0] ?? "",
+      armorPieceTypeLabel: this.item.type === "armor"
+        ? game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${this.item.system.pieceType}`) : "",
       armorTotals,
       isHitLocation: this.item.type === "hitLocation",
       isTrait: this.item.type === "trait",
@@ -170,11 +185,21 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       damageModifierChoices: ["full", "half", "none"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Weapon.DamageModifier.${value}`)
       })),
-      armorEraChoices: ["ancient", "modern", "futuristic"].map((value) => ({
+      armorEraChoices: ["all", "ancient-medieval", "ancient-renaissance",
+        "medieval-industrial", "ancient", "modern", "futuristic"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Armor.Era.${value}`)
       })),
-      armorPieceTypeChoices: ["helmet", "cuirass", "greaves", "bracers", "other"].map((value) => ({
+      armorPieceTypeChoices: ["helmet", "cuirass", "skirt", "greaves", "bracers", "other"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${value}`)
+      })),
+      armorReferenceLocationChoices: ARMOR_REFERENCE_LOCATIONS.map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Armor.ReferenceLocation.${value}`)
+      })),
+      armorMaterialChoices: Object.keys(ARMOR_MATERIAL_MODIFIERS).map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Armor.Material.${value}`)
+      })),
+      armorConstructionChoices: ["flexible", "rigid"].map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.Armor.Construction.${value}`)
       })),
       locationCategoryChoices: ["limb", "head", "chest", "abdomen", "other"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.HitLocation.Category.${value}`)
@@ -283,11 +308,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   async #updateArmorCoverage(event) {
     if (!this.isEditable || this.item.type !== "armor") return;
-    const id = event.currentTarget.dataset.armorLocationId;
-    const selected = new Set(this.item.system.coveredLocationIds ?? []);
-    event.currentTarget.checked ? selected.add(id) : selected.delete(id);
+    const id = event.currentTarget.value;
     await this.item.update({
-      "system.coveredLocationIds": [...selected],
+      "system.coveredLocationIds": id ? [id] : [],
       "system.coverageMigrated": true,
       "system.equipped": false
     });

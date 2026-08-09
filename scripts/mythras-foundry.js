@@ -30,6 +30,7 @@ import { PartyManager } from "./apps/party-manager.js";
 import { createPartyApi } from "./api/party-api.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
+import { ARMOR_MATERIAL_MODIFIERS, armorPieceTypeForLocation } from "./rules/armor.js";
 import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
 import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
@@ -207,10 +208,18 @@ Hooks.on("preCreateItem", (item, data) => {
     item.updateSource({ "system.modes": [mode], "system.activeModeKey": mode.key });
   }
   if (type === "armor") {
+    const referenceLocation = system.referenceLocation || "special";
+    const material = system.material || "leather";
     item.updateSource({
       "system.profileKey": system.profileKey || normalizeWeaponProfile(data.name ?? item.name),
       "system.profileName": system.profileName || data.name || item.name,
-      "system.coverageMigrated": true
+      "system.pieceType": armorPieceTypeForLocation(referenceLocation),
+      "system.referenceLocation": referenceLocation,
+      "system.material": material,
+      "system.materialModifier": ARMOR_MATERIAL_MODIFIERS[material] ?? 1,
+      "system.coveredLocationIds": Array.from(system.coveredLocationIds ?? []).slice(0, 1),
+      "system.coverageMigrated": true,
+      "system.armorRulesVersion": 3
     });
   }
 });
@@ -355,12 +364,21 @@ async function migrateActorArmor(actor) {
       });
     }
     if (item.type === "armor"
-      && !foundry.utils.hasProperty(item._source, "system.coverageMigrated")) {
+      && Number(item._source.system?.armorRulesVersion ?? 0) < 3) {
+      const referenceLocation = item.system.referenceLocation || "special";
+      const material = item.system.material || "leather";
       updates.push({
         _id: item.id,
         "system.profileKey": normalizeWeaponProfile(item.name),
         "system.profileName": item.name,
-        "system.coveredLocationIds": [],
+        "system.coveredLocationIds": Array.from(item.system.coveredLocationIds ?? []).slice(0, 1),
+        "system.referenceLocation": referenceLocation,
+        "system.pieceType": armorPieceTypeForLocation(referenceLocation),
+        "system.material": material,
+        "system.materialModifier": ARMOR_MATERIAL_MODIFIERS[material] ?? 1,
+        "system.baseEncumbrance": Number(item.system.baseEncumbrance ?? item.system.weight ?? 0),
+        "system.baseValue": Number(item.system.baseValue ?? item.system.value ?? 0),
+        "system.armorRulesVersion": 3,
         "system.coverageMigrated": true,
         "system.coverage": "",
         "system.equipped": false
@@ -371,11 +389,20 @@ async function migrateActorArmor(actor) {
 }
 
 async function migrateWorldArmor(item) {
-  if (foundry.utils.hasProperty(item._source, "system.coverageMigrated")) return;
+  if (Number(item._source.system?.armorRulesVersion ?? 0) >= 3) return;
+  const referenceLocation = item.system.referenceLocation || "special";
+  const material = item.system.material || "leather";
   await item.update({
     "system.profileKey": normalizeWeaponProfile(item.name),
     "system.profileName": item.name,
-    "system.coveredLocationIds": [],
+    "system.coveredLocationIds": Array.from(item.system.coveredLocationIds ?? []).slice(0, 1),
+    "system.referenceLocation": referenceLocation,
+    "system.pieceType": armorPieceTypeForLocation(referenceLocation),
+    "system.material": material,
+    "system.materialModifier": ARMOR_MATERIAL_MODIFIERS[material] ?? 1,
+    "system.baseEncumbrance": Number(item.system.baseEncumbrance ?? item.system.weight ?? 0),
+    "system.baseValue": Number(item.system.baseValue ?? item.system.value ?? 0),
+    "system.armorRulesVersion": 3,
     "system.coverageMigrated": true,
     "system.coverage": "",
     "system.equipped": false

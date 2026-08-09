@@ -1,78 +1,120 @@
-function normalizeCoverage(value) {
-  return String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+export const ARMOR_REFERENCE_LOCATIONS = Object.freeze([
+  "rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head", "special"
+]);
+
+export const ARMOR_MATERIAL_MODIFIERS = Object.freeze({
+  steel: 0.75,
+  bronze: 1,
+  shell: 2,
+  leather: 2,
+  iron: 1,
+  bone: 1.5,
+  linen: 1,
+  ivory: 1.25,
+  stone: 3,
+  chitin: 0.75,
+  silk: 0.75
+});
+
+export function armorPieceTypeForLocation(referenceLocation) {
+  if (referenceLocation === "head") return "helmet";
+  if (referenceLocation === "chest") return "cuirass";
+  if (referenceLocation === "abdomen") return "skirt";
+  if (["rightLeg", "leftLeg"].includes(referenceLocation)) return "greaves";
+  if (["rightArm", "leftArm"].includes(referenceLocation)) return "bracers";
+  return "other";
+}
+
+export function armorMaterialModifier(armor) {
+  const system = armor?.system ?? armor ?? {};
+  return ARMOR_MATERIAL_MODIFIERS[system.material]
+    ?? Math.max(0, Number(system.materialModifier ?? 1));
 }
 
 export function armorCoversLocation(armor, location) {
   if (!armor?.system?.equipped) return false;
-  const locationIds = Array.from(armor.system.coveredLocationIds ?? []);
-  if (armor.system.coverageMigrated || locationIds.length) {
-    return locationIds.includes(location?.id ?? location?._id);
-  }
-  const coverage = String(armor.system.coverage ?? "").trim();
-  if (!coverage) return true;
-  const entries = coverage.split(/[,;\n]/).map(normalizeCoverage).filter(Boolean);
-  if (entries.some((entry) => ["all", "all-locations", "full-body", "todas", "todas-las-localizaciones", "todo-el-cuerpo"].includes(entry))) {
-    return true;
-  }
-  const locationName = normalizeCoverage(location?.name);
-  const category = normalizeCoverage(location?.system?.category);
-  return entries.includes(locationName) || entries.includes(category);
+  const locationId = location?.id ?? location?._id;
+  return Array.from(armor.system.coveredLocationIds ?? []).slice(0, 1).includes(locationId);
 }
 
 export function armorCoverageLocations(armor, locations) {
-  const ids = new Set(Array.from(armor?.system?.coveredLocationIds ?? []));
-  return (locations ?? []).filter((location) => ids.has(location.id ?? location._id));
+  const id = Array.from(armor?.system?.coveredLocationIds ?? [])[0];
+  return id ? (locations ?? []).filter((location) => (location.id ?? location._id) === id) : [];
 }
 
-export function armorEncumbranceFactor(armor, locations) {
-  return armorCoverageLocations(armor, locations).reduce((total, location) =>
-    total + Math.max(0, Number(location.system?.armorEncumbranceMultiplier ?? 0)), 0);
+export function armorPieceEncumbrance(armor) {
+  const system = armor?.system ?? armor ?? {};
+  return Math.max(0, Number(system.baseEncumbrance ?? system.encumbrance ?? 0))
+    * armorMaterialModifier(system);
 }
 
-export function armorCostPercentage(armor, locations) {
-  return armorCoverageLocations(armor, locations).reduce((total, location) =>
-    total + Math.max(0, Number(location.system?.armorCostPercentage ?? 0)), 0);
+function configuredLocationValues(system) {
+  return Object.values(system.locationValues ?? {}).map(Number).filter((value) => value > 0);
 }
 
-export function armorPhysicalTotals(armor, locations) {
-  const encumbranceFactor = armorEncumbranceFactor(armor, locations);
-  const costPercentage = armorCostPercentage(armor, locations);
+export function armorPieceValue(armor) {
+  const system = armor?.system ?? armor ?? {};
+  const baseValue = Math.max(0, Number(system.baseValue ?? system.value ?? 0));
+  const values = system.locationValues ?? {};
+  if (system.referenceLocation === "special") {
+    return Math.max(baseValue, ...configuredLocationValues(system), 0);
+  }
+  return Math.max(0, Number(values[system.referenceLocation] ?? 0)) || baseValue;
+}
+
+export function armorPhysicalTotals(armor, locations = []) {
   return {
-    encumbranceFactor,
-    costPercentage,
-    encumbrance: encumbranceFactor * Math.max(0, Number(armor?.system?.baseEncumbrance ?? 0)),
-    value: costPercentage / 100 * Math.max(0, Number(armor?.system?.baseValue ?? 0))
+    encumbranceFactor: armorMaterialModifier(armor),
+    costPercentage: 100,
+    encumbrance: armorPieceEncumbrance(armor),
+    value: armorPieceValue(armor)
   };
 }
 
-export function armorEquipConflicts(armor, armors) {
-  const selected = new Set(Array.from(armor?.system?.coveredLocationIds ?? []));
-  if (!selected.size) return [];
-  const conflicts = new Set();
-  for (const candidate of armors ?? []) {
-    if (candidate.id === armor.id || !candidate.system?.equipped) continue;
-    for (const id of candidate.system?.coveredLocationIds ?? []) {
-      if (selected.has(id)) conflicts.add(id);
-    }
-  }
-  return [...conflicts];
+// Mythras permite vestir varias capas en una localización. La CRG de todas se acumula,
+// pero solo protege el valor de PA más alto.
+export function armorEquipConflicts() {
+  return [];
 }
 
-export function wornArmorPoints(location, armors) {
-  return armors.reduce((total, armor) => (
-    armorCoversLocation(armor, location)
-      ? total + Math.max(0, Number(armor.system.armorPoints ?? 0))
-      : total
-  ), 0);
+export function wornArmorPoints(location, armors = []) {
+  return armors.reduce((highest, armor) => armorCoversLocation(armor, location)
+    ? Math.max(highest, Math.max(0, Number(armor.system.armorPoints ?? 0)))
+    : highest, 0);
 }
 
 export function totalArmorPoints(location, armors) {
   const natural = Math.max(0, Number(location?.system?.armorPoints ?? 0));
   return natural + wornArmorPoints(location, armors);
+}
+
+export function totalArmorEncumbrance(armors = []) {
+  return armors.reduce((total, armor) => armor?.system?.equipped
+    ? total + armorPieceEncumbrance(armor)
+    : total, 0);
+}
+
+export function armorInitiativePenalty(armors = []) {
+  const encumbrance = totalArmorEncumbrance(armors);
+  return encumbrance > 0 ? Math.ceil(encumbrance / 5) : 0;
+}
+
+export function applyArmorInitiativePenalty(attributes, armors = []) {
+  const penalty = armorInitiativePenalty(armors);
+  return {
+    ...attributes,
+    initiative: Math.max(0, Number(attributes?.initiative ?? 0) - penalty),
+    armorEncumbrance: totalArmorEncumbrance(armors),
+    armorInitiativePenalty: penalty
+  };
+}
+
+export function armorFitsWearer(armor, wearer) {
+  const system = armor?.system ?? armor ?? {};
+  const designedSize = Math.max(0, Number(system.designedSize ?? 0));
+  if (!designedSize) return true;
+  const wearerSize = Math.max(0, Number(wearer?.system?.size ?? wearer?.size ?? 0));
+  if (!wearerSize) return true;
+  if (system.construction === "rigid" && wearerSize !== designedSize) return false;
+  return Math.abs(wearerSize - designedSize) <= 1;
 }

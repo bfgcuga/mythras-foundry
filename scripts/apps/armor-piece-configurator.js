@@ -1,5 +1,8 @@
+import { armorDefaultName } from "../data/armor.js";
+import { armorPieceTypeForLocation } from "../rules/armor.js";
+
 export const ARMOR_PIECE_TYPES = Object.freeze([
-  "helmet", "cuirass", "greaves", "bracers", "other"
+  "helmet", "cuirass", "skirt", "greaves", "bracers", "other"
 ]);
 
 function escapeHtml(value) {
@@ -8,34 +11,22 @@ function escapeHtml(value) {
   })[character]);
 }
 
-export function armorPieceDefaultName(pieceType, profileName, format = (key, data) =>
-  `${key}:${data.profile}`) {
-  if (pieceType === "other") return profileName;
-  return format(`MYTHRASF.Armor.Piece.DefaultName.${pieceType}`, { profile: profileName });
-}
+export const armorPieceDefaultName = armorDefaultName;
 
 export async function configureNewArmorPiece(item) {
   const { DialogV2 } = foundry.applications.api;
-  const actor = item.parent;
-  const locations = actor?.items.filter((candidate) => candidate.type === "hitLocation") ?? [];
-  const typeOptions = ARMOR_PIECE_TYPES.map((type) =>
-    `<option value="${type}">${escapeHtml(game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${type}`))}</option>`
-  ).join("");
-  const locationOptions = locations.map((location) => `<label class="armor-piece-location-option">
-    <input type="checkbox" class="sheet-state-box" name="coveredLocationIds" value="${escapeHtml(location.id)}">
-    <span>${escapeHtml(location.name)}</span>
-  </label>`).join("");
+  const locations = item.parent?.items.filter((candidate) => candidate.type === "hitLocation") ?? [];
+  const options = locations.map((location) =>
+    `<option value="${escapeHtml(location.id)}">${escapeHtml(location.name)}</option>`).join("");
   const result = await DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Armor.Piece.ConfigureTitle") },
     content: `<div class="mythras-foundry armor-piece-config-dialog">
-      <label><span>${escapeHtml(game.i18n.localize("MYTHRASF.Armor.Piece.TypeLabel"))}</span>
-        <select name="pieceType" class="sheet-field-editable">${typeOptions}</select></label>
-      <label><span>${escapeHtml(game.i18n.localize("MYTHRASF.Armor.Piece.NameLabel"))}</span>
-        <input type="text" name="pieceName" class="sheet-field-editable"
-          placeholder="${escapeHtml(game.i18n.localize("MYTHRASF.Armor.Piece.NamePlaceholder"))}"></label>
-      <fieldset><legend>${escapeHtml(game.i18n.localize("MYTHRASF.Armor.Coverage"))}</legend>
-        <div class="armor-piece-location-options">${locationOptions}</div>
-      </fieldset>
+      <label><span>${escapeHtml(game.i18n.localize("MYTHRASF.Armor.AssignedLocation"))}</span>
+        <select name="coveredLocationId" class="sheet-field-editable">
+          <option value="">${escapeHtml(game.i18n.localize("MYTHRASF.Armor.Unassigned"))}</option>
+          ${options}
+        </select>
+      </label>
     </div>`,
     buttons: [{
       action: "configure",
@@ -43,18 +34,12 @@ export async function configureNewArmorPiece(item) {
       icon: "fas fa-check",
       default: true,
       callback: (event, button) => {
-        const form = button.form;
-        const coveredLocationIds = [...form.querySelectorAll("input[name='coveredLocationIds']:checked")]
-          .map((field) => field.value);
-        if (!coveredLocationIds.length) {
+        const id = button.form.elements.coveredLocationId.value;
+        if (!id) {
           ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.CoverageRequired"));
           return null;
         }
-        return {
-          pieceType: form.elements.pieceType.value,
-          pieceName: form.elements.pieceName.value.trim(),
-          coveredLocationIds
-        };
+        return id;
       }
     }, {
       action: "cancel",
@@ -63,17 +48,16 @@ export async function configureNewArmorPiece(item) {
     }],
     rejectClose: false
   });
-  if (!result?.coveredLocationIds?.length) {
+  if (!result) {
     await item.delete();
     return false;
   }
-  const profileName = item.system.profileName || item.name;
+  const referenceLocation = item.system.referenceLocation || "special";
+  const material = item.system.material || "leather";
   await item.update({
-    name: result.pieceName || armorPieceDefaultName(
-      result.pieceType, profileName, (key, data) => game.i18n.format(key, data)
-    ),
-    "system.pieceType": result.pieceType,
-    "system.coveredLocationIds": result.coveredLocationIds,
+    name: item.name || armorDefaultName(referenceLocation, material),
+    "system.pieceType": armorPieceTypeForLocation(referenceLocation),
+    "system.coveredLocationIds": [result],
     "system.coverageMigrated": true,
     "system.equipped": false
   });

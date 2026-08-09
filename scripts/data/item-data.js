@@ -231,23 +231,41 @@ export class WeaponData extends EquipmentData {
 
 export class ArmorData extends EquipmentData {
   static defineSchema() {
+    const locationValues = Object.fromEntries([
+      "rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head"
+    ].map((key) => [key, nonNegativeNumber()]));
     return {
       ...super.defineSchema(),
+      source: textField(),
       profileKey: textField(),
       profileName: textField(),
       pieceType: new StringField({ required: true, nullable: false, initial: "other",
-        choices: ["helmet", "cuirass", "greaves", "bracers", "other"] }),
+        choices: ["helmet", "cuirass", "skirt", "greaves", "bracers", "other"] }),
+      construction: new StringField({ required: true, nullable: false, initial: "flexible",
+        choices: ["flexible", "rigid"] }),
+      material: new StringField({ required: true, nullable: false, initial: "leather",
+        choices: ["steel", "bronze", "shell", "leather", "iron", "bone", "linen",
+          "ivory", "stone", "chitin", "silk"] }),
+      materialModifier: nonNegativeNumber(1),
+      referenceLocation: new StringField({ required: true, nullable: false, initial: "special",
+        choices: ["rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm",
+          "head", "special"] }),
+      designedSize: nonNegativeNumber(0, true),
+      designedBuild: textField(),
       armorPoints: nonNegativeNumber(0, true),
       armorPointsFormula: textField(),
       baseEncumbrance: nonNegativeNumber(),
       baseValue: nonNegativeNumber(),
+      locationValues: new SchemaField(locationValues),
+      armorRulesVersion: nonNegativeNumber(3, true),
       coveredLocationIds: new ArrayField(textField(), {
         required: true, nullable: false, initial: []
       }),
       coverageMigrated: new BooleanField({ required: true, nullable: false, initial: false }),
       penalty: nonNegativeNumber(0, true),
       era: new StringField({ required: true, nullable: false, initial: "ancient",
-        choices: ["ancient", "modern", "futuristic"] }),
+        choices: ["all", "ancient-medieval", "ancient-renaissance", "medieval-industrial",
+          "ancient", "modern", "futuristic"] }),
       coverage: textField()
     };
   }

@@ -201,7 +201,7 @@ await buildPack("skills", ALL_SKILL_SOURCES, "skill");
 await buildPack("cultures", CULTURE_SOURCES, "culture");
 await buildPack("professions", PROFESSION_SOURCES, "profession");
 await buildPack("weapons", WEAPON_SOURCES, "weapon");
-await buildPack("armor", ARMOR_SOURCES, "armor");
+await buildPack("armor-pieces", ARMOR_SOURCES, "armor-piece");
 await buildPack("traits", TRAIT_SOURCES, "trait");
 await buildActorPack("creatures", CREATURE_SOURCES, "creature");
 await buildMacroPack("macros", MACRO_SOURCES, "macro");

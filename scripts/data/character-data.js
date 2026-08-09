@@ -5,6 +5,7 @@ import {
 import { applyFatigue, combinedConditionLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { getActionPointRules } from "../settings.js";
+import { applyArmorInitiativePenalty } from "../rules/armor.js";
 
 const {
   BooleanField,
@@ -121,7 +122,9 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
     const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
     this.conditionLevel = combinedConditionLevel(
       this.fatigueLevel, worstWoundLevel(locations));
-    this.attributes = applyFatigue(this.baseAttributes, this.conditionLevel.key);
+    const conditioned = applyFatigue(this.baseAttributes, this.conditionLevel.key);
+    const armors = this.parent?.items?.filter((item) => item.type === "armor") ?? [];
+    this.attributes = applyArmorInitiativePenalty(conditioned, armors);
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;

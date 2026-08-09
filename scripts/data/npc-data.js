@@ -2,6 +2,7 @@ import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
 import { applyFatigue, combinedConditionLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { calculateNpcAttributes, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
+import { applyArmorInitiativePenalty } from "../rules/armor.js";
 
 const { BooleanField, HTMLField, NumberField, SchemaField, StringField } = foundry.data.fields;
 
@@ -70,7 +71,9 @@ export class NpcData extends foundry.abstract.TypeDataModel {
     const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
     this.conditionLevel = combinedConditionLevel(
       this.fatigueLevel, worstWoundLevel(locations));
-    this.attributes = applyFatigue(this.baseAttributes, this.conditionLevel.key);
+    const conditioned = applyFatigue(this.baseAttributes, this.conditionLevel.key);
+    const armors = this.parent?.items?.filter((item) => item.type === "armor") ?? [];
+    this.attributes = applyArmorInitiativePenalty(conditioned, armors);
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;

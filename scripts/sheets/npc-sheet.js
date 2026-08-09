@@ -6,7 +6,7 @@ import { assessWeaponEquip } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
-import { armorEquipConflicts, totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
+import { armorFitsWearer, totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { npcWeaponDurability, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
 import { hasSeriousWound, worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
@@ -393,16 +393,15 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #canEquipArmor(item) {
+    if (!armorFitsWearer(item, this.actor)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.SizeMismatch"));
+      return false;
+    }
     if (!(item.system.coveredLocationIds ?? []).length) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.CoverageRequired"));
       return false;
     }
-    const conflicts = armorEquipConflicts(item,
-      this.actor.items.filter((candidate) => candidate.type === "armor"));
-    if (!conflicts.length) return true;
-    const names = conflicts.map((id) => this.actor.items.get(id)?.name ?? id).join(", ");
-    ui.notifications.warn(game.i18n.format("MYTHRASF.Armor.CoverageConflict", { locations: names }));
-    return false;
+    return true;
   }
 
   async #adjustResource(event) {

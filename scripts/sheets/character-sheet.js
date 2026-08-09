@@ -47,8 +47,9 @@ import { difficultyTarget, resolveWeaponStyle,
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
-import { armorCoverageLocations, armorEquipConflicts, armorPhysicalTotals,
-  totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
+import { applyArmorInitiativePenalty, armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
+  totalArmorEncumbrance, armorInitiativePenalty, totalArmorPoints,
+  wornArmorPoints } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
   FATIGUE_LEVELS, worsenDifficulty } from "../rules/fatigue.js";
 import { hasSeriousWound, worstWoundLevel,
@@ -140,7 +141,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const currentCondition = combinedConditionLevel(currentFatigue.key, currentWound);
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, getActionPointRules());
-    const effectiveAttributes = applyFatigue(baseAttributes, currentCondition.key);
+    const effectiveAttributes = applyArmorInitiativePenalty(
+      applyFatigue(baseAttributes, currentCondition.key), equippedArmor);
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
       baseAttributes.actionPointsMax,
@@ -211,8 +213,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         fatiguePenalty: currentFatigue.skillDifficulty === "standard"
           ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
           : game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
-        encumbrance: "",
-        encumbrancePenalty: ""
+        encumbrance: totalArmorEncumbrance(equippedArmor),
+        encumbrancePenalty: armorInitiativePenalty(equippedArmor)
+          ? `-${armorInitiativePenalty(equippedArmor)}` : "—"
       },
       attributePenalties: {
         actionPoints: actionPointsDisplay,
@@ -562,19 +565,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #canEquipArmor(item) {
+    if (!armorFitsWearer(item, this.actor)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.SizeMismatch"));
+      return false;
+    }
     const locationIds = new Set(this.actor.items
       .filter((candidate) => candidate.type === "hitLocation").map((location) => location.id));
     const selectedIds = Array.from(item.system.coveredLocationIds ?? [])
       .filter((id) => locationIds.has(id));
     if (!selectedIds.length) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.CoverageRequired"));
-      return false;
-    }
-    const conflicts = armorEquipConflicts(item,
-      this.actor.items.filter((candidate) => candidate.type === "armor"));
-    if (conflicts.length) {
-      const names = conflicts.map((id) => this.actor.items.get(id)?.name ?? id).join(", ");
-      ui.notifications.warn(game.i18n.format("MYTHRASF.Armor.CoverageConflict", { locations: names }));
       return false;
     }
     return true;
@@ -608,6 +608,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         || game.i18n.localize("MYTHRASF.Armor.Unassigned"),
       profileLabel: item.system.profileName || item.name,
       showProfile: Boolean(item.system.profileName && item.system.profileName !== item.name),
+      initiativePenalty: totals.encumbrance > 0 ? Math.ceil(totals.encumbrance / 5) : 0,
       ...totals
     };
   }

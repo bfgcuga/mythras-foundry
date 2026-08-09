@@ -1,59 +1,56 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { armorCoversLocation, armorCostPercentage, armorEncumbranceFactor, armorEquipConflicts,
-  armorPhysicalTotals, totalArmorPoints, wornArmorPoints } from "../scripts/rules/armor.js";
+import { applyArmorInitiativePenalty, armorFitsWearer, armorInitiativePenalty,
+  armorMaterialModifier, armorPhysicalTotals, armorPieceValue, totalArmorEncumbrance,
+  totalArmorPoints, wornArmorPoints } from "../scripts/rules/armor.js";
 
-const location = (name, category, armorPoints = 0) => ({ name, system: { category, armorPoints } });
-const legacyArmor = (armorPoints, coverage = "", equipped = true) =>
-  ({ system: { armorPoints, coverage, equipped } });
-const piece = (id, armorPoints, coveredLocationIds, equipped = true) => ({
-  id,
-  system: { armorPoints, coveredLocationIds, coverageMigrated: true, equipped,
-    baseEncumbrance: 2, baseValue: 10 }
+const location = (id, armorPoints = 0) => ({ id, system: { armorPoints } });
+const piece = (id, armorPoints, coveredLocationIds, options = {}) => ({ id, system: {
+  armorPoints, coveredLocationIds, equipped: true, baseEncumbrance: 4, baseValue: 500,
+  material: "bronze", referenceLocation: "chest", ...options
+} });
+
+test("varias capas aplican solo el PA más alto y conservan la armadura natural", () => {
+  const chest = location("chest", 1);
+  const padding = piece("padding", 2, ["chest"]);
+  const plate = piece("plate", 5, ["chest"]);
+  assert.equal(wornArmorPoints(chest, [padding, plate]), 5);
+  assert.equal(totalArmorPoints(chest, [padding, plate]), 6);
 });
 
-test("la cobertura heredada se conserva hasta su migración", () => {
-  assert.equal(armorCoversLocation(legacyArmor(2), location("Cabeza", "head")), true);
-});
-
-test("la cobertura heredada puede seleccionar nombres y categorías", () => {
-  const helmet = legacyArmor(3, "Cabeza");
-  const limbArmor = legacyArmor(1, "limb");
-  assert.equal(armorCoversLocation(helmet, location("Cabeza", "head")), true);
-  assert.equal(armorCoversLocation(helmet, location("Pecho", "chest")), false);
-  assert.equal(armorCoversLocation(limbArmor, location("Brazo derecho", "limb")), true);
-});
-
-test("la armadura no equipada no protege", () => {
-  assert.equal(wornArmorPoints(location("Pecho", "chest"), [legacyArmor(4, "", false)]), 0);
-});
-
-test("una pieza nueva solo protege las localizaciones seleccionadas", () => {
-  const head = { id: "head", name: "Cabeza", system: { category: "head", armorPoints: 1 } };
-  const chest = { id: "chest", name: "Pecho", system: { category: "chest", armorPoints: 0 } };
-  const helmet = piece("helmet", 4, ["head"]);
-  assert.equal(totalArmorPoints(head, [helmet]), 5);
-  assert.equal(totalArmorPoints(chest, [helmet]), 0);
-});
-
-test("la carga usa multiplicadores y el precio porcentajes de la armadura completa", () => {
-  const locations = [
-    { id: "left-leg", system: { armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 } },
-    { id: "right-leg", system: { armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 } },
-    { id: "chest", system: { armorEncumbranceMultiplier: 3, armorCostPercentage: 25 } }
+test("la CRG de todas las piezas equipadas se acumula y penaliza iniciativa hacia arriba", () => {
+  const pieces = [
+    piece("one", 5, ["chest"], { baseEncumbrance: 4 }),
+    piece("two", 2, ["chest"], { baseEncumbrance: 2, material: "leather" })
   ];
-  const greaves = piece("greaves", 6, ["left-leg", "right-leg"]);
-  assert.equal(armorEncumbranceFactor(greaves, locations), 3);
-  assert.equal(armorCostPercentage(greaves, locations), 30);
-  assert.deepEqual(armorPhysicalTotals(greaves, locations), {
-    encumbranceFactor: 3, costPercentage: 30, encumbrance: 6, value: 3
+  assert.equal(totalArmorEncumbrance(pieces), 8);
+  assert.equal(armorInitiativePenalty(pieces), 2);
+  assert.deepEqual(applyArmorInitiativePenalty({ initiative: 13, movementRate: 6 }, pieces), {
+    initiative: 11, movementRate: 6, armorEncumbrance: 8, armorInitiativePenalty: 2
   });
 });
 
-test("se detecta el solapamiento entre piezas equipadas", () => {
-  const helmet = piece("helmet", 4, ["head"], false);
-  const hood = piece("hood", 1, ["head"], true);
-  const greaves = piece("greaves", 4, ["left-leg", "right-leg"], true);
-  assert.deepEqual(armorEquipConflicts(helmet, [helmet, hood, greaves]), ["head"]);
+test("los materiales modifican la CRG y no los PA", () => {
+  const steel = piece("steel", 5, ["head"], { material: "steel" });
+  assert.equal(armorMaterialModifier(steel), 0.75);
+  assert.deepEqual(armorPhysicalTotals(steel, []), {
+    encumbranceFactor: 0.75, costPercentage: 100, encumbrance: 3, value: 500
+  });
+});
+
+test("la pieza especial usa el coste más alto configurado", () => {
+  const special = piece("special", 4, ["tail"], {
+    referenceLocation: "special", baseValue: 20,
+    locationValues: { head: 30, chest: 50, rightArm: 10 }
+  });
+  assert.equal(armorPieceValue(special), 50);
+});
+
+test("las armaduras flexibles admiten ±1 TAM y las rígidas exigen el TAM exacto", () => {
+  const wearer = { system: { size: 12 } };
+  assert.equal(armorFitsWearer({ system: { construction: "flexible", designedSize: 11 } }, wearer), true);
+  assert.equal(armorFitsWearer({ system: { construction: "flexible", designedSize: 10 } }, wearer), false);
+  assert.equal(armorFitsWearer({ system: { construction: "rigid", designedSize: 11 } }, wearer), false);
+  assert.equal(armorFitsWearer({ system: { construction: "rigid", designedSize: 12 } }, wearer), true);
 });

@@ -192,33 +192,33 @@
     </nav>
     <section class="armor-tab-panel active" data-armor-tab-content="characteristics">
       <fieldset class="armor-sheet-fields"><legend>{{localize "MYTHRASF.Armor.Characteristics"}}</legend>
+        <label>{{localize "MYTHRASF.Skill.Source"}}</label><input class="sheet-field-editable" type="text" name="system.source" value="{{item.system.source}}">
         <label>{{localize "MYTHRASF.Armor.ProfileName"}}</label><input type="text" name="system.profileName" value="{{item.system.profileName}}">
+        <label>{{localize "MYTHRASF.Armor.Construction.Label"}}</label><select name="system.construction">{{selectOptions armorConstructionChoices selected=item.system.construction labelAttr="label" valueAttr="value"}}</select>
+        <label>{{localize "MYTHRASF.Armor.Material.Label"}}</label><select name="system.material">{{selectOptions armorMaterialChoices selected=item.system.material labelAttr="label" valueAttr="value"}}</select>
         <label>{{localize "MYTHRASF.Armor.Points"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
         <label>{{localize "MYTHRASF.Npc.GenerationFormula"}}</label><input type="text" name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}">
         <label>{{localize "MYTHRASF.Armor.BaseEncumbrance"}}</label><input type="number" min="0" step="any" name="system.baseEncumbrance" value="{{item.system.baseEncumbrance}}">
+        <label>{{localize "MYTHRASF.Armor.MaterialModifier"}}</label><output class="sheet-field-readonly">&times;{{item.system.materialModifier}}</output>
+        <label>{{localize "MYTHRASF.Armor.TotalEncumbrance"}}</label><output class="sheet-field-readonly">{{armorTotals.encumbrance}}</output>
         <label>{{localize "MYTHRASF.Armor.BaseValue"}}</label><input type="number" min="0" step="any" name="system.baseValue" value="{{item.system.baseValue}}">
-        <label>{{localize "MYTHRASF.Armor.Penalty"}}</label><input type="number" min="0" name="system.penalty" value="{{item.system.penalty}}">
+        <label>{{localize "MYTHRASF.Armor.TotalValue"}}</label><output class="sheet-field-readonly">{{armorTotals.value}}</output>
         <label>{{localize "MYTHRASF.Armor.Era.Label"}}</label><select name="system.era">{{selectOptions armorEraChoices selected=item.system.era labelAttr="label" valueAttr="value"}}</select>
         <label>{{localize "MYTHRASF.Item.Description"}}</label><textarea name="system.description">{{item.system.description}}</textarea>
       </fieldset>
     </section>
     <section class="armor-tab-panel" data-armor-tab-content="coverage">
       <fieldset class="armor-coverage-editor"><legend>{{localize "MYTHRASF.Armor.Coverage"}}</legend>
-        {{#each armorLocations as |location|}}<label class="armor-location-choice">
-          <input type="checkbox" class="sheet-state-box" data-armor-location-id="{{location.id}}" {{checked location.selected}}>
-          <span>{{location.name}}</span><small>{{localize "MYTHRASF.Armor.EncumbranceShort"}} &times;{{location.encumbranceMultiplier}} · {{localize "MYTHRASF.Armor.PriceShort"}} {{location.costPercentage}}%</small>
-        </label>{{else}}<p class="empty">{{localize "MYTHRASF.Armor.CoverageActorRequired"}}</p>{{/each}}
-      </fieldset>
-      <fieldset class="armor-sheet-fields"><legend>{{localize "MYTHRASF.Armor.CoverageTotals"}}</legend>
-        <label>{{localize "MYTHRASF.Armor.EncumbranceFactor"}}</label><output class="sheet-field-readonly">&times;{{armorTotals.encumbranceFactor}}</output>
-        <label>{{localize "MYTHRASF.Armor.PricePercentage"}}</label><output class="sheet-field-readonly">{{armorTotals.costPercentage}}%</output>
-        <label>{{localize "MYTHRASF.Armor.TotalEncumbrance"}}</label><output class="sheet-field-readonly">{{armorTotals.encumbrance}}</output>
-        <label>{{localize "MYTHRASF.Armor.TotalValue"}}</label><output class="sheet-field-readonly">{{armorTotals.value}}</output>
+        <label>{{localize "MYTHRASF.Armor.ReferenceLocation.Label"}}</label><select name="system.referenceLocation">{{selectOptions armorReferenceLocationChoices selected=item.system.referenceLocation labelAttr="label" valueAttr="value"}}</select>
+        {{#if armorLocations.length}}<label>{{localize "MYTHRASF.Armor.AssignedLocation"}}</label><select data-armor-location-id><option value="">{{localize "MYTHRASF.Armor.Unassigned"}}</option>{{selectOptions armorLocations selected=armorSelectedLocationId labelAttr="name" valueAttr="id"}}</select>
+        {{else}}<p class="empty">{{localize "MYTHRASF.Armor.CoverageActorRequired"}}</p>{{/if}}
       </fieldset>
     </section>
     <section class="armor-tab-panel" data-armor-tab-content="configuration">
       <fieldset class="armor-sheet-fields"><legend>{{localize "MYTHRASF.Armor.Configuration"}}</legend>
-        <label>{{localize "MYTHRASF.Armor.Piece.TypeLabel"}}</label><select name="system.pieceType">{{selectOptions armorPieceTypeChoices selected=item.system.pieceType labelAttr="label" valueAttr="value"}}</select>
+        <label>{{localize "MYTHRASF.Armor.Piece.TypeLabel"}}</label><output class="sheet-field-readonly">{{armorPieceTypeLabel}}</output>
+        <label>{{localize "MYTHRASF.Armor.DesignedSize"}}</label><input type="number" min="0" name="system.designedSize" value="{{item.system.designedSize}}">
+        <label>{{localize "MYTHRASF.Armor.DesignedBuild"}}</label><input type="text" name="system.designedBuild" value="{{item.system.designedBuild}}">
         <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
         <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
         <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>

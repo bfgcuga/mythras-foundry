@@ -1,42 +1,42 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  ANCIENT_ARMOR_SOURCES,
-  ARMOR_SOURCES,
-  FUTURISTIC_ARMOR_SOURCES,
-  MODERN_ARMOR_SOURCES
-} from "../scripts/data/armor.js";
-import { ARMOR_PIECE_TYPES, armorPieceDefaultName } from "../scripts/apps/armor-piece-configurator.js";
+import { ARMOR_PROFILES, ARMOR_SOURCES, armorDefaultName } from "../scripts/data/armor.js";
+import { ARMOR_REFERENCE_LOCATIONS, armorPieceEncumbrance } from "../scripts/rules/armor.js";
 
-test("el compendio contiene las veinte armaduras de muestra de Imperativo", () => {
-  assert.equal(ANCIENT_ARMOR_SOURCES.length, 7);
-  assert.equal(MODERN_ARMOR_SOURCES.length, 9);
-  assert.equal(FUTURISTIC_ARMOR_SOURCES.length, 4);
-  assert.equal(ARMOR_SOURCES.length, 20);
+test("el compendio contiene una pieza por perfil y localización", () => {
+  assert.equal(ARMOR_PROFILES.length, 8);
+  assert.equal(ARMOR_REFERENCE_LOCATIONS.length, 8);
+  assert.equal(ARMOR_SOURCES.length, 64);
+  assert.equal(new Set(ARMOR_SOURCES.map(({ buildKey }) => buildKey)).size, 64);
 });
 
-test("cada armadura tiene clave única, era y puntos de armadura", () => {
-  assert.equal(new Set(ARMOR_SOURCES.map(({ buildKey }) => buildKey)).size, 20);
+test("todas las piezas proceden de Mythras básico revisado y cubren una sola localización", () => {
   for (const source of ARMOR_SOURCES) {
     assert.equal(source.type, "armor");
-    assert.ok(["ancient", "modern", "futuristic"].includes(source.system.era));
-    assert.ok(source.system.armorPoints > 0);
-    assert.equal(source.system.penalty, 0);
-    assert.equal(source.system.profileKey, source.buildKey);
+    assert.equal(source.system.source, "Mythras básico revisado");
+    assert.ok(ARMOR_REFERENCE_LOCATIONS.includes(source.system.referenceLocation));
     assert.deepEqual(source.system.coveredLocationIds, []);
-    assert.equal(source.system.coverageMigrated, true);
+    assert.equal(source.system.armorRulesVersion, 3);
   }
 });
 
-test("el catálogo conserva los extremos de protección de la tabla", () => {
-  assert.equal(ARMOR_SOURCES.find(({ buildKey }) => buildKey === "pieles-cueros").system.armorPoints, 1);
-  assert.equal(ARMOR_SOURCES.find(({ buildKey }) => buildKey === "armadura-asalto-completa").system.armorPoints, 12);
+test("los nombres predeterminados distinguen lado, localización y material", () => {
+  assert.equal(armorDefaultName("head", "steel"), "Yelmo de acero");
+  assert.equal(armorDefaultName("chest", "bone"), "Peto de hueso");
+  assert.equal(armorDefaultName("rightArm", "iron"), "Brazal derecho de hierro");
+  assert.equal(armorDefaultName("leftLeg", "bronze"), "Greba izquierda de bronce");
+  assert.equal(armorDefaultName("special", "leather"), "Pieza de armadura de cuero");
 });
 
-test("el configurador ofrece los tipos fisicos de armadura", () => {
-  assert.deepEqual(ARMOR_PIECE_TYPES, ["helmet", "cuirass", "greaves", "bracers", "other"]);
-  assert.equal(armorPieceDefaultName("helmet", "Cota de malla", (key, data) =>
-    `Casco de ${data.profile}`), "Casco de Cota de malla");
-  assert.equal(armorPieceDefaultName("other", "Cota de malla"), "Cota de malla");
+test("los perfiles reproducen la tabla de PA, CRG y coste por localización", () => {
+  assert.deepEqual(ARMOR_PROFILES.map(({ armorPoints, encumbrance, value }) =>
+    [armorPoints, encumbrance, value]), [
+    [1, 2, 20], [2, 1, 80], [3, 2, 180], [4, 3, 320],
+    [5, 4, 500], [6, 5, 900], [7, 6, 1400], [8, 7, 2400]
+  ]);
+  for (const profile of ARMOR_PROFILES) {
+    const piece = ARMOR_SOURCES.find((source) => source.system.profileKey === profile.key);
+    assert.equal(armorPieceEncumbrance(piece), profile.encumbrance);
+  }
 });
