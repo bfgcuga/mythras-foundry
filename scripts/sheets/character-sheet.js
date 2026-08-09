@@ -1949,33 +1949,50 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       window: { title: game.i18n.localize("MYTHRASF.Inventory.Transfer") },
       content: `<div class="inventory-transfer-dialog">
         <label><span>${game.i18n.localize("MYTHRASF.Inventory.TransferDestination")}</span><select name="destination">${options}</select></label>
-        <label><span>${game.i18n.localize("MYTHRASF.Currency.Denomination")}</span><select name="denomination"><option value="copper">PC</option><option value="silver">PP</option><option value="gold">PO</option></select></label>
-        <label><span>${game.i18n.localize("MYTHRASF.Inventory.TransferAmount")}</span><input type="number" min="0.01" step="0.01" name="amount" value="1"></label>
+        <fieldset class="inventory-transfer-amounts"><legend>${game.i18n.localize("MYTHRASF.Inventory.TransferAmount")}</legend>
+          <label><span>PC</span><input type="number" min="0" step="0.01" name="copper" value="0"></label>
+          <label><span>PP</span><input type="number" min="0" step="0.01" name="silver" value="0"></label>
+          <label><span>PO</span><input type="number" min="0" step="0.01" name="gold" value="0"></label>
+        </fieldset>
       </div>`,
       ok: { label: game.i18n.localize("MYTHRASF.Inventory.Transfer"),
         icon: "fas fa-right-left", callback: (dialogEvent, button) => ({
           destinationId: button.form.elements.destination.value,
-          denomination: button.form.elements.denomination.value,
-          amount: Number(button.form.elements.amount.value)
+          amounts: Object.fromEntries(["copper", "silver", "gold"].map((denomination) => (
+            [denomination, Math.max(0, Number(button.form.elements[denomination].value) || 0)]
+          )))
         }) }
     });
-    if (!result || !Number.isFinite(result.amount) || result.amount <= 0) return;
+    if (!result) return;
+    const transfers = Object.entries(result.amounts).filter(([, amount]) => amount > 0);
+    if (!transfers.length) return;
     const walletDocument = (id) => id === "person" ? this.actor : this.actor.items.get(id);
     const walletPath = (id, denomination) => id === "person"
       ? `system.currency.${denomination}` : `system.funds.${denomination}`;
     const source = walletDocument(sourceId);
     const destination = walletDocument(result.destinationId);
     if (!source || !destination) return;
-    const sourcePath = walletPath(sourceId, result.denomination);
-    const destinationPath = walletPath(result.destinationId, result.denomination);
-    const available = Number(foundry.utils.getProperty(source, sourcePath) ?? 0);
-    if (result.amount > available) {
-      ui.notifications.warn(game.i18n.localize("MYTHRASF.Inventory.TransferInsufficient"));
-      return;
+    for (const [denomination, amount] of transfers) {
+      const available = Number(foundry.utils.getProperty(
+        source, walletPath(sourceId, denomination)) ?? 0);
+      if (amount > available) {
+        ui.notifications.warn(game.i18n.format("MYTHRASF.Inventory.TransferInsufficient", {
+          currency: game.i18n.localize(`MYTHRASF.Currency.${denomination}`)
+        }));
+        return;
+      }
     }
-    const currentDestination = Number(foundry.utils.getProperty(destination, destinationPath) ?? 0);
-    await source.update({ [sourcePath]: available - result.amount });
-    await destination.update({ [destinationPath]: currentDestination + result.amount });
+    const sourceUpdate = {};
+    const destinationUpdate = {};
+    for (const [denomination, amount] of transfers) {
+      const sourcePath = walletPath(sourceId, denomination);
+      const destinationPath = walletPath(result.destinationId, denomination);
+      sourceUpdate[sourcePath] = Number(foundry.utils.getProperty(source, sourcePath) ?? 0) - amount;
+      destinationUpdate[destinationPath] = Number(
+        foundry.utils.getProperty(destination, destinationPath) ?? 0) + amount;
+    }
+    await source.update(sourceUpdate);
+    await destination.update(destinationUpdate);
   }
 
   #propertyContaining(item) {

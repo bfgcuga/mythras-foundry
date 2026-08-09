@@ -9,7 +9,7 @@
   "MYTHRASF.Inventory.TransferDestination": "Destination",
   "MYTHRASF.Inventory.TransferAmount": "Amount",
   "MYTHRASF.Inventory.TransferNoDestination": "There is no other money reserve to transfer to.",
-  "MYTHRASF.Inventory.TransferInsufficient": "The source reserve does not contain enough of that currency.",
+  "MYTHRASF.Inventory.TransferInsufficient": "The source reserve does not contain enough {currency}.",
   "MYTHRASF.Inventory.Category.weapons": "Weapons and shields",
   "MYTHRASF.Inventory.Category.armor": "Armor",
   "MYTHRASF.Inventory.Category.miscellaneous": "Miscellaneous",

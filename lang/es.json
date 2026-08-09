@@ -9,7 +9,7 @@
   "MYTHRASF.Inventory.TransferDestination": "Destino",
   "MYTHRASF.Inventory.TransferAmount": "Cantidad",
   "MYTHRASF.Inventory.TransferNoDestination": "No hay otra reserva de dinero a la que transferir.",
-  "MYTHRASF.Inventory.TransferInsufficient": "La reserva de origen no tiene suficiente dinero en esa moneda.",
+  "MYTHRASF.Inventory.TransferInsufficient": "La reserva de origen no tiene suficientes {currency}.",
   "MYTHRASF.Inventory.Category.weapons": "Armas y escudos",
   "MYTHRASF.Inventory.Category.armor": "Armaduras",
   "MYTHRASF.Inventory.Category.miscellaneous": "Objetos varios",
