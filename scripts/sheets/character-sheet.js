@@ -17,6 +17,7 @@ import {
   AGE_CATEGORIES,
   allocationRemaining as backgroundAllocationRemaining,
   createBackgroundDraft,
+  culturePassionDrafts,
   finalizeBackgroundCreation,
   freeSkillNeedsSpecialization,
   getAllAcquiredAbilities,
@@ -31,6 +32,7 @@ import {
   validateAgeSelection,
   validateBackgroundSelection,
   validateFreePhase,
+  validatePassionSelection,
   validateSocialClassSelection
 } from "../rules/background-generation.js";
 import {
@@ -41,11 +43,12 @@ import {
   createMinimumAllocation
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
-import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
+import { calculatePassionBase, PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import { difficultyTarget, resolveWeaponStyle,
   UNTRAINED_COMBAT_STYLE_ID } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
+import { carriedInventoryEncumbrance, inventoryCarried, inventoryRows } from "../rules/inventory.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { applyArmorInitiativePenalty, armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   totalArmorEncumbrance, armorInitiativePenalty, totalArmorPoints,
@@ -135,6 +138,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equipment = items.filter((item) => item.type === "equipment");
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
+    const allInventoryItems = [...equipment, ...weapons, ...armor];
+    const equipmentRows = inventoryRows(allInventoryItems).map((row) => ({ ...row,
+      handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
+      categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
+        : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
+          : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`) }));
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
@@ -213,7 +222,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         fatiguePenalty: currentFatigue.skillDifficulty === "standard"
           ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
           : game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
-        encumbrance: totalArmorEncumbrance(equippedArmor),
+        encumbrance: totalArmorEncumbrance(equippedArmor)
+          + carriedInventoryEncumbrance(allInventoryItems),
         encumbrancePenalty: armorInitiativePenalty(equippedArmor)
           ? `-${armorInitiativePenalty(equippedArmor)}` : "—"
       },
@@ -240,7 +250,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       combatSkillGroup,
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
-      equipment,
+      equipment: equipmentRows,
       weapons: weapons.map((item) => ({ item,
         hasMultipleModes: weaponModes(item).length > 1,
         modeOptions: weaponModes(item).map((mode) => ({ ...mode,
@@ -385,6 +395,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-background-choice]").forEach((field) => {
       field.addEventListener("change", (event) => this.#toggleBackgroundChoice(event));
     });
+    this.element.querySelectorAll("[data-background-passion-field]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#updateBackgroundPassion(event));
+    });
     this.element.querySelectorAll("[data-background-professional]").forEach((field) => {
       field.addEventListener("change", (event) => this.#toggleBackgroundProfessional(event));
     });
@@ -429,6 +442,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-action='toggle-equipped']").forEach((button) => {
       button.addEventListener("click", (event) => this.#toggleEquipped(event));
+    });
+    this.element.querySelectorAll("[data-action='toggle-container']").forEach((button) => {
+      button.addEventListener("click", (event) => this.#toggleContainer(event));
     });
     this.element.querySelectorAll("[data-active-weapon-mode]").forEach((select) => {
       select.addEventListener("change", (event) => this.#prepareWeaponMode(event));
@@ -540,6 +556,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
+    if (!item.system.equipped && !inventoryCarried(item, this.actor.items.filter((candidate) =>
+      ["equipment", "weapon", "armor"].includes(candidate.type)))) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Item.StoredCannotEquip"));
+      return;
+    }
     if (item.type === "armor") {
       if (!item.system.equipped && !this.#canEquipArmor(item)) return;
       await item.update({ "system.equipped": !Boolean(item.system.equipped) });
@@ -906,6 +927,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return {
       stage,
       isCulture: stage === "culture",
+      isPassions: stage === "passions",
       isSocialClass: stage === "socialClass",
       isProfession: stage === "profession",
       isAge: stage === "age",
@@ -937,6 +959,26 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         key: entry.key,
         name: entry.name,
         selected: entry.key === draft.cultureKey
+      })),
+      passionRows: draft.passions.map((passion, index) => ({
+        ...passion,
+        index,
+        number: index + 1,
+        isPerson: passion.objectType === "person",
+        isCustomVerb: passion.verb === "other",
+        total: calculatePassionBase(
+          passion.objectType, this.actor.system, passion.targetCharisma
+        ) + Number(passion.creationBonus ?? 0),
+        verbChoices: PASSION_VERBS.map((value) => ({
+          value,
+          label: game.i18n.localize(`MYTHRASF.Passion.Verb.${value}`),
+          selected: value === passion.verb
+        })),
+        objectChoices: PASSION_OBJECT_TYPES.map((value) => ({
+          value,
+          label: game.i18n.localize(`MYTHRASF.Passion.Object.${value}`),
+          selected: value === passion.objectType
+        }))
       })),
       professions: professionsForCulture(draft.cultureKey).map((entry) => ({
         key: entry.key,
@@ -1321,7 +1363,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (type === "culture") {
       Object.assign(draft, createBackgroundDraft(), {
-        cultureKey: event.currentTarget.value
+        cultureKey: event.currentTarget.value,
+        passions: culturePassionDrafts(getCulture(event.currentTarget.value))
       });
     } else {
       draft.professionKey = event.currentTarget.value;
@@ -1337,6 +1380,18 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         if (key.startsWith("profession:")) delete draft.styles[key];
       }
     }
+    await this.#saveBackgroundDraft(draft);
+  }
+
+  async #updateBackgroundPassion(event) {
+    if (!this.isEditable) return;
+    const { index, backgroundPassionField: field } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const passion = draft.passions[Number(index)];
+    if (!passion) return;
+    passion[field] = ["targetCharisma", "creationBonus"].includes(field)
+      ? Number.parseInt(event.currentTarget.value, 10) || 0
+      : event.currentTarget.value.trim();
     await this.#saveBackgroundDraft(draft);
   }
 
@@ -1591,7 +1646,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (direction === "back") {
       draft.stage = {
-        socialClass: "culture",
+        passions: "culture",
+        socialClass: "passions",
         profession: "socialClass",
         age: "profession",
         free: "age",
@@ -1607,6 +1663,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const freeAllocationRules = this.#backgroundAllocationRules(draft, "free");
     const validation = draft.stage === "culture"
       ? validateBackgroundSelection(culture, draft, "culture", cultureAllocationRules)
+      : draft.stage === "passions"
+        ? validatePassionSelection(draft)
       : draft.stage === "socialClass"
         ? validateSocialClassSelection(draft)
         : draft.stage === "profession"
@@ -1628,10 +1686,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const previousStage = draft.stage;
     draft.stage = {
-      culture: "socialClass", socialClass: "profession", profession: "age",
+      culture: "passions", passions: "socialClass", socialClass: "profession", profession: "age",
       age: "free", free: "review"
     }[draft.stage];
-    if (previousStage === "culture"
+    if (previousStage === "passions"
       && getSocialClassMethod() === SOCIAL_CLASS_METHODS.random
       && !draft.socialClassKey) {
       await this.#assignRandomSocialClass(draft);
@@ -1649,6 +1707,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const freeAllocationRules = this.#backgroundAllocationRules(draft, "free");
     if (
       !validateBackgroundSelection(culture, draft, "culture", cultureAllocationRules).valid
+      || !validatePassionSelection(draft).valid
       || !validateSocialClassSelection(draft).valid
       || !professionAvailableToCulture(draft.professionKey, draft.cultureKey)
       || !validateBackgroundSelection(
@@ -1705,6 +1764,34 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (updates.length > 0) {
             await this.actor.updateEmbeddedDocuments("Item", updates);
           }
+          const existing = new Set(this.actor.items
+            .filter((item) => item.type === "passion")
+            .map((item) => item.getFlag("mythras-foundry", "culturalPassion"))
+            .filter(Boolean));
+          const passionItems = draft.passions.flatMap((passion, index) => {
+            const flag = `${culture.key}:${index}`;
+            if (existing.has(flag)) return [];
+            const verb = passion.verb === "other"
+              ? passion.customVerb
+              : game.i18n.localize(`MYTHRASF.Passion.Verb.${passion.verb}`);
+            return [{
+              name: `${verb} (${passion.objectDescription})`,
+              type: "passion",
+              img: defaultItemIcon("passion"),
+              system: {
+                structured: true,
+                ...passion,
+                experiencePoints: 0,
+                manualAdjustment: 0,
+                value: 0,
+                description: ""
+              },
+              flags: { "mythras-foundry": { culturalPassion: flag } }
+            }];
+          });
+          if (passionItems.length > 0) {
+            await this.actor.createEmbeddedDocuments("Item", passionItems);
+          }
         }
       });
     } finally {
@@ -1753,6 +1840,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           <select name="objectType">${objectOptions}</select></label>
         <label><span>${game.i18n.localize("MYTHRASF.Passion.ObjectDescription")}</span>
           <input type="text" name="objectDescription" required></label>
+        <label><span>${game.i18n.localize("MYTHRASF.Passion.TargetCharisma")}</span>
+          <input type="number" min="1" name="targetCharisma" value="11"></label>
         <label><span>${game.i18n.localize("MYTHRASF.Passion.CreationBonus")}</span>
           <input type="number" name="creationBonus" value="0"></label>
       </div>`,
@@ -1766,6 +1855,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             customVerb: elements.customVerb.value.trim(),
             objectType: elements.objectType.value,
             objectDescription: elements.objectDescription.value.trim(),
+            targetCharisma: Number.parseInt(elements.targetCharisma.value, 10) || 11,
             creationBonus: Number.parseInt(elements.creationBonus.value, 10) || 0
           };
         }
@@ -1787,6 +1877,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     item?.sheet.render(true);
+  }
+
+  async #toggleContainer(event) {
+    event.preventDefault();
+    const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (item?.type !== "equipment" || !item.system.isContainer) return;
+    await item.update({ "system.collapsed": !item.system.collapsed });
   }
 
   async #deleteItem(event) {

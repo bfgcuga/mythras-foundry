@@ -734,11 +734,31 @@
 
 .mythras-foundry .background-steps {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 0.3rem;
   margin: 0 0 0.75rem;
   padding: 0;
   list-style: none;
+}
+
+.mythras-foundry .background-passion-help {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0.4rem;
+  background: var(--mythras-panel);
+}
+
+.mythras-foundry .background-passion-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.mythras-foundry .background-passion-row label {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .mythras-foundry .background-steps li {
@@ -1680,8 +1700,19 @@
 
 .mythras-foundry .inventory-panel { position: relative; margin: 0 0 0.85rem; }
 .mythras-foundry .inventory-panel-add { position: absolute; top: -0.45rem; right: 0.6rem; }
+.mythras-foundry .inventory-tree { overflow-x: auto; }
+.mythras-foundry .inventory-tree-head,
+.mythras-foundry .inventory-tree .item-list li { display: grid; grid-template-columns: minmax(12rem, 1fr) 7rem 4rem 4rem 6rem 2rem 2rem; align-items: center; gap: 0.4rem; min-width: 42rem; min-height: 2rem; font-size: var(--mythras-font-size-table); }
+.mythras-foundry .inventory-tree-head { border-bottom: 1px solid var(--mythras-border); font-weight: 700; text-align: center; }
+.mythras-foundry .inventory-tree .item-list { margin: 0; padding: 0; }
+.mythras-foundry .inventory-tree .item-list li { position: relative; border-bottom: 1px solid rgb(107 83 47 / 35%); }
 .mythras-foundry .inventory-table { overflow-x: auto; }
 .mythras-foundry .inventory-table .item-list { margin: 0; border: 0; }
+.mythras-foundry .inventory-table .item-list li { position: relative; }
+.mythras-foundry .inventory-container-row { background: var(--mythras-panel); }
+.mythras-foundry .inventory-container-toggle { position: absolute; left: 0.15rem; z-index: 1; }
+.mythras-foundry .equipment-quality-prices,
+.mythras-foundry .weapon-crew-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem; align-items: center; }
 .mythras-foundry .inventory-table-head,
 .mythras-foundry .inventory-table .item-list li {
   display: grid;

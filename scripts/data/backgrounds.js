@@ -17,6 +17,7 @@ const background = ({
   choices = [],
   professional = [],
   styles = [],
+  passions = [],
   description = ""
 }) => ({
   key,
@@ -31,6 +32,7 @@ const background = ({
   professional: professional.map(option),
   professionalChoiceCount: 3,
   styles,
+  passions: passions.map((passion) => ({ ...passion })),
   description
 });
 
@@ -45,6 +47,11 @@ export const CULTURES = [
       "navegacion|Navegación", "orientacion|Orientación", "rastrear|Rastrear",
       "saber|Saber (cualquiera)", "supervivencia|Supervivencia"
     ],
+    passions: [
+      { verb: "loyalty", objectType: "person", objectDescription: "Jefe del clan", targetCharisma: 11 },
+      { verb: "love", objectType: "person", objectDescription: "Amigo, pariente o amor romántico", targetCharisma: 11 },
+      { verb: "hate", objectType: "person", objectDescription: "Criatura, rival o clan", targetCharisma: 11 }
+    ],
     styles: ["Estilo de combate cultural"]
   }),
   background({
@@ -55,6 +62,11 @@ export const CULTURES = [
       "arte|Arte (cualquiera)", "artesania|Artesanía (cualquiera)", "callejeo|Callejeo",
       "comerciar|Comerciar", "cortesia|Cortesía", "idioma|Idioma (cualquiera)",
       "musica|Música", "saber|Saber (cualquiera)"
+    ],
+    passions: [
+      { verb: "loyalty", objectType: "place", objectDescription: "Villa o ciudad", targetCharisma: 11 },
+      { verb: "love", objectType: "person", objectDescription: "Amigo, pariente o amor romántico", targetCharisma: 11 },
+      { verb: "hate", objectType: "organization", objectDescription: "Rival, banda, distrito o ciudad", targetCharisma: 11 }
     ],
     styles: ["Estilo de combate cultural"]
   }),
@@ -75,6 +87,11 @@ export const CULTURES = [
       "idioma|Idioma (cualquiera)", "musica|Música", "orientacion|Orientación",
       "rastrear|Rastrear", "saber|Saber (cualquiera)", "supervivencia|Supervivencia"
     ],
+    passions: [
+      { verb: "loyalty", objectType: "person", objectDescription: "Kan o Jefe Tribal", targetCharisma: 11 },
+      { verb: "love", objectType: "person", objectDescription: "Amigo, pariente o amor romántico", targetCharisma: 11 },
+      { verb: "hate", objectType: "organization", objectDescription: "Criatura, rival o tribu", targetCharisma: 11 }
+    ],
     styles: ["Estilo de combate cultural"]
   }),
   background({
@@ -89,6 +106,11 @@ export const CULTURES = [
       "artesania|Artesanía (cualquiera)", "curacion|Curación", "musica|Música",
       "orientacion|Orientación", "rastrear|Rastrear", "saber|Saber (cualquiera)",
       "supervivencia|Supervivencia"
+    ],
+    passions: [
+      { verb: "loyalty", objectType: "person", objectDescription: "Jefe o Líder", targetCharisma: 11 },
+      { verb: "love", objectType: "person", objectDescription: "Amigo, pariente o amor romántico", targetCharisma: 11 },
+      { verb: "hate", objectType: "species", objectDescription: "Algo que te asusta o intimida", targetCharisma: 11 }
     ],
     styles: ["Estilo de combate cultural"]
   })

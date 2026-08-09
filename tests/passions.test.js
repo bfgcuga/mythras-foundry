@@ -9,22 +9,24 @@ import {
 const actor = { power: 12, charisma: 9, intelligence: 14 };
 
 test("cada tipo de objeto aplica la base de pasión correcta", () => {
-  assert.equal(calculatePassionBase("person", actor), 21);
-  assert.equal(calculatePassionBase("organization", actor), 26);
-  assert.equal(calculatePassionBase("species", actor), 24);
-  assert.equal(calculatePassionBase("place", actor), 26);
-  assert.equal(calculatePassionBase("object", actor), 24);
-  assert.equal(calculatePassionBase("ideal", actor), 26);
+  assert.equal(calculatePassionBase("person", actor), 53);
+  assert.equal(calculatePassionBase("person", actor, 15), 57);
+  assert.equal(calculatePassionBase("organization", actor), 56);
+  assert.equal(calculatePassionBase("species", actor), 54);
+  assert.equal(calculatePassionBase("place", actor), 56);
+  assert.equal(calculatePassionBase("object", actor), 54);
+  assert.equal(calculatePassionBase("ideal", actor), 56);
 });
 
 test("la pasión separa base, creación, experiencia y ajuste manual", () => {
   assert.deepEqual(calculatePassionValues({
     structured: true,
     objectType: "person",
-    creationBonus: 40,
+    targetCharisma: 11,
+    creationBonus: 10,
     experiencePoints: 3,
     manualAdjustment: -2
-  }, actor), { base: 21, bonus: 41, total: 62, legacy: false });
+  }, actor), { base: 53, bonus: 11, total: 64, legacy: false });
 });
 
 test("una pasión antigua conserva exactamente su porcentaje", () => {

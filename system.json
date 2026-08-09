@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.80",
+  "version": "0.0.81",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.80/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.81/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -76,6 +76,13 @@
       "name": "weapons",
       "label": "Armas",
       "path": "packs/weapons",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "equipment",
+      "label": "Objetos",
+      "path": "packs/equipment",
       "type": "Item",
       "system": "mythras-foundry"
     },

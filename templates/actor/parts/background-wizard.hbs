@@ -3,11 +3,12 @@
 
   <ol class="background-steps" aria-label="{{localize "MYTHRASF.Background.Progress"}}">
     <li class="{{#if wizard.isCulture}}active{{/if}}">1. {{localize "MYTHRASF.Background.Culture"}}</li>
-    <li class="{{#if wizard.isSocialClass}}active{{/if}}">2. {{localize "MYTHRASF.Background.SocialClass"}}</li>
-    <li class="{{#if wizard.isProfession}}active{{/if}}">3. {{localize "MYTHRASF.Background.Profession"}}</li>
-    <li class="{{#if wizard.isAge}}active{{/if}}">4. {{localize "MYTHRASF.Background.Age"}}</li>
-    <li class="{{#if wizard.isFree}}active{{/if}}">5. {{localize "MYTHRASF.Background.FreePoints"}}</li>
-    <li class="{{#if wizard.isReview}}active{{/if}}">6. {{localize "MYTHRASF.Background.Review"}}</li>
+    <li class="{{#if wizard.isPassions}}active{{/if}}">2. {{localize "MYTHRASF.Background.Passions"}}</li>
+    <li class="{{#if wizard.isSocialClass}}active{{/if}}">3. {{localize "MYTHRASF.Background.SocialClass"}}</li>
+    <li class="{{#if wizard.isProfession}}active{{/if}}">4. {{localize "MYTHRASF.Background.Profession"}}</li>
+    <li class="{{#if wizard.isAge}}active{{/if}}">5. {{localize "MYTHRASF.Background.Age"}}</li>
+    <li class="{{#if wizard.isFree}}active{{/if}}">6. {{localize "MYTHRASF.Background.FreePoints"}}</li>
+    <li class="{{#if wizard.isReview}}active{{/if}}">7. {{localize "MYTHRASF.Background.Review"}}</li>
   </ol>
 
   {{#if wizard.isCulture}}
@@ -20,6 +21,42 @@
         {{/each}}
       </select>
     </label>
+  {{/if}}
+
+  {{#if wizard.isPassions}}
+    <p class="background-passion-help">{{localize "MYTHRASF.Background.PassionHelp"}}</p>
+    <div class="background-passion-list">
+      {{#each wizard.passionRows as |passion|}}
+        <fieldset class="background-passion-row">
+          <legend>{{localize "MYTHRASF.Background.PassionNumber" number=passion.number}}</legend>
+          <label><span>{{localize "MYTHRASF.Passion.VerbLabel"}}</span>
+            <select class="sheet-field-editable" data-background-passion-field="verb" data-index="{{passion.index}}">
+              {{#each passion.verbChoices as |choice|}}<option value="{{choice.value}}" {{#if choice.selected}}selected{{/if}}>{{choice.label}}</option>{{/each}}
+            </select>
+          </label>
+          {{#if passion.isCustomVerb}}<label><span>{{localize "MYTHRASF.Passion.CustomVerb"}}</span>
+            <input class="sheet-field-editable" value="{{passion.customVerb}}" data-background-passion-field="customVerb" data-index="{{passion.index}}">
+          </label>{{/if}}
+          <label><span>{{localize "MYTHRASF.Passion.ObjectType"}}</span>
+            <select class="sheet-field-editable" data-background-passion-field="objectType" data-index="{{passion.index}}">
+              {{#each passion.objectChoices as |choice|}}<option value="{{choice.value}}" {{#if choice.selected}}selected{{/if}}>{{choice.label}}</option>{{/each}}
+            </select>
+          </label>
+          <label><span>{{localize "MYTHRASF.Passion.ObjectDescription"}}</span>
+            <input class="sheet-field-editable" value="{{passion.objectDescription}}" data-background-passion-field="objectDescription" data-index="{{passion.index}}">
+          </label>
+          {{#if passion.isPerson}}<label><span>{{localize "MYTHRASF.Passion.TargetCharisma"}}</span>
+            <input type="number" min="1" class="sheet-field-editable" value="{{passion.targetCharisma}}" data-background-passion-field="targetCharisma" data-index="{{passion.index}}">
+          </label>{{/if}}
+          <label><span>{{localize "MYTHRASF.Passion.CreationBonus"}}</span>
+            <input type="number" class="sheet-field-editable" value="{{passion.creationBonus}}" data-background-passion-field="creationBonus" data-index="{{passion.index}}">
+          </label>
+          <label><span>{{localize "MYTHRASF.Passion.InitialValue"}}</span>
+            <output class="sheet-field-readonly">{{passion.total}}%</output>
+          </label>
+        </fieldset>
+      {{/each}}
+    </div>
   {{/if}}
 
   {{#if wizard.isSocialClass}}
@@ -261,6 +298,8 @@
       <p><b>{{localize "MYTHRASF.Background.Profession"}}:</b> {{wizard.professionName}}</p>
       <p><b>{{localize "MYTHRASF.SocialClass.StartingMoney"}}:</b> {{wizard.startingMoney}} {{localize "MYTHRASF.Currency.SilverPieces"}}</p>
       <p><b>{{localize "MYTHRASF.Background.Age"}}:</b> {{wizard.age}} ({{wizard.ageCategoryName}})</p>
+      <p><b>{{localize "MYTHRASF.Background.Passions"}}:</b></p>
+      <ul>{{#each wizard.passionRows as |passion|}}<li>{{passion.objectDescription}} ({{passion.total}}%)</li>{{/each}}</ul>
       <p>{{localize "MYTHRASF.Background.ReviewHelp"}}</p>
     </div>
   {{/if}}

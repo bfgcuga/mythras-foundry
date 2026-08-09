@@ -9,6 +9,7 @@ const EXPECTED_PACKS = Object.freeze({
   cultures: { label: "Culturas", path: "packs/cultures", type: "Item" },
   professions: { label: "Profesiones", path: "packs/professions", type: "Item" },
   weapons: { label: "Armas", path: "packs/weapons", type: "Item" },
+  equipment: { label: "Objetos", path: "packs/equipment", type: "Item" },
   "armor-pieces": { label: "Piezas de armadura", path: "packs/armor-pieces", type: "Item" },
   macros: { label: "Macros", path: "packs/macros", type: "Macro" },
   traits: { label: "Rasgos", path: "packs/traits", type: "Item" },

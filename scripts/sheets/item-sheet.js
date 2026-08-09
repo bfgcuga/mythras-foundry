@@ -11,6 +11,7 @@ import { manualWeaponProfiles, mergeWeaponProfiles, removeWeaponProfile, weaponP
 import { armorDefaultName } from "../data/armor.js";
 import { ARMOR_MATERIAL_MODIFIERS, ARMOR_REFERENCE_LOCATIONS, armorPieceTypeForLocation,
   armorLocationForReference, armorPhysicalTotals } from "../rules/armor.js";
+import { inventoryCarried } from "../rules/inventory.js";
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -39,6 +40,15 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static async _onSubmitForm(event, form, formData) {
     const update = foundry.utils.expandObject(formData.object);
+    if (["equipment", "weapon", "armor"].includes(this.item.type)
+      && update.system?.parentContainerId !== undefined && this.item.actor) {
+      const preview = { id: this.item.id, type: this.item.type,
+        system: { ...this.item.system, ...update.system } };
+      const inventory = this.item.actor.items.filter((candidate) =>
+        ["equipment", "weapon", "armor"].includes(candidate.type))
+        .map((candidate) => candidate.id === this.item.id ? preview : candidate);
+      if (!inventoryCarried(preview, inventory)) update.system.equipped = false;
+    }
     if (this.item.type === "combatStyle" && update.system?.weapons !== undefined) {
       update.system.weaponProfiles = parseWeaponProfileReferences(update.system.weapons);
     }
@@ -92,7 +102,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       if (!this.item.system.structured) {
         const base = calculatePassionBase(
           update.system.objectType,
-          this.item.actor?.system
+          this.item.actor?.system,
+          update.system.targetCharisma
         );
         update.system.manualAdjustment = Number(this.item.system.value ?? 0)
           - base
@@ -125,7 +136,16 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isCulture: this.item.type === "culture",
       isPassion: this.item.type === "passion",
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
+      isPersonPassion: this.item.type === "passion" && this.item.system.objectType === "person",
       isEquipment: ["equipment", "weapon", "armor"].includes(this.item.type),
+      equipmentCategoryChoices: ["item", "service", "vehicle", "livestock", "container",
+        "property", "clothing", "food", "ammunition"].map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.ItemClass.${value}`) })),
+      equipmentContainerChoices: ["equipment", "weapon", "armor"].includes(this.item.type)
+        && this.item.actor
+        ? this.item.actor.items.filter((candidate) => candidate.type === "equipment"
+          && candidate.id !== this.item.id && candidate.system.isContainer)
+          .map((candidate) => ({ value: candidate.id, label: candidate.name })) : [],
       isWeapon: this.item.type === "weapon",
       weaponModes: this.item.type === "weapon" ? weaponModes(this.item) : [],
       isArmor: this.item.type === "armor",

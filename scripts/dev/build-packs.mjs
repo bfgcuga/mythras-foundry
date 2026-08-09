@@ -9,6 +9,7 @@ import {
 } from "../data/backgrounds.js";
 import { ALL_SKILL_SOURCES } from "../data/skills.js";
 import { WEAPON_SOURCES } from "../data/weapons.js";
+import { EQUIPMENT_SOURCES } from "../data/equipment.js";
 import { ARMOR_SOURCES } from "../data/armor.js";
 import { MACRO_SOURCES } from "../data/macros.js";
 import { TRAIT_SOURCES } from "../data/traits.js";
@@ -201,6 +202,7 @@ await buildPack("skills", ALL_SKILL_SOURCES, "skill");
 await buildPack("cultures", CULTURE_SOURCES, "culture");
 await buildPack("professions", PROFESSION_SOURCES, "profession");
 await buildPack("weapons", WEAPON_SOURCES, "weapon");
+await buildPack("equipment", EQUIPMENT_SOURCES, "equipment");
 await buildPack("armor-pieces", ARMOR_SOURCES, "armor-piece");
 await buildPack("traits", TRAIT_SOURCES, "trait");
 await buildActorPack("creatures", CREATURE_SOURCES, "creature");

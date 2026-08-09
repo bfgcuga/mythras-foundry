@@ -10,6 +10,7 @@ import {
   allocationRemaining,
   AGE_CATEGORIES,
   createBackgroundDraft,
+  culturePassionDrafts,
   finalizeBackgroundCreation,
   getAllAcquiredAbilities,
   getAgeCategory,
@@ -18,8 +19,21 @@ import {
   skillAbilityKey,
   validateAgeSelection,
   validateBackgroundSelection,
-  validateFreePhase
+  validateFreePhase,
+  validatePassionSelection
 } from "../scripts/rules/background-generation.js";
+
+test("cada cultura propone tres pasiones editables", () => {
+  for (const culture of CULTURES) {
+    const passions = culturePassionDrafts(culture);
+    assert.equal(passions.length, 3);
+    assert.ok(passions.every((passion) => passion.objectDescription));
+    assert.ok(passions.every((passion) => passion.targetCharisma === 11));
+    assert.equal(validatePassionSelection({ passions }).valid, true);
+    passions[0].objectDescription = "";
+    assert.equal(validatePassionSelection({ passions }).valid, false);
+  }
+});
 
 test("el catálogo coincide con las veinticuatro profesiones del documento", () => {
   assert.equal(CULTURES.length, 4);

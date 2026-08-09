@@ -1,4 +1,5 @@
 import { getSocialClass } from "../data/social-classes.js";
+import { PASSION_OBJECT_TYPES, PASSION_VERBS } from "./passions.js";
 
 export const BACKGROUND_BUDGETS = Object.freeze({
   culture: 100,
@@ -44,6 +45,7 @@ export function createBackgroundDraft() {
     startingMoney: 0,
     ageCategory: "",
     age: 0,
+    passions: [],
     cultureChoices: {},
     professionChoices: {},
     cultureProfessionals: [],
@@ -76,6 +78,7 @@ export function mergeDraft(draft = {}) {
   return {
     ...initial,
     ...draft,
+    passions: (draft.passions ?? initial.passions).map((passion) => ({ ...passion })),
     cultureChoices: { ...initial.cultureChoices, ...draft.cultureChoices },
     professionChoices: { ...initial.professionChoices, ...draft.professionChoices },
     specializations: { ...initial.specializations, ...draft.specializations },
@@ -91,6 +94,27 @@ export function mergeDraft(draft = {}) {
       free: { ...initial.allocations.free, ...draft.allocations?.free }
     }
   };
+}
+
+export function culturePassionDrafts(culture) {
+  return (culture?.passions ?? []).map((passion) => ({
+    customVerb: "",
+    creationBonus: 0,
+    targetCharisma: 11,
+    ...passion
+  }));
+}
+
+export function validatePassionSelection(draft) {
+  const passions = draft.passions ?? [];
+  const valid = passions.length === 3 && passions.every((passion) => (
+    PASSION_VERBS.includes(passion.verb)
+    && PASSION_OBJECT_TYPES.includes(passion.objectType)
+    && String(passion.objectDescription ?? "").trim()
+    && (passion.verb !== "other" || String(passion.customVerb ?? "").trim())
+    && (passion.objectType !== "person" || Number(passion.targetCharisma) >= 1)
+  ));
+  return valid ? { valid: true } : { valid: false, reason: "passions" };
 }
 
 export function slugifySpecialization(value) {

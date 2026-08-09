@@ -2,6 +2,7 @@ import { CharacterData } from "./data/character-data.js";
 import { NpcData } from "./data/npc-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
 import { defaultItemIcon } from "./data/item-icons.js";
+import { DEFAULT_HOME_DATA } from "./data/equipment.js";
 import {
   BackgroundData,
   ArmorData,
@@ -46,6 +47,7 @@ const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
   "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
+  "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs",
   "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
 ];
 
@@ -261,6 +263,7 @@ Hooks.on("createActor", async (actor, options, userId) => {
   await ensureBasicSkills(actor);
   if (actor.type === "character") {
     await ensureHumanHitLocations(actor);
+    await ensureDefaultHome(actor);
     await actor.update({ "system.backgroundCreationEnabled": true });
   }
 });
@@ -301,6 +304,7 @@ Hooks.once("ready", async () => {
     await migrateEmbeddedItemIcons(actor);
     await migrateCombatItems(actor);
     if (actor.type === "character") await ensureHumanHitLocations(actor);
+    if (actor.type === "character") await ensureDefaultHome(actor);
     await migrateActorArmor(actor);
   }
   const worldIconUpdates = game.items
@@ -342,6 +346,18 @@ async function ensureHumanHitLocations(actor) {
     actor.system,
     (key) => game.i18n.localize(key)
   ));
+}
+
+async function ensureDefaultHome(actor) {
+  if (actor.type !== "character" || actor.items.some((item) => (
+    item.type === "equipment" && (item.getFlag("mythras-foundry", "defaultHome")
+      || (item.system.category === "property" && item.name === "Casa"))
+  ))) return;
+  await actor.createEmbeddedDocuments("Item", [{
+    ...DEFAULT_HOME_DATA,
+    flags: { ...DEFAULT_HOME_DATA.flags,
+      "mythras-foundry": { ...DEFAULT_HOME_DATA.flags["mythras-foundry"], defaultHome: true } }
+  }]);
 }
 
 function defaultArmorFactors(location) {
