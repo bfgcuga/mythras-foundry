@@ -121,6 +121,13 @@ const EQUIPMENT_IMAGE_PATHS = Object.freeze({
   "balas-de-plomo-para-honda-bolsa-de-veinte": "municion/balas_de_plomo_para_honda_bolsa_de_veinte.webp",
   "dardos-de-cerbatana-media-docena": "municion/dardos_de_cerbatana_media_docena.webp",
   "dardos-arrojadizos-fajo-de-doce": "municion/dardos_arrojadizos_fajo_de_doce.webp",
+  "carro-de-dos-ruedas": "transportes/carro_de_dos_ruedas.webp",
+  "carromato-de-dos-ruedas": "transportes/carromato_de_dos_ruedas.webp",
+  "carromato-de-cuatro-ruedas": "transportes/carromato_de_cuatro_ruedas.webp",
+  "carruaje-pesado": "transportes/carruaje_pesado.webp",
+  "cuadriga-de-guerra": "transportes/cuadriga_de_guerra.webp",
+  "diligencia": "transportes/diligencia.webp",
+  "litera-abierta": "transportes/litera_abierta.webp",
   "palanquin": "transportes/palanquin.webp"
 });
 
