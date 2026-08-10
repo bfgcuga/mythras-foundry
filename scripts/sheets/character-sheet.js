@@ -16,6 +16,8 @@ import { ARMOR_SOURCES } from "../data/armor.js";
 import { WEAPON_SOURCES } from "../data/weapons.js";
 import { equipmentIcon } from "../data/equipment.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
+import { COMBAT_STYLE_TRAIT_SOURCES } from "../data/traits.js";
+import { traitReference } from "../rules/traits.js";
 import {
   BACKGROUND_BUDGETS,
   AGE_CATEGORIES,
@@ -317,7 +319,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           .map((profile) => profile.name)
           .filter(Boolean)
           .join(", ") || style.system.weapons,
-        traits: style.system.traits,
+        traits: [
+          ...(style.system.traitRefs ?? []).map((reference) => reference.name || reference.key),
+          ...(style.system.traits ? [style.system.traits] : [])
+        ].join(", "),
         total: Number(style.system.total ?? 0),
         totalDisplay: penalizedValue(
           Number(style.system.total ?? 0),
@@ -448,6 +453,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelectorAll("[data-background-style-field]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateBackgroundStyle(event));
+    });
+    this.element.querySelectorAll("[data-background-style-trait]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#toggleBackgroundStyleTrait(event));
     });
     this.element.querySelectorAll("[data-background-style-action]").forEach((button) => {
       button.addEventListener("click", (event) => this.#changeBackgroundStyles(event));
@@ -1156,6 +1164,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               ...ability,
               phase,
               existingStyleNames: this.#existingCombatStyleNames(),
+              traitOptions: COMBAT_STYLE_TRAIT_SOURCES.map((trait) => ({
+                key: trait.buildKey, name: trait.name,
+                checked: (ability.traitKeys ?? []).includes(trait.buildKey)
+              })),
               canRemove: !ability.required
             }))
         }
@@ -1173,6 +1185,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       freeCombatStyleSelected: draft.freeProfessional.type === "combatStyle",
       freeExistingCombatStyles: this.#existingCombatStyleNames(),
       freeProfessional: draft.freeProfessional,
+      freeCombatStyleTraitOptions: COMBAT_STYLE_TRAIT_SOURCES.map((trait) => ({
+        key: trait.buildKey, name: trait.name,
+        checked: (draft.freeProfessional.traitKeys ?? []).includes(trait.buildKey)
+      })),
       freeSpecializationListId: `specializations-free-${
         draft.freeProfessional.slug || "skill"
       }`,
@@ -1406,6 +1422,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             : {}),
           ...(ability.type === "combatStyle" && ability.traits
             ? { "system.traits": ability.traits }
+            : {}),
+          ...(ability.type === "combatStyle"
+            ? { "system.traitRefs": this.#backgroundTraitReferences(ability.traitKeys) }
             : {})
         });
       } else {
@@ -1440,6 +1459,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       desired.length !== currentKeys.size
       || desired.some((ability) => !currentKeys.has(ability.key))
     ) return true;
+    for (const ability of desired.filter((candidate) => candidate.type === "combatStyle")) {
+      const item = this.actor.items.find((candidate) => (
+        candidate.type === "combatStyle"
+        && styleAbilityKey(candidate.name) === ability.key
+      ));
+      if (!item) return true;
+      const desiredTraitKeys = new Set(ability.traitKeys ?? []);
+      const currentTraitKeys = new Set((item.system.traitRefs ?? []).map((trait) => trait.key));
+      if (
+        desiredTraitKeys.size !== currentTraitKeys.size
+        || [...desiredTraitKeys].some((key) => !currentTraitKeys.has(key))
+      ) return true;
+    }
     return BASIC_SKILL_SOURCES.some((source) => {
       if (source.system.slug === "estilo-de-combate") return false;
       const item = this.actor.items.find((candidate) => (
@@ -1479,6 +1511,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           fumbled: false,
           weapons: ability.weapons,
           traits: ability.traits,
+          traitRefs: this.#backgroundTraitReferences(ability.traitKeys),
           sourceType: "background",
           description: ability.prompt
         },
@@ -1505,6 +1538,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     };
     return data;
+  }
+
+  #backgroundTraitReferences(keys = []) {
+    const selected = new Set(keys ?? []);
+    return COMBAT_STYLE_TRAIT_SOURCES.filter((trait) => selected.has(trait.buildKey))
+      .map((trait) => traitReference(trait));
   }
 
   async #selectBackground(event) {
@@ -1634,6 +1673,18 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.#saveBackgroundDraft(draft);
   }
 
+  async #toggleBackgroundStyleTrait(event) {
+    const { style, traitKey, free } = event.currentTarget.dataset;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    const target = free === "true" ? draft.freeProfessional : draft.styles[style];
+    if (!target) return;
+    const selected = new Set(target.traitKeys ?? []);
+    if (event.currentTarget.checked) selected.add(traitKey);
+    else selected.delete(traitKey);
+    target.traitKeys = [...selected];
+    await this.#saveBackgroundDraft(draft);
+  }
+
   async #changeBackgroundStyles(event) {
     event.preventDefault();
     const { phase, backgroundStyleAction: action, style } = event.currentTarget.dataset;
@@ -1642,7 +1693,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (phase === "culture") return;
       const id = `${phase}:extra-${Date.now().toString(36)}`;
       draft.extraStyles[phase].push(id);
-      draft.styles[id] = { name: "", weapons: "", traits: "" };
+      draft.styles[id] = { name: "", weapons: "", traits: "", traitKeys: [] };
     } else if (action === "remove" && style) {
       const oldName = draft.styles[style]?.name ?? "";
       const oldKey = styleAbilityKey(oldName);
@@ -1734,7 +1785,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         });
       } else {
         Object.assign(draft.freeProfessional, {
-          type: "skill", slug: value, name: "", weapons: "", traits: ""
+          type: "skill", slug: value, name: "", weapons: "", traits: "", traitKeys: []
         });
       }
     } else {
@@ -2648,19 +2699,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         <div class="combat-style-dialog">
           <label><span>${game.i18n.localize("MYTHRASF.Background.StyleName")}</span>
             <input type="text" name="name" autofocus required></label>
-          <label><span>${game.i18n.localize("MYTHRASF.CombatStyle.Weapons")}</span>
-            <input type="text" name="weapons"></label>
-          <label><span>${game.i18n.localize("MYTHRASF.CombatStyle.Traits")}</span>
-            <input type="text" name="traits"></label>
         </div>
       `,
       ok: {
         label: game.i18n.localize("MYTHRASF.Add"),
         icon: "fas fa-plus",
         callback: (dialogEvent, button) => ({
-          name: button.form.elements.name.value.trim(),
-          weapons: button.form.elements.weapons.value.trim(),
-          traits: button.form.elements.traits.value.trim()
+          name: button.form.elements.name.value.trim()
         })
       }
     });
@@ -2680,11 +2725,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       key,
       type: "combatStyle",
       name: result.name,
-      weapons: result.weapons,
-      traits: result.traits,
+      weapons: "",
+      traits: "",
+      traitKeys: [],
       prompt: ""
     }, { culturePoints: 0, professionPoints: 0, freePoints: 0 });
-    await this.actor.createEmbeddedDocuments("Item", [data]);
+    const [createdStyle] = await this.actor.createEmbeddedDocuments("Item", [data]);
     if (!ignoresExperienceCost) {
       const remainingExperience = Number(this.actor.system.experienceRolls ?? 0)
         - NEW_SKILL_EXPERIENCE_COST;
@@ -2698,6 +2744,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         })
       });
     }
+    createdStyle?.sheet?.render(true);
     await this.render({ force: true });
   }
 

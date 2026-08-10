@@ -46,7 +46,7 @@ test("todas las armas naturales vinculadas apuntan a una localización existente
 });
 
 test("el compendio de rasgos contiene claves únicas y cubre todas las referencias", () => {
-  assert.equal(TRAIT_SOURCES.length, 8);
+  assert.equal(TRAIT_SOURCES.length, 46);
   assert.equal(new Set(TRAIT_SOURCES.map((source) => source.buildKey)).size, TRAIT_SOURCES.length);
   const names = new Set(TRAIT_SOURCES.map((source) => source.name));
   for (const creature of CREATURE_SOURCES) {

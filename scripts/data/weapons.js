@@ -1,4 +1,6 @@
 import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
+import { WEAPON_TRAIT_SOURCES } from "./traits.js";
+import { parseLegacyTraitText } from "../rules/traits.js";
 
 const WEAPON_IMAGE_NAMES = Object.freeze({
   "bola-cadena": "bola_y_cadena",
@@ -22,7 +24,7 @@ const baseSystem = Object.freeze({
   modes: [], weaponType: "melee", damage: "", damageModifierMode: "full", size: "",
   reach: "", maxHitPoints: 0, maxHitPointsFormula: "", currentHitPoints: 0,
   armorPoints: 0, armorPointsFormula: "", durabilitySource: "independent",
-  linkedLocationId: "", encumbrance: 0, effects: "", traits: "", grip: "",
+  linkedLocationId: "", encumbrance: 0, effects: "", traits: "", traitRefs: [], grip: "",
   handsRequired: 1, range: "", reload: "", impalingSize: "", powerModifier: 0,
   crewMinimum: 0, crewMaximum: 0, preferredCombatStyleId: "", familiarity: "similar",
   description: ""
@@ -32,7 +34,7 @@ const mode = ({ key, name = "", type = "melee", damage = "", damageModifier = "f
   size = "", reach = "", effects = "", traits = "", hands = 1, range = "", reload = "",
   impalingSize = "", powerModifier = 0, crew = [0, 0] }) => ({
   key, name, profileKey: "", weaponType: type, damage, damageModifierMode: damageModifier,
-  size, impalingSize, powerModifier, reach, effects, traits,
+  size, impalingSize, powerModifier, reach, effects, traits, traitRefs: [],
   grip: hands === 2 ? "2 manos" : hands === 1 ? "1 mano" : "",
   handsRequired: hands, range, reload, crewMinimum: crew[0], crewMaximum: crew[1],
   preferredCombatStyleId: "", familiarity: "similar"
@@ -192,9 +194,20 @@ export const MELEE_WEAPON_SOURCES = Object.freeze([
   ...TWO_HANDED_WEAPON_SOURCES
 ]);
 
+function convertWeaponTraits(entry) {
+  const top = parseLegacyTraitText(entry.system.traits, WEAPON_TRAIT_SOURCES);
+  entry.system.traits = top.legacyText;
+  entry.system.traitRefs = top.references;
+  entry.system.modes = entry.system.modes.map((weaponMode) => {
+    const converted = parseLegacyTraitText(weaponMode.traits, WEAPON_TRAIT_SOURCES);
+    return { ...weaponMode, traits: converted.legacyText, traitRefs: converted.references };
+  });
+  return entry;
+}
+
 export const WEAPON_SOURCES = Object.freeze([
   ...SHIELD_SOURCES,
   ...MELEE_WEAPON_SOURCES,
   ...SIEGE_WEAPON_SOURCES,
   ...RANGED_WEAPON_SOURCES
-]);
+].map(convertWeaponTraits));

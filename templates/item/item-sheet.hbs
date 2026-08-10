@@ -22,17 +22,18 @@
     {{/if}}
     {{#if isCombatStyle}}
       <nav class="combat-style-sheet-tabs" aria-label="{{localize "MYTHRASF.CombatStyle.Tabs.Label"}}">
-        <button type="button" class="active" data-combat-style-tab="description">{{localize "MYTHRASF.CombatStyle.Tabs.Description"}}</button>
-        <button type="button" data-combat-style-tab="weapons">{{localize "MYTHRASF.CombatStyle.Tabs.Weapons"}}</button>
-        <button type="button" data-combat-style-tab="configuration">{{localize "MYTHRASF.CombatStyle.Tabs.Configuration"}}</button>
+        <button type="button" class="active" data-combat-style-tab="description" title="{{localize "MYTHRASF.CombatStyle.Tabs.Description"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Description"}}</button>
+        <button type="button" data-combat-style-tab="weapons" title="{{localize "MYTHRASF.CombatStyle.Tabs.Weapons"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Weapons"}}</button>
+        <button type="button" data-combat-style-tab="traits" title="{{localize "MYTHRASF.CombatStyle.Tabs.Traits"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Traits"}}</button>
+        <button type="button" data-combat-style-tab="configuration" title="{{localize "MYTHRASF.CombatStyle.Tabs.Configuration"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Configuration"}}</button>
       </nav>
 
       <section class="combat-style-tab-panel active" data-combat-style-tab-content="description">
         <fieldset class="combat-style-description-editor"><legend>{{localize "MYTHRASF.CombatStyle.Description"}}</legend>
-          <label>{{localize "MYTHRASF.CombatStyle.Traits"}}</label>
-          <input type="text" name="system.traits" value="{{item.system.traits}}">
           <label>{{localize "MYTHRASF.Item.Description"}}</label>
           <textarea name="system.description">{{item.system.description}}</textarea>
+          {{#if item.system.traits}}<label>{{localize "MYTHRASF.Trait.LegacyText"}}</label>
+          <textarea name="system.traits">{{item.system.traits}}</textarea>{{/if}}
         </fieldset>
       </section>
 
@@ -49,6 +50,7 @@
               data-profile-key="{{profile.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
           </li>{{else}}<li class="empty">{{localize "MYTHRASF.CombatStyle.NoWeaponProfiles"}}</li>{{/each}}
         </ol>
+        {{#if editable}}<button type="button" class="combat-style-select-button" data-action="select-combat-style-weapon" title="{{localize "MYTHRASF.CombatStyle.SelectWeapon"}}"><i class="fas fa-list" aria-hidden="true"></i> {{localize "MYTHRASF.CombatStyle.SelectWeapon"}}</button>{{/if}}
         {{#if editable}}<div class="combat-style-profile-manual">
           <label for="combat-style-profile-input">{{localize "MYTHRASF.CombatStyle.ManualWeaponProfilesLabel"}}</label>
           <textarea class="sheet-field-editable" data-combat-style-profile-input rows="2"
@@ -57,6 +59,26 @@
           <button type="button" class="sheet-add-button" data-action="add-combat-style-profile"
             aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
         </div>{{/if}}
+        </fieldset>
+      </section>
+
+      <section class="combat-style-tab-panel" data-combat-style-tab-content="traits">
+        <fieldset class="combat-style-traits-editor"><legend>{{localize "MYTHRASF.CombatStyle.Traits"}}</legend>
+          <div class="combat-style-trait-drop" data-combat-style-trait-drop><i class="fas fa-hand-pointer" aria-hidden="true"></i>
+            <span>{{localize "MYTHRASF.CombatStyle.DropTraitsHere"}}</span></div>
+          <ol class="combat-style-trait-list">
+            {{#each combatStyleTraitReferences as |trait|}}<li class="{{#if trait.broken}}broken{{/if}}">
+              <img src="{{trait.img}}" alt="">
+              <button type="button" class="combat-style-trait-name" data-action="open-combat-style-trait" data-trait-uuid="{{trait.uuid}}" title="{{trait.name}}">{{trait.name}}</button>
+              <span class="combat-style-trait-description">{{{trait.description}}}{{#if trait.requiresAllGroupMembers}} <em>{{localize "MYTHRASF.Trait.RequiresAllGroupMembers.Note"}}</em>{{/if}}{{#if trait.broken}} <em>{{localize "MYTHRASF.CombatStyle.BrokenTraitReference"}}</em>{{/if}}</span>
+              <span class="combat-style-trait-source">{{trait.source}}</span>
+              {{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-combat-style-trait" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
+            </li>{{else}}<li class="empty">{{localize "MYTHRASF.CombatStyle.NoTraits"}}</li>{{/each}}
+          </ol>
+          {{#if editable}}<div class="combat-style-trait-actions">
+            <button type="button" data-action="select-combat-style-trait" title="{{localize "MYTHRASF.CombatStyle.SelectTrait"}}"><i class="fas fa-list" aria-hidden="true"></i> {{localize "MYTHRASF.CombatStyle.SelectTrait"}}</button>
+            <button type="button" data-action="create-combat-style-trait" title="{{localize "MYTHRASF.CombatStyle.CreateTrait"}}"><i class="fas fa-plus" aria-hidden="true"></i> {{localize "MYTHRASF.CombatStyle.CreateTrait"}}</button>
+          </div>{{/if}}
         </fieldset>
       </section>
 
@@ -147,7 +169,11 @@
         <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}">
         <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
         <label>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
-        <label>{{localize "MYTHRASF.Weapon.Traits"}}</label><input name="system.traits" value="{{item.system.traits}}">
+        <label>{{localize "MYTHRASF.Weapon.Traits"}}</label><div class="weapon-trait-editor">
+          {{#each weaponTraitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}
+          {{#if editable}}<button type="button" class="sheet-icon-button" data-action="select-weapon-trait" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        </div>
+        {{#if item.system.traits}}<label>{{localize "MYTHRASF.Trait.LegacyText"}}</label><input name="system.traits" value="{{item.system.traits}}">{{/if}}
         <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.ArmorPoints"}})</label><input type="text" name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}">
         <label>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</label><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
         <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.MaxHitPoints"}})</label><input type="text" name="system.maxHitPointsFormula" value="{{item.system.maxHitPointsFormula}}">
@@ -177,7 +203,11 @@
         <label>{{localize "MYTHRASF.Weapon.Range"}}</label><input name="system.modes.{{@index}}.range" value="{{mode.range}}">
         <label>{{localize "MYTHRASF.Weapon.Reload"}}</label><input name="system.modes.{{@index}}.reload" value="{{mode.reload}}">
         <label>{{localize "MYTHRASF.Weapon.Effects"}}</label><textarea name="system.modes.{{@index}}.effects">{{mode.effects}}</textarea>
-        <label>{{localize "MYTHRASF.Weapon.Traits"}}</label><textarea name="system.modes.{{@index}}.traits">{{mode.traits}}</textarea>
+        <label>{{localize "MYTHRASF.Weapon.Traits"}}</label><div class="weapon-trait-editor">
+          {{#each mode.traitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#if ../../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-mode-index="{{../modeIndex}}" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}
+          {{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="select-weapon-trait" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        </div>
+        {{#if mode.traits}}<label>{{localize "MYTHRASF.Trait.LegacyText"}}</label><textarea name="system.modes.{{@index}}.traits">{{mode.traits}}</textarea>{{/if}}
         <label>{{localize "MYTHRASF.Weapon.Crew"}}</label><span class="weapon-crew-fields"><input type="number" min="0" name="system.modes.{{@index}}.crewMinimum" value="{{mode.crewMinimum}}"><span>/</span><input type="number" min="0" name="system.modes.{{@index}}.crewMaximum" value="{{mode.crewMaximum}}"></span>
       </section>{{/each}}
       </fieldset>
@@ -262,6 +292,17 @@
     <label>{{localize "MYTHRASF.HitLocation.ArmorCostPercentage"}}</label><input type="number" min="0" step="any" name="system.armorCostPercentage" value="{{item.system.armorCostPercentage}}">
   {{/if}}
 
-  {{#unless isWeapon}}{{#unless isCombatStyle}}{{#unless isArmor}}<label>{{localize "MYTHRASF.Item.Description"}}</label>
-  <textarea name="system.description">{{item.system.description}}</textarea>{{/unless}}{{/unless}}{{/unless}}
+  {{#if isTrait}}
+    <fieldset class="trait-sheet-fields"><legend>{{localize "MYTHRASF.Trait.Configuration"}}</legend>
+      <label>{{localize "MYTHRASF.Item.Source"}}</label><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
+      <label>{{localize "MYTHRASF.Trait.Type.Label"}}</label><select class="sheet-field-editable" name="system.traitType">{{selectOptions traitTypeChoices selected=item.system.traitType labelAttr="label" valueAttr="value"}}</select>
+      <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.requiresAllGroupMembers" {{checked item.system.requiresAllGroupMembers}}>{{localize "MYTHRASF.Trait.RequiresAllGroupMembers.Label"}}</label>
+      <label>{{localize "MYTHRASF.Item.Description"}}</label><textarea class="sheet-field-editable" name="system.description">{{item.system.description}}</textarea>
+      <label>{{localize "MYTHRASF.Trait.Key"}}</label><input class="sheet-field-editable" name="system.key" value="{{item.system.key}}">
+      <label>{{localize "MYTHRASF.Trait.RuleKey"}}</label><input class="sheet-field-editable" name="system.ruleKey" value="{{item.system.ruleKey}}">
+    </fieldset>
+  {{/if}}
+
+  {{#unless isWeapon}}{{#unless isCombatStyle}}{{#unless isArmor}}{{#unless isTrait}}<label>{{localize "MYTHRASF.Item.Description"}}</label>
+  <textarea name="system.description">{{item.system.description}}</textarea>{{/unless}}{{/unless}}{{/unless}}{{/unless}}
 </div>

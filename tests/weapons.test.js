@@ -60,8 +60,9 @@ test("las columnas especiales de distancia y asedio quedan estructuradas", () =>
 });
 
 test("los escudos conservan sus localizaciones de bloqueo pasivo", () => {
-  assert.match(SHIELD_SOURCES.find((entry) => entry.buildKey === "rodela").system.traits,
-    /2 Localizaciones/);
-  assert.match(SHIELD_SOURCES.find((entry) => entry.buildKey === "scutum-paves").system.traits,
-    /5 Localizaciones/);
+  const passiveLocations = (key) => SHIELD_SOURCES.find((entry) => entry.buildKey === key)
+    .system.traitRefs.find((reference) => reference.key === "bloqueo-pasivo")
+    .parameters.find((parameter) => parameter.key === "locations").value;
+  assert.equal(passiveLocations("rodela"), "2");
+  assert.equal(passiveLocations("scutum-paves"), "5");
 });

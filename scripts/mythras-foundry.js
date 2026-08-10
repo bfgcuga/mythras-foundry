@@ -39,6 +39,9 @@ import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
 import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
 import { managedMacroUpdate } from "./data/macros.js";
+import { TRAIT_SOURCES } from "./data/traits.js";
+import { hasTrait, mergeTraitReferences, parseLegacyTraitText, registerTraitRule,
+  resolveTraitRules, traitReferences, traitSlug, unregisterTraitRule } from "./rules/traits.js";
 import { calculateNpcAttributes } from "./rules/npc.js";
 import { regenerateNpcActor } from "./rules/npc-token.js";
 import { activateActionPointSettingVisibility, getActionPointRules,
@@ -97,7 +100,9 @@ Hooks.once("init", async () => {
         manager.render({ force: true });
         return manager;
       }
-    })
+    }),
+    traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
+      registerRule: registerTraitRule, unregisterRule: unregisterTraitRule }
   };
 
   foundry.documents.collections.Actors.registerSheet(
@@ -204,6 +209,9 @@ Hooks.on("preCreateItem", (item, data) => {
   if (type === "combatStyle" && !(system.weaponProfiles?.length) && system.weapons) {
     item.updateSource({ "system.weaponProfiles": parseWeaponProfileReferences(system.weapons) });
   }
+  if (type === "trait" && !system.key) {
+    item.updateSource({ "system.key": traitSlug(data.name ?? item.name) });
+  }
   if (type === "weapon" && !system.profileKey) {
     item.updateSource({ "system.profileKey": normalizeWeaponProfile(data.name ?? item.name) });
   }
@@ -279,6 +287,8 @@ Hooks.on("createActor", async (actor, options, userId) => {
 Hooks.once("ready", async () => {
   if (!isPrimaryActiveGM()) return;
 
+  const traitCatalog = await runtimeTraitCatalog();
+
   const macroUpdates = game.macros.map(managedMacroUpdate).filter(Boolean);
   if (macroUpdates.length) await Macro.updateDocuments(macroUpdates);
 
@@ -288,7 +298,8 @@ Hooks.once("ready", async () => {
   for (const item of legacyWorldSkills) {
     await migrateLegacySkill(item);
   }
-  for (const item of game.items.filter((candidate) => ["combatStyle", "weapon"].includes(candidate.type))) {
+  for (const item of game.items.filter((candidate) => ["trait", "combatStyle", "weapon"].includes(candidate.type))) {
+    await migrateTraitData(item, traitCatalog);
     await migrateWorldCombatItem(item);
   }
   for (const item of game.items.filter((candidate) => candidate.type === "armor")) {
@@ -310,6 +321,10 @@ Hooks.once("ready", async () => {
       await deduplicateBackgroundAbilities(actor);
     }
     await migrateEmbeddedItemIcons(actor);
+    for (const item of actor.items.filter((candidate) =>
+      ["trait", "combatStyle", "weapon"].includes(candidate.type))) {
+      await migrateTraitData(item, traitCatalog);
+    }
     await migrateCombatItems(actor);
     if (actor.type === "character") await ensureHumanHitLocations(actor);
     if (actor.type === "character") await ensureDefaultHome(actor);
@@ -322,6 +337,55 @@ Hooks.once("ready", async () => {
     await Item.updateDocuments(worldIconUpdates);
   }
 });
+
+async function runtimeTraitCatalog() {
+  const officialPack = game.packs.get("mythras-foundry.traits");
+  const official = officialPack ? await officialPack.getDocuments() : [];
+  return [...official, ...game.items.filter((item) => item.type === "trait")];
+}
+
+function traitSourceMatch(item) {
+  const key = traitSlug(item.system?.key || item.name);
+  return TRAIT_SOURCES.find((source) => source.buildKey === key
+    || traitSlug(source.name) === traitSlug(item.name));
+}
+
+async function migrateTraitData(item, catalog) {
+  if (item.type === "trait") {
+    const source = traitSourceMatch(item);
+    const update = {};
+    if (!item.system.key) update["system.key"] = source?.system.key || traitSlug(item.name);
+    if (!item.system.source && source?.system.source) update["system.source"] = source.system.source;
+    if ((!item.system.traitType || item.system.traitType === "other") && source?.system.traitType) {
+      update["system.traitType"] = source.system.traitType;
+    }
+    if (source?.system.requiresAllGroupMembers && !item.system.requiresAllGroupMembers) {
+      update["system.requiresAllGroupMembers"] = true;
+    }
+    if (Object.keys(update).length) await item.update(update);
+    return;
+  }
+  if (!["combatStyle", "weapon"].includes(item.type)) return;
+  const update = {};
+  const direct = parseLegacyTraitText(item.system.traits, catalog);
+  const merged = mergeTraitReferences(item.system.traitRefs, direct.references);
+  if (merged.added || direct.legacyText !== String(item.system.traits ?? "")) {
+    update["system.traitRefs"] = merged.references;
+    update["system.traits"] = direct.legacyText;
+  }
+  if (item.type === "weapon") {
+    let modesChanged = false;
+    const modes = weaponModes(item).map((mode) => {
+      const parsed = parseLegacyTraitText(mode.traits, catalog);
+      const modeMerged = mergeTraitReferences(mode.traitRefs, parsed.references);
+      if (!modeMerged.added && parsed.legacyText === String(mode.traits ?? "")) return mode;
+      modesChanged = true;
+      return { ...mode, traitRefs: modeMerged.references, traits: parsed.legacyText };
+    });
+    if (modesChanged) update["system.modes"] = modes;
+  }
+  if (Object.keys(update).length) await item.update(update);
+}
 
 Hooks.on("updateActor", async (actor, changed, options, userId) => {
   if (userId !== game.user.id || !isCombatActor(actor)) return;
@@ -585,6 +649,8 @@ async function deduplicateBackgroundAbilities(actor) {
     if (!keeper.system.traits && item.system.traits) {
       update["system.traits"] = item.system.traits;
     }
+    const mergedTraits = mergeTraitReferences(keeper.system.traitRefs, item.system.traitRefs);
+    if (mergedTraits.added) update["system.traitRefs"] = mergedTraits.references;
     await actor.updateEmbeddedDocuments("Item", [update]);
     duplicates.push(item.id);
   }

@@ -12,6 +12,42 @@ import { armorDefaultName } from "../data/armor.js";
 import { ARMOR_MATERIAL_MODIFIERS, ARMOR_REFERENCE_LOCATIONS, armorPieceTypeForLocation,
   armorLocationForReference, armorPhysicalTotals } from "../rules/armor.js";
 import { inventoryCarried } from "../rules/inventory.js";
+import { TRAIT_TYPES, mergeTraitReferences, removeTraitReference, traitReference,
+  traitSlug } from "../rules/traits.js";
+
+async function prepareTraitReferences(references = []) {
+  return Promise.all(references.map(async (reference) => {
+    let document = null;
+    try { document = reference.uuid ? await fromUuid(reference.uuid) : null; } catch { /* broken UUID */ }
+    if (!document && reference.key) {
+      document = game.items.find((item) => item.type === "trait"
+        && traitSlug(item.system.key || item.name) === traitSlug(reference.key)) ?? null;
+    }
+    if (!document && reference.key) {
+      for (const pack of game.packs.filter((candidate) => candidate.documentName === "Item")) {
+        if (!pack.visible) continue;
+        const index = await pack.getIndex({ fields: ["type", "system.key"] });
+        const entry = index.find((candidate) => candidate.type === "trait"
+          && traitSlug(candidate.system?.key || candidate.name) === traitSlug(reference.key));
+        if (entry) {
+          document = await pack.getDocument(entry._id);
+          break;
+        }
+      }
+    }
+    return {
+      ...reference,
+      uuid: document?.uuid || reference.uuid,
+      name: document?.name || reference.name || reference.key,
+      img: document?.img || "icons/svg/aura.svg",
+      description: document?.system?.description || "",
+      source: document?.system?.source || "",
+      traitType: document?.system?.traitType || "",
+      requiresAllGroupMembers: Boolean(document?.system?.requiresAllGroupMembers),
+      broken: !document
+    };
+  }));
+}
 
 export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
@@ -51,6 +87,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
     if (this.item.type === "combatStyle" && update.system?.weapons !== undefined) {
       update.system.weaponProfiles = parseWeaponProfileReferences(update.system.weapons);
+    }
+    if (this.item.type === "trait") {
+      update.system.key = traitSlug(update.system?.key || update.name || this.item.name);
     }
     if (this.item.type === "weapon") {
       update.system.profileKey = normalizeWeaponProfile(
@@ -126,6 +165,14 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const selectedArmorLocations = new Set(this.item.system.coveredLocationIds ?? []);
     const armorTotals = this.item.type === "armor"
       ? armorPhysicalTotals(this.item, armorLocations) : null;
+    const combatStyleTraitReferences = this.item.type === "combatStyle"
+      ? await prepareTraitReferences(this.item.system.traitRefs ?? []) : [];
+    const weaponTraitReferences = this.item.type === "weapon"
+      ? await prepareTraitReferences(this.item.system.traitRefs ?? []) : [];
+    const preparedWeaponModes = this.item.type === "weapon"
+      ? await Promise.all(weaponModes(this.item).map(async (weaponMode, modeIndex) => ({
+        ...weaponMode, modeIndex,
+        traitReferences: await prepareTraitReferences(weaponMode.traitRefs ?? []) }))) : [];
     return foundry.utils.mergeObject(context, {
       item: this.item,
       editable: this.isEditable,
@@ -149,7 +196,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           && candidate.id !== this.item.id && candidate.system.isContainer)
           .map((candidate) => ({ value: candidate.id, label: candidate.name })) : [],
       isWeapon: this.item.type === "weapon",
-      weaponModes: this.item.type === "weapon" ? weaponModes(this.item) : [],
+      weaponModes: preparedWeaponModes,
+      weaponTraitReferences,
       isArmor: this.item.type === "armor",
       armorLocations: armorLocations.map((location) => ({
         id: location.id,
@@ -168,6 +216,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       armorTotals,
       isHitLocation: this.item.type === "hitLocation",
       isTrait: this.item.type === "trait",
+      traitTypeChoices: TRAIT_TYPES.map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.Trait.Type.${value}`) })),
       weaponLocationChoices: this.item.type === "weapon" && this.item.actor
         ? this.item.actor.items.filter((candidate) => candidate.type === "hitLocation")
           .map((location) => ({ value: location.id, label: location.name })) : [],
@@ -179,6 +229,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       })),
       combatStyleWeaponProfiles: this.item.type === "combatStyle"
         ? (this.item.system.weaponProfiles ?? []) : [],
+      combatStyleTraitReferences,
       combatStyleCharacteristic1: this.item.type === "combatStyle"
         ? game.i18n.localize(`MYTHRASF.Characteristic.${this.item.system.characteristic1}`) : "",
       combatStyleCharacteristic2: this.item.type === "combatStyle"
@@ -274,6 +325,12 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       button.addEventListener("click", (event) => this.#deleteWeaponMode(event)));
     this.element.querySelectorAll("[data-action='move-weapon-mode']").forEach((button) =>
       button.addEventListener("click", (event) => this.#moveWeaponMode(event)));
+    this.element.querySelectorAll("[data-action='select-weapon-trait']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#selectWeaponTrait(event)));
+    this.element.querySelectorAll("[data-action='delete-weapon-trait']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#deleteWeaponTrait(event)));
+    this.element.querySelectorAll("[data-action='open-weapon-trait']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#openWeaponTrait(event)));
     this.element.querySelector("[data-action='add-combat-style-profile']")
       ?.addEventListener("click", (event) => {
         event.preventDefault();
@@ -288,6 +345,16 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       });
     this.element.querySelectorAll("[data-action='delete-combat-style-profile']").forEach((button) =>
       button.addEventListener("click", (event) => this.#deleteCombatStyleProfile(event)));
+    this.element.querySelector("[data-action='select-combat-style-weapon']")
+      ?.addEventListener("click", () => this.#selectCombatStyleWeapon());
+    this.element.querySelector("[data-action='select-combat-style-trait']")
+      ?.addEventListener("click", () => this.#selectCombatStyleTrait());
+    this.element.querySelector("[data-action='create-combat-style-trait']")
+      ?.addEventListener("click", () => this.#createCombatStyleTrait());
+    this.element.querySelectorAll("[data-action='delete-combat-style-trait']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#deleteCombatStyleTrait(event)));
+    this.element.querySelectorAll("[data-action='open-combat-style-trait']").forEach((button) =>
+      button.addEventListener("click", (event) => this.#openCombatStyleTrait(event)));
     this.element.querySelectorAll("[data-armor-location-id]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateArmorCoverage(event)));
     const dropZone = this.element.querySelector("[data-combat-style-weapon-drop]");
@@ -302,6 +369,19 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       event.stopPropagation();
       dropZone.classList.remove("drag-over");
       this.#handleCombatStyleWeaponDrop(event).catch((error) => this.#notifyProfileError(error));
+    });
+    const traitDropZone = this.element.querySelector("[data-combat-style-trait-drop]");
+    traitDropZone?.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      traitDropZone.classList.add("drag-over");
+    });
+    traitDropZone?.addEventListener("dragleave", () => traitDropZone.classList.remove("drag-over"));
+    traitDropZone?.addEventListener("drop", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      traitDropZone.classList.remove("drag-over");
+      this.#handleCombatStyleTraitDrop(event);
     });
   }
 
@@ -357,6 +437,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _onDropDocument(event, document) {
     if (this.item.type !== "combatStyle") return super._onDropDocument(event, document);
     if (!this.isEditable) return null;
+    if (event.target?.closest?.(".combat-style-traits-editor")) return this.#addDroppedTrait(document);
     if (!event.target?.closest?.(".combat-style-weapons-editor")) return null;
     if (document?.documentName !== "Item" || document.type !== "weapon") {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.DropWeaponOnly"));
@@ -371,6 +452,147 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!data?.type) return null;
     const document = await Item.implementation.fromDropData(data);
     return this.#addDroppedWeapon(document);
+  }
+
+  async #handleCombatStyleTraitDrop(event) {
+    if (!this.isEditable || this.item.type !== "combatStyle") return null;
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event);
+    if (!data?.type) return null;
+    const document = await Item.implementation.fromDropData(data);
+    return this.#addDroppedTrait(document);
+  }
+
+  async #addDroppedTrait(document) {
+    if (document?.documentName !== "Item" || document.type !== "trait"
+      || document.system.traitType !== "combatStyle") {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.DropTraitOnly"));
+      return null;
+    }
+    const result = mergeTraitReferences(this.item.system.traitRefs,
+      [traitReference(document)]);
+    if (!result.added) {
+      ui.notifications.info(game.i18n.localize("MYTHRASF.CombatStyle.TraitAlreadyIncluded"));
+      return null;
+    }
+    await this.item.update({ "system.traitRefs": result.references });
+    return document;
+  }
+
+  async #catalogItemOptions(type, traitType = "") {
+    const options = game.items.filter((item) => item.type === type
+      && (!traitType || item.system.traitType === traitType))
+      .map((item) => ({ uuid: item.uuid, name: item.name }));
+    for (const pack of game.packs.filter((candidate) => candidate.documentName === "Item")) {
+      if (!pack.visible) continue;
+      const index = await pack.getIndex({ fields: ["type", "system.traitType"] });
+      for (const entry of index) {
+        if (entry.type !== type || (traitType && entry.system?.traitType !== traitType)) continue;
+        options.push({ uuid: entry.uuid || `Compendium.${pack.collection}.${entry._id}`,
+          name: entry.name });
+      }
+    }
+    return [...new Map(options.map((option) => [option.uuid, option])).values()]
+      .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
+  }
+
+  async #chooseCatalogItem(type, traitType, titleKey) {
+    const options = await this.#catalogItemOptions(type, traitType);
+    if (!options.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.NoSelectableItems"));
+      return null;
+    }
+    const escape = foundry.utils.escapeHTML;
+    const labels = new Map(options.map((option) => [`${option.name} — ${option.uuid}`, option.uuid]));
+    const result = await DialogV2.input({
+      window: { title: game.i18n.localize(titleKey) },
+      content: `<div class="mythras-foundry combat-style-catalog-dialog"><label>${game.i18n.localize("MYTHRASF.Catalog.Search")}
+        <input class="sheet-field-editable" name="catalogItem" list="combat-style-catalog-items" autocomplete="off"></label>
+        <datalist id="combat-style-catalog-items">${[...labels.keys()].map((label) =>
+          `<option value="${escape(label)}"></option>`).join("")}</datalist></div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Add"), icon: "fas fa-plus",
+        callback: (event, button) => labels.get(button.form.elements.catalogItem.value) ?? null }
+    });
+    return result ? fromUuid(result) : null;
+  }
+
+  async #selectCombatStyleWeapon() {
+    const document = await this.#chooseCatalogItem("weapon", "",
+      "MYTHRASF.CombatStyle.SelectWeapon");
+    if (document) await this.#addDroppedWeapon(document);
+  }
+
+  async #selectCombatStyleTrait() {
+    const document = await this.#chooseCatalogItem("trait", "combatStyle",
+      "MYTHRASF.CombatStyle.SelectTrait");
+    if (document) await this.#addDroppedTrait(document);
+  }
+
+  async #createCombatStyleTrait() {
+    if (!game.user.can("ITEM_CREATE")) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.CombatStyle.CannotCreateTrait"));
+      return;
+    }
+    const name = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.CombatStyle.CreateTrait") },
+      content: `<div class="mythras-foundry"><label>${game.i18n.localize("MYTHRASF.Item.Name")}<input class="sheet-field-editable" name="name" required></label></div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Add"), icon: "fas fa-plus",
+        callback: (event, button) => button.form.elements.name.value.trim() }
+    });
+    if (!name) return;
+    const document = await Item.create({ name, type: "trait", img: "icons/svg/aura.svg",
+      system: { key: traitSlug(name), source: "", traitType: "combatStyle",
+        requiresAllGroupMembers: false, ruleKey: "", ruleParameters: [], description: "" } });
+    if (!document) return;
+    await this.#addDroppedTrait(document);
+    document.sheet?.render(true);
+  }
+
+  async #deleteCombatStyleTrait(event) {
+    const identity = event.currentTarget.dataset.traitKey || event.currentTarget.dataset.traitUuid;
+    await this.item.update({ "system.traitRefs": removeTraitReference(
+      this.item.system.traitRefs, identity) });
+  }
+
+  async #openCombatStyleTrait(event) {
+    const uuid = event.currentTarget.dataset.traitUuid;
+    const document = uuid ? await fromUuid(uuid) : null;
+    if (!document) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.CombatStyle.BrokenTraitReference"));
+    document.sheet?.render(true);
+  }
+
+  async #selectWeaponTrait(event) {
+    const document = await this.#chooseCatalogItem("trait", "weapon",
+      "MYTHRASF.Weapon.SelectTrait");
+    if (!document) return;
+    const index = event.currentTarget.dataset.modeIndex;
+    if (index === undefined) {
+      const result = mergeTraitReferences(this.item.system.traitRefs, [traitReference(document)]);
+      if (result.added) await this.item.update({ "system.traitRefs": result.references });
+      return;
+    }
+    const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
+    const result = mergeTraitReferences(modes[Number(index)].traitRefs, [traitReference(document)]);
+    if (!result.added) return;
+    modes[Number(index)].traitRefs = result.references;
+    await this.item.update({ "system.modes": modes });
+  }
+
+  async #deleteWeaponTrait(event) {
+    const identity = event.currentTarget.dataset.traitKey || event.currentTarget.dataset.traitUuid;
+    const index = event.currentTarget.dataset.modeIndex;
+    if (index === undefined) {
+      await this.item.update({ "system.traitRefs": removeTraitReference(
+        this.item.system.traitRefs, identity) });
+      return;
+    }
+    const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
+    modes[Number(index)].traitRefs = removeTraitReference(modes[Number(index)].traitRefs, identity);
+    await this.item.update({ "system.modes": modes });
+  }
+
+  async #openWeaponTrait(event) {
+    return this.#openCombatStyleTrait(event);
   }
 
   async #addDroppedWeapon(document) {
@@ -446,7 +668,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const key = nextModeKey(modes);
     modes.push({ key, name: "", profileKey: "",
       weaponType: "melee", damage: "", damageModifierMode: "full", size: "", reach: "",
-      effects: "", grip: "1 mano", handsRequired: 1, range: "", reload: "",
+      effects: "", traits: "", traitRefs: [], grip: "1 mano", handsRequired: 1, range: "", reload: "",
       preferredCombatStyleId: "", familiarity: "similar" });
     await this.item.update({ "system.modes": modes });
   }

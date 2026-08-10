@@ -45,6 +45,7 @@ const weaponModeField = () => new SchemaField({
   reach: textField(),
   effects: textField(),
   traits: textField(),
+  traitRefs: new ArrayField(traitReferenceField(), { required: true, nullable: false, initial: [] }),
   grip: textField(),
   handsRequired: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 0, max: 2 }),
   range: textField(),
@@ -55,6 +56,19 @@ const weaponModeField = () => new SchemaField({
   familiarity: new StringField({ required: true, nullable: false, initial: "similar",
     choices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"] })
 });
+
+function traitParameterField() {
+  return new SchemaField({ key: textField(), value: textField() });
+}
+
+function traitReferenceField() {
+  return new SchemaField({
+    uuid: textField(),
+    key: textField(),
+    name: textField(),
+    parameters: new ArrayField(traitParameterField(), { required: true, nullable: false, initial: [] })
+  });
+}
 
 export class SkillData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
@@ -142,6 +156,7 @@ export class CombatStyleData extends SkillData {
         name: textField()
       }), { required: true, nullable: false, initial: [] }),
       traits: textField(),
+      traitRefs: new ArrayField(traitReferenceField(), { required: true, nullable: false, initial: [] }),
       sourceType: textField()
     };
   }
@@ -245,6 +260,7 @@ export class WeaponData extends EquipmentData {
       encumbrance: nonNegativeNumber(),
       effects: textField(),
       traits: textField(),
+      traitRefs: new ArrayField(traitReferenceField(), { required: true, nullable: false, initial: [] }),
       impalingSize: textField(),
       powerModifier: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
       grip: textField(),
@@ -333,6 +349,13 @@ export class HitLocationData extends foundry.abstract.TypeDataModel {
 export class TraitData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
+      key: textField(),
+      source: textField(),
+      traitType: new StringField({ required: true, nullable: false, initial: "other",
+        choices: ["combatStyle", "creature", "weapon", "other"] }),
+      requiresAllGroupMembers: new BooleanField({ required: true, nullable: false, initial: false }),
+      ruleKey: textField(),
+      ruleParameters: new ArrayField(traitParameterField(), { required: true, nullable: false, initial: [] }),
       description: descriptionField()
     };
   }

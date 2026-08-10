@@ -65,7 +65,7 @@ function style(buildKey, name, value, weaponKeys, traits = "") {
       culturePoints: 0, professionPoints: 0, freePoints: 0, experiencePoints: 0,
       trained: true, fumbled: false, valueMode: "manual", manualValue: value,
       generationFormula: "", weapons: weaponKeys.join(", "),
-      weaponProfiles: weaponKeys.map((key) => ({ key, name: key })), traits,
+      weaponProfiles: weaponKeys.map((key) => ({ key, name: key })), traits, traitRefs: [],
       sourceType: "creature", description: "" }, flags: sourceFlags };
 }
 
@@ -81,9 +81,9 @@ function weapon(buildKey, name, { damage, size = "M", reach = "M", linkedLocatio
       ? "hitLocation" : "independent", linkedLocationId: "", encumbrance: 0, effects,
     grip: handsRequired === 2 ? "2 manos" : handsRequired === 1 ? "1 mano" : "Natural",
     handsRequired, range, reload: "", preferredCombatStyleId: "", familiarity: "similar",
-    description: "", modes: [{ key: modeKey, name: "", profileKey: buildKey, weaponType,
+    description: "", traits: "", traitRefs: [], modes: [{ key: modeKey, name: "", profileKey: buildKey, weaponType,
       damage, damageModifierMode, size, reach, effects, grip: handsRequired ? `${handsRequired} mano${handsRequired > 1 ? "s" : ""}` : "Natural",
-      handsRequired, range, reload: "", preferredCombatStyleId: "", familiarity: "similar" }]
+      traits: "", traitRefs: [], handsRequired, range, reload: "", preferredCombatStyleId: "", familiarity: "similar" }]
   }, flags: sourceFlags };
 }
 

@@ -230,11 +230,11 @@
             <input type="text" value="{{style.weapons}}" data-background-style-field="weapons"
               data-style="{{style.id}}">
           </label>
-          <label>
-            <span>{{localize "MYTHRASF.CombatStyle.Traits"}}</span>
-            <input type="text" value="{{style.traits}}" data-background-style-field="traits"
-              data-style="{{style.id}}">
-          </label>
+          <fieldset class="background-style-traits"><legend>{{localize "MYTHRASF.CombatStyle.Traits"}}</legend>
+            {{#each style.traitOptions as |trait|}}<label><input type="checkbox" class="sheet-state-box"
+              data-background-style-trait data-style="{{style.id}}" data-trait-key="{{trait.key}}"
+              {{checked trait.checked}}> {{trait.name}}</label>{{/each}}
+          </fieldset>
         </section>
       {{/each}}
       {{#unless wizard.isCulture}}<button type="button" class="background-style-add"
@@ -278,11 +278,11 @@
           <input type="text" value="{{wizard.freeProfessional.weapons}}"
             data-background-free-field="weapons">
         </label>
-        <label>
-          <span>{{localize "MYTHRASF.Background.Traits"}}</span>
-          <input type="text" value="{{wizard.freeProfessional.traits}}"
-            data-background-free-field="traits">
-        </label>
+        <fieldset class="background-style-traits"><legend>{{localize "MYTHRASF.Background.Traits"}}</legend>
+          {{#each wizard.freeCombatStyleTraitOptions as |trait|}}<label><input type="checkbox" class="sheet-state-box"
+            data-background-style-trait data-free="true" data-trait-key="{{trait.key}}"
+            {{checked trait.checked}}> {{trait.name}}</label>{{/each}}
+        </fieldset>
       {{/if}}
       {{#if wizard.freeSpecializationRequired}}
         <label>

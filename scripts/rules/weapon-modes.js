@@ -19,6 +19,8 @@ export function legacyWeaponMode(weapon) {
     size: system.size ?? "",
     reach: system.reach ?? "",
     effects: system.effects ?? "",
+    traits: system.traits ?? "",
+    traitRefs: [...(system.traitRefs ?? [])],
     grip: system.grip ?? "",
     handsRequired: Number(system.effectiveHandsRequired ?? system.handsRequired ?? 1),
     range: system.range ?? "",

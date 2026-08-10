@@ -54,7 +54,8 @@ export function createBackgroundDraft() {
     styles: {},
     extraStyles: { culture: [], profession: [] },
     freeProfessional: {
-      type: "skill", slug: "", specialization: "", name: "", weapons: "", traits: ""
+      type: "skill", slug: "", specialization: "", name: "", weapons: "", traits: "",
+      traitKeys: []
     },
     allocations: { culture: {}, profession: {}, free: {} }
   };
@@ -82,12 +83,14 @@ export function mergeDraft(draft = {}) {
     cultureChoices: { ...initial.cultureChoices, ...draft.cultureChoices },
     professionChoices: { ...initial.professionChoices, ...draft.professionChoices },
     specializations: { ...initial.specializations, ...draft.specializations },
-    styles: { ...initial.styles, ...draft.styles },
+    styles: Object.fromEntries(Object.entries({ ...initial.styles, ...draft.styles })
+      .map(([key, style]) => [key, { ...style, traitKeys: [...(style?.traitKeys ?? [])] }])),
     extraStyles: {
       culture: [...(draft.extraStyles?.culture ?? [])],
       profession: [...(draft.extraStyles?.profession ?? [])]
     },
-    freeProfessional: { ...initial.freeProfessional, ...draft.freeProfessional },
+    freeProfessional: { ...initial.freeProfessional, ...draft.freeProfessional,
+      traitKeys: [...(draft.freeProfessional?.traitKeys ?? [])] },
     allocations: {
       culture: { ...initial.allocations.culture, ...draft.allocations?.culture },
       profession: { ...initial.allocations.profession, ...draft.allocations?.profession },
@@ -201,6 +204,7 @@ export function getPhaseAbilities(background, draft, phase) {
       name: style.name ?? "",
       weapons: style.weapons ?? "",
       traits: style.traits ?? "",
+      traitKeys: [...(style.traitKeys ?? [])],
       prompt: definition.prompt,
       required: definition.required
     };
@@ -224,6 +228,7 @@ export function getAllAcquiredAbilities(culture, profession, draft, {
         name: free.name,
         weapons: free.weapons,
         traits: free.traits,
+        traitKeys: [...(free.traitKeys ?? [])],
         specialization: free.name,
         freeChoice: true
       });
