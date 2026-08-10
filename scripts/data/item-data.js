@@ -135,9 +135,8 @@ export class SkillData extends foundry.abstract.TypeDataModel {
 
 export class CombatStyleData extends SkillData {
   static defineSchema() {
-    const { bonus: _legacyBonus, ...skillSchema } = super.defineSchema();
     return {
-      ...skillSchema,
+      ...super.defineSchema(),
       category: new StringField({
         required: true,
         nullable: false,

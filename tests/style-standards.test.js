@@ -94,5 +94,5 @@ test("la ficha de estilo resume asociaciones y separa el cálculo no editable", 
   const styleSchema = itemData.slice(itemData.indexOf("export class CombatStyleData"),
     itemData.indexOf("export class BackgroundData"));
   assert.doesNotMatch(styleSchema, /\b(weapons|traits): textField/);
-  assert.match(styleSchema, /bonus: _legacyBonus/);
+  assert.match(styleSchema, /\.\.\.super\.defineSchema\(\)/);
 });

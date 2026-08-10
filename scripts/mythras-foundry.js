@@ -511,7 +511,8 @@ async function migrateCombatItems(actor) {
       const assigned = ["culturePoints", "professionPoints", "freePoints", "experiencePoints"]
         .reduce((total, field) => total + Number(item.system[field] ?? 0), 0);
       if (legacyBonus && assigned === 0) update["system.freePoints"] = Math.max(0, legacyBonus);
-      for (const field of ["bonus", "weapons", "traits"]) {
+      if (legacyBonus !== 0) update["system.bonus"] = 0;
+      for (const field of ["weapons", "traits"]) {
         if (foundry.utils.hasProperty(item._source, `system.${field}`)) {
           update[`system.-=${field}`] = null;
         }
@@ -569,7 +570,8 @@ async function migrateWorldCombatItem(item) {
     const assigned = ["culturePoints", "professionPoints", "freePoints", "experiencePoints"]
       .reduce((total, field) => total + Number(item.system[field] ?? 0), 0);
     if (legacyBonus && assigned === 0) update["system.freePoints"] = Math.max(0, legacyBonus);
-    for (const field of ["bonus", "weapons", "traits"]) {
+    if (legacyBonus !== 0) update["system.bonus"] = 0;
+    for (const field of ["weapons", "traits"]) {
       if (foundry.utils.hasProperty(item._source, `system.${field}`)) {
         update[`system.-=${field}`] = null;
       }
@@ -754,8 +756,8 @@ function getLegacySkillUpdate(item) {
   if (legacyBonus !== 0 && assignedPoints === 0) {
     update["system.freePoints"] = Math.max(0, legacyBonus);
   }
-  if (foundry.utils.hasProperty(item._source, "system.bonus")) {
-    update["system.-=bonus"] = null;
+  if (legacyBonus !== 0) {
+    update["system.bonus"] = 0;
     changed = true;
   }
 
