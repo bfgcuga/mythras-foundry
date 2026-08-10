@@ -88,6 +88,7 @@ test("la ficha de estilo resume asociaciones y separa el cálculo no editable", 
   assert.match(itemTemplate, /combat-style-name-summary[^]*combatStyleTraitReferences/);
   assert.match(itemTemplate, /data-combat-style-tab-content="calculation"[^]*<output class="sheet-field-readonly">/);
   assert.match(itemTemplate, /combat-style-advanced-state/);
+  assert.match(itemTemplate, /combat-style-experience-variables[^]*system\.trained[^]*system\.fumbled/);
   assert.doesNotMatch(itemTemplate, /name="system\.(weapons|traits|bonus)"/);
   assert.match(css, /\.combat-style-item-sheet input,[^}]*background: transparent/s);
 

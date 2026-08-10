@@ -43,8 +43,6 @@
           <details class="combat-style-advanced-state">
             <summary>{{localize "MYTHRASF.CombatStyle.AdvancedState"}}</summary>
             <div class="combat-style-state-grid">
-              <label><input type="checkbox" class="sheet-state-box" name="system.trained" {{checked item.system.trained}}> {{localize "MYTHRASF.Skill.Trained"}}</label>
-              <label><input type="checkbox" class="sheet-state-box" name="system.fumbled" {{checked item.system.fumbled}}> {{localize "MYTHRASF.Skill.Fumbled"}}</label>
               <label>{{localize "MYTHRASF.Skill.ValueMode.Label"}}</label>
               <select class="sheet-field-editable" name="system.valueMode">{{selectOptions skillValueModeChoices selected=item.system.valueMode labelAttr="label" valueAttr="value"}}</select>
               <label>{{localize "MYTHRASF.Skill.ManualValue"}}</label>
@@ -110,6 +108,10 @@
           <label>{{localize "MYTHRASF.Skill.FreePoints"}}</label><output class="sheet-field-readonly">{{item.system.freePoints}}</output>
           <label>{{localize "MYTHRASF.Skill.ExperiencePoints"}}</label><output class="sheet-field-readonly">{{item.system.experiencePoints}}</output>
           <label>{{localize "MYTHRASF.Skill.Total"}}</label><output class="sheet-field-readonly">{{item.system.total}}%</output>
+        </fieldset>
+        <fieldset class="combat-style-experience-variables"><legend>{{localize "MYTHRASF.CombatStyle.ExperienceVariables"}}</legend>
+          <label><input type="checkbox" class="sheet-state-box" name="system.trained" {{checked item.system.trained}}> {{localize "MYTHRASF.Skill.Trained"}}</label>
+          <label><input type="checkbox" class="sheet-state-box" name="system.fumbled" {{checked item.system.fumbled}}> {{localize "MYTHRASF.Skill.Fumbled"}}</label>
         </fieldset>
       </section>
     {{/if}}

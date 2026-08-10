@@ -1948,6 +1948,8 @@
   padding: 0.25rem 0.4rem;
   border-bottom: 1px solid var(--mythras-border);
 }
+.mythras-foundry .combat-style-experience-variables { display: grid; gap: 0.45rem; margin-top: 0.7rem; }
+.mythras-foundry .combat-style-experience-variables label { display: flex; align-items: center; gap: 0.45rem; }
 
 .mythras-foundry .combat-style-item-sheet input,
 .mythras-foundry .combat-style-item-sheet textarea,
@@ -1959,7 +1961,6 @@
 .mythras-foundry .combat-style-advanced-state { grid-column: 1 / -1; margin-top: 0.5rem; border-top: 1px solid rgb(156 135 102 / 50%); }
 .mythras-foundry .combat-style-advanced-state summary { padding: 0.45rem 0; cursor: pointer; font-weight: 700; }
 .mythras-foundry .combat-style-state-grid { display: grid; grid-template-columns: minmax(10rem, auto) minmax(0, 1fr); align-items: center; gap: 0.4rem 0.7rem; }
-.mythras-foundry .combat-style-state-grid > label:has(.sheet-state-box) { grid-column: 1 / -1; }
 
 .mythras-foundry .combat-style-weapons-editor,
 .mythras-foundry .combat-style-traits-editor {
