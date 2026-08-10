@@ -30,7 +30,15 @@ test("las nuevas imagenes de equipo se asignan a entradas existentes", () => {
   const illustrated = EQUIPMENT_SOURCES.filter((source) => (
     source.img.includes("/imagenes_256x256/")
   ));
-  assert.equal(illustrated.length, 76);
+  assert.equal(illustrated.length, 110);
   for (const source of illustrated) assert.equal(existsSync(localPath(source.img)), true,
     `${source.name}: ${source.img}`);
+});
+
+test("solo los transportes sin ilustracion conservan el icono generico", () => {
+  const generic = EQUIPMENT_SOURCES.filter((source) => (
+    !source.img.includes("/imagenes_256x256/")
+  ));
+  assert.equal(generic.length, 7);
+  assert.ok(generic.every((source) => source.system.category === "vehicle"));
 });
