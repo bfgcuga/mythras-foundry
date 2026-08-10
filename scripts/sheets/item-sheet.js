@@ -246,6 +246,12 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       weaponLocationChoices: this.item.type === "weapon" && this.item.actor
         ? this.item.actor.items.filter((candidate) => candidate.type === "hitLocation")
           .map((location) => ({ value: location.id, label: location.name })) : [],
+      weaponDurabilityHelp: this.item.type === "weapon"
+        ? game.i18n.format(this.item.actor
+          ? "MYTHRASF.Weapon.Durability.NaturalHelpActor"
+          : "MYTHRASF.Weapon.Durability.NaturalHelpTemplate", {
+          actor: this.item.actor?.name ?? ""
+        }) : "",
       skillValueModeChoices: ["derived", "manual"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Skill.ValueMode.${value}`)
       })),
@@ -367,6 +373,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       button.addEventListener("click", (event) => this.#deleteWeaponTrait(event)));
     this.element.querySelectorAll("[data-action='open-weapon-trait']").forEach((button) =>
       button.addEventListener("click", (event) => this.#openWeaponTrait(event)));
+    this.element.querySelectorAll("[data-weapon-mode-type]").forEach((field) =>
+      field.addEventListener("change", () => field.closest("form")?.requestSubmit()));
     this.element.querySelector("[data-action='add-combat-style-profile']")
       ?.addEventListener("click", (event) => {
         event.preventDefault();

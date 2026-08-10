@@ -66,3 +66,18 @@ test("la ficha de arma envía una sola moneda y combate muestra los PG actuales"
   assert.doesNotMatch(weaponSection, /name="system\.(parentContainerId|location|quantityFormula)"/);
   assert.match(combatTemplate, /row\.item\.system\.currentHitPoints/);
 });
+
+test("las acciones de modo y rasgo son distintas y la durabilidad natural se explica", () => {
+  assert.match(itemTemplate, /weapon-modes-toolbar[^]*sheet-add-button/);
+  assert.match(itemTemplate, /class="weapon-trait-add"[^]*fa-tag/);
+  assert.doesNotMatch(itemTemplate, /class="sheet-add-button weapon-trait-add"/);
+  assert.match(itemTemplate, /MYTHRASF\.Weapon\.NaturalWeaponDurability/);
+  assert.match(itemTemplate, /weaponDurabilityHelp/);
+});
+
+test("la configuración de arma separa ejemplar y situación del personaje", () => {
+  assert.match(itemTemplate, /weapon-copy-editor[^]*system\.quantity[^]*system\.currentHitPoints/);
+  assert.match(itemTemplate, /weapon-situation-editor[^]*system\.activeModeKey[^]*system\.equipped/);
+  assert.ok(itemTemplate.indexOf("weapon-copy-editor")
+    < itemTemplate.indexOf("weapon-situation-editor"));
+});
