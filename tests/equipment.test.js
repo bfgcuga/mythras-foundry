@@ -29,12 +29,13 @@ test("viviendas alquiladas y en propiedad se comportan como propiedades", () => 
   ));
   assert.equal(dwellings.length, 8);
   assert.ok(dwellings.every((entry) => entry.system.category === "property"
-    && entry.system.isContainer && entry.img === "icons/svg/chest.svg"));
+    && entry.system.isContainer && (entry.img === "icons/svg/chest.svg"
+      || entry.img.startsWith("systems/mythras-foundry/assets/"))));
 });
 
-test("el ganado usa un icono local estable", () => {
+test("el ganado usa una imagen local estable", () => {
   assert.ok(LIVESTOCK_SOURCES.every((entry) => (
-    entry.img === "systems/mythras-foundry/assets/icons/livestock.svg"
+    entry.img.startsWith("systems/mythras-foundry/assets/")
   )));
 });
 

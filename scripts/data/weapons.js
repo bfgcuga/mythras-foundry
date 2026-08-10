@@ -140,7 +140,7 @@ export const SIEGE_WEAPON_SOURCES = [
   ["onagro", "Onagro", "6d6", "300/600", "7", [3, 6], "Aturdir Localización, Golpetazo", 4, 75, "A-M", 1500],
   ["trabuquete", "Trabuquete", "8d6", "400/800", "9", [4, 8], "Aturdir Localización, Golpetazo", 4, 150, "M", 5000]
 ].map(([key, name, damage, range, reload, crew, effects, ap, hp, era, cost]) => source({
-  key, name, ap, hp, cost, era, img: "icons/svg/explosion.svg",
+  key, name, ap, hp, cost, era, img: weaponImage("armas_de_asedio", key),
   modes: [mode({ key: "siege", type: "ranged", damage, damageModifier: "none",
     size: "MD", range, reload, crew, effects, hands: 0 })]
 }));
