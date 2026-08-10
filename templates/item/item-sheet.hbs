@@ -1,6 +1,8 @@
-<div class="item-sheet-content">
-  <header class="sheet-header">
-    <img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
+<div class="item-sheet-content {{#if isWeapon}}weapon-item-sheet{{/if}}">
+  <header class="sheet-header {{#if isWeapon}}weapon-sheet-header{{/if}}">
+    <span class="item-image-frame"><img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
+      {{#if isWeapon}}<button type="button" class="sheet-icon-button item-image-view" data-action="view-item-image" aria-label="{{localize "MYTHRASF.Item.ViewImage"}}" title="{{localize "MYTHRASF.Item.ViewImage"}}"><i class="fas fa-expand" aria-hidden="true"></i></button>{{/if}}
+    </span>
     <input type="text" name="name" value="{{item.name}}" {{#if isPassion}}readonly{{/if}}>
   </header>
 
@@ -154,62 +156,49 @@
 
   {{#if isWeapon}}
     <nav class="weapon-sheet-tabs" aria-label="{{localize "MYTHRASF.Weapon.Tabs.Label"}}">
-      <button type="button" class="active" data-weapon-tab="characteristics">{{localize "MYTHRASF.Weapon.Tabs.Characteristics"}}</button>
-      <button type="button" data-weapon-tab="modes">{{localize "MYTHRASF.Weapon.Tabs.Modes"}}</button>
-      <button type="button" data-weapon-tab="instance">{{localize "MYTHRASF.Weapon.Tabs.Instance"}}</button>
-      <button type="button" data-weapon-tab="coding">{{localize "MYTHRASF.Weapon.Tabs.Coding"}}</button>
+      <button type="button" class="active" data-weapon-tab="characteristics" title="{{localize "MYTHRASF.Weapon.Tabs.Characteristics"}}">{{localize "MYTHRASF.Weapon.Tabs.Characteristics"}}</button>
+      <button type="button" data-weapon-tab="modes" title="{{localize "MYTHRASF.Weapon.Tabs.Modes"}}">{{localize "MYTHRASF.Weapon.Tabs.Modes"}}</button>
+      <button type="button" data-weapon-tab="instance" title="{{localize "MYTHRASF.Weapon.Tabs.Instance"}}">{{localize "MYTHRASF.Weapon.Tabs.Instance"}}</button>
     </nav>
 
     <section class="weapon-tab-panel active" data-weapon-tab-content="characteristics">
       <fieldset class="weapon-characteristics-editor"><legend>{{localize "MYTHRASF.Weapon.Characteristics"}}</legend>
-        <label>{{localize "MYTHRASF.Background.Source"}}</label><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
-        <label>{{localize "MYTHRASF.Weapon.Era"}}</label><input class="sheet-field-editable" name="system.era" value="{{item.system.era}}">
-        <label>{{localize "MYTHRASF.Item.Weight"}}</label><input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
-        <label>{{localize "MYTHRASF.Item.Value"}}</label><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}">
-        <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}">
-        <label>{{localize "MYTHRASF.Item.Location"}}</label><input type="text" name="system.location" value="{{item.system.location}}">
-        <label>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</label><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}">
-        <label>{{localize "MYTHRASF.Weapon.Traits"}}</label><div class="weapon-trait-editor">
-          {{#each weaponTraitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}
-          {{#if editable}}<button type="button" class="sheet-icon-button" data-action="select-weapon-trait" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+        <div class="weapon-general-fields">
+          <label class="weapon-cost-field"><span>{{localize "MYTHRASF.Item.Value"}}</span><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}"><select name="system.currency" aria-label="{{localize "MYTHRASF.Currency.Label"}}">{{selectOptions currencyChoices selected=item.system.currency labelAttr="label" valueAttr="value"}}</select></label>
+          <label><span>{{localize "MYTHRASF.Weapon.Encumbrance"}}</span><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}"></label>
+          <label><span>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</span><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}"></label>
+          <label><span>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</span><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}"></label>
+          <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><input name="system.era" value="{{item.system.era}}"></label>
+          <label class="weapon-source-field"><span>{{localize "MYTHRASF.Background.Source"}}</span><input name="system.source" value="{{item.system.source}}"></label>
         </div>
-        {{#if item.system.traits}}<label>{{localize "MYTHRASF.Trait.LegacyText"}}</label><input name="system.traits" value="{{item.system.traits}}">{{/if}}
-        <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.ArmorPoints"}})</label><input type="text" name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}">
-        <label>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</label><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}">
-        <label>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.MaxHitPoints"}})</label><input type="text" name="system.maxHitPointsFormula" value="{{item.system.maxHitPointsFormula}}">
-        <label>{{localize "MYTHRASF.Weapon.Durability.Label"}}</label><select name="system.durabilitySource">{{selectOptions weaponDurabilityChoices selected=item.system.durabilitySource labelAttr="label" valueAttr="value"}}</select>
-        <label>{{localize "MYTHRASF.Weapon.LinkedLocation"}}</label><select name="system.linkedLocationId"><option value=""></option>{{selectOptions weaponLocationChoices selected=item.system.linkedLocationId labelAttr="label" valueAttr="value"}}</select>
-        <label>{{localize "MYTHRASF.Item.Description"}}</label><textarea name="system.description">{{item.system.description}}</textarea>
+        <label class="weapon-description-field"><span>{{localize "MYTHRASF.Item.Description"}}</span><textarea name="system.description">{{item.system.description}}</textarea></label>
+        <details class="weapon-advanced-fields"><summary>{{localize "MYTHRASF.Weapon.AdvancedDurability"}}</summary><div>
+          <label><span>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.ArmorPoints"}})</span><input name="system.armorPointsFormula" value="{{item.system.armorPointsFormula}}"></label>
+          <label><span>{{localize "MYTHRASF.Npc.GenerationFormula"}} ({{localize "MYTHRASF.Weapon.MaxHitPoints"}})</span><input name="system.maxHitPointsFormula" value="{{item.system.maxHitPointsFormula}}"></label>
+          <label><span>{{localize "MYTHRASF.Weapon.Durability.Label"}}</span><select name="system.durabilitySource">{{selectOptions weaponDurabilityChoices selected=item.system.durabilitySource labelAttr="label" valueAttr="value"}}</select></label>
+          <label><span>{{localize "MYTHRASF.Weapon.LinkedLocation"}}</span><select name="system.linkedLocationId"><option value=""></option>{{selectOptions weaponLocationChoices selected=item.system.linkedLocationId labelAttr="label" valueAttr="value"}}</select></label>
+        </div></details>
       </fieldset>
     </section>
 
     <section class="weapon-tab-panel" data-weapon-tab-content="modes">
       <fieldset class="weapon-modes-editor"><legend>{{localize "MYTHRASF.Weapon.Modes"}}</legend>
-      <button type="button" class="sheet-add-button" data-action="add-weapon-mode" aria-label="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus"></i></button>
-      {{#each weaponModes as |mode|}}<section class="weapon-mode-editor">
-        <div class="weapon-mode-actions"><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="-1" aria-label="{{localize "MYTHRASF.MoveUp"}}"><i class="fas fa-arrow-up"></i></button><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="1" aria-label="{{localize "MYTHRASF.MoveDown"}}"><i class="fas fa-arrow-down"></i></button><button type="button" class="sheet-icon-button" data-action="delete-weapon-mode" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash"></i></button></div>
-        <label>{{localize "MYTHRASF.Weapon.ModeKey"}}</label><input name="system.modes.{{@index}}.key" value="{{mode.key}}">
-        <label>{{localize "MYTHRASF.Weapon.ModeName"}}</label><input name="system.modes.{{@index}}.name" value="{{mode.name}}">
-        <label>{{localize "MYTHRASF.Weapon.ProfileKey"}}</label><input name="system.modes.{{@index}}.profileKey" value="{{mode.profileKey}}">
-        <label>{{localize "MYTHRASF.Weapon.TypeLabel"}}</label><select name="system.modes.{{@index}}.weaponType">{{selectOptions ../weaponTypeChoices selected=mode.weaponType labelAttr="label" valueAttr="value"}}</select>
-        <label>{{localize "MYTHRASF.Weapon.Damage"}}</label><input name="system.modes.{{@index}}.damage" value="{{mode.damage}}">
-        <label>{{localize "MYTHRASF.Weapon.DamageModifier.Label"}}</label><select name="system.modes.{{@index}}.damageModifierMode">{{selectOptions ../damageModifierChoices selected=mode.damageModifierMode labelAttr="label" valueAttr="value"}}</select>
-        <label>{{localize "MYTHRASF.Weapon.Size"}}</label><input name="system.modes.{{@index}}.size" value="{{mode.size}}">
-        <label>{{localize "MYTHRASF.Weapon.ImpalingSize"}}</label><input name="system.modes.{{@index}}.impalingSize" value="{{mode.impalingSize}}">
-        <label>{{localize "MYTHRASF.Weapon.PowerModifier"}}</label><input type="number" name="system.modes.{{@index}}.powerModifier" value="{{mode.powerModifier}}">
-        <label>{{localize "MYTHRASF.Weapon.Reach"}}</label><input name="system.modes.{{@index}}.reach" value="{{mode.reach}}">
-        <label>{{localize "MYTHRASF.Weapon.Grip"}}</label><input name="system.modes.{{@index}}.grip" value="{{mode.grip}}">
-        <label>{{localize "MYTHRASF.Weapon.HandsRequired"}}</label><input type="number" min="0" max="2" name="system.modes.{{@index}}.handsRequired" value="{{mode.handsRequired}}">
-        <label>{{localize "MYTHRASF.Weapon.Range"}}</label><input name="system.modes.{{@index}}.range" value="{{mode.range}}">
-        <label>{{localize "MYTHRASF.Weapon.Reload"}}</label><input name="system.modes.{{@index}}.reload" value="{{mode.reload}}">
-        <label>{{localize "MYTHRASF.Weapon.Effects"}}</label><textarea name="system.modes.{{@index}}.effects">{{mode.effects}}</textarea>
-        <label>{{localize "MYTHRASF.Weapon.Traits"}}</label><div class="weapon-trait-editor">
-          {{#each mode.traitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#if ../../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-mode-index="{{../modeIndex}}" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}
-          {{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="select-weapon-trait" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+      <button type="button" class="sheet-add-button" data-action="add-weapon-mode" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
+      <div class="weapon-mode-table-head"><span>{{localize "MYTHRASF.Weapon.TypeLabel"}}</span><span>{{localize "MYTHRASF.Weapon.HandsRequired"}}</span><span>{{localize "MYTHRASF.Weapon.Damage"}}</span><span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.Reach"}}</span><span>{{localize "MYTHRASF.Weapon.Reload"}}</span><span>{{localize "MYTHRASF.Weapon.Effects"}}</span><span>{{localize "MYTHRASF.Weapon.Traits"}}</span><span></span></div>
+      {{#each weaponModes as |mode|}}<article class="weapon-mode-table-entry">
+        <div class="weapon-mode-table-row">
+          <select name="system.modes.{{@index}}.weaponType" aria-label="{{localize "MYTHRASF.Weapon.TypeLabel"}}">{{selectOptions ../weaponTypeChoices selected=mode.weaponType labelAttr="label" valueAttr="value"}}</select>
+          <input type="number" min="0" max="2" name="system.modes.{{@index}}.handsRequired" value="{{mode.handsRequired}}" aria-label="{{localize "MYTHRASF.Weapon.HandsRequired"}}">
+          <input name="system.modes.{{@index}}.damage" value="{{mode.damage}}" aria-label="{{localize "MYTHRASF.Weapon.Damage"}}">
+          <span class="weapon-size-fields"><input name="system.modes.{{@index}}.size" value="{{mode.size}}" aria-label="{{localize "MYTHRASF.Weapon.Size"}}">{{#if mode.isRanged}}<input name="system.modes.{{@index}}.impalingSize" value="{{mode.impalingSize}}" aria-label="{{localize "MYTHRASF.Weapon.ImpalingSize"}}" title="{{localize "MYTHRASF.Weapon.ImpalingSize"}}">{{/if}}</span>
+          {{#if mode.usesRange}}<input name="system.modes.{{@index}}.range" value="{{mode.range}}" aria-label="{{localize "MYTHRASF.Weapon.Range"}}">{{else}}<input name="system.modes.{{@index}}.reach" value="{{mode.reach}}" aria-label="{{localize "MYTHRASF.Weapon.Reach"}}">{{/if}}
+          {{#if mode.usesRange}}<input name="system.modes.{{@index}}.reload" value="{{mode.reload}}" aria-label="{{localize "MYTHRASF.Weapon.Reload"}}">{{else}}<span class="sheet-field-readonly">—</span>{{/if}}
+          <textarea name="system.modes.{{@index}}.effects" aria-label="{{localize "MYTHRASF.Weapon.Effects"}}">{{mode.effects}}</textarea>
+          <div class="weapon-trait-editor">{{#each mode.traitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#each trait.parameters as |parameter|}}<label class="weapon-trait-parameter"><span>{{parameter.label}}</span><input name="system.modes.{{../../modeIndex}}.traitRefs.{{../referenceIndex}}.parameters.{{parameterIndex}}.value" value="{{parameter.value}}" aria-label="{{parameter.label}}"></label>{{/each}}{{#if ../../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-mode-index="{{../modeIndex}}" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="select-weapon-trait" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}</div>
+          <div class="weapon-mode-actions"><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="-1" aria-label="{{localize "MYTHRASF.MoveUp"}}" title="{{localize "MYTHRASF.MoveUp"}}"><i class="fas fa-arrow-up" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="move-weapon-mode" data-mode-index="{{@index}}" data-direction="1" aria-label="{{localize "MYTHRASF.MoveDown"}}" title="{{localize "MYTHRASF.MoveDown"}}"><i class="fas fa-arrow-down" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="delete-weapon-mode" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button></div>
         </div>
-        {{#if mode.traits}}<label>{{localize "MYTHRASF.Trait.LegacyText"}}</label><textarea name="system.modes.{{@index}}.traits">{{mode.traits}}</textarea>{{/if}}
-        <label>{{localize "MYTHRASF.Weapon.Crew"}}</label><span class="weapon-crew-fields"><input type="number" min="0" name="system.modes.{{@index}}.crewMinimum" value="{{mode.crewMinimum}}"><span>/</span><input type="number" min="0" name="system.modes.{{@index}}.crewMaximum" value="{{mode.crewMaximum}}"></span>
-      </section>{{/each}}
+        {{#if mode.isSiege}}<div class="weapon-mode-siege-fields"><strong>{{localize "MYTHRASF.Weapon.Crew"}}</strong><label>{{localize "MYTHRASF.Weapon.CrewMinimum"}} <input type="number" min="0" name="system.modes.{{@index}}.crewMinimum" value="{{mode.crewMinimum}}"></label><label>{{localize "MYTHRASF.Weapon.CrewMaximum"}} <input type="number" min="0" name="system.modes.{{@index}}.crewMaximum" value="{{mode.crewMaximum}}"></label></div>{{/if}}
+      </article>{{/each}}
       </fieldset>
     </section>
 
@@ -217,14 +206,10 @@
       <fieldset class="weapon-instance-editor"><legend>{{localize "MYTHRASF.Weapon.InstanceValues"}}</legend>
         <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
         <label>{{localize "MYTHRASF.Weapon.CurrentHitPoints"}}</label><input type="number" min="0" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
-        <label>{{localize "MYTHRASF.Weapon.PreparedMode"}}</label><select name="system.activeModeKey">{{selectOptions weaponModes selected=item.system.activeModeKey labelAttr="name" valueAttr="key"}}</select>
+        <label>{{localize "MYTHRASF.Weapon.PreparedMode"}}</label><select name="system.activeModeKey">{{selectOptions weaponModes selected=item.system.activeModeKey labelAttr="displayName" valueAttr="key"}}</select>
         <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>
-      </fieldset>
-    </section>
-
-    <section class="weapon-tab-panel" data-weapon-tab-content="coding">
-      <fieldset class="weapon-instance-editor"><legend>{{localize "MYTHRASF.Weapon.CodingValues"}}</legend>
-        <label>{{localize "MYTHRASF.Weapon.ProfileKey"}}</label><input type="text" name="system.profileKey" value="{{item.system.profileKey}}">
+        <label>{{localize "MYTHRASF.Item.Location"}}</label><input name="system.location" value="{{item.system.location}}">
+        {{#if item.actor}}{{#each weaponModes as |mode|}}<fieldset class="weapon-instance-mode"><legend>{{mode.displayName}}</legend><label>{{localize "MYTHRASF.Combat.SelectStyle"}}</label><select name="system.modes.{{@index}}.preferredCombatStyleId"><option value=""></option>{{selectOptions mode.combatStyleChoices selected=mode.preferredCombatStyleId labelAttr="name" valueAttr="id"}}</select><label>{{localize "MYTHRASF.Combat.Familiarity"}}</label><select name="system.modes.{{@index}}.familiarity">{{selectOptions ../familiarityChoices selected=mode.familiarity labelAttr="label" valueAttr="value"}}</select></fieldset>{{/each}}{{/if}}
       </fieldset>
     </section>
   {{/if}}

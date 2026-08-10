@@ -1786,14 +1786,57 @@
   min-width: 38rem;
 }
 
-.mythras-foundry .weapon-modes-editor { position: relative; grid-column: 1 / -1; }
+.mythras-foundry .weapon-modes-editor { position: relative; grid-column: 1 / -1; overflow-x: auto; }
 .mythras-foundry .weapon-modes-editor > .sheet-add-button { position: absolute; top: -0.75rem; right: 0.35rem; }
-.mythras-foundry .weapon-mode-editor { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.3rem 0.6rem; padding: 0.6rem 0; border-bottom: 1px solid var(--mythras-border); }
-.mythras-foundry .weapon-mode-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.2rem; }
-.mythras-foundry .weapon-mode-editor textarea { min-height: 3rem; resize: vertical; }
+.mythras-foundry .weapon-item-sheet input,
+.mythras-foundry .weapon-item-sheet select,
+.mythras-foundry .weapon-item-sheet textarea {
+  border: 1px solid color-mix(in srgb, var(--mythras-border) 72%, transparent);
+  background: transparent;
+}
+.mythras-foundry .weapon-item-sheet input:disabled,
+.mythras-foundry .weapon-item-sheet select:disabled,
+.mythras-foundry .weapon-item-sheet textarea:disabled { border-color: transparent; opacity: 1; }
+.mythras-foundry .weapon-item-sheet .sheet-field-readonly { border: 0; background: transparent; }
+.mythras-foundry .weapon-sheet-header { grid-template-columns: 64px minmax(0, 1fr); }
+.mythras-foundry .item-image-frame { position: relative; display: inline-grid; }
+.mythras-foundry .item-image-view { position: absolute; right: 0.15rem; bottom: 0.15rem; color: var(--mythras-ink); }
+.mythras-foundry .weapon-general-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 0.45rem 0.75rem; }
+.mythras-foundry .weapon-general-fields label { display: grid; grid-template-columns: auto minmax(3rem, 5rem); align-items: center; gap: 0.35rem; }
+.mythras-foundry .weapon-general-fields .weapon-cost-field { grid-template-columns: auto 5rem 3.5rem; }
+.mythras-foundry .weapon-general-fields .weapon-source-field { grid-template-columns: auto minmax(12rem, 1fr); flex: 1 1 18rem; }
+.mythras-foundry .weapon-description-field { display: grid; gap: 0.25rem; margin-top: 0.55rem; }
+.mythras-foundry .weapon-description-field textarea { min-height: 4.5rem; resize: vertical; }
+.mythras-foundry .weapon-advanced-fields { margin-top: 0.55rem; border-top: 1px solid var(--mythras-border); padding-top: 0.35rem; }
+.mythras-foundry .weapon-advanced-fields summary { cursor: pointer; font-weight: 700; }
+.mythras-foundry .weapon-advanced-fields > div { display: grid; grid-template-columns: repeat(2, minmax(15rem, 1fr)); gap: 0.4rem 0.75rem; margin-top: 0.45rem; }
+.mythras-foundry .weapon-advanced-fields label { display: grid; grid-template-columns: minmax(9rem, 1fr) minmax(7rem, 1fr); align-items: center; gap: 0.35rem; }
+.mythras-foundry .weapon-mode-table-head,
+.mythras-foundry .weapon-mode-table-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) 3.2rem 5rem 5rem minmax(5rem, 0.65fr) 4.5rem minmax(9rem, 1.25fr) minmax(11rem, 1.4fr) 5.3rem;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 69rem;
+  font-size: var(--mythras-font-size-table);
+}
+.mythras-foundry .weapon-mode-table-head { padding: 0.2rem 0.25rem; border-bottom: 1px solid var(--mythras-border); font-weight: 700; text-align: center; }
+.mythras-foundry .weapon-mode-table-entry { border-bottom: 1px solid var(--mythras-border); padding: 0.3rem 0; min-width: 69rem; }
+.mythras-foundry .weapon-mode-table-row textarea { min-height: 2.15rem; height: 2.15rem; resize: vertical; }
+.mythras-foundry .weapon-mode-table-row > input,
+.mythras-foundry .weapon-mode-table-row > select { min-width: 0; width: 100%; }
+.mythras-foundry .weapon-size-fields { display: flex; gap: 0.2rem; }
+.mythras-foundry .weapon-size-fields input { min-width: 0; width: 50%; text-align: center; }
+.mythras-foundry .weapon-mode-actions { display: flex; justify-content: flex-end; gap: 0.1rem; }
+.mythras-foundry .weapon-mode-siege-fields { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; padding: 0.25rem 5.6rem 0 0; }
+.mythras-foundry .weapon-mode-siege-fields label { display: flex; align-items: center; gap: 0.25rem; }
+.mythras-foundry .weapon-mode-siege-fields input { width: 4rem; }
 .mythras-foundry .weapon-trait-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
 .mythras-foundry .weapon-trait-chip { display: inline-flex; align-items: center; gap: 0.15rem; border: 1px solid var(--mythras-border); padding: 0.1rem 0.25rem; }
 .mythras-foundry .weapon-trait-chip > button:first-child { border: 0; background: transparent; padding: 0.1rem; }
+.mythras-foundry .weapon-trait-parameter { display: inline-flex; align-items: center; gap: 0.15rem; font-size: var(--mythras-font-size-auxiliary); }
+.mythras-foundry .weapon-trait-parameter input { width: 2.6rem; height: 1.5rem; text-align: center; }
+.mythras-foundry .weapon-instance-mode { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.3rem 0.6rem; }
 .mythras-foundry .background-style-traits { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 0.5rem; max-height: 12rem; overflow-y: auto; }
 .mythras-foundry .background-style-traits label { display: flex; align-items: center; gap: 0.3rem; font-size: var(--mythras-font-size-table); }
 
@@ -1861,7 +1904,6 @@
 .mythras-foundry .armor-tab-panel { display: none; grid-column: 1 / -1; }
 .mythras-foundry .armor-tab-panel.active { display: block; }
 
-.mythras-foundry .weapon-characteristics-editor,
 .mythras-foundry .weapon-instance-editor {
   display: grid;
   grid-template-columns: minmax(10rem, auto) minmax(0, 1fr);
@@ -1881,10 +1923,7 @@
   min-height: 8rem;
 }
 
-.mythras-foundry .weapon-characteristics-editor textarea {
-  grid-column: 1 / -1;
-  min-height: 8rem;
-}
+.mythras-foundry .weapon-characteristics-editor { display: block; }
 
 .mythras-foundry .combat-style-description-editor,
 .mythras-foundry .combat-style-configuration {

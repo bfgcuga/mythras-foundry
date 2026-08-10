@@ -23,7 +23,8 @@ export function normalizeCatalogText(value) {
 
 export function catalogCategory(entry) {
   if (entry.type === "armor") return "armor";
-  if (entry.type === "weapon") return entry.system?.weaponType === "shield"
+  if (entry.type === "weapon") return (entry.system?.modes?.some((mode) => mode.weaponType === "shield")
+    || entry.system?.weaponType === "shield")
     ? "shield" : "weapon";
   if (entry.type !== "equipment") return null;
   const category = entry.system?.category ?? "item";

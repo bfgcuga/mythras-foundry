@@ -35,7 +35,7 @@ const weaponModeField = () => new SchemaField({
   name: textField(),
   profileKey: textField(),
   weaponType: new StringField({ required: true, nullable: false, initial: "melee",
-    choices: ["melee", "ranged", "shield"] }),
+    choices: ["melee", "ranged", "shield", "siege"] }),
   damage: textField(),
   damageModifierMode: new StringField({ required: true, nullable: false, initial: "full",
     choices: ["full", "half", "none"] }),
@@ -44,7 +44,6 @@ const weaponModeField = () => new SchemaField({
   powerModifier: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
   reach: textField(),
   effects: textField(),
-  traits: textField(),
   traitRefs: new ArrayField(traitReferenceField(), { required: true, nullable: false, initial: [] }),
   grip: textField(),
   handsRequired: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 0, max: 2 }),
@@ -235,20 +234,14 @@ export class PassionData extends foundry.abstract.TypeDataModel {
 
 export class WeaponData extends EquipmentData {
   static defineSchema() {
+    const { weight: _obsoleteWeight, ...equipmentSchema } = super.defineSchema();
     return {
-      ...super.defineSchema(),
+      ...equipmentSchema,
       source: textField(),
       era: textField(),
       profileKey: textField(),
       activeModeKey: textField(),
       modes: new ArrayField(weaponModeField(), { required: true, nullable: false, initial: [] }),
-      weaponType: new StringField({ required: true, nullable: false, initial: "melee",
-        choices: ["melee", "ranged", "shield"] }),
-      damage: textField(),
-      damageModifierMode: new StringField({ required: true, nullable: false, initial: "full",
-        choices: ["full", "half", "none"] }),
-      size: textField(),
-      reach: textField(),
       maxHitPoints: nonNegativeNumber(0, true),
       maxHitPointsFormula: textField(),
       currentHitPoints: nonNegativeNumber(0, true),
@@ -258,25 +251,12 @@ export class WeaponData extends EquipmentData {
         choices: ["independent", "hitLocation"] }),
       linkedLocationId: textField(),
       encumbrance: nonNegativeNumber(),
-      effects: textField(),
-      traits: textField(),
-      traitRefs: new ArrayField(traitReferenceField(), { required: true, nullable: false, initial: [] }),
-      impalingSize: textField(),
-      powerModifier: new NumberField({ required: true, nullable: false, integer: true, initial: 0 }),
-      grip: textField(),
-      handsRequired: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 0, max: 2 }),
-      range: textField(),
-      reload: textField(),
-      crewMinimum: nonNegativeNumber(0, true),
-      crewMaximum: nonNegativeNumber(0, true),
-      preferredCombatStyleId: textField(),
-      familiarity: new StringField({ required: true, nullable: false, initial: "similar",
-        choices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"] })
     };
   }
 
   get effectiveHandsRequired() {
-    return weaponHandsRequired(this);
+    const mode = this.modes.find((entry) => entry.key === this.activeModeKey) ?? this.modes[0];
+    return weaponHandsRequired(this, mode);
   }
 }
 

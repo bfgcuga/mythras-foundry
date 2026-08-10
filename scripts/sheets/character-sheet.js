@@ -342,8 +342,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         recoveryLabel: game.i18n.localize(`MYTHRASF.Fatigue.RecoveryValue.${level.recovery}`)
       })),
       combatWeapons,
-      meleeCombatWeapons: combatWeapons.filter((row) => row.mode.weaponType !== "ranged"),
-      rangedCombatWeapons: combatWeapons.filter((row) => row.mode.weaponType === "ranged")
+      meleeCombatWeapons: combatWeapons.filter((row) => !["ranged", "siege"].includes(row.mode.weaponType)),
+      rangedCombatWeapons: combatWeapons.filter((row) => ["ranged", "siege"].includes(row.mode.weaponType))
         .map((row) => ({ ...row,
           damageModifierLabel: game.i18n.localize(
             `MYTHRASF.Weapon.DamageModifier.${row.mode.damageModifierMode ?? "full"}`) })),

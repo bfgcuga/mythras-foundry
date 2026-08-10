@@ -10,6 +10,9 @@ const standards = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8")
 const characterTemplate = readFileSync(
   new URL("../templates/actor/character-sheet.hbs", import.meta.url), "utf8"
 );
+const itemTemplate = readFileSync(
+  new URL("../templates/item/item-sheet.hbs", import.meta.url), "utf8"
+);
 const tooltipScript = readFileSync(new URL("../scripts/ui/tooltips.js", import.meta.url), "utf8");
 const sheetSources = ["character-sheet.js", "npc-sheet.js", "item-sheet.js"]
   .map((name) => readFileSync(new URL(`../scripts/sheets/${name}`, import.meta.url), "utf8"));
@@ -40,4 +43,11 @@ test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula"
   assert.match(css, /\.catalog-header,\s*\n\.mythras-foundry \.catalog-results li[^}]*grid-template-columns:/);
   assert.match(css, /\.inventory-tree-head,\s*\n\.mythras-foundry \.inventory-tree \.item-list li[^}]*grid-template-columns:/);
   assert.match(css, /\.inventory-tree-head \{[^}]*text-align: left/);
+});
+
+test("la ficha de arma usa tabla compacta y expone parámetros de rasgo", () => {
+  assert.match(css, /\.weapon-mode-table-head,\s*\n\.mythras-foundry \.weapon-mode-table-row/);
+  assert.match(itemTemplate, /data-action="view-item-image"/);
+  assert.match(itemTemplate, /traitRefs\.\{\{\.\.\/referenceIndex\}\}\.parameters/);
+  assert.match(itemTemplate, /weapon-advanced-fields/);
 });

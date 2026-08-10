@@ -1,5 +1,6 @@
 const { ItemSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { ImagePopout } = foundry.applications.apps;
 import {
   PASSION_OBJECT_TYPES,
   PASSION_VERBS,
@@ -16,7 +17,7 @@ import { TRAIT_TYPES, mergeTraitReferences, removeTraitReference, traitReference
   traitSlug } from "../rules/traits.js";
 
 async function prepareTraitReferences(references = []) {
-  return Promise.all(references.map(async (reference) => {
+  return Promise.all(references.map(async (reference, referenceIndex) => {
     let document = null;
     try { document = reference.uuid ? await fromUuid(reference.uuid) : null; } catch { /* broken UUID */ }
     if (!document && reference.key) {
@@ -37,6 +38,13 @@ async function prepareTraitReferences(references = []) {
     }
     return {
       ...reference,
+      referenceIndex,
+      parameters: (reference.parameters ?? []).map((parameter, parameterIndex) => ({
+        ...parameter,
+        parameterIndex,
+        label: parameter.key === "locations"
+          ? game.i18n.localize("MYTHRASF.Trait.Parameter.Locations") : parameter.key
+      })),
       uuid: document?.uuid || reference.uuid,
       name: document?.name || reference.name || reference.key,
       img: document?.img || "icons/svg/aura.svg",
@@ -96,9 +104,17 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         update.system?.profileKey || update.name || this.item.name
       );
       if (update.system?.modes) {
-        update.system.modes = Object.values(update.system.modes).map((mode) => ({ ...mode,
-          key: normalizeModeKey(mode.key), profileKey: mode.profileKey
-            ? normalizeWeaponProfile(mode.profileKey) : "" }));
+        const currentModes = weaponModes(this.item);
+        update.system.modes = Object.values(update.system.modes).map((submitted, index) => {
+          const mode = foundry.utils.mergeObject(
+            foundry.utils.deepClone(currentModes[index] ?? {}), submitted, { inplace: false }
+          );
+          const hands = Math.max(0, Math.min(2, Number(mode.handsRequired ?? 1)));
+          return { ...mode,
+            key: normalizeModeKey(mode.key || mode.weaponType),
+            profileKey: mode.profileKey ? normalizeWeaponProfile(mode.profileKey) : "",
+            grip: hands === 2 ? "2 manos" : hands === 1 ? "1 mano" : "" };
+        });
         if (!modeKeysAreUnique(update.system.modes)) {
           return ui.notifications.error(game.i18n.localize("MYTHRASF.Weapon.DuplicateModeKey"));
         }
@@ -169,9 +185,16 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ? await prepareTraitReferences(this.item.system.traitRefs ?? []) : [];
     const weaponTraitReferences = this.item.type === "weapon"
       ? await prepareTraitReferences(this.item.system.traitRefs ?? []) : [];
+    const weaponStyles = this.item.type === "weapon" && this.item.actor
+      ? this.item.actor.items.filter((candidate) => candidate.type === "combatStyle") : [];
     const preparedWeaponModes = this.item.type === "weapon"
       ? await Promise.all(weaponModes(this.item).map(async (weaponMode, modeIndex) => ({
         ...weaponMode, modeIndex,
+        displayName: game.i18n.localize(`MYTHRASF.Weapon.Type.${weaponMode.weaponType}`),
+        isRanged: weaponMode.weaponType === "ranged",
+        isSiege: weaponMode.weaponType === "siege",
+        usesRange: ["ranged", "siege"].includes(weaponMode.weaponType),
+        combatStyleChoices: weaponStyles.map((style) => ({ id: style.id, name: style.name })),
         traitReferences: await prepareTraitReferences(weaponMode.traitRefs ?? []) }))) : [];
     return foundry.utils.mergeObject(context, {
       item: this.item,
@@ -268,12 +291,15 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         value,
         label: game.i18n.localize(`MYTHRASF.Passion.Object.${value}`)
       })),
-      weaponTypeChoices: ["melee", "ranged", "shield"].map((value) => ({
+      weaponTypeChoices: ["melee", "ranged", "shield", "siege"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Weapon.Type.${value}`)
       })),
       damageModifierChoices: ["full", "half", "none"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Weapon.DamageModifier.${value}`)
       })),
+      familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent",
+        "substantiallyDifferent"].map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) })),
       armorEraChoices: ["all", "ancient-medieval", "ancient-renaissance",
         "medieval-industrial", "ancient", "modern", "futuristic"].map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.Armor.Era.${value}`)
@@ -301,6 +327,14 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   _onRender(context, options) {
     super._onRender(context, options);
+
+    if (this.item.type === "weapon" && !this._weaponDefaultSizeApplied) {
+      this._weaponDefaultSizeApplied = true;
+      this.setPosition({ width: 900, height: 680 });
+    }
+
+    this.element.querySelector("[data-action='view-item-image']")
+      ?.addEventListener("click", () => this.#viewItemImage());
 
     this._activeWeaponTab ??= "characteristics";
     this.element.querySelectorAll("[data-weapon-tab]").forEach((button) =>
@@ -565,14 +599,17 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const document = await this.#chooseCatalogItem("trait", "weapon",
       "MYTHRASF.Weapon.SelectTrait");
     if (!document) return;
+    const reference = traitReference(document,
+      traitSlug(document.system.key || document.name) === "bloqueo-pasivo"
+        ? [{ key: "locations", value: "1" }] : []);
     const index = event.currentTarget.dataset.modeIndex;
     if (index === undefined) {
-      const result = mergeTraitReferences(this.item.system.traitRefs, [traitReference(document)]);
+      const result = mergeTraitReferences(this.item.system.traitRefs, [reference]);
       if (result.added) await this.item.update({ "system.traitRefs": result.references });
       return;
     }
     const modes = weaponModes(this.item).map((mode) => ({ ...mode }));
-    const result = mergeTraitReferences(modes[Number(index)].traitRefs, [traitReference(document)]);
+    const result = mergeTraitReferences(modes[Number(index)].traitRefs, [reference]);
     if (!result.added) return;
     modes[Number(index)].traitRefs = result.references;
     await this.item.update({ "system.modes": modes });
@@ -593,6 +630,14 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   async #openWeaponTrait(event) {
     return this.#openCombatStyleTrait(event);
+  }
+
+  #viewItemImage() {
+    new ImagePopout({
+      src: this.item.img,
+      uuid: this.item.uuid,
+      window: { title: this.item.name }
+    }).render(true);
   }
 
   async #addDroppedWeapon(document) {

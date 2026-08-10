@@ -24,7 +24,6 @@ import { CharacterSheet } from "./sheets/character-sheet.js";
 import { NpcSheet } from "./sheets/npc-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
-import { weaponHandsRequired } from "./rules/equipment.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { PartyManager } from "./apps/party-manager.js";
@@ -367,20 +366,24 @@ async function migrateTraitData(item, catalog) {
   }
   if (!["combatStyle", "weapon"].includes(item.type)) return;
   const update = {};
-  const direct = parseLegacyTraitText(item.system.traits, catalog);
-  const merged = mergeTraitReferences(item.system.traitRefs, direct.references);
-  if (merged.added || direct.legacyText !== String(item.system.traits ?? "")) {
-    update["system.traitRefs"] = merged.references;
-    update["system.traits"] = direct.legacyText;
+  if (item.type === "combatStyle") {
+    const direct = parseLegacyTraitText(item.system.traits, catalog);
+    const merged = mergeTraitReferences(item.system.traitRefs, direct.references);
+    if (merged.added || direct.legacyText !== String(item.system.traits ?? "")) {
+      update["system.traitRefs"] = merged.references;
+      update["system.traits"] = direct.legacyText;
+    }
   }
   if (item.type === "weapon") {
     let modesChanged = false;
-    const modes = weaponModes(item).map((mode) => {
-      const parsed = parseLegacyTraitText(mode.traits, catalog);
+    const rawModes = item._source.system?.modes ?? [];
+    const modes = weaponModes(item).map((mode, index) => {
+      const legacyTraits = rawModes[index]?.traits;
+      const parsed = parseLegacyTraitText(legacyTraits, catalog);
       const modeMerged = mergeTraitReferences(mode.traitRefs, parsed.references);
-      if (!modeMerged.added && parsed.legacyText === String(mode.traits ?? "")) return mode;
+      if (!modeMerged.added && legacyTraits === undefined) return mode;
       modesChanged = true;
-      return { ...mode, traitRefs: modeMerged.references, traits: parsed.legacyText };
+      return { ...mode, traitRefs: modeMerged.references };
     });
     if (modesChanged) update["system.modes"] = modes;
   }
@@ -531,12 +534,12 @@ async function migrateCombatItems(actor) {
         update["system.-=hitPoints"] = null;
         changed = true;
       }
-      const requiredHands = weaponHandsRequired(item);
-      if (!foundry.utils.hasProperty(item._source, "system.handsRequired")
-        || Number(item.system.handsRequired) !== requiredHands) {
-        update["system.handsRequired"] = requiredHands;
+      const normalizedModes = siegeModeMigration(item);
+      if (normalizedModes) {
+        update["system.modes"] = normalizedModes;
         changed = true;
       }
+      if (appendObsoleteWeaponFieldRemovals(item, update)) changed = true;
       if (changed) updates.push(update);
     }
   }
@@ -565,12 +568,38 @@ async function migrateWorldCombatItem(item) {
     update["system.currentHitPoints"] = legacy;
   }
   if (hasLegacyHitPoints) update["system.-=hitPoints"] = null;
-  const requiredHands = weaponHandsRequired(item);
-  if (!foundry.utils.hasProperty(item._source, "system.handsRequired")
-    || Number(item.system.handsRequired) !== requiredHands) {
-    update["system.handsRequired"] = requiredHands;
-  }
+  const normalizedModes = siegeModeMigration(item);
+  if (normalizedModes) update["system.modes"] = normalizedModes;
+  appendObsoleteWeaponFieldRemovals(item, update);
   if (Object.keys(update).length) await item.update(update);
+}
+
+const OBSOLETE_WEAPON_FIELDS = Object.freeze([
+  "weight", "weaponType", "damage", "damageModifierMode", "size", "reach", "effects",
+  "traits", "traitRefs", "grip", "handsRequired", "range", "reload", "impalingSize",
+  "powerModifier", "crewMinimum", "crewMaximum", "preferredCombatStyleId", "familiarity"
+]);
+
+function appendObsoleteWeaponFieldRemovals(item, update) {
+  let changed = false;
+  for (const field of OBSOLETE_WEAPON_FIELDS) {
+    if (!foundry.utils.hasProperty(item._source, `system.${field}`)) continue;
+    update[`system.-=${field}`] = null;
+    changed = true;
+  }
+  return changed;
+}
+
+function siegeModeMigration(item) {
+  let changed = false;
+  const modes = weaponModes(item).map((mode) => {
+    if (mode.weaponType === "siege" || (
+      mode.key !== "siege" && Number(mode.crewMaximum ?? 0) <= 0
+    )) return mode;
+    changed = true;
+    return { ...mode, weaponType: "siege" };
+  });
+  return changed ? modes : null;
 }
 
 async function migrateEmbeddedItemIcons(actor) {

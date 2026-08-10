@@ -1,4 +1,4 @@
-export const WEAPON_MODE_TYPES = Object.freeze(["melee", "ranged", "shield"]);
+export const WEAPON_MODE_TYPES = Object.freeze(["melee", "ranged", "shield", "siege"]);
 
 export function normalizeModeKey(value, fallback = "mode") {
   const normalized = String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -19,7 +19,6 @@ export function legacyWeaponMode(weapon) {
     size: system.size ?? "",
     reach: system.reach ?? "",
     effects: system.effects ?? "",
-    traits: system.traits ?? "",
     traitRefs: [...(system.traitRefs ?? [])],
     grip: system.grip ?? "",
     handsRequired: Number(system.effectiveHandsRequired ?? system.handsRequired ?? 1),

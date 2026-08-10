@@ -4,7 +4,7 @@ import { CATALOG_CATEGORIES, OFFICIAL_CATALOG_PACKS, filterCatalogEntries,
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const INDEX_FIELDS = ["name", "img", "type", "system.category", "system.weaponType",
+const INDEX_FIELDS = ["name", "img", "type", "system.category", "system.modes",
   "system.value", "system.currency"];
 
 export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {

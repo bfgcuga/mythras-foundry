@@ -19,14 +19,11 @@ export function weaponImage(category, key, fallback) {
 }
 
 const baseSystem = Object.freeze({
-  quantity: 1, quantityFormula: "", weight: 0, value: 0, location: "", equipped: false,
+  quantity: 1, quantityFormula: "", value: 0, location: "", equipped: false,
   source: MYTHRAS_REVISED_SOURCE, era: "", profileKey: "", activeModeKey: "",
-  modes: [], weaponType: "melee", damage: "", damageModifierMode: "full", size: "",
-  reach: "", maxHitPoints: 0, maxHitPointsFormula: "", currentHitPoints: 0,
+  modes: [], maxHitPoints: 0, maxHitPointsFormula: "", currentHitPoints: 0,
   armorPoints: 0, armorPointsFormula: "", durabilitySource: "independent",
-  linkedLocationId: "", encumbrance: 0, effects: "", traits: "", traitRefs: [], grip: "",
-  handsRequired: 1, range: "", reload: "", impalingSize: "", powerModifier: 0,
-  crewMinimum: 0, crewMaximum: 0, preferredCombatStyleId: "", familiarity: "similar",
+  linkedLocationId: "", encumbrance: 0,
   description: ""
 });
 
@@ -47,14 +44,8 @@ const source = ({ key, name, ap, hp, enc = 0, cost = 0, era = "", traits = "",
     buildKey: key, name, type: "weapon", img,
     system: {
       ...baseSystem, profileKey: key, activeModeKey: active.key, modes,
-      weaponType: active.weaponType, damage: active.damage,
-      damageModifierMode: active.damageModifierMode, size: active.size, reach: active.reach,
       maxHitPoints: hp, currentHitPoints: hp, armorPoints: ap, encumbrance: enc,
-      value: cost, era, effects: active.effects, traits: traits || active.traits,
-      grip: active.grip, handsRequired: active.handsRequired, range: active.range,
-      reload: active.reload, impalingSize: active.impalingSize,
-      powerModifier: active.powerModifier, crewMinimum: active.crewMinimum,
-      crewMaximum: active.crewMaximum
+      value: cost, era
     },
     flags: { "mythras-foundry": { source: "mythras-basic-revised" } }
   };
@@ -143,7 +134,7 @@ export const SIEGE_WEAPON_SOURCES = [
   ["trabuquete", "Trabuquete", "8d6", "400/800", "9", [4, 8], "Aturdir Localización, Golpetazo", 4, 150, "M", 5000]
 ].map(([key, name, damage, range, reload, crew, effects, ap, hp, era, cost]) => source({
   key, name, ap, hp, cost, era, img: weaponImage("armas_de_asedio", key),
-  modes: [mode({ key: "siege", type: "ranged", damage, damageModifier: "none",
+  modes: [mode({ key: "siege", type: "siege", damage, damageModifier: "none",
     size: "MD", range, reload, crew, effects, hands: 0 })]
 }));
 
@@ -195,12 +186,10 @@ export const MELEE_WEAPON_SOURCES = Object.freeze([
 ]);
 
 function convertWeaponTraits(entry) {
-  const top = parseLegacyTraitText(entry.system.traits, WEAPON_TRAIT_SOURCES);
-  entry.system.traits = top.legacyText;
-  entry.system.traitRefs = top.references;
   entry.system.modes = entry.system.modes.map((weaponMode) => {
     const converted = parseLegacyTraitText(weaponMode.traits, WEAPON_TRAIT_SOURCES);
-    return { ...weaponMode, traits: converted.legacyText, traitRefs: converted.references };
+    const { traits: _legacyTraits, ...structuredMode } = weaponMode;
+    return { ...structuredMode, traitRefs: converted.references };
   });
   return entry;
 }

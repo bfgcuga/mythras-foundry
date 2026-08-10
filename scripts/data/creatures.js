@@ -74,16 +74,14 @@ function weapon(buildKey, name, { damage, size = "M", reach = "M", linkedLocatio
   handsRequired = 0, range = "" }) {
   const modeKey = weaponType === "ranged" ? "ranged" : "melee";
   return { buildKey, linkedLocationKey, name, type: "weapon", img: "icons/svg/sword.svg", system: {
-    quantity: 1, quantityFormula: "", weight: 0, value: 0, location: "", equipped: true,
-    profileKey: buildKey, activeModeKey: modeKey, weaponType, damage, damageModifierMode,
-    size, reach, maxHitPoints: hp, maxHitPointsFormula: "", currentHitPoints: hp,
+    quantity: 1, quantityFormula: "", value: 0, location: "", equipped: true,
+    profileKey: buildKey, activeModeKey: modeKey,
+    maxHitPoints: hp, maxHitPointsFormula: "", currentHitPoints: hp,
     armorPoints: ap, armorPointsFormula: "", durabilitySource: linkedLocationKey
-      ? "hitLocation" : "independent", linkedLocationId: "", encumbrance: 0, effects,
-    grip: handsRequired === 2 ? "2 manos" : handsRequired === 1 ? "1 mano" : "Natural",
-    handsRequired, range, reload: "", preferredCombatStyleId: "", familiarity: "similar",
-    description: "", traits: "", traitRefs: [], modes: [{ key: modeKey, name: "", profileKey: buildKey, weaponType,
+      ? "hitLocation" : "independent", linkedLocationId: "", encumbrance: 0,
+    description: "", modes: [{ key: modeKey, name: "", profileKey: buildKey, weaponType,
       damage, damageModifierMode, size, reach, effects, grip: handsRequired ? `${handsRequired} mano${handsRequired > 1 ? "s" : ""}` : "Natural",
-      traits: "", traitRefs: [], handsRequired, range, reload: "", preferredCombatStyleId: "", familiarity: "similar" }]
+      traitRefs: [], handsRequired, range, reload: "", preferredCombatStyleId: "", familiarity: "similar" }]
   }, flags: sourceFlags };
 }
 
