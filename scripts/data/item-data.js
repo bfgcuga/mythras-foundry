@@ -135,8 +135,9 @@ export class SkillData extends foundry.abstract.TypeDataModel {
 
 export class CombatStyleData extends SkillData {
   static defineSchema() {
+    const { bonus: _legacyBonus, ...skillSchema } = super.defineSchema();
     return {
-      ...super.defineSchema(),
+      ...skillSchema,
       category: new StringField({
         required: true,
         nullable: false,
@@ -149,12 +150,10 @@ export class CombatStyleData extends SkillData {
         initial: "combat",
         choices: ["combat"]
       }),
-      weapons: textField(),
       weaponProfiles: new ArrayField(new SchemaField({
         key: textField(),
         name: textField()
       }), { required: true, nullable: false, initial: [] }),
-      traits: textField(),
       traitRefs: new ArrayField(traitReferenceField(), { required: true, nullable: false, initial: [] }),
       sourceType: textField()
     };

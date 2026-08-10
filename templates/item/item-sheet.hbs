@@ -1,4 +1,4 @@
-<div class="item-sheet-content {{#if isWeapon}}weapon-item-sheet{{/if}}">
+<div class="item-sheet-content {{#if isWeapon}}weapon-item-sheet{{/if}} {{#if isCombatStyle}}combat-style-item-sheet{{/if}}">
   <header class="sheet-header {{#if isWeapon}}weapon-sheet-header{{/if}}">
     <span class="item-image-frame"><img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
       {{#if isWeapon}}<button type="button" class="sheet-icon-button item-image-view" data-action="view-item-image" aria-label="{{localize "MYTHRASF.Item.ViewImage"}}" title="{{localize "MYTHRASF.Item.ViewImage"}}"><i class="fas fa-expand" aria-hidden="true"></i></button>{{/if}}
@@ -27,15 +27,32 @@
         <button type="button" class="active" data-combat-style-tab="description" title="{{localize "MYTHRASF.CombatStyle.Tabs.Description"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Description"}}</button>
         <button type="button" data-combat-style-tab="weapons" title="{{localize "MYTHRASF.CombatStyle.Tabs.Weapons"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Weapons"}}</button>
         <button type="button" data-combat-style-tab="traits" title="{{localize "MYTHRASF.CombatStyle.Tabs.Traits"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Traits"}}</button>
-        <button type="button" data-combat-style-tab="configuration" title="{{localize "MYTHRASF.CombatStyle.Tabs.Configuration"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Configuration"}}</button>
+        <button type="button" data-combat-style-tab="calculation" title="{{localize "MYTHRASF.CombatStyle.Tabs.Calculation"}}">{{localize "MYTHRASF.CombatStyle.Tabs.Calculation"}}</button>
       </nav>
 
       <section class="combat-style-tab-panel active" data-combat-style-tab-content="description">
         <fieldset class="combat-style-description-editor"><legend>{{localize "MYTHRASF.CombatStyle.Description"}}</legend>
           <label>{{localize "MYTHRASF.Item.Description"}}</label>
-          <textarea name="system.description">{{item.system.description}}</textarea>
-          {{#if item.system.traits}}<label>{{localize "MYTHRASF.Trait.LegacyText"}}</label>
-          <textarea name="system.traits">{{item.system.traits}}</textarea>{{/if}}
+          <textarea class="sheet-field-editable" name="system.description">{{item.system.description}}</textarea>
+          <label>{{localize "MYTHRASF.CombatStyle.Weapons"}}</label>
+          <div class="combat-style-name-summary sheet-field-readonly">{{#each combatStyleWeaponProfiles as |profile|}}<span>{{profile.name}}</span>{{else}}<em>{{localize "MYTHRASF.CombatStyle.NoWeaponProfiles"}}</em>{{/each}}</div>
+          <label>{{localize "MYTHRASF.CombatStyle.Traits"}}</label>
+          <div class="combat-style-name-summary sheet-field-readonly">{{#each combatStyleTraitReferences as |trait|}}<span>{{trait.name}}</span>{{else}}<em>{{localize "MYTHRASF.CombatStyle.NoTraits"}}</em>{{/each}}</div>
+          <label>{{localize "MYTHRASF.Skill.Source"}}</label>
+          <input type="text" class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
+          <details class="combat-style-advanced-state">
+            <summary>{{localize "MYTHRASF.CombatStyle.AdvancedState"}}</summary>
+            <div class="combat-style-state-grid">
+              <label><input type="checkbox" class="sheet-state-box" name="system.trained" {{checked item.system.trained}}> {{localize "MYTHRASF.Skill.Trained"}}</label>
+              <label><input type="checkbox" class="sheet-state-box" name="system.fumbled" {{checked item.system.fumbled}}> {{localize "MYTHRASF.Skill.Fumbled"}}</label>
+              <label>{{localize "MYTHRASF.Skill.ValueMode.Label"}}</label>
+              <select class="sheet-field-editable" name="system.valueMode">{{selectOptions skillValueModeChoices selected=item.system.valueMode labelAttr="label" valueAttr="value"}}</select>
+              <label>{{localize "MYTHRASF.Skill.ManualValue"}}</label>
+              <input class="sheet-field-editable" type="number" min="0" name="system.manualValue" value="{{item.system.manualValue}}">
+              <label>{{localize "MYTHRASF.Npc.GenerationFormula"}}</label>
+              <input class="sheet-field-editable" type="text" name="system.generationFormula" value="{{item.system.generationFormula}}" placeholder="1d10+50">
+            </div>
+          </details>
         </fieldset>
       </section>
 
@@ -84,14 +101,9 @@
         </fieldset>
       </section>
 
-      <section class="combat-style-tab-panel" data-combat-style-tab-content="configuration">
-        <fieldset class="combat-style-configuration"><legend>{{localize "MYTHRASF.CombatStyle.Configuration"}}</legend>
-          <label>{{localize "MYTHRASF.Item.Category"}}</label><output class="sheet-field-readonly">{{localize "MYTHRASF.Skill.Professional"}}</output>
-          <label>{{localize "MYTHRASF.Skill.Group"}}</label><output class="sheet-field-readonly">{{localize "MYTHRASF.Skill.GroupCombat"}}</output>
-          <label>{{localize "MYTHRASF.Item.Characteristic1"}}</label><output class="sheet-field-readonly">{{combatStyleCharacteristic1}}</output>
-          <label>{{localize "MYTHRASF.Item.Characteristic2"}}</label><output class="sheet-field-readonly">{{combatStyleCharacteristic2}}</output>
+      <section class="combat-style-tab-panel" data-combat-style-tab-content="calculation">
+        <fieldset class="combat-style-calculation"><legend>{{localize "MYTHRASF.CombatStyle.Calculation"}}</legend>
           <label>{{localize "MYTHRASF.Skill.Base"}}</label><output class="sheet-field-readonly">{{item.system.base}}%</output>
-          <label>{{localize "MYTHRASF.CombatStyle.SourceType"}}</label><output class="sheet-field-readonly">{{combatStyleSourceType}}</output>
           <label>{{localize "MYTHRASF.Skill.BaseBonus"}}</label><output class="sheet-field-readonly">{{item.system.baseBonus}}</output>
           <label>{{localize "MYTHRASF.Skill.CulturePoints"}}</label><output class="sheet-field-readonly">{{item.system.culturePoints}}</output>
           <label>{{localize "MYTHRASF.Skill.ProfessionPoints"}}</label><output class="sheet-field-readonly">{{item.system.professionPoints}}</output>
@@ -101,7 +113,7 @@
         </fieldset>
       </section>
     {{/if}}
-    <fieldset class="item-generation-fields">
+    {{#unless isCombatStyle}}<fieldset class="item-generation-fields">
       <legend>{{localize "MYTHRASF.Npc.ValueConfiguration"}}</legend>
       <label>{{localize "MYTHRASF.Skill.ValueMode.Label"}}</label>
       <select name="system.valueMode">{{selectOptions skillValueModeChoices selected=item.system.valueMode labelAttr="label" valueAttr="value"}}</select>
@@ -109,7 +121,7 @@
       <input type="number" min="0" name="system.manualValue" value="{{item.system.manualValue}}">
       <label>{{localize "MYTHRASF.Npc.GenerationFormula"}}</label>
       <input type="text" name="system.generationFormula" value="{{item.system.generationFormula}}" placeholder="1d10+50">
-    </fieldset>
+    </fieldset>{{/unless}}
   {{/if}}
 
   {{#if isBackground}}
@@ -214,7 +226,7 @@
         </div>{{/if}}{{/if}}
 
         <label class="weapon-mode-effect-field"><span>{{localize "MYTHRASF.Weapon.Effects"}}</span><textarea name="system.modes.{{@index}}.effects">{{mode.effects}}</textarea></label>
-        <div class="weapon-mode-trait-field"><span>{{localize "MYTHRASF.Weapon.Traits"}}</span><div class="weapon-trait-editor">{{#each mode.traitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#each trait.parameters as |parameter|}}<label class="weapon-trait-parameter"><span>{{parameter.label}}</span><input name="system.modes.{{../../modeIndex}}.traitRefs.{{../referenceIndex}}.parameters.{{parameterIndex}}.value" value="{{parameter.value}}" aria-label="{{parameter.label}}"></label>{{/each}}{{#if ../../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-mode-index="{{../modeIndex}}" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}{{#if ../editable}}<button type="button" class="weapon-trait-add" data-action="select-weapon-trait" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-tag" aria-hidden="true"></i><span>{{localize "MYTHRASF.Weapon.AddTrait"}}</span></button>{{/if}}</div></div></div>
+        <div class="weapon-mode-trait-field"><span>{{localize "MYTHRASF.Weapon.Traits"}}</span><div class="weapon-trait-editor">{{#each mode.traitReferences as |trait|}}<span class="weapon-trait-chip"><button type="button" data-action="open-weapon-trait" data-trait-uuid="{{trait.uuid}}" aria-label="{{trait.name}}" title="{{trait.name}}">{{trait.name}}</button>{{#each trait.parameters as |parameter|}}<label class="weapon-trait-parameter">{{#unless parameter.hideLabel}}<span>{{parameter.label}}</span>{{/unless}}<input name="system.modes.{{../../modeIndex}}.traitRefs.{{../referenceIndex}}.parameters.{{parameterIndex}}.value" value="{{parameter.value}}" aria-label="{{parameter.label}}"></label>{{/each}}{{#if ../../editable}}<button type="button" class="sheet-icon-button" data-action="delete-weapon-trait" data-mode-index="{{../modeIndex}}" data-trait-uuid="{{trait.uuid}}" data-trait-key="{{trait.key}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</span>{{/each}}{{#if ../editable}}<button type="button" class="weapon-trait-add" data-action="select-weapon-trait" data-mode-index="{{@index}}" aria-label="{{localize "MYTHRASF.Weapon.SelectTrait"}}" title="{{localize "MYTHRASF.Weapon.SelectTrait"}}"><i class="fas fa-tag" aria-hidden="true"></i><span>{{localize "MYTHRASF.Weapon.AddTrait"}}</span></button>{{/if}}</div></div></div>
       </article>{{/each}}
       </fieldset>
     </section>

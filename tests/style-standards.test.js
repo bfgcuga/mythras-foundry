@@ -17,6 +17,7 @@ const itemTemplate = readFileSync(
   new URL("../templates/item/item-sheet.hbs", import.meta.url), "utf8"
 );
 const tooltipScript = readFileSync(new URL("../scripts/ui/tooltips.js", import.meta.url), "utf8");
+const itemData = readFileSync(new URL("../scripts/data/item-data.js", import.meta.url), "utf8");
 const sheetSources = ["character-sheet.js", "npc-sheet.js", "item-sheet.js"]
   .map((name) => readFileSync(new URL(`../scripts/sheets/${name}`, import.meta.url), "utf8"));
 
@@ -80,4 +81,18 @@ test("la configuración de arma separa ejemplar y situación del personaje", () 
   assert.match(itemTemplate, /weapon-situation-editor[^]*system\.activeModeKey[^]*system\.equipped/);
   assert.ok(itemTemplate.indexOf("weapon-copy-editor")
     < itemTemplate.indexOf("weapon-situation-editor"));
+});
+
+test("la ficha de estilo resume asociaciones y separa el cálculo no editable", () => {
+  assert.match(itemTemplate, /combat-style-name-summary[^]*combatStyleWeaponProfiles/);
+  assert.match(itemTemplate, /combat-style-name-summary[^]*combatStyleTraitReferences/);
+  assert.match(itemTemplate, /data-combat-style-tab-content="calculation"[^]*<output class="sheet-field-readonly">/);
+  assert.match(itemTemplate, /combat-style-advanced-state/);
+  assert.doesNotMatch(itemTemplate, /name="system\.(weapons|traits|bonus)"/);
+  assert.match(css, /\.combat-style-item-sheet input,[^}]*background: transparent/s);
+
+  const styleSchema = itemData.slice(itemData.indexOf("export class CombatStyleData"),
+    itemData.indexOf("export class BackgroundData"));
+  assert.doesNotMatch(styleSchema, /\b(weapons|traits): textField/);
+  assert.match(styleSchema, /bonus: _legacyBonus/);
 });

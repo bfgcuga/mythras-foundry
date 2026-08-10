@@ -42,6 +42,7 @@ async function prepareTraitReferences(references = []) {
       parameters: (reference.parameters ?? []).map((parameter, parameterIndex) => ({
         ...parameter,
         parameterIndex,
+        hideLabel: parameter.key === "locations",
         label: parameter.key === "locations"
           ? game.i18n.localize("MYTHRASF.Trait.Parameter.Locations") : parameter.key
       })),
@@ -92,9 +93,6 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ["equipment", "weapon", "armor"].includes(candidate.type))
         .map((candidate) => candidate.id === this.item.id ? preview : candidate);
       if (!inventoryCarried(preview, inventory)) update.system.equipped = false;
-    }
-    if (this.item.type === "combatStyle" && update.system?.weapons !== undefined) {
-      update.system.weaponProfiles = parseWeaponProfileReferences(update.system.weapons);
     }
     if (this.item.type === "trait") {
       update.system.key = traitSlug(update.system?.key || update.name || this.item.name);
@@ -261,12 +259,6 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       combatStyleWeaponProfiles: this.item.type === "combatStyle"
         ? (this.item.system.weaponProfiles ?? []) : [],
       combatStyleTraitReferences,
-      combatStyleCharacteristic1: this.item.type === "combatStyle"
-        ? game.i18n.localize(`MYTHRASF.Characteristic.${this.item.system.characteristic1}`) : "",
-      combatStyleCharacteristic2: this.item.type === "combatStyle"
-        ? game.i18n.localize(`MYTHRASF.Characteristic.${this.item.system.characteristic2}`) : "",
-      combatStyleSourceType: this.item.type === "combatStyle"
-        ? (this.item.system.sourceType || game.i18n.localize("MYTHRASF.CombatStyle.SourceManual")) : "",
       groupChoices: [
         ["", "MYTHRASF.Skill.GroupAutomatic"],
         ["basic", "MYTHRASF.Skill.GroupBasic"],
@@ -338,7 +330,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (this.item.type === "weapon" && !this._weaponDefaultSizeApplied) {
       this._weaponDefaultSizeApplied = true;
-      this.setPosition({ width: 960, height: 680 });
+      this.setPosition({ width: 960, height: 560 });
     }
 
     this.element.querySelector("[data-action='view-item-image']")

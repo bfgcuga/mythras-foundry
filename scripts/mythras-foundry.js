@@ -18,6 +18,7 @@ import { MythrasItem } from "./documents/mythras-item.js";
 import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
   worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
+import { mergeWeaponProfiles } from "./rules/combat-style-weapons.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
 import { styleAbilityKey } from "./rules/background-generation.js";
 import { CharacterSheet } from "./sheets/character-sheet.js";
@@ -366,13 +367,9 @@ async function migrateTraitData(item, catalog) {
   }
   if (!["combatStyle", "weapon"].includes(item.type)) return;
   const update = {};
-  if (item.type === "combatStyle") {
-    const direct = parseLegacyTraitText(item.system.traits, catalog);
-    const merged = mergeTraitReferences(item.system.traitRefs, direct.references);
-    if (merged.added || direct.legacyText !== String(item.system.traits ?? "")) {
-      update["system.traitRefs"] = merged.references;
-      update["system.traits"] = direct.legacyText;
-    }
+  if (item.type === "combatStyle"
+    && foundry.utils.hasProperty(item._source, "system.traits")) {
+    update["system.-=traits"] = null;
   }
   if (item.type === "weapon") {
     let modesChanged = false;
@@ -502,10 +499,24 @@ async function migrateWorldArmor(item) {
 async function migrateCombatItems(actor) {
   const updates = [];
   for (const item of actor.items) {
+    const legacyWeapons = foundry.utils.getProperty(item._source, "system.weapons");
     if (item.type === "combatStyle" && (item.system.weaponProfiles?.length ?? 0) === 0
-      && item.system.weapons) {
+      && legacyWeapons) {
       updates.push({ _id: item.id,
-        "system.weaponProfiles": parseWeaponProfileReferences(item.system.weapons) });
+        "system.weaponProfiles": parseWeaponProfileReferences(legacyWeapons) });
+    }
+    if (item.type === "combatStyle") {
+      const update = updates.find((candidate) => candidate._id === item.id) ?? { _id: item.id };
+      const legacyBonus = Number(foundry.utils.getProperty(item._source, "system.bonus") ?? 0);
+      const assigned = ["culturePoints", "professionPoints", "freePoints", "experiencePoints"]
+        .reduce((total, field) => total + Number(item.system[field] ?? 0), 0);
+      if (legacyBonus && assigned === 0) update["system.freePoints"] = Math.max(0, legacyBonus);
+      for (const field of ["bonus", "weapons", "traits"]) {
+        if (foundry.utils.hasProperty(item._source, `system.${field}`)) {
+          update[`system.-=${field}`] = null;
+        }
+      }
+      if (Object.keys(update).length > 1 && !updates.includes(update)) updates.push(update);
     }
     if (item.type === "weapon") {
       const update = { _id: item.id };
@@ -547,9 +558,24 @@ async function migrateCombatItems(actor) {
 }
 
 async function migrateWorldCombatItem(item) {
+  const legacyWeapons = foundry.utils.getProperty(item._source, "system.weapons");
   if (item.type === "combatStyle" && (item.system.weaponProfiles?.length ?? 0) === 0
-    && item.system.weapons) {
-    await item.update({ "system.weaponProfiles": parseWeaponProfileReferences(item.system.weapons) });
+    && legacyWeapons) {
+    await item.update({ "system.weaponProfiles": parseWeaponProfileReferences(legacyWeapons) });
+  }
+  if (item.type === "combatStyle") {
+    const update = {};
+    const legacyBonus = Number(foundry.utils.getProperty(item._source, "system.bonus") ?? 0);
+    const assigned = ["culturePoints", "professionPoints", "freePoints", "experiencePoints"]
+      .reduce((total, field) => total + Number(item.system[field] ?? 0), 0);
+    if (legacyBonus && assigned === 0) update["system.freePoints"] = Math.max(0, legacyBonus);
+    for (const field of ["bonus", "weapons", "traits"]) {
+      if (foundry.utils.hasProperty(item._source, `system.${field}`)) {
+        update[`system.-=${field}`] = null;
+      }
+    }
+    if (Object.keys(update).length) await item.update(update);
+    return;
   }
   if (item.type !== "weapon") return;
   const update = {};
@@ -672,12 +698,10 @@ async function deduplicateBackgroundAbilities(actor) {
     }
     update["system.trained"] = Boolean(keeper.system.trained || item.system.trained);
     update["system.fumbled"] = Boolean(keeper.system.fumbled || item.system.fumbled);
-    if (!keeper.system.weapons && item.system.weapons) {
-      update["system.weapons"] = item.system.weapons;
-    }
-    if (!keeper.system.traits && item.system.traits) {
-      update["system.traits"] = item.system.traits;
-    }
+    const mergedProfiles = mergeWeaponProfiles(
+      keeper.system.weaponProfiles, item.system.weaponProfiles ?? []
+    );
+    if (mergedProfiles.added) update["system.weaponProfiles"] = mergedProfiles.profiles;
     const mergedTraits = mergeTraitReferences(keeper.system.traitRefs, item.system.traitRefs);
     if (mergedTraits.added) update["system.traitRefs"] = mergedTraits.references;
     await actor.updateEmbeddedDocuments("Item", [update]);
@@ -720,7 +744,7 @@ function getLegacySkillUpdate(item) {
     changed = true;
   }
 
-  const legacyBonus = Number(item.system.bonus ?? 0);
+  const legacyBonus = Number(foundry.utils.getProperty(item._source, "system.bonus") ?? 0);
   const assignedPoints = [
     item.system.culturePoints,
     item.system.professionPoints,
@@ -729,8 +753,19 @@ function getLegacySkillUpdate(item) {
   ].reduce((total, value) => total + Number(value ?? 0), 0);
   if (legacyBonus !== 0 && assignedPoints === 0) {
     update["system.freePoints"] = Math.max(0, legacyBonus);
-    update["system.bonus"] = 0;
+  }
+  if (foundry.utils.hasProperty(item._source, "system.bonus")) {
+    update["system.-=bonus"] = null;
     changed = true;
+  }
+
+  if (item.type === "combatStyle") {
+    for (const field of ["weapons", "traits"]) {
+      if (foundry.utils.hasProperty(item._source, `system.${field}`)) {
+        update[`system.-=${field}`] = null;
+        changed = true;
+      }
+    }
   }
 
   return changed ? update : null;

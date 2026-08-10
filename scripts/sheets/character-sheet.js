@@ -318,11 +318,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         weapons: (style.system.weaponProfiles ?? [])
           .map((profile) => profile.name)
           .filter(Boolean)
-          .join(", ") || style.system.weapons,
-        traits: [
-          ...(style.system.traitRefs ?? []).map((reference) => reference.name || reference.key),
-          ...(style.system.traits ? [style.system.traits] : [])
-        ].join(", "),
+          .join(", "),
+        traits: (style.system.traitRefs ?? [])
+          .map((reference) => reference.name || reference.key).join(", "),
         total: Number(style.system.total ?? 0),
         totalDisplay: penalizedValue(
           Number(style.system.total ?? 0),
@@ -1417,12 +1415,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           "system.culturePoints": points.culturePoints,
           "system.professionPoints": points.professionPoints,
           "system.freePoints": points.freePoints,
-          ...(ability.type === "combatStyle" && ability.weapons
-            ? { "system.weapons": ability.weapons }
-            : {}),
-          ...(ability.type === "combatStyle" && ability.traits
-            ? { "system.traits": ability.traits }
-            : {}),
           ...(ability.type === "combatStyle"
             ? { "system.traitRefs": this.#backgroundTraitReferences(ability.traitKeys) }
             : {})
@@ -1504,13 +1496,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           characteristic1: "strength",
           characteristic2: "dexterity",
           baseBonus: 0,
-          bonus: 0,
           ...points,
           experiencePoints: 0,
           trained: false,
           fumbled: false,
-          weapons: ability.weapons,
-          traits: ability.traits,
+          weaponProfiles: parseWeaponProfileReferences(ability.weapons),
           traitRefs: this.#backgroundTraitReferences(ability.traitKeys),
           sourceType: "background",
           description: ability.prompt
