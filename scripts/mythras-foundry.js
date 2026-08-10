@@ -575,7 +575,7 @@ async function migrateWorldCombatItem(item) {
 }
 
 const OBSOLETE_WEAPON_FIELDS = Object.freeze([
-  "weight", "weaponType", "damage", "damageModifierMode", "size", "reach", "effects",
+  "weight", "location", "quantityFormula", "weaponType", "damage", "damageModifierMode", "size", "reach", "effects",
   "traits", "traitRefs", "grip", "handsRequired", "range", "reload", "impalingSize",
   "powerModifier", "crewMinimum", "crewMaximum", "preferredCombatStyleId", "familiarity"
 ]);

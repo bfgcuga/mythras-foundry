@@ -19,7 +19,7 @@ export function weaponImage(category, key, fallback) {
 }
 
 const baseSystem = Object.freeze({
-  quantity: 1, quantityFormula: "", value: 0, location: "", equipped: false,
+  quantity: 1, value: 0, equipped: false,
   source: MYTHRAS_REVISED_SOURCE, era: "", profileKey: "", activeModeKey: "",
   modes: [], maxHitPoints: 0, maxHitPointsFormula: "", currentHitPoints: 0,
   armorPoints: 0, armorPointsFormula: "", durabilitySource: "independent",

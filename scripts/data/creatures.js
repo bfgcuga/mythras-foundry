@@ -74,7 +74,7 @@ function weapon(buildKey, name, { damage, size = "M", reach = "M", linkedLocatio
   handsRequired = 0, range = "" }) {
   const modeKey = weaponType === "ranged" ? "ranged" : "melee";
   return { buildKey, linkedLocationKey, name, type: "weapon", img: "icons/svg/sword.svg", system: {
-    quantity: 1, quantityFormula: "", value: 0, location: "", equipped: true,
+    quantity: 1, value: 0, equipped: true,
     profileKey: buildKey, activeModeKey: modeKey,
     maxHitPoints: hp, maxHitPointsFormula: "", currentHitPoints: hp,
     armorPoints: ap, armorPointsFormula: "", durabilitySource: linkedLocationKey

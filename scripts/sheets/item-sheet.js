@@ -193,6 +193,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         displayName: game.i18n.localize(`MYTHRASF.Weapon.Type.${weaponMode.weaponType}`),
         isRanged: weaponMode.weaponType === "ranged",
         isSiege: weaponMode.weaponType === "siege",
+        isMelee: weaponMode.weaponType === "melee",
+        isShield: weaponMode.weaponType === "shield",
         usesRange: ["ranged", "siege"].includes(weaponMode.weaponType),
         combatStyleChoices: weaponStyles.map((style) => ({ id: style.id, name: style.name })),
         traitReferences: await prepareTraitReferences(weaponMode.traitRefs ?? []) }))) : [];
@@ -330,7 +332,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (this.item.type === "weapon" && !this._weaponDefaultSizeApplied) {
       this._weaponDefaultSizeApplied = true;
-      this.setPosition({ width: 900, height: 680 });
+      this.setPosition({ width: 960, height: 680 });
     }
 
     this.element.querySelector("[data-action='view-item-image']")

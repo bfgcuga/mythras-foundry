@@ -10,6 +10,9 @@ const standards = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8")
 const characterTemplate = readFileSync(
   new URL("../templates/actor/character-sheet.hbs", import.meta.url), "utf8"
 );
+const combatTemplate = readFileSync(
+  new URL("../templates/actor/parts/combat-tab.hbs", import.meta.url), "utf8"
+);
 const itemTemplate = readFileSync(
   new URL("../templates/item/item-sheet.hbs", import.meta.url), "utf8"
 );
@@ -45,9 +48,21 @@ test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula"
   assert.match(css, /\.inventory-tree-head \{[^}]*text-align: left/);
 });
 
-test("la ficha de arma usa tabla compacta y expone parámetros de rasgo", () => {
-  assert.match(css, /\.weapon-mode-table-head,\s*\n\.mythras-foundry \.weapon-mode-table-row/);
+test("la ficha de arma separa modos por tipo y expone parámetros de rasgo", () => {
+  assert.match(css, /\.weapon-mode-fields-melee/);
+  assert.match(css, /\.weapon-mode-fields-ranged/);
+  assert.match(css, /\.weapon-mode-fields-siege/);
+  assert.match(css, /\.weapon-item-sheet textarea \{[^}]*background: transparent !important/s);
   assert.match(itemTemplate, /data-action="view-item-image"/);
   assert.match(itemTemplate, /traitRefs\.\{\{\.\.\/referenceIndex\}\}\.parameters/);
   assert.match(itemTemplate, /weapon-advanced-fields/);
+});
+
+test("la ficha de arma envía una sola moneda y combate muestra los PG actuales", () => {
+  const armorStart = itemTemplate.indexOf("{{#if isArmor}}");
+  const weaponSection = itemTemplate.slice(itemTemplate.lastIndexOf("{{#if isWeapon}}", armorStart),
+    armorStart);
+  assert.equal((weaponSection.match(/name="system\.currency"/g) ?? []).length, 1);
+  assert.doesNotMatch(weaponSection, /name="system\.(parentContainerId|location|quantityFormula)"/);
+  assert.match(combatTemplate, /row\.item\.system\.currentHitPoints/);
 });

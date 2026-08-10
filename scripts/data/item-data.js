@@ -234,7 +234,8 @@ export class PassionData extends foundry.abstract.TypeDataModel {
 
 export class WeaponData extends EquipmentData {
   static defineSchema() {
-    const { weight: _obsoleteWeight, ...equipmentSchema } = super.defineSchema();
+    const { weight: _obsoleteWeight, location: _obsoleteLocation,
+      quantityFormula: _obsoleteQuantityFormula, ...equipmentSchema } = super.defineSchema();
     return {
       ...equipmentSchema,
       source: textField(),

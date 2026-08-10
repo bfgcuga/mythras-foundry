@@ -69,7 +69,7 @@ test("los escudos conservan sus localizaciones de bloqueo pasivo", () => {
 });
 
 test("el compendio no duplica datos de modo ni conserva peso o rasgos de texto", () => {
-  const obsolete = ["weight", "weaponType", "damage", "damageModifierMode", "size", "reach",
+  const obsolete = ["weight", "location", "quantityFormula", "weaponType", "damage", "damageModifierMode", "size", "reach",
     "effects", "traits", "traitRefs", "grip", "handsRequired", "range", "reload",
     "impalingSize", "powerModifier", "crewMinimum", "crewMaximum",
     "preferredCombatStyleId", "familiarity"];
