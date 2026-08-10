@@ -89,3 +89,17 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - En celdas de tabla con altura disponible, priorizar texto multilínea mediante `overflow-wrap` y `white-space: normal`. Si el contenido variable aún desborda, puede aplicarse ajuste progresivo de fuente con un mínimo legible; no truncar con elipsis por defecto cuando la fila admite varias líneas.
 - Encabezados y valores de una tabla deben compartir exactamente la misma cuadrícula y alineación. Los iconos auxiliares se posicionan fuera del flujo cuando puedan desplazar visualmente el dato principal de su columna.
 - En listas y tablas de inventario, la acción de eliminar ocupa siempre la última columna y queda alineada al extremo derecho, independientemente de las columnas opcionales del tipo de Item.
+
+## Publicación de versiones
+
+- En este repositorio, «publicar» significa completar el flujo hasta crear y subir la etiqueta de versión; subir únicamente los commits a `main` no publica una versión instalable.
+- La publicación se realiza con Git, directamente sobre `main`, sin depender de GitHub CLI ni de la creación de un pull request.
+- Antes de publicar, comprobar que el árbol de trabajo contiene únicamente los cambios previstos, ejecutar todos los tests y validar el proyecto. Los archivos ajenos al alcance no se incorporan al commit sin autorización.
+- Incrementar la versión de parche de `system.json` y actualizar en el mismo cambio la versión incluida en la URL `download`.
+- La etiqueta sigue el formato `v<versión>`, por ejemplo `v0.0.100`, y debe coincidir exactamente con la versión declarada en `system.json`.
+- Validar explícitamente la versión mediante `node scripts/dev/validate-project.mjs v<versión>` antes de crear la etiqueta.
+- Crear un commit para el cambio de versión y subir primero `main` a `origin`.
+- Verificar que la etiqueta no exista ni local ni remotamente. Después crear una etiqueta anotada sobre el commit de versión y subirla a `origin`.
+- El orden esperado es: tests, validación, actualización de `system.json`, commit, `git push origin main`, `git tag -a v<versión> -m "Mythras Foundry <versión>"` y `git push origin v<versión>`.
+- La subida de la etiqueta activa `.github/workflows/release.yml`, que crea la release y adjunta `system.json` y `mythras-foundry.zip`.
+- Al finalizar, informar de la versión, el commit y la etiqueta publicados. No afirmar que la release terminó correctamente solo porque se subió la etiqueta; si es necesario confirmar el resultado, comprobar el workflow o la release por separado.

@@ -7,30 +7,43 @@ import {
   RANGED_WEAPON_SOURCES,
   SHIELD_SOURCES,
   SIEGE_WEAPON_SOURCES,
+  UNARMED_WEAPON_SOURCE,
   WEAPON_SOURCES
 } from "../scripts/data/weapons.js";
 
-test("el compendio contiene exclusivamente las 63 armas y escudos del documento", () => {
+test("el compendio contiene las 63 armas revisadas y el ataque sin armas de Imperativo", () => {
   assert.equal(SHIELD_SOURCES.length, 8);
   assert.equal(SHIELD_SOURCES.every((entry) => entry.name.startsWith("Escudo ")), true);
-  assert.equal(MELEE_WEAPON_SOURCES.length, 35);
+  assert.equal(MELEE_WEAPON_SOURCES.length, 36);
   assert.equal(SIEGE_WEAPON_SOURCES.length, 6);
   assert.equal(RANGED_WEAPON_SOURCES.length, 14);
-  assert.equal(WEAPON_SOURCES.length, 63);
-  assert.equal(new Set(WEAPON_SOURCES.map((entry) => entry.buildKey)).size, 63);
+  assert.equal(WEAPON_SOURCES.length, 64);
+  assert.equal(new Set(WEAPON_SOURCES.map((entry) => entry.buildKey)).size, 64);
 });
 
 test("todas las entradas conservan fuente, coste, época y perfil reutilizable", () => {
   for (const entry of WEAPON_SOURCES) {
     assert.equal(entry.type, "weapon");
-    assert.equal(entry.system.source, MYTHRAS_REVISED_SOURCE);
-    assert.equal(entry.flags["mythras-foundry"].source, "mythras-basic-revised");
+    assert.ok([MYTHRAS_REVISED_SOURCE, "Mythras Imperativo SRD"].includes(entry.system.source));
+    assert.ok(["mythras-basic-revised", "mythras-imperative-srd"]
+      .includes(entry.flags["mythras-foundry"].source));
     assert.ok(entry.buildKey && entry.system.profileKey);
     assert.ok(entry.system.era);
     assert.ok(entry.system.value >= 0);
     assert.equal(entry.system.currentHitPoints, entry.system.maxHitPoints);
     assert.ok(entry.system.modes.some((mode) => mode.key === entry.system.activeModeKey));
   }
+});
+
+test("Puño/Patada conserva los datos de Mythras Imperativo", () => {
+  assert.equal(UNARMED_WEAPON_SOURCE.system.source, "Mythras Imperativo SRD");
+  assert.equal(UNARMED_WEAPON_SOURCE.system.description, "Daño de Pelea para humanos");
+  assert.deepEqual([
+    UNARMED_WEAPON_SOURCE.system.modes[0].damage,
+    UNARMED_WEAPON_SOURCE.system.modes[0].size,
+    UNARMED_WEAPON_SOURCE.system.armorPoints,
+    UNARMED_WEAPON_SOURCE.system.maxHitPoints
+  ], ["1d3", "P", 0, 0]);
 });
 
 test("los siete objetos con varios usos reúnen sus modos en una sola entrada", () => {

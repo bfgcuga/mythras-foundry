@@ -21,9 +21,14 @@ test("todas las imágenes asignadas a armaduras existen", () => {
 
 test("todas las armas reciben una imagen existente", () => {
   const illustrated = WEAPON_SOURCES;
-  assert.equal(illustrated.length, 63);
-  for (const source of illustrated) assert.equal(existsSync(localPath(source.img)), true,
-    `${source.name}: ${source.img}`);
+  assert.equal(illustrated.length, 64);
+  for (const source of illustrated) {
+    if (source.img.startsWith("icons/")) {
+      assert.equal(source.img, "icons/svg/fist.svg", source.name);
+      continue;
+    }
+    assert.equal(existsSync(localPath(source.img)), true, `${source.name}: ${source.img}`);
+  }
 });
 
 test("las nuevas imagenes de equipo se asignan a entradas existentes", () => {

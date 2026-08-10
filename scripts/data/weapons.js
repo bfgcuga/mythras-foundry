@@ -38,16 +38,17 @@ const mode = ({ key, name = "", type = "melee", damage = "", damageModifier = "f
 });
 
 const source = ({ key, name, ap, hp, enc = 0, cost = 0, era = "", traits = "",
-  modes, img = "icons/svg/sword.svg" }) => {
+  modes, img = "icons/svg/sword.svg", description = "",
+  sourceName = MYTHRAS_REVISED_SOURCE, sourceFlag = "mythras-basic-revised" }) => {
   const active = modes[0];
   return {
     buildKey: key, name, type: "weapon", img,
     system: {
       ...baseSystem, profileKey: key, activeModeKey: active.key, modes,
       maxHitPoints: hp, currentHitPoints: hp, armorPoints: ap, encumbrance: enc,
-      value: cost, era
+      value: cost, era, source: sourceName, description
     },
-    flags: { "mythras-foundry": { source: "mythras-basic-revised" } }
+    flags: { "mythras-foundry": { source: sourceFlag } }
   };
 };
 
@@ -180,9 +181,18 @@ const addTwoHandedMode = (key, damage, size, reach, effects, era) => {
 addTwoHandedMode("espada-larga", "1d10", "G", "L", "Desangrar, Empalar, Hender Armadura", "M-I");
 addTwoHandedMode("hacha-batalla", "1d8+1", "G", "M", "Desangrar, Hender Armadura", "A-M");
 
+export const UNARMED_WEAPON_SOURCE = source({
+  key: "puno-patada", name: "Puño/Patada", ap: 0, hp: 0, era: "Todas",
+  description: "Daño de Pelea para humanos", sourceName: "Mythras Imperativo SRD",
+  sourceFlag: "mythras-imperative-srd", img: "icons/svg/fist.svg",
+  modes: [mode({ key: "unarmed", type: "melee", damage: "1d3", size: "P",
+    reach: "T", hands: 0 })]
+});
+
 export const MELEE_WEAPON_SOURCES = Object.freeze([
   ...ONE_HANDED_WEAPON_SOURCES,
-  ...TWO_HANDED_WEAPON_SOURCES
+  ...TWO_HANDED_WEAPON_SOURCES,
+  UNARMED_WEAPON_SOURCE
 ]);
 
 function convertWeaponTraits(entry) {
