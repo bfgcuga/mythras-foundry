@@ -8,12 +8,12 @@ import { hasTrait, mergeTraitReferences, parseLegacyTraitText, registerTraitRule
   resolveTraitRules, traitReference, traitReferences,
   unregisterTraitRule } from "../scripts/rules/traits.js";
 
-test("el compendio comparte un unico tipo de Item para los 46 rasgos", () => {
-  assert.equal(TRAIT_SOURCES.length, 46);
+test("el compendio comparte un unico tipo de Item para los 83 rasgos", () => {
+  assert.equal(TRAIT_SOURCES.length, 83);
   assert.equal(COMBAT_STYLE_TRAIT_SOURCES.length, 26);
   assert.equal(WEAPON_TRAIT_SOURCES.length, 12);
-  assert.equal(CREATURE_TRAIT_SOURCES.length, 8);
-  assert.equal(new Set(TRAIT_SOURCES.map((trait) => trait.system.key)).size, 46);
+  assert.equal(CREATURE_TRAIT_SOURCES.length, 45);
+  assert.equal(new Set(TRAIT_SOURCES.map((trait) => trait.system.key)).size, 83);
   assert.ok(TRAIT_SOURCES.every((trait) => trait.type === "trait"
     && trait.system.description && trait.system.source));
 });
