@@ -591,6 +591,16 @@
   font-weight: 700;
 }
 
+.mythras-foundry .characteristic-controls .characteristic-free-input {
+  flex: 0 0 3.2rem;
+  width: 3.2rem;
+  height: 1.65rem;
+  min-height: 0;
+  padding: 0.1rem 0.2rem;
+  text-align: center;
+  font-weight: 700;
+}
+
 .mythras-foundry .characteristic-controls button,
 .mythras-foundry .characteristics-edit-toggle {
   flex: 0 0 1.65rem;
@@ -628,7 +638,7 @@
 
 .mythras-foundry .generation-methods {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.3rem;
 }
 

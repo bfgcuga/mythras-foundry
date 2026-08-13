@@ -1,5 +1,12 @@
 export const POINT_ALLOCATION_TOTAL = 75;
 
+export const CHARACTER_GENERATION_METHODS = Object.freeze([
+  "random",
+  "randomSwap",
+  "points",
+  "free"
+]);
+
 export const CHARACTERISTIC_MINIMUMS = {
   strength: 3,
   constitution: 3,

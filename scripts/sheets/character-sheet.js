@@ -42,6 +42,7 @@ import {
   validateSocialClassSelection
 } from "../rules/background-generation.js";
 import {
+  CHARACTER_GENERATION_METHODS,
   CHARACTERISTIC_MINIMUMS,
   adjustPointAllocation,
   calculateAllocationRemaining,
@@ -195,6 +196,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
       value: this.actor.system[key],
+      minimum: CHARACTERISTIC_MINIMUMS[key],
       swapChoices: CHARACTERISTIC_KEYS
         .filter((candidate) => canSwapCharacteristics(key, candidate))
         .map((candidate) => ({
@@ -204,7 +206,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }));
     const characteristicsGenerated = this.actor.system.characteristicsGenerated;
     const generationMethod = this.actor.system.generationMethod;
-    const generationMethods = ["random", "randomSwap", "points"].map((key) => ({
+    const generationMethods = CHARACTER_GENERATION_METHODS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Character.Method.${key}`),
       active: generationMethod === key
@@ -275,6 +277,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
+      isFreeAllocation: !characteristicsGenerated && generationMethod === "free",
       allocationRemaining: calculateAllocationRemaining(this.actor.system),
       showCharacteristicAdjustments: this.isEditable && (
         (!characteristicsGenerated && generationMethod === "points")
@@ -943,7 +946,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
 
     const method = event.currentTarget.dataset.generationMethod;
-    if (method === "points") {
+    if (["points", "free"].includes(method)) {
       const allocation = createMinimumAllocation();
       const update = { "system.generationMethod": method };
       for (const [key, value] of Object.entries(allocation)) {

@@ -20,7 +20,14 @@
             {{/each}}
           </select>
         {{/if}}
-        <output>{{characteristic.value}}</output>
+        {{#if ../isFreeAllocation}}
+          <input type="number" class="sheet-field-editable characteristic-free-input"
+            name="system.{{characteristic.key}}" value="{{characteristic.value}}"
+            min="{{characteristic.minimum}}" step="1"
+            aria-label="{{characteristic.label}}">
+        {{else}}
+          <output>{{characteristic.value}}</output>
+        {{/if}}
       </div>
     </div>
   {{/each}}

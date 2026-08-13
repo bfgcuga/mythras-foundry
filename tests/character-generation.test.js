@@ -2,11 +2,27 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  CHARACTER_GENERATION_METHODS,
   adjustPointAllocation,
   calculateAllocationRemaining,
   canSwapCharacteristics,
   createMinimumAllocation
 } from "../scripts/rules/character-generation.js";
+
+test("ofrece asignación libre junto a los tres métodos existentes", () => {
+  assert.deepEqual(CHARACTER_GENERATION_METHODS, [
+    "random", "randomSwap", "points", "free"
+  ]);
+  assert.deepEqual(createMinimumAllocation(), {
+    strength: 3,
+    constitution: 3,
+    size: 8,
+    dexterity: 3,
+    intelligence: 8,
+    power: 3,
+    charisma: 3
+  });
+});
 
 test("la asignación parte de los mínimos y dispone de 44 puntos", () => {
   const allocation = createMinimumAllocation();

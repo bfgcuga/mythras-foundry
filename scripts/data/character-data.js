@@ -6,6 +6,7 @@ import { applyFatigue, combinedConditionLevel, FATIGUE_LEVELS } from "../rules/f
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { getActionPointRules } from "../settings.js";
 import { applyArmorInitiativePenalty } from "../rules/armor.js";
+import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
 
 const {
   BooleanField,
@@ -61,7 +62,7 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         nullable: false,
         initial: "",
         blank: true,
-        choices: ["", "random", "randomSwap", "points"]
+        choices: ["", ...CHARACTER_GENERATION_METHODS]
       }),
       backgroundComplete: new BooleanField({
         required: true,

@@ -9,7 +9,8 @@ instalables se distribuyen mediante las releases de GitHub.
 El sistema incluye actualmente:
 
 - hojas Application V2 para personajes, PNJ y todos los tipos de Item;
-- creación de personajes por tiradas, intercambio o reparto de puntos;
+- creación de personajes por tiradas, intercambio, reparto de puntos o
+  asignación libre desde los mínimos;
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
   habilidades, estilos de combate, dinero y equipo inicial;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,

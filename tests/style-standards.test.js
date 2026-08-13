@@ -10,6 +10,9 @@ const standards = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8")
 const characterTemplate = readFileSync(
   new URL("../templates/actor/character-sheet.hbs", import.meta.url), "utf8"
 );
+const characteristicsTemplate = readFileSync(
+  new URL("../templates/actor/parts/characteristics.hbs", import.meta.url), "utf8"
+);
 const combatTemplate = readFileSync(
   new URL("../templates/actor/parts/combat-tab.hbs", import.meta.url), "utf8"
 );
@@ -41,6 +44,13 @@ test("todos los atributos derivados ofrecen el tooltip retrasado compartido", ()
   assert.equal(attributeTooltips.length, 8);
   assert.match(tooltipScript, /button, \[data-mythras-tooltip\]/);
   assert.match(tooltipScript, /TOOLTIP_DELAY_MS = 1100/);
+});
+
+test("los cuatro métodos de características comparten fila y libre usa campos editables", () => {
+  assert.match(css, /\.generation-methods \{[^}]*repeat\(4, minmax\(0, 1fr\)\)/s);
+  assert.match(characteristicsTemplate, /isFreeAllocation/);
+  assert.match(characteristicsTemplate, /class="sheet-field-editable characteristic-free-input"/);
+  assert.match(characteristicsTemplate, /min="\{\{characteristic\.minimum\}\}"/);
 });
 
 test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula", () => {
