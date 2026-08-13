@@ -103,3 +103,101 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - El orden esperado es: tests, validación, actualización de `system.json`, commit, `git push origin main`, `git tag -a v<versión> -m "Mythras Foundry <versión>"` y `git push origin v<versión>`.
 - La subida de la etiqueta activa `.github/workflows/release.yml`, que crea la release y adjunta `system.json` y `mythras-foundry.zip`.
 - Al finalizar, informar de la versión, el commit y la etiqueta publicados. No afirmar que la release terminó correctamente solo porque se subió la etiqueta; si es necesario confirmar el resultado, comprobar el workflow o la release por separado.
+
+# Mantenimiento del contexto y la documentación del proyecto
+
+El repositorio debe actuar como la memoria persistente del proyecto. No depender de conversaciones anteriores para conocer decisiones, convenciones, estado o próximos pasos.
+
+La arquitectura, las capas del repositorio y sus fuentes de verdad se documentan en `docs/architecture.md`. El estado funcional, los comandos de desarrollo y la API pública se resumen en `README.md`.
+
+Al finalizar cada tarea, evaluar siempre si la implementación ha cambiado información que deba quedar disponible para futuras sesiones de trabajo.
+
+## Actualización de AGENTS.md
+
+Actualizar `AGENTS.md` únicamente cuando cambie información permanente o de larga duración, como:
+
+- reglas generales de desarrollo;
+- convenciones del proyecto;
+- estructura relevante del repositorio;
+- stack tecnológico;
+- restricciones importantes;
+- procedimientos habituales de ejecución, pruebas, compilación o despliegue;
+- instrucciones que futuros agentes deban conocer antes de trabajar.
+
+No utilizar `AGENTS.md` como diario de desarrollo.
+
+No añadir a `AGENTS.md`:
+
+- cada funcionalidad terminada;
+- cada bug corregido;
+- cambios triviales;
+- decisiones temporales;
+- detalles que puedan deducirse fácilmente del código;
+- transcripciones o resúmenes extensos de conversaciones anteriores.
+
+## Documentación complementaria
+
+Cuando el proyecto disponga de documentación específica, actualizar el archivo correspondiente en lugar de acumular toda la información en `AGENTS.md`.
+
+Por ejemplo:
+
+- arquitectura y decisiones técnicas → documentación de arquitectura;
+- modelo de datos → documentación del modelo de datos;
+- funcionalidades terminadas, estado y próximos pasos → roadmap o documento de estado;
+- procedimientos específicos → documentación técnica correspondiente.
+
+Si esos documentos no existen y la información será importante para futuras sesiones, valorar crear un archivo apropiado dentro de `docs/`.
+
+## Al comenzar una tarea
+
+Antes de modificar código:
+
+1. Leer este `AGENTS.md`.
+2. Inspeccionar el estado actual del código relacionado con la tarea.
+3. Consultar únicamente la documentación necesaria.
+4. No asumir que una conversación anterior refleja el estado actual del repositorio.
+5. Limitar la inspección al área relevante siempre que sea posible, evitando recorrer innecesariamente todo el proyecto.
+
+La fuente de verdad es el estado actual del repositorio y su documentación.
+
+## Al finalizar una tarea
+
+Antes de considerar una tarea terminada, comprobar:
+
+- [ ] La implementación solicitada está completa.
+- [ ] Se han realizado las pruebas o comprobaciones relevantes disponibles.
+- [ ] Se ha revisado el diff para evitar cambios accidentales o no relacionados.
+- [ ] Se ha evaluado si `AGENTS.md` necesita actualización.
+- [ ] Se ha evaluado si alguna documentación técnica necesita actualización.
+- [ ] Se ha actualizado el roadmap o documento de estado si ha cambiado el progreso del proyecto.
+- [ ] Se ha eliminado o corregido información que haya quedado obsoleta.
+- [ ] La documentación describe el estado actual, no una intención anterior ya superada.
+
+Esta revisión debe realizarse aunque finalmente no sea necesario modificar ningún archivo de documentación.
+
+## Gestión eficiente del contexto
+
+Para reducir consumo de contexto y trabajo repetido:
+
+- mantener la documentación breve y actual;
+- evitar duplicar la misma información en varios archivos;
+- documentar decisiones importantes cuando se toman;
+- no conservar explicaciones históricas que ya no sean necesarias para trabajar;
+- no volver a investigar áreas del proyecto que ya estén documentadas de forma suficiente;
+- inspeccionar solo los archivos relevantes para cada tarea;
+- reutilizar patrones existentes antes de crear nuevas abstracciones.
+
+Si una decisión será necesaria para realizar correctamente futuras tareas, debe quedar registrada en el repositorio.
+
+Si una información solo explica cómo se llegó a una decisión, pero ya no es necesaria para trabajar con el estado actual del proyecto, normalmente no debe conservarse.
+
+## Resumen al terminar
+
+Al finalizar una tarea, proporcionar un resumen breve indicando:
+
+1. qué se ha cambiado;
+2. qué comprobaciones se han realizado;
+3. qué documentación se ha actualizado;
+4. qué queda pendiente, únicamente si es relevante.
+
+No reproducir archivos completos ni grandes bloques de código salvo que se solicite expresamente.

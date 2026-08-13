@@ -1,85 +1,100 @@
 # Mythras Foundry
 
-Sistema independiente de Mythras Imperativo para Foundry Virtual Tabletop.
+Sistema independiente de Mythras Imperativo para Foundry Virtual Tabletop 13.
+El proyecto no está publicado en el catálogo oficial de Foundry; las versiones
+instalables se distribuyen mediante las releases de GitHub.
 
-## Estado
+## Estado actual
 
-El proyecto está en desarrollo temprano y se prueba actualmente con Foundry V13.
-No está publicado en el catálogo oficial de Foundry.
+El sistema incluye actualmente:
 
-La primera fase incluye:
+- hojas Application V2 para personajes, PNJ y todos los tipos de Item;
+- creación de personajes por tiradas, intercambio o reparto de puntos;
+- asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
+  habilidades, estilos de combate, dinero y equipo inicial;
+- atributos derivados, recursos, experiencia, fatiga, heridas por localización,
+  penalizaciones, carga e iniciativa modificada por armadura;
+- habilidades y tiradas porcentuales con resultados de crítico, éxito, fallo y
+  pifia presentados en tarjetas de chat;
+- armas con varios modos, estilos de combate, familiaridad, rasgos reutilizables
+  y resolución de ataques;
+- armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
+  y conflictos de equipación;
+- inventario jerárquico por persona y propiedades, contenedores, monedas,
+  transferencias y compras con cambio;
+- catálogo extensible que combina los compendios oficiales con fuentes de Items
+  configuradas por el mundo;
+- PNJ y criaturas con anatomías configurables, valores manuales o derivados y
+  tokens no enlazados generados de forma independiente mediante fórmulas;
+- gestor de grupos activos y macros que consumen la API pública del sistema;
+- interfaz localizada en español e inglés;
+- migraciones automáticas de datos heredados al abrir un mundo con un GM activo.
 
-- personaje con siete características;
-- generación y confirmación de características;
-- atributos derivados y recursos actuales/máximos;
-- habilidades reutilizables y tiradas porcentuales;
-- PNJ y criaturas con hoja compacta, anatomías configurables y valores manuales;
-- tokens de PNJ no enlazados con generación independiente mediante fórmulas;
-- equipo y armas como tipos de Item independientes;
-- interfaz en español.
-- compendio de habilidades generado desde fuentes legibles.
+La implementación usa Mythras Imperativo como perfil predeterminado. Los Puntos
+de Acción pueden configurarse como un valor fijo —2 por defecto— o calcularse a
+partir de INT y DES. Las diferencias pendientes de perfil se identifican en el
+código con `RULESET DIFFERENCE` y `TODO(rules-profile)`.
 
-Las fórmulas y tablas deben contrastarse con la edición de Mythras Imperativo
-elegida antes de considerar estable una release.
+## Compendios
 
-## Perfiles de reglas pendientes
+El manifiesto declara diez compendios generados a partir de los módulos de
+`scripts/data/`:
 
-La implementación actual usa Mythras Imperativo. Las diferencias conocidas
-respecto a Mythras completo se marcan en el código con `RULESET DIFFERENCE` y
-los puntos de extensión previstos con `TODO(rules-profile)`.
+- habilidades, culturas y profesiones;
+- armas, equipo y piezas de armadura;
+- rasgos y criaturas;
+- macros y tablas de clase social.
 
-La primera diferencia registrada son los Puntos de Acción: Imperativo concede
-siempre 2, mientras que Mythras completo los deriva de INT y DES. En una fase
-posterior se podrá introducir un perfil de reglas para seleccionar el
-comportamiento sin duplicar hojas, macros ni modelos de datos.
+`packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
+determinista antes de validar o empaquetar una versión.
 
 ## Desarrollo
 
-Las reglas puras están separadas de la API de Foundry para poder probarlas:
+Requisitos: Node.js y npm. Instala las dependencias y ejecuta:
 
 ```powershell
+npm install
 npm test
+npm run build:packs
 npm run check
 ```
 
-`npm run check` valida la sintaxis, los archivos declarados en el manifiesto y
-la coherencia entre la versión y la URL de descarga.
+- `npm test` ejecuta las pruebas unitarias y las comprobaciones de catálogo,
+  manifiesto, localización, estilos e iconos.
+- `npm run build:packs` genera `.build/packs-src/` y compila `packs/` mediante la
+  CLI oficial de Foundry VTT.
+- `npm run check` comprueba la sintaxis JavaScript, los recursos declarados en
+  `system.json`, los idiomas, los compendios y la coherencia entre versión y URL
+  de descarga.
+- `npm run check -- v<versión>` comprueba además que la etiqueta indicada
+  coincida con la versión del manifiesto.
 
-`npm run build:packs` usa la CLI oficial de Foundry para compilar las fuentes
-de Items, rasgos y criaturas en compendios LevelDB compatibles con V13. Las descripciones
-del catálogo son resúmenes originales, no copias literales del manual.
+Las reglas de dominio se mantienen como módulos puros bajo `scripts/rules/` para
+que puedan probarse sin ejecutar Foundry. La arquitectura y las fuentes de verdad
+se describen en [docs/architecture.md](docs/architecture.md).
 
-### PNJ y criaturas
+## API para macros y módulos
 
-El Actor `npc` conserva valores de referencia y fórmulas opcionales. Al colocar
-su prototipo no enlazado, el sistema materializa las fórmulas en el Actor sintético
-del token sin modificar la plantilla del directorio. Solo un GM puede regenerar
-una instancia existente, ya que la operación restaura recursos y puntos de golpe.
-
-Las habilidades y estilos usan los mismos Items que los personajes. El modo
-`manual` permite introducir directamente el porcentaje de una criatura, mientras
-que el modo `derived` mantiene el cálculo normal por características y mejoras.
-
-### Grupos activos y macros
-
-El gestor de grupos de los ajustes del sistema permite seleccionar un grupo activo.
-Las macros pueden obtener sus personajes sin depender de las carpetas de actores:
+El sistema publica `game.mythrasFoundry` durante `init`:
 
 ```js
 const party = game.mythrasFoundry.party.getActiveMembers();
-for (const actor of party) {
-  // Operación de la macro.
-}
+game.mythrasFoundry.shop.open({ actorUuid: actor.uuid });
 ```
+
+También expone `party` para consultar o abrir el gestor de grupos, y `traits`
+para consultar rasgos y registrar reglas de rasgo adicionales. La forma exacta
+de estas APIs se define en `scripts/api/party-api.js`, `scripts/apps/item-catalog.js`
+y `scripts/rules/traits.js`.
 
 ## Publicación
 
-Las releases se crean automáticamente al subir una etiqueta:
+Publicar significa crear y subir una etiqueta anotada que coincida exactamente
+con `system.json`. El procedimiento completo está documentado en `AGENTS.md`.
+En resumen, tras superar pruebas y validación se incrementan conjuntamente
+`version` y la URL `download`, se sube el commit a `main` y después la etiqueta
+`v<versión>`.
 
-```powershell
-git tag -a v0.0.10 -m "Versión 0.0.10"
-git push origin v0.0.10
-```
-
-La automatización rechaza la publicación si la etiqueta no coincide con la
-versión declarada en `system.json`.
+La etiqueta activa `.github/workflows/release.yml`, que vuelve a ejecutar las
+pruebas, reconstruye los compendios, valida la etiqueta, crea
+`mythras-foundry.zip` y publica la release con el ZIP y `system.json`.
