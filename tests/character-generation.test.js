@@ -6,7 +6,8 @@ import {
   adjustPointAllocation,
   calculateAllocationRemaining,
   canSwapCharacteristics,
-  createMinimumAllocation
+  createMinimumAllocation,
+  initialAllocationForGenerationMethod
 } from "../scripts/rules/character-generation.js";
 
 test("ofrece asignación libre junto a los tres métodos existentes", () => {
@@ -22,6 +23,16 @@ test("ofrece asignación libre junto a los tres métodos existentes", () => {
     power: 3,
     charisma: 3
   });
+});
+
+test("libre conserva valores generados y solo inicia mínimos sin método previo", () => {
+  assert.deepEqual(initialAllocationForGenerationMethod("free", ""),
+    createMinimumAllocation());
+  assert.equal(initialAllocationForGenerationMethod("free", "random"), null);
+  assert.equal(initialAllocationForGenerationMethod("free", "randomSwap"), null);
+  assert.equal(initialAllocationForGenerationMethod("free", "points"), null);
+  assert.deepEqual(initialAllocationForGenerationMethod("points", "random"),
+    createMinimumAllocation());
 });
 
 test("la asignación parte de los mínimos y dispone de 44 puntos", () => {

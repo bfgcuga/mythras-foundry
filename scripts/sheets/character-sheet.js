@@ -47,7 +47,7 @@ import {
   adjustPointAllocation,
   calculateAllocationRemaining,
   canSwapCharacteristics,
-  createMinimumAllocation
+  initialAllocationForGenerationMethod
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { calculatePassionBase, PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
@@ -946,11 +946,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
 
     const method = event.currentTarget.dataset.generationMethod;
+    const allocation = initialAllocationForGenerationMethod(
+      method, this.actor.system.generationMethod
+    );
     if (["points", "free"].includes(method)) {
-      const allocation = createMinimumAllocation();
       const update = { "system.generationMethod": method };
-      for (const [key, value] of Object.entries(allocation)) {
-        update[`system.${key}`] = value;
+      if (allocation) {
+        for (const [key, value] of Object.entries(allocation)) {
+          update[`system.${key}`] = value;
+        }
       }
       await this.actor.update(update);
       return;

@@ -30,6 +30,12 @@ export function createMinimumAllocation() {
   return { ...CHARACTERISTIC_MINIMUMS };
 }
 
+export function initialAllocationForGenerationMethod(method, previousMethod = "") {
+  if (method === "points") return createMinimumAllocation();
+  if (method === "free" && !previousMethod) return createMinimumAllocation();
+  return null;
+}
+
 export function calculateAllocationRemaining(characteristics) {
   const spent = Object.keys(CHARACTERISTIC_MINIMUMS)
     .reduce((total, key) => total + Number(characteristics[key] ?? 0), 0);
