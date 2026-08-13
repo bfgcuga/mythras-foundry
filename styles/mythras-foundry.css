@@ -2,7 +2,6 @@
 .chat-message.mythras-chat-message {
   --mythras-accent: #3d3933;
   --mythras-border: #9c8766;
-  --mythras-field-editable: #eadbb8;
   --mythras-font-size-auxiliary: 0.72rem;
   --mythras-font-size-section: 0.9rem;
   --mythras-font-size-table: 0.8rem;
@@ -53,12 +52,12 @@
 .mythras-foundry select,
 .mythras-foundry textarea {
   border-color: var(--mythras-border);
-  background: var(--mythras-field-editable) !important;
+  background: transparent !important;
   color: var(--mythras-ink) !important;
 }
 
 .mythras-foundry .sheet-field-editable {
-  background: var(--mythras-field-editable) !important;
+  background: transparent !important;
 }
 
 .mythras-foundry .sheet-field-readonly {
@@ -413,7 +412,7 @@
   padding: 0.15rem;
   border: 1px solid var(--mythras-border);
   border-radius: 50%;
-  background: var(--mythras-field-editable);
+  background: transparent;
   font-size: 1.05rem;
   text-align: center;
 }
@@ -679,7 +678,7 @@
 .mythras-foundry .homebrew-creator-content select,
 .mythras-foundry .homebrew-creator-content textarea {
   border: 1px solid color-mix(in srgb, var(--mythras-border) 72%, transparent);
-  background: transparent;
+  background: transparent !important;
   box-shadow: none;
 }
 

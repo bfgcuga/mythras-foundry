@@ -39,6 +39,14 @@ test("la superficie compartida queda registrada como estándar visual", () => {
   assert.match(standards, /no sustituye la superficie de papel/);
 });
 
+test("todos los campos editables son transparentes y el estándar prohíbe fondos coloreados", () => {
+  assert.match(css, /input:not\(\[type="checkbox"\]\),[^}]*textarea[^}]*background: transparent !important/s);
+  assert.match(css, /\.sheet-field-editable \{[^}]*background: transparent !important/s);
+  assert.doesNotMatch(css, /mythras-field-editable/);
+  assert.match(standards, /input`, `select` y `textarea` son transparentes/);
+  assert.match(standards, /nunca introduce una superficie coloreada/);
+});
+
 test("todos los atributos derivados ofrecen el tooltip retrasado compartido", () => {
   const attributeTooltips = characterTemplate.match(/data-mythras-tooltip="{{attributeTooltips\./g) ?? [];
   assert.equal(attributeTooltips.length, 8);
@@ -110,5 +118,5 @@ test("la ficha de estilo resume asociaciones y separa el cálculo no editable", 
 
 test("las hojas de Item y el creador usan recuadros discretos sin superficie propia", () => {
   assert.match(css, /\.item-sheet-content fieldset,[^}]*\.homebrew-creator-content fieldset[^}]*background: transparent/s);
-  assert.match(css, /\.item-sheet-content input,[^}]*\.homebrew-creator-content textarea[^}]*background: transparent/s);
+  assert.match(css, /\.item-sheet-content input,[^}]*\.homebrew-creator-content textarea[^}]*background: transparent !important/s);
 });

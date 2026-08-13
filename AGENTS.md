@@ -16,7 +16,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 
 ## Campos editables y de solo lectura
 
-- Los campos editables usan la superficie compartida `--mythras-field-editable` mediante la clase `sheet-field-editable`; deben distinguirse claramente del papel para comunicar que aceptan entrada.
+- Los campos editables no tienen color de fondo: `input`, `select` y `textarea` son transparentes y se distinguen del papel mediante el borde compartido. La clase `sheet-field-editable` conserva este mismo tratamiento y nunca introduce una superficie coloreada.
 - Los valores de solo lectura usan `sheet-field-readonly`, sin color de fondo o con fondo transparente para integrarse visualmente con `--mythras-paper`.
 - No usar fondos de panel, tarjetas o colores alternativos para distinguir valores de solo lectura equivalentes.
 - Una misma clase debe conservar el mismo significado en encabezados, formularios, tablas y pestañas: la apariencia nunca debe depender de que el valor sea un `input`, `output` o `span`.
@@ -68,7 +68,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - No simular este patrón mediante un encabezado separado y bordes parciales en elementos consecutivos.
 - Los paneles reutilizan los estilos globales de `fieldset` y `legend`; las clases locales solo ajustan distribución o espaciado.
 - Si el panel permite añadir elementos, el botón `sheet-add-button` se coloca en la esquina superior derecha sin desplazar el `legend`.
-- Las hojas de Item y sus asistentes de creación siguen el tratamiento visual de la hoja de arma: recuadros de un píxel, discretos y transparentes, sin una superficie propia sobre el papel. Sus campos también son transparentes y se distinguen mediante el borde compartido.
+- Las hojas de Item y sus asistentes de creación siguen el tratamiento visual de la hoja de arma: recuadros de un píxel, discretos y transparentes, sin una superficie propia sobre el papel.
 
 ## Mensajes de chat
 
