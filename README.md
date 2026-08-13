@@ -25,6 +25,8 @@ El sistema incluye actualmente:
   transferencias y compras con cambio;
 - catálogo extensible que combina los compendios oficiales con fuentes de Items
   configuradas por el mundo;
+- creador homebrew para los diez tipos de Item, con selección o creación de un
+  compendio mundial y acceso desde Ajustes o una macro exclusiva del DJ;
 - PNJ y criaturas con anatomías configurables, valores manuales o derivados y
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
@@ -81,12 +83,14 @@ El sistema publica `game.mythrasFoundry` durante `init`:
 ```js
 const party = game.mythrasFoundry.party.getActiveMembers();
 game.mythrasFoundry.shop.open({ actorUuid: actor.uuid });
+game.mythrasFoundry.homebrew.open(); // Solo DJ.
 ```
 
-También expone `party` para consultar o abrir el gestor de grupos, y `traits`
-para consultar rasgos y registrar reglas de rasgo adicionales. La forma exacta
-de estas APIs se define en `scripts/api/party-api.js`, `scripts/apps/item-catalog.js`
-y `scripts/rules/traits.js`.
+También expone `party` para consultar o abrir el gestor de grupos, `homebrew`
+para abrir el creador de Items y `traits` para consultar rasgos y registrar reglas
+de rasgo adicionales. La forma exacta de estas APIs se define en
+`scripts/api/party-api.js`, `scripts/apps/item-catalog.js`,
+`scripts/apps/homebrew-item-creator.js` y `scripts/rules/traits.js`.
 
 ## Publicación
 

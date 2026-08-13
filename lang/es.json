@@ -840,5 +840,22 @@
   "MYTHRASF.Catalog.Sources.NewItem": "Crear objeto homebrew",
   "MYTHRASF.Catalog.Sources.Empty": "No hay otros compendios Item disponibles.",
   "MYTHRASF.Item.Name": "Nombre",
-  "MYTHRASF.Item.Source": "Fuente"
+  "MYTHRASF.Item.Source": "Fuente",
+  "MYTHRASF.Homebrew.Title": "Creador de contenido homebrew",
+  "MYTHRASF.Homebrew.Open": "Abrir creador homebrew",
+  "MYTHRASF.Homebrew.Hint": "Crea Items del sistema en un compendio mundial de la campaña.",
+  "MYTHRASF.Homebrew.Destination": "Compendio de destino",
+  "MYTHRASF.Homebrew.Pack": "Compendio mundial",
+  "MYTHRASF.Homebrew.NoPack": "Selecciona o crea un compendio",
+  "MYTHRASF.Homebrew.CreatePack": "Crear compendio",
+  "MYTHRASF.Homebrew.PackName": "Nombre del compendio",
+  "MYTHRASF.Homebrew.ChooseType": "¿Qué quieres crear?",
+  "MYTHRASF.Homebrew.CreateItem": "Crear Item",
+  "MYTHRASF.Homebrew.Automatic": "Automático a partir del nombre",
+  "MYTHRASF.Homebrew.SelectPack": "Selecciona o crea primero un compendio mundial de Items.",
+  "MYTHRASF.Homebrew.InvalidRules": "Las reglas deben ser un objeto JSON válido.",
+  "MYTHRASF.Homebrew.InvalidData": "Completa los campos obligatorios con valores válidos.",
+  "MYTHRASF.Homebrew.Created": "{name} se ha creado en el compendio homebrew.",
+  "MYTHRASF.Homebrew.GMOnly": "Solo el director de juego puede crear contenido homebrew.",
+  "MYTHRASF.Homebrew.Unavailable": "El creador homebrew no está disponible."
 }

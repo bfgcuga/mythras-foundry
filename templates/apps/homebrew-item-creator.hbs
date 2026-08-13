@@ -1,0 +1,187 @@
+<div class="homebrew-creator-content">
+  <fieldset class="homebrew-destination"><legend>{{localize "MYTHRASF.Homebrew.Destination"}}</legend>
+    <label><span>{{localize "MYTHRASF.Homebrew.Pack"}}</span>
+      <select class="sheet-field-editable" data-homebrew-pack>
+        <option value="">{{localize "MYTHRASF.Homebrew.NoPack"}}</option>
+        {{selectOptions packs selected=selectedPackId labelAttr="label" valueAttr="value"}}
+      </select>
+    </label>
+    <button type="button" data-action="createPack" title="{{localize "MYTHRASF.Homebrew.CreatePack"}}">
+      <i class="fas fa-plus" aria-hidden="true"></i>{{localize "MYTHRASF.Homebrew.CreatePack"}}
+    </button>
+  </fieldset>
+
+  {{#unless hasSelectedType}}
+    <fieldset><legend>{{localize "MYTHRASF.Homebrew.ChooseType"}}</legend>
+      <div class="homebrew-type-grid">
+        {{#each types as |entry|}}
+          <button type="button" data-action="selectType" data-item-type="{{entry.type}}"
+            title="{{entry.label}}"><img src="{{entry.icon}}" alt=""><span>{{entry.label}}</span></button>
+        {{/each}}
+      </div>
+    </fieldset>
+  {{else}}
+    <form data-homebrew-form>
+      <fieldset><legend>{{selectedTypeLabel}}</legend>
+        <div class="homebrew-field-grid">
+          <label><span>{{localize "MYTHRASF.Item.Name"}}</span>
+            <input class="sheet-field-editable" name="name" required autofocus></label>
+
+          {{#unless isPassion}}{{#unless isHitLocation}}
+            <label><span>{{localize "MYTHRASF.Item.Source"}}</span>
+              <input class="sheet-field-editable" name="source"></label>
+          {{/unless}}{{/unless}}
+
+          {{#if isSkill}}
+            <label><span>{{localize "MYTHRASF.Item.Category"}}</span><select name="category">
+              {{selectOptions skillCategories selected="professional" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Skill.Group"}}</span><select name="group">
+              {{selectOptions skillGroups selected="professional" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Item.Characteristic1"}}</span><select name="characteristic1">
+              {{selectOptions characteristics selected="strength" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Item.Characteristic2"}}</span><select name="characteristic2">
+              {{selectOptions characteristics selected="dexterity" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Skill.BaseBonus"}}</span>
+              <input type="number" name="baseBonus" value="0" step="1"></label>
+          {{/if}}
+
+          {{#if isCombatStyle}}
+            <label><span>{{localize "MYTHRASF.Item.Characteristic1"}}</span><select name="characteristic1">
+              {{selectOptions characteristics selected="strength" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Item.Characteristic2"}}</span><select name="characteristic2">
+              {{selectOptions characteristics selected="dexterity" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Skill.BaseBonus"}}</span>
+              <input type="number" name="baseBonus" value="0" step="1"></label>
+          {{/if}}
+
+          {{#if isBackground}}
+            <label><span>{{localize "MYTHRASF.Background.Key"}}</span>
+              <input class="sheet-field-editable" name="key" placeholder="{{localize "MYTHRASF.Homebrew.Automatic"}}"></label>
+            <label class="homebrew-wide"><span>{{localize "MYTHRASF.Background.Rules"}}</span>
+              <textarea class="sheet-field-editable" name="rules" rows="5">{}</textarea></label>
+          {{/if}}
+
+          {{#if isPassion}}
+            <label><span>{{localize "MYTHRASF.Passion.VerbLabel"}}</span><select name="verb">
+              {{selectOptions passionVerbs selected="other" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Passion.CustomVerb"}}</span>
+              <input class="sheet-field-editable" name="customVerb"></label>
+            <label><span>{{localize "MYTHRASF.Passion.ObjectType"}}</span><select name="objectType">
+              {{selectOptions passionObjects selected="ideal" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Passion.ObjectDescription"}}</span>
+              <input class="sheet-field-editable" name="objectDescription" required></label>
+            <label><span>{{localize "MYTHRASF.Passion.TargetCharisma"}}</span>
+              <input type="number" name="targetCharisma" min="1" value="11"></label>
+            <label><span>{{localize "MYTHRASF.Passion.CreationBonus"}}</span>
+              <input type="number" name="creationBonus" value="0"></label>
+          {{/if}}
+
+          {{#if isEquipment}}
+            <label><span>{{localize "MYTHRASF.ItemClass.Label"}}</span><select name="category">
+              {{selectOptions equipmentCategories selected="item" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><input name="era"></label>
+            <label><span>{{localize "MYTHRASF.Item.Quantity"}}</span><input type="number" min="0" name="quantity" value="1"></label>
+            <label><span>{{localize "MYTHRASF.Item.Weight"}}</span><input type="number" min="0" step="any" name="weight" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Item.Value"}}</span><input type="number" min="0" step="any" name="value" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Currency.Denomination"}}</span><select name="currency">
+              {{selectOptions currencies selected="silver" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label class="homebrew-checkbox"><input type="checkbox" class="sheet-state-box" name="isContainer">
+              <span>{{localize "MYTHRASF.Item.Container.IsContainer"}}</span></label>
+            <label><span>{{localize "MYTHRASF.Item.Container.Capacity"}}</span>
+              <input type="number" min="0" step="any" name="capacityEncumbrance" value="0"></label>
+          {{/if}}
+
+          {{#if isWeapon}}
+            <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><input name="era"></label>
+            <label><span>{{localize "MYTHRASF.Item.Value"}}</span><input type="number" min="0" step="any" name="value" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Currency.Denomination"}}</span><select name="currency">
+              {{selectOptions currencies selected="silver" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Encumbrance"}}</span><input type="number" min="0" step="any" name="encumbrance" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</span><input type="number" min="0" name="armorPoints" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</span><input type="number" min="0" name="maxHitPoints" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.TypeLabel"}}</span><select name="weaponType">
+              {{selectOptions weaponTypes selected="melee" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Weapon.ModeName"}}</span><input name="modeName"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Damage"}}</span><input name="damage" placeholder="1d8"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.DamageModifier"}}</span><select name="damageModifierMode">
+              {{selectOptions damageModifierModes selected="full" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Size"}}</span><input name="size"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Reach"}}</span><input name="reach"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.HandsRequired"}}</span><input type="number" min="0" max="2" name="handsRequired" value="1"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Range"}}</span><input name="range"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Reload"}}</span><input name="reload"></label>
+            <label><span>{{localize "MYTHRASF.Weapon.Effects"}}</span><input name="effects"></label>
+          {{/if}}
+
+          {{#if isArmor}}
+            <label><span>{{localize "MYTHRASF.Armor.ProfileName"}}</span><input name="profileName"></label>
+            <label><span>{{localize "MYTHRASF.Armor.ReferenceLocation.Label"}}</span><select name="referenceLocation">
+              {{selectOptions armorLocations selected="special" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Armor.Construction.Label"}}</span><select name="construction">
+              {{selectOptions armorConstructions selected="flexible" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Armor.Material.Label"}}</span><select name="material">
+              {{selectOptions armorMaterials selected="leather" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Armor.Points"}}</span><input type="number" min="0" name="armorPoints" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Armor.BaseEncumbrance"}}</span><input type="number" min="0" step="any" name="baseEncumbrance" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Armor.BaseValue"}}</span><input type="number" min="0" step="any" name="baseValue" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Armor.DesignedSize"}}</span><input type="number" min="0" name="designedSize" value="0"></label>
+            <label><span>{{localize "MYTHRASF.Armor.Era.Label"}}</span><select name="era">
+              {{selectOptions armorEras selected="ancient" labelAttr="label" valueAttr="value"}}
+            </select></label>
+          {{/if}}
+
+          {{#if isHitLocation}}
+            <label><span>{{localize "MYTHRASF.HitLocation.Range"}}</span><span class="homebrew-range">
+              <input type="number" min="1" max="20" name="rangeStart" value="1">
+              <input type="number" min="1" max="20" name="rangeEnd" value="1"></span></label>
+            <label><span>{{localize "MYTHRASF.HitLocation.Category.Label"}}</span><select name="category">
+              {{selectOptions locationCategories selected="other" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.HitLocation.HpClass.Label"}}</span><select name="hpClass">
+              {{selectOptions hpClasses selected="standard" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label class="homebrew-checkbox"><input type="checkbox" class="sheet-state-box" name="autoCalculate">
+              <span>{{localize "MYTHRASF.HitLocation.AutoCalculate"}}</span></label>
+            <label><span>{{localize "MYTHRASF.HitLocation.MaxHitPoints"}}</span><input type="number" min="1" name="maxHitPoints" value="1"></label>
+            <label><span>{{localize "MYTHRASF.Armor.Natural"}}</span><input type="number" min="0" name="armorPoints" value="0"></label>
+            <label><span>{{localize "MYTHRASF.HitLocation.ArmorEncumbranceMultiplier"}}</span><input type="number" min="0" step="0.5" name="armorEncumbranceMultiplier" value="1"></label>
+            <label><span>{{localize "MYTHRASF.HitLocation.ArmorCostPercentage"}}</span><input type="number" min="0" step="any" name="armorCostPercentage" value="10"></label>
+          {{/if}}
+
+          {{#if isTrait}}
+            <label><span>{{localize "MYTHRASF.Trait.Type.Label"}}</span><select name="traitType">
+              {{selectOptions traitTypes selected="other" labelAttr="label" valueAttr="value"}}
+            </select></label>
+            <label><span>{{localize "MYTHRASF.Trait.Key"}}</span><input name="key" placeholder="{{localize "MYTHRASF.Homebrew.Automatic"}}"></label>
+            <label><span>{{localize "MYTHRASF.Trait.RuleKey"}}</span><input name="ruleKey"></label>
+            <label class="homebrew-checkbox"><input type="checkbox" class="sheet-state-box" name="requiresAllGroupMembers">
+              <span>{{localize "MYTHRASF.Trait.RequiresAllGroupMembers.Label"}}</span></label>
+          {{/if}}
+
+          <label class="homebrew-wide"><span>{{localize "MYTHRASF.Item.Description"}}</span>
+            <textarea class="sheet-field-editable" name="description" rows="5"></textarea></label>
+        </div>
+      </fieldset>
+      <div class="homebrew-form-actions">
+        <button type="button" data-action="back" title="{{localize "MYTHRASF.Background.Back"}}"><i class="fas fa-arrow-left" aria-hidden="true"></i>{{localize "MYTHRASF.Background.Back"}}</button>
+        <button type="button" data-action="createItem" title="{{localize "MYTHRASF.Homebrew.CreateItem"}}"><i class="fas fa-plus" aria-hidden="true"></i>{{localize "MYTHRASF.Homebrew.CreateItem"}}</button>
+      </div>
+    </form>
+  {{/unless}}
+</div>

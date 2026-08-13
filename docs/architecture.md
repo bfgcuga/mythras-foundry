@@ -16,7 +16,8 @@ verdad que deben consultarse antes de cambiar modelos, reglas o compendios.
 - `scripts/sheets/`: hojas Application V2 de personaje, PNJ e Item. Preparan el
   contexto de presentación y delegan los cálculos en `scripts/rules/`.
 - `scripts/apps/`: aplicaciones auxiliares para catálogo, grupos, fuentes del
-  catálogo, configuración de armaduras y fusión de modos de arma.
+  catálogo, creación homebrew, configuración de armaduras y fusión de modos de
+  arma.
 - `scripts/api/`: APIs públicas que se publican bajo `game.mythrasFoundry`.
 - `templates/`, `styles/` y `lang/`: presentación Handlebars, tema compartido y
   localizaciones. Las reglas visuales obligatorias están en `AGENTS.md`.
@@ -33,7 +34,7 @@ Durante `init` registra:
 - los modelos `character` y `npc`;
 - la clase de documento de Item y los modelos de los diez tipos de Item;
 - hojas Application V2, ajustes y menús de administración;
-- las APIs `game.mythrasFoundry.shop`, `party` y `traits`;
+- las APIs `game.mythrasFoundry.shop`, `homebrew`, `party` y `traits`;
 - los parciales Handlebars compartidos.
 
 Los hooks posteriores aplican límites de recursos, preparan actores nuevos,
@@ -63,6 +64,11 @@ Los módulos de `scripts/data/` son la fuente de verdad de los compendios. El
 script `scripts/dev/build-packs.mjs` genera documentos con identificadores
 deterministas en `.build/packs-src/` y compila la salida LevelDB en `packs/`.
 Ambos directorios son artefactos generados e ignorados por Git.
+
+El contenido propio de una campaña se guarda en compendios mundiales `Item` y no
+en `scripts/data/`. El creador homebrew permite seleccionar uno existente o
+crearlo, lo registra como fuente del catálogo y genera un documento inicial
+válido mediante `scripts/rules/homebrew-items.js`.
 
 Los diez compendios declarados en `system.json` deben mantenerse sincronizados
 con las llamadas de construcción de `build-packs.mjs`. Cualquier cambio en sus

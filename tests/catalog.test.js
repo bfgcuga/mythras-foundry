@@ -98,5 +98,5 @@ test("la interfaz emite arrastre Item estándar y reserva la gestión homebrew a
   assert.match(catalog, /OFFICIAL_CATALOG_PACKS/);
   assert.match(manager, /if \(!game\.user\.isGM\) return;/);
   assert.match(manager, /createCompendium/);
-  assert.match(manager, /\{ pack: pack\.collection \}/);
+  assert.match(manager, /new HomebrewItemCreator\(\{ selectedPackId: pack\.collection \}\)/);
 });

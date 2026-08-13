@@ -38,6 +38,17 @@ test("el compendio incluye un lanzador ligero para el catálogo", () => {
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });
 
+test("el compendio incluye una macro GM para abrir el creador homebrew", () => {
+  const macro = MACRO_SOURCES.find((source) => (
+    source.buildKey === "open-homebrew-item-creator"
+  ));
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /homebrew\?\.open/);
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
 test("las copias antiguas de macros oficiales reciben el formato actualizado", () => {
   const update = managedMacroUpdate({
     id: "world-macro",

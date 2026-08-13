@@ -88,6 +88,22 @@ if (!catalog) ui.notifications.error(game.i18n.localize("MYTHRASF.Catalog.Unavai
 `,
   flags: { "mythras-foundry": { macroKey: "open-item-catalog", macroVersion: 1 } }
 }, {
+  buildKey: "open-homebrew-item-creator",
+  name: "Crear contenido homebrew",
+  type: "script",
+  img: "icons/svg/item-bag.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Homebrew.GMOnly"));
+  return;
+}
+const creator = game.mythrasFoundry?.homebrew?.open?.();
+if (!creator) ui.notifications.error(game.i18n.localize("MYTHRASF.Homebrew.Unavailable"));
+`,
+  flags: { "mythras-foundry": {
+    macroKey: "open-homebrew-item-creator", macroVersion: 1
+  } }
+}, {
   buildKey: "manage-parties",
   name: "Gestionar grupos de personajes",
   type: "script",

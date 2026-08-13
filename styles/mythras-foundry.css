@@ -659,6 +659,77 @@
   justify-self: center;
 }
 
+.mythras-foundry .homebrew-creator-content {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.mythras-foundry .homebrew-destination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.55rem;
+}
+
+.mythras-foundry .homebrew-destination label,
+.mythras-foundry .homebrew-field-grid label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mythras-foundry .homebrew-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.mythras-foundry .homebrew-type-grid button {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.8rem;
+  text-align: left;
+}
+
+.mythras-foundry .homebrew-type-grid img {
+  width: 1.8rem;
+  height: 1.8rem;
+  object-fit: contain;
+  border: 0;
+}
+
+.mythras-foundry .homebrew-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.75rem;
+}
+
+.mythras-foundry .homebrew-field-grid .homebrew-wide {
+  grid-column: 1 / -1;
+}
+
+.mythras-foundry .homebrew-field-grid .homebrew-checkbox {
+  display: flex;
+  align-items: center;
+  align-self: end;
+  min-height: 1.75rem;
+}
+
+.mythras-foundry .homebrew-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.mythras-foundry .homebrew-form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .mythras-foundry .paper-attribute-list {
   display: grid;
   gap: 0.3rem;

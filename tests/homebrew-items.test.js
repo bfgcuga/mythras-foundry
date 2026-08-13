@@ -1,0 +1,61 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { HOMEBREW_ITEM_TYPES, buildHomebrewItem, homebrewPackName }
+  from "../scripts/rules/homebrew-items.js";
+
+test("el creador homebrew cubre todos los tipos Item del sistema", () => {
+  assert.deepEqual(new Set(HOMEBREW_ITEM_TYPES), new Set([
+    "skill", "combatStyle", "culture", "profession", "passion",
+    "equipment", "weapon", "armor", "hitLocation", "trait"
+  ]));
+  for (const type of HOMEBREW_ITEM_TYPES) {
+    const fields = { name: `Prueba ${type}`, rules: "{}", objectDescription: "Prueba" };
+    assert.equal(buildHomebrewItem(type, fields).type, type);
+  }
+});
+
+test("registra el menú GM, la API y los formularios del creador", () => {
+  const entrypoint = readFileSync(new URL("../scripts/mythras-foundry.js", import.meta.url), "utf8");
+  const template = readFileSync(new URL(
+    "../templates/apps/homebrew-item-creator.hbs", import.meta.url), "utf8");
+  assert.match(entrypoint, /registerMenu\("mythras-foundry", "homebrewItemCreator"/);
+  assert.match(entrypoint, /homebrew: createHomebrewApi\(\)/);
+  for (const type of ["Skill", "CombatStyle", "Background", "Passion", "Equipment",
+    "Weapon", "Armor", "HitLocation", "Trait"]) {
+    assert.match(template, new RegExp(`is${type}`));
+  }
+});
+
+test("normaliza el nombre de un compendio mundial", () => {
+  assert.equal(homebrewPackName("Campaña de Áitor"), "campana-de-aitor");
+  assert.equal(homebrewPackName("***"), "mythras-homebrew");
+});
+
+test("crea armas funcionales con un modo y durabilidad completa", () => {
+  const item = buildHomebrewItem("weapon", {
+    name: "Lanza lunar", weaponType: "ranged", damage: "1d8", maxHitPoints: 9
+  });
+  assert.equal(item.system.activeModeKey, "ranged");
+  assert.equal(item.system.currentHitPoints, 9);
+  assert.equal(item.system.modes[0].damage, "1d8");
+  assert.deepEqual(item.system.modes[0].traitRefs, []);
+});
+
+test("crea localizaciones y armaduras con valores operativos", () => {
+  const location = buildHomebrewItem("hitLocation", {
+    name: "Ala", rangeStart: 2, rangeEnd: 5, maxHitPoints: 4, autoCalculate: "on"
+  });
+  assert.equal(location.system.currentHitPoints, 4);
+  assert.equal(location.system.autoCalculate, true);
+  const armor = buildHomebrewItem("armor", { name: "Protección alar" });
+  assert.equal(armor.system.referenceLocation, "special");
+  assert.equal(armor.system.material, "leather");
+});
+
+test("culturas y profesiones exigen reglas JSON con forma de objeto", () => {
+  assert.equal(buildHomebrewItem("culture", { name: "Insular", rules: "{}" })
+    .system.key, "insular");
+  assert.throws(() => buildHomebrewItem("profession", { name: "Vigía", rules: "[]" }),
+    /invalid-rules/);
+});

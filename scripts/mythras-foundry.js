@@ -29,6 +29,7 @@ import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { PartyManager } from "./apps/party-manager.js";
 import { CatalogSourceManager } from "./apps/catalog-source-manager.js";
+import { HomebrewItemCreator, createHomebrewApi } from "./apps/homebrew-item-creator.js";
 import { createCatalogApi } from "./apps/item-catalog.js";
 import { createPartyApi } from "./api/party-api.js";
 import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
@@ -88,9 +89,15 @@ Hooks.once("init", async () => {
     hint: "MYTHRASF.Catalog.Sources.Hint", icon: "fas fa-store",
     type: CatalogSourceManager, restricted: true
   });
+  game.settings.registerMenu("mythras-foundry", "homebrewItemCreator", {
+    name: "MYTHRASF.Homebrew.Title", label: "MYTHRASF.Homebrew.Open",
+    hint: "MYTHRASF.Homebrew.Hint", icon: "fas fa-hammer",
+    type: HomebrewItemCreator, restricted: true
+  });
   game.mythrasFoundry = {
     ...(game.mythrasFoundry ?? {}),
     shop: createCatalogApi(),
+    homebrew: createHomebrewApi(),
     party: createPartyApi({
       getConfig: () => getSystemSetting(SETTING_KEYS.parties),
       getActors: () => game.actors,

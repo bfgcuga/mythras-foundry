@@ -840,5 +840,22 @@
   "MYTHRASF.Catalog.Sources.NewItem": "Create homebrew item",
   "MYTHRASF.Catalog.Sources.Empty": "No other Item compendia are available.",
   "MYTHRASF.Item.Name": "Name",
-  "MYTHRASF.Item.Source": "Source"
+  "MYTHRASF.Item.Source": "Source",
+  "MYTHRASF.Homebrew.Title": "Homebrew content creator",
+  "MYTHRASF.Homebrew.Open": "Open homebrew creator",
+  "MYTHRASF.Homebrew.Hint": "Create system Items in a world compendium for this campaign.",
+  "MYTHRASF.Homebrew.Destination": "Destination compendium",
+  "MYTHRASF.Homebrew.Pack": "World compendium",
+  "MYTHRASF.Homebrew.NoPack": "Select or create a compendium",
+  "MYTHRASF.Homebrew.CreatePack": "Create compendium",
+  "MYTHRASF.Homebrew.PackName": "Compendium name",
+  "MYTHRASF.Homebrew.ChooseType": "What do you want to create?",
+  "MYTHRASF.Homebrew.CreateItem": "Create Item",
+  "MYTHRASF.Homebrew.Automatic": "Automatic from name",
+  "MYTHRASF.Homebrew.SelectPack": "Select or create a world Item compendium first.",
+  "MYTHRASF.Homebrew.InvalidRules": "Rules must be a valid JSON object.",
+  "MYTHRASF.Homebrew.InvalidData": "Complete all required fields with valid values.",
+  "MYTHRASF.Homebrew.Created": "{name} was created in the homebrew compendium.",
+  "MYTHRASF.Homebrew.GMOnly": "Only the game master can create homebrew content.",
+  "MYTHRASF.Homebrew.Unavailable": "The homebrew creator is unavailable."
 }

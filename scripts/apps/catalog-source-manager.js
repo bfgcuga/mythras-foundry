@@ -1,5 +1,6 @@
 import { OFFICIAL_CATALOG_PACKS, normalizeCatalogConfig } from "../rules/catalog.js";
 import { getSystemSetting, setSystemSetting, SETTING_KEYS } from "../settings.js";
+import { HomebrewItemCreator } from "./homebrew-item-creator.js";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -83,22 +84,6 @@ export class CatalogSourceManager extends HandlebarsApplicationMixin(Application
     if (!game.user.isGM) return;
     const pack = game.packs.get(target.closest("[data-pack-id]")?.dataset.packId);
     if (!pack) return;
-    if (pack.locked && pack.configure) await pack.configure({ locked: false });
-    const result = await DialogV2.wait({
-      window: { title: game.i18n.localize("MYTHRASF.Catalog.Sources.NewItem") },
-      content: `<div class="mythras-foundry catalog-new-item-dialog">
-        <label><span>${game.i18n.localize("MYTHRASF.Item.Name")}</span><input type="text" name="name" class="sheet-field-editable" required autofocus></label>
-        <label><span>${game.i18n.localize("MYTHRASF.ItemClass.Label")}</span><select name="type"><option value="equipment">${game.i18n.localize("TYPES.Item.equipment")}</option><option value="weapon">${game.i18n.localize("TYPES.Item.weapon")}</option><option value="armor">${game.i18n.localize("TYPES.Item.armor")}</option></select></label>
-      </div>`,
-      buttons: [{ action: "create", default: true, icon: "fas fa-plus",
-        label: game.i18n.localize("MYTHRASF.Add"), callback: (event, button) => ({
-          name: button.form.elements.name.value.trim(), type: button.form.elements.type.value
-        }) }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }],
-      rejectClose: false
-    });
-    if (!result?.name) return;
-    const document = await Item.create({ name: result.name, type: result.type },
-      { pack: pack.collection });
-    document?.sheet?.render(true);
+    new HomebrewItemCreator({ selectedPackId: pack.collection }).render({ force: true });
   }
 }
