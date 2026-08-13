@@ -8,6 +8,8 @@ import { getSystemSetting, setSystemSetting, SETTING_KEYS } from "../settings.js
 import { normalizeCatalogConfig } from "../rules/catalog.js";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const FilePickerClass = foundry.applications.apps.FilePicker?.implementation
+  ?? globalThis.FilePicker?.implementation ?? globalThis.FilePicker;
 
 function worldItemPacks() {
   return game.packs.filter((pack) => (
@@ -33,6 +35,7 @@ export class HomebrewItemCreator extends HandlebarsApplicationMixin(ApplicationV
       selectType: HomebrewItemCreator.#selectType,
       back: HomebrewItemCreator.#back,
       createPack: HomebrewItemCreator.#createPack,
+      browseImage: HomebrewItemCreator.#browseImage,
       createItem: HomebrewItemCreator.#createItem
     }
   };
@@ -153,6 +156,20 @@ export class HomebrewItemCreator extends HandlebarsApplicationMixin(ApplicationV
     this.render({ force: true });
   }
 
+  static async #browseImage() {
+    const input = this.element.querySelector("[name='img']");
+    if (!input || !FilePickerClass) return;
+    const picker = new FilePickerClass({
+      type: "image",
+      current: input.value,
+      callback: (path) => {
+        input.value = path;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+    await picker.browse();
+  }
+
   static async #createItem() {
     if (!game.user.isGM) return;
     const form = this.element.querySelector("[data-homebrew-form]");
@@ -179,7 +196,10 @@ export class HomebrewItemCreator extends HandlebarsApplicationMixin(ApplicationV
     if (!document) return;
     await addCatalogSource(pack.collection);
     ui.notifications.info(game.i18n.format("MYTHRASF.Homebrew.Created", { name: document.name }));
-    document.sheet?.render(true);
+    if (document.sheet) {
+      document.sheet.creationMode = ["weapon", "combatStyle"].includes(document.type);
+      document.sheet.render(true);
+    }
     this.selectedType = "";
     this.render({ force: true });
   }

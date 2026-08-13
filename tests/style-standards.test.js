@@ -107,3 +107,8 @@ test("la ficha de estilo resume asociaciones y separa el cálculo no editable", 
   assert.doesNotMatch(styleSchema, /\b(weapons|traits): textField/);
   assert.match(styleSchema, /\.\.\.super\.defineSchema\(\)/);
 });
+
+test("las hojas de Item y el creador usan recuadros discretos sin superficie propia", () => {
+  assert.match(css, /\.item-sheet-content fieldset,[^}]*\.homebrew-creator-content fieldset[^}]*background: transparent/s);
+  assert.match(css, /\.item-sheet-content input,[^}]*\.homebrew-creator-content textarea[^}]*background: transparent/s);
+});

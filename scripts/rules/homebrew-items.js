@@ -25,7 +25,8 @@ export function buildHomebrewItem(type, fields = {}) {
   if (!name) throw new Error("missing-name");
   const source = String(fields.source ?? "").trim();
   const description = String(fields.description ?? "").trim();
-  const common = { name, type };
+  const img = String(fields.img ?? "").trim();
+  const common = { name, type, ...(img ? { img } : {}) };
 
   if (type === "skill") return { ...common, system: {
     slug: homebrewSlug(name), source, description,
@@ -69,7 +70,10 @@ export function buildHomebrewItem(type, fields = {}) {
     return { ...common, system: {
       source, description, category: fields.category || "item",
       era: String(fields.era ?? ""), quantity: Math.max(0, integer(fields.quantity, 1)),
-      weight: Math.max(0, number(fields.weight)), value: Math.max(0, number(fields.value)),
+      // Equipment predates the system-wide `encumbrance` name. Keep the persisted
+      // field for compatibility while presenting it as encumbrance in every UI.
+      weight: Math.max(0, number(fields.encumbrance ?? fields.weight)),
+      value: Math.max(0, number(fields.value)),
       currency: fields.currency || "silver", isContainer,
       capacityEncumbrance: isContainer ? Math.max(0, number(fields.capacityEncumbrance)) : 0
     } };

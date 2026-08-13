@@ -199,6 +199,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return foundry.utils.mergeObject(context, {
       item: this.item,
       editable: this.isEditable,
+      creationMode: Boolean(this.creationMode),
       isSkill: this.item.type === "skill",
       isSkillLike: ["skill", "combatStyle"].includes(this.item.type),
       isCombatStyle: this.item.type === "combatStyle",
@@ -337,6 +338,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ?.addEventListener("click", () => this.#viewItemImage());
 
     this._activeWeaponTab ??= "characteristics";
+    this.element.classList.toggle("item-creation-mode", Boolean(this.creationMode));
     this.element.querySelectorAll("[data-weapon-tab]").forEach((button) =>
       button.addEventListener("click", (event) => this.#activateWeaponTab(event)));
     this.#showWeaponTab(this._activeWeaponTab);

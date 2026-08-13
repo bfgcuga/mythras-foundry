@@ -665,6 +665,24 @@
   padding: 0.75rem;
 }
 
+/* Item editors use the restrained paper treatment established by the weapon sheet. */
+.mythras-foundry .item-sheet-content fieldset,
+.mythras-foundry .homebrew-creator-content fieldset {
+  border: 1px solid color-mix(in srgb, var(--mythras-border) 72%, transparent);
+  background: transparent;
+}
+
+.mythras-foundry .item-sheet-content input,
+.mythras-foundry .item-sheet-content select,
+.mythras-foundry .item-sheet-content textarea,
+.mythras-foundry .homebrew-creator-content input,
+.mythras-foundry .homebrew-creator-content select,
+.mythras-foundry .homebrew-creator-content textarea {
+  border: 1px solid color-mix(in srgb, var(--mythras-border) 72%, transparent);
+  background: transparent;
+  box-shadow: none;
+}
+
 .mythras-foundry .homebrew-destination {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -708,6 +726,23 @@
 
 .mythras-foundry .homebrew-field-grid .homebrew-wide {
   grid-column: 1 / -1;
+}
+
+.mythras-foundry .homebrew-image-field > span:last-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.mythras-foundry .homebrew-development-note,
+.mythras-foundry .homebrew-sheet-editor-note {
+  margin: 0;
+  padding: 0.35rem 0;
+  border-block: 1px solid color-mix(in srgb, var(--mythras-border) 55%, transparent);
+  background: transparent;
+  color: var(--mythras-ink);
+  font-size: var(--mythras-font-size-auxiliary);
 }
 
 .mythras-foundry .homebrew-field-grid .homebrew-checkbox {

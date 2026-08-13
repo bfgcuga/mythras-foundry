@@ -857,5 +857,10 @@
   "MYTHRASF.Homebrew.InvalidData": "Complete all required fields with valid values.",
   "MYTHRASF.Homebrew.Created": "{name} was created in the homebrew compendium.",
   "MYTHRASF.Homebrew.GMOnly": "Only the game master can create homebrew content.",
-  "MYTHRASF.Homebrew.Unavailable": "The homebrew creator is unavailable."
+  "MYTHRASF.Homebrew.Unavailable": "The homebrew creator is unavailable.",
+  "MYTHRASF.Homebrew.Image": "Image",
+  "MYTHRASF.Homebrew.BrowseImage": "Browse or upload an image",
+  "MYTHRASF.Homebrew.WeaponSheetHelp": "After creating the weapon, its editor opens with the Characteristics and Usage modes tabs.",
+  "MYTHRASF.Homebrew.CombatStyleSheetHelp": "After creating the style, its editor opens with the Description, Weapons and Traits tabs, including drag and drop.",
+  "MYTHRASF.Homebrew.BackgroundEditorPending": "Pending: replace JSON rules with a visual editor using menus and draggable skills."
 }

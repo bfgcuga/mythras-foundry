@@ -68,6 +68,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - No simular este patrón mediante un encabezado separado y bordes parciales en elementos consecutivos.
 - Los paneles reutilizan los estilos globales de `fieldset` y `legend`; las clases locales solo ajustan distribución o espaciado.
 - Si el panel permite añadir elementos, el botón `sheet-add-button` se coloca en la esquina superior derecha sin desplazar el `legend`.
+- Las hojas de Item y sus asistentes de creación siguen el tratamiento visual de la hoja de arma: recuadros de un píxel, discretos y transparentes, sin una superficie propia sobre el papel. Sus campos también son transparentes y se distinguen mediante el borde compartido.
 
 ## Mensajes de chat
 

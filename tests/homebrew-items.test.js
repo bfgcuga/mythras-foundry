@@ -42,6 +42,25 @@ test("crea armas funcionales con un modo y durabilidad completa", () => {
   assert.deepEqual(item.system.modes[0].traitRefs, []);
 });
 
+test("conserva la imagen elegida y trata el peso histórico del equipo como carga", () => {
+  const item = buildHomebrewItem("equipment", {
+    name: "Mochila", img: "worlds/campana/mochila.webp", encumbrance: 2, value: 15
+  });
+  assert.equal(item.img, "worlds/campana/mochila.webp");
+  assert.equal(item.system.weight, 2);
+  assert.equal(item.system.value, 15);
+});
+
+test("el creador delega armas y estilos en versiones acotadas de sus hojas", () => {
+  const app = readFileSync(new URL(
+    "../scripts/apps/homebrew-item-creator.js", import.meta.url), "utf8");
+  const sheet = readFileSync(new URL(
+    "../templates/item/item-sheet.hbs", import.meta.url), "utf8");
+  assert.match(app, /document\.sheet\.creationMode/);
+  assert.match(sheet, /unless creationMode[^]*data-weapon-tab="instance"/);
+  assert.match(sheet, /unless creationMode[^]*data-combat-style-tab="calculation"/);
+});
+
 test("crea localizaciones y armaduras con valores operativos", () => {
   const location = buildHomebrewItem("hitLocation", {
     name: "Ala", rangeStart: 2, rangeEnd: 5, maxHitPoints: 4, autoCalculate: "on"

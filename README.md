@@ -26,7 +26,9 @@ El sistema incluye actualmente:
 - catálogo extensible que combina los compendios oficiales con fuentes de Items
   configuradas por el mundo;
 - creador homebrew para los diez tipos de Item, con selección o creación de un
-  compendio mundial y acceso desde Ajustes o una macro exclusiva del DJ;
+  compendio mundial, imagen elegida mediante el navegador de Foundry y acceso
+  desde Ajustes o una macro exclusiva del DJ; las armas y estilos continúan su
+  edición en versiones acotadas de sus hojas completas;
 - PNJ y criaturas con anatomías configurables, valores manuales o derivados y
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
@@ -37,6 +39,9 @@ La implementación usa Mythras Imperativo como perfil predeterminado. Los Puntos
 de Acción pueden configurarse como un valor fijo —2 por defecto— o calcularse a
 partir de INT y DES. Las diferencias pendientes de perfil se identifican en el
 código con `RULESET DIFFERENCE` y `TODO(rules-profile)`.
+
+Queda pendiente sustituir el JSON de reglas de selección de culturas y
+profesiones por un editor visual basado en menús y habilidades arrastrables.
 
 ## Compendios
 
