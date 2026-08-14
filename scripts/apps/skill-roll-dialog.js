@@ -3,6 +3,8 @@ import { combineDifficulties } from "../rules/fatigue.js";
 
 const DIFFICULTIES = ["automatic", "veryEasy", "easy", "standard", "hard",
   "formidable", "herculean", "impossible"];
+const ABILITY_TYPES = ["skill", "combatStyle", "passion"];
+const CONTEST_TYPES = ["simple", "opposed", "differential", "team", "inverseTeam", "elimination"];
 
 function escape(value) {
   return foundry.utils.escapeHTML(String(value ?? ""));
@@ -11,13 +13,29 @@ function escape(value) {
 export async function openSkillRollDialog(item, { imposedDifficulty = "standard",
   defaultDifficulty = "standard", modifiers = [] } = {}) {
   const { DialogV2 } = foundry.applications.api;
-  const actors = game.actors.filter((actor) => actor.testUserPermission(game.user, "OBSERVER"));
+  const actors = game.actors.filter((actor) => actor.visible || actor.testUserPermission(game.user, "OBSERVER"));
   const actorOptions = actors.map((actor) =>
     `<option value="${escape(actor.id)}">${escape(actor.name)}</option>`).join("");
   const skillOptions = actors.flatMap((actor) => actor.items
-    .filter((candidate) => ["skill", "combatStyle"].includes(candidate.type))
+    .filter((candidate) => ABILITY_TYPES.includes(candidate.type))
     .map((skill) => `<option value="${escape(actor.id)}:${escape(skill.id)}" data-target="${Number(skill.system.total ?? 0)}">${escape(actor.name)} — ${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`))
     .join("");
+  const targetedActorIds = new Set(Array.from(game.user?.targets ?? []).map((token) => token.actor?.id).filter(Boolean));
+  const participantDifficultyOptions = DIFFICULTIES.map((key) => `<option value="${key}" ${key === "standard" ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
+  const participantRows = actors.map((actor) => {
+    const abilities = actor.items.filter((candidate) => ABILITY_TYPES.includes(candidate.type));
+    const options = abilities.map((ability) => `<option value="${escape(ability.id)}" data-target="${Number(ability.system.total ?? 0)}">${escape(ability.name)} (${Number(ability.system.total ?? 0)}%)</option>`).join("");
+    const checked = targetedActorIds.has(actor.id) ? "checked" : "";
+    return `<div class="skill-roll-participant" data-actor-id="${escape(actor.id)}">
+      <label><input type="checkbox" class="sheet-state-box" name="participantActor" value="${escape(actor.id)}" ${checked}><span>${escape(actor.name)}</span></label>
+      <select name="participantAbility-${escape(actor.id)}" aria-label="${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}">${options}</select>
+      <select name="participantDifficulty-${escape(actor.id)}" aria-label="${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}">${participantDifficultyOptions}</select>
+      <label class="skill-roll-representative"><input type="radio" class="sheet-state-box" name="designatedActor" value="${escape(actor.id)}"><span>${escape(game.i18n.localize("MYTHRASF.Contest.Representative"))}</span></label>
+    </div>`;
+  }).join("");
+  const contestOptions = CONTEST_TYPES.map((type) => `<option value="${type}">${escape(game.i18n.localize(`MYTHRASF.Contest.Type.${type}`))}</option>`).join("");
+  const partyOptions = [`<option value="">${escape(game.i18n.localize("MYTHRASF.Contest.NoGroup"))}</option>`,
+    ...(game.mythrasFoundry?.party?.parties ?? []).map((party) => `<option value="${escape(party.id)}" data-members="${escape((party.memberIds ?? []).join(","))}">${escape(party.name)}</option>`)].join("");
   const difficultyOptions = DIFFICULTIES.map((key) =>
     `<option value="${key}" ${key === defaultDifficulty ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
   const modifierRows = modifiers.length
@@ -38,6 +56,13 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   const result = await DialogV2.wait({
     window: { title: game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
     content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog" data-imposed-difficulty="${imposedDifficulty}" data-base-target="${Number(item.system.total ?? 0)}">
+      <fieldset class="skill-roll-contest"><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Title"))}</legend>
+        <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.RollType"))}</span><select name="contestType">${contestOptions}</select></label>
+        <div data-contest-settings hidden>
+          <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.LoadGroup"))}</span><select name="partyId">${partyOptions}</select></label>
+          <div class="skill-roll-participants">${participantRows}</div>
+        </div>
+      </fieldset>
       ${adjustmentPanel("limited")}
       ${adjustmentPanel("reinforced")}
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>${modifierRows}</fieldset>
@@ -64,7 +89,29 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           ui.notifications.warn(game.i18n.localize("MYTHRASF.SkillRoll.SupportMismatch"));
           return null;
         }
-        return { difficulty: form.difficulty.value, limitedSkill, reinforcedSkill };
+        const type = form.contestType.value;
+        const selectedParticipants = type === "simple" ? [] : Array.from(button.form.querySelectorAll("input[name='participantActor']:checked"));
+        const participants = selectedParticipants.map((control) => {
+          const actor = game.actors.get(control.value);
+          const abilityId = form[`participantAbility-${control.value}`]?.value;
+          const ability = actor?.items.get(abilityId);
+          const participantDifficulty = form[`participantDifficulty-${control.value}`]?.value ?? "standard";
+          return actor && ability ? { actorId: actor.id, actorName: actor.name, abilityId: ability.id,
+            abilityName: ability.name, difficulty: participantDifficulty,
+            target: resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: participantDifficulty }).target } : null;
+        }).filter(Boolean);
+        if (type !== "simple" && !participants.length) {
+          ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired"));
+          return null;
+        }
+        const groupType = ["team", "inverseTeam", "elimination"].includes(type);
+        if (groupType && participants.length !== selectedParticipants.length) {
+          ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired"));
+          return null;
+        }
+        const designatedActorId = form.designatedActor?.value || (type === "elimination" ? participants[0]?.actorId : null);
+        return { difficulty: form.difficulty.value, limitedSkill, reinforcedSkill,
+          contest: { type, participants, designatedActorId } };
       }
     }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
     rejectClose: false
@@ -104,8 +151,43 @@ export function activateSkillRollDialog(element) {
     finalTarget.className = `skill-roll-target skill-roll-target--${targetComparison(targets.target, targets.baseTarget)}`;
   };
   dialog.dataset.rollPreviewListener = "true";
-  dialog.addEventListener("change", update);
+  dialog.addEventListener("change", (event) => {
+    if (event.target.name === "contestType") {
+      const simple = event.target.value === "simple";
+      dialog.querySelector("[data-contest-settings]").hidden = simple;
+      dialog.querySelectorAll(".skill-roll-representative").forEach((node) => {
+        node.hidden = event.target.value !== "elimination";
+      });
+    }
+    if (event.target.name === "partyId") {
+      const members = new Set(String(event.target.selectedOptions[0]?.dataset.members ?? "").split(",").filter(Boolean));
+      if (members.size) dialog.querySelectorAll("input[name='participantActor']").forEach((control) => { control.checked = members.has(control.value); });
+    }
+    update();
+  });
   update();
+}
+
+export async function openContestResponseDialog(actor, defaultAbilityId) {
+  const { DialogV2 } = foundry.applications.api;
+  const abilities = actor.items.filter((item) => ABILITY_TYPES.includes(item.type));
+  const options = abilities.map((item) => `<option value="${escape(item.id)}" ${item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`).join("");
+  const affectingOptions = game.actors.filter((candidate) => candidate.testUserPermission(game.user, "OBSERVER")).flatMap((candidate) => candidate.items
+    .filter((item) => ABILITY_TYPES.includes(item.type)).map((item) => `<option value="${escape(candidate.id)}:${escape(item.id)}">${escape(candidate.name)} — ${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`)).join("");
+  const adjustment = (name, key) => `<fieldset><legend>${escape(game.i18n.localize(`MYTHRASF.SkillRoll.${key}`))}</legend><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ApplyAdjustment"))}</span><input type="checkbox" class="sheet-state-box" name="${name}Enabled"></label><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectingSkill"))}</span><select name="${name}Ability">${affectingOptions}</select></label></fieldset>`;
+  return DialogV2.wait({
+    window: { title: game.i18n.format("MYTHRASF.Contest.ResponseTitle", { actor: actor.name }) },
+    content: `<div class="mythras-foundry mythras-dialog contest-response-dialog"><fieldset><legend>${escape(actor.name)}</legend>
+      <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}</span><select name="abilityId">${options}</select></label>
+      <label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}</span><select name="difficulty">${DIFFICULTIES.map((key) => `<option value="${key}" ${key === "standard" ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("")}</select></label>
+    </fieldset>${adjustment("limited", "Limited")}${adjustment("reinforced", "Reinforced")}</div>`,
+    buttons: [{ action: "roll", label: game.i18n.localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20", default: true,
+      callback: (event, button) => ({ abilityId: button.form.elements.abilityId.value,
+        difficulty: button.form.elements.difficulty.value,
+        limitedAbility: button.form.elements.limitedEnabled.checked ? button.form.elements.limitedAbility.value : null,
+        reinforcedAbility: button.form.elements.reinforcedEnabled.checked ? button.form.elements.reinforcedAbility.value : null }) },
+    { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false
+  });
 }
 
 function targetComparison(target, baseTarget) {

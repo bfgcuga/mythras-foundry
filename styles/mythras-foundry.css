@@ -2472,6 +2472,20 @@
 .catalog-new-item-dialog { display: grid; gap: 0.5rem; }
 .catalog-new-item-dialog label { display: grid; grid-template-columns: 8rem minmax(0, 1fr); align-items: center; gap: 0.4rem; }
 
+.mythras-foundry .skill-roll-contest > label,
+.mythras-foundry .skill-roll-contest [data-contest-settings] > label,
+.mythras-foundry .contest-response-dialog label { display: grid; grid-template-columns: minmax(8rem, 0.7fr) minmax(10rem, 1fr); align-items: center; gap: 0.45rem; }
+.mythras-foundry .skill-roll-participants { display: grid; gap: 0.3rem; margin-top: 0.5rem; }
+.mythras-foundry .skill-roll-participant { display: grid; grid-template-columns: minmax(8rem, 0.8fr) minmax(9rem, 1fr) minmax(7rem, 0.65fr) auto; align-items: center; gap: 0.4rem; padding-block: 0.2rem; border-bottom: 1px solid color-mix(in srgb, var(--mythras-border) 55%, transparent); }
+.mythras-foundry .skill-roll-participant > label { display: flex; align-items: center; gap: 0.35rem; }
+.chat-message .mythras-contest-card .contest-participants { display: grid; gap: 0.25rem; margin-block: 0.45rem; }
+.chat-message .mythras-contest-card .contest-participant > span:first-child { display: grid; min-width: 0; }
+.chat-message .mythras-contest-card .contest-participant small { color: color-mix(in srgb, var(--mythras-ink) 72%, transparent); overflow-wrap: anywhere; }
+.chat-message .mythras-contest-card .contest-participant-values { display: flex; align-items: center; gap: 0.35rem; }
+.chat-message .mythras-contest-card .contest-participant-result { font-weight: 700; }
+.chat-message .mythras-contest-card .contest-gm-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.55rem; }
+.chat-message .mythras-contest-card .contest-gm-actions button { flex: 1 1 auto; border: 1px solid var(--mythras-border); background: transparent; color: var(--mythras-ink); }
+
 @media (max-width: 780px) {
   .mythras-foundry .npc-sheet-header { grid-template-columns: 6rem minmax(0, 1fr); }
   .mythras-foundry .npc-sheet-header .portrait-frame,

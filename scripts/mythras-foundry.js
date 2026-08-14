@@ -27,6 +27,7 @@ import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
 import { activateSkillRollCard } from "./rules/skill-roll-chat.js";
 import { activateSkillRollDialog } from "./apps/skill-roll-dialog.js";
+import { activateContestCard, registerContestSocket } from "./rules/contest-chat.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { PartyManager } from "./apps/party-manager.js";
@@ -158,9 +159,11 @@ Hooks.once("setup", () => {
 function activateChatCards(message, html) {
   activateCombatCard(message, html);
   activateSkillRollCard(message, html);
+  activateContestCard(message, html);
 }
 Hooks.on("renderChatMessageHTML", activateChatCards);
 Hooks.on("renderChatMessage", activateChatCards);
+Hooks.once("ready", registerContestSocket);
 Hooks.on("renderApplicationV2", (application, element) => {
   if (element.querySelector?.(".mythras-dialog")) {
     element.classList.add("mythras-foundry", "mythras-paper-sheet");

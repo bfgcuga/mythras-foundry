@@ -2,6 +2,7 @@ import { calculateSkillValues } from "../rules/skills.js";
 import { calculatePassionValues } from "../rules/passions.js";
 import { woundLevel } from "../rules/hit-locations.js";
 import { openSkillRollDialog } from "../apps/skill-roll-dialog.js";
+import { createContestMessage } from "../rules/contest-chat.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
@@ -54,6 +55,12 @@ export class MythrasItem extends Item {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.RollResult.impossible"));
       return;
     }
+    if (configured.contest?.type !== "simple") {
+      const isGroup = ["team", "inverseTeam", "elimination"].includes(configured.contest.type);
+      const initialRoll = isGroup ? null : await new Roll("1d100").evaluate();
+      await createContestMessage(this, configured, initialRoll);
+      return;
+    }
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, targets.target, targets.criticalTarget);
     const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
@@ -93,7 +100,14 @@ export class MythrasItem extends Item {
 
   async rollPassion() {
     if (this.type !== "passion") return;
-    const target = Math.max(0, Number(this.system.total ?? 0));
+    const configured = await openSkillRollDialog(this);
+    if (!configured) return;
+    if (configured.contest?.type !== "simple") {
+      const isGroup = ["team", "inverseTeam", "elimination"].includes(configured.contest.type);
+      await createContestMessage(this, configured, isGroup ? null : await new Roll("1d100").evaluate());
+      return;
+    }
+    const target = configured.targets.target;
     const criticalTarget = Math.max(1, Math.ceil(target / 10));
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, target, criticalTarget);

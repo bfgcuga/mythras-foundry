@@ -62,6 +62,14 @@ Las tiradas de habilidad se resuelven en `scripts/rules/skill-roll.js`; el
 diálogo de ajustes, el documento de Item y la interacción de suerte de la tarjeta
 consumen esos mismos objetivos y umbrales para no duplicar reglas.
 
+Las tiradas interactivas se modelan en `scripts/rules/contest-rolls.js`. Este
+módulo puro conserva el dado bruto separado de su clasificación, aplica la
+reducción común por objetivos superiores a 100 y resuelve enfrentadas,
+diferenciales, equipos y eliminatorias. `scripts/rules/contest-chat.js` persiste
+el estado versionado en `flags.mythras-foundry.contest`, valida revisión y
+propiedad, y elige al DJ activo o al autor como coordinador de respaldo. Las
+tarjetas antiguas y las tiradas simples no requieren migración.
+
 ## Compendios
 
 Los módulos de `scripts/data/` son la fuente de verdad de los compendios. El

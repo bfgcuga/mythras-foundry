@@ -18,6 +18,9 @@ El sistema incluye actualmente:
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;
+- tiradas enfrentadas, diferenciales, de equipo, de equipo inversas y
+  eliminatorias coordinadas desde una tarjeta de chat, con actores, objetivos o
+  grupos y respuestas restringidas a sus propietarios y al DJ;
 - armas con varios modos, estilos de combate, familiaridad, rasgos reutilizables
   y resolución de ataques;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
@@ -46,6 +49,10 @@ profesiones por un editor visual basado en menús y habilidades arrastrables.
 
 También queda pendiente revisar de forma conjunta el modelo de estados y
 condiciones y las reglas con las que se apilan sus modificadores de dificultad.
+
+Quedan pendientes la suerte repetible sobre tiradas propias o rivales, la
+integración del motor interactivo con ataques, defensas, daño y efectos de
+combate, y el método porcentual para resolver multitudes.
 
 ## Compendios
 
