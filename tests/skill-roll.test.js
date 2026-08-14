@@ -17,10 +17,15 @@ test("una habilidad limitada queda topada y una reforzada suma el 20% hacia arri
 });
 
 test("la dificultad se aplica después del ajuste y el crítico usa el objetivo efectivo", () => {
-  assert.deepEqual(resolveSkillRollTargets({ baseTarget: 70, supportingTarget: 46,
-    adjustmentMode: "reinforced", difficulty: "hard" }), {
+  assert.deepEqual(resolveSkillRollTargets({ baseTarget: 70,
+    reinforced: true, reinforcedTarget: 46, difficulty: "hard" }), {
     baseTarget: 70, adjustedTarget: 80, difficulty: "hard", target: 54, criticalTarget: 6
   });
+});
+
+test("limitada y reforzada pueden aplicarse juntas de forma independiente", () => {
+  assert.equal(resolveSkillRollTargets({ baseTarget: 70, limited: true, limitedTarget: 45,
+    reinforced: true, reinforcedTarget: 46 }).adjustedTarget, 55);
 });
 
 test("invertir conserva los dos dígitos y trata 00 como 100", () => {

@@ -10,8 +10,13 @@ export function supportingSkillAdjustment(baseTarget, supportingTarget, mode = "
 }
 
 export function resolveSkillRollTargets({ baseTarget, difficulty = "standard",
-  imposedDifficulty = "standard", adjustmentMode = "none", supportingTarget = 0 } = {}) {
-  const adjustedTarget = supportingSkillAdjustment(baseTarget, supportingTarget, adjustmentMode);
+  imposedDifficulty = "standard", limited = false, limitedTarget = 0,
+  reinforced = false, reinforcedTarget = 0 } = {}) {
+  let adjustedTarget = Math.max(0, Number(baseTarget) || 0);
+  if (limited) adjustedTarget = supportingSkillAdjustment(adjustedTarget, limitedTarget, "limited");
+  if (reinforced) {
+    adjustedTarget = supportingSkillAdjustment(adjustedTarget, reinforcedTarget, "reinforced");
+  }
   const effectiveDifficulty = combineDifficulties(difficulty, imposedDifficulty);
   const target = difficultyTarget(adjustedTarget, effectiveDifficulty);
   return {

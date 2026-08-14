@@ -22,32 +22,39 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   const modifierRows = modifiers.length
     ? modifiers.map(({ source, effect }) => `<div class="skill-roll-modifier"><span>${escape(source)}</span><strong>${escape(effect)}</strong></div>`).join("")
     : `<p class="skill-roll-empty">${escape(game.i18n.localize("MYTHRASF.SkillRoll.NoModifiers"))}</p>`;
+  const adjustmentPanel = (type) => `<fieldset class="skill-roll-adjustment" data-adjustment="${type}">
+    <legend>${escape(game.i18n.localize(`MYTHRASF.SkillRoll.${type === "limited" ? "Limited" : "Reinforced"}`))}</legend>
+    <label class="skill-roll-adjustment-toggle"><input type="checkbox" class="sheet-state-box" name="${type}Enabled">
+      <span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ApplyAdjustment"))}</span></label>
+    <div class="skill-roll-adjustment-fields">
+      <label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectedBy"))}</span><select name="${type}ActorId">${actorOptions}</select></label>
+      <label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectingSkill"))}</span><select name="${type}Skill">${skillOptions}</select></label>
+    </div>
+  </fieldset>`;
   const result = await DialogV2.wait({
     window: { title: game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
-    content: `<div class="mythras-foundry skill-roll-dialog">
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Adjustment"))}</legend>
-        <label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Type"))}</span><select name="adjustmentMode">
-          <option value="none">${escape(game.i18n.localize("MYTHRASF.SkillRoll.None"))}</option>
-          <option value="limited">${escape(game.i18n.localize("MYTHRASF.SkillRoll.Limited"))}</option>
-          <option value="reinforced">${escape(game.i18n.localize("MYTHRASF.SkillRoll.Reinforced"))}</option>
-        </select></label>
-        <label class="skill-roll-support-field"><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Who"))}</span><select name="supportActorId">${actorOptions}</select></label>
-        <label class="skill-roll-support-field"><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.SupportingSkill"))}</span><select name="supportSkill">${skillOptions}</select></label>
-      </fieldset>
+    content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog">
+      ${adjustmentPanel("limited")}
+      ${adjustmentPanel("reinforced")}
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Skill.Difficulty"))}</legend><select name="difficulty">${difficultyOptions}</select></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>${modifierRows}</fieldset>
     </div>`,
     buttons: [{ action: "roll", label: game.i18n.localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20", default: true,
       callback: (event, button) => {
         const form = button.form.elements;
-        const mode = form.adjustmentMode.value;
-        const [actorId, skillId] = String(form.supportSkill.value).split(":");
-        if (mode !== "none" && (actorId !== form.supportActorId.value || !skillId)) {
+        const adjustment = (type) => {
+          if (!form[`${type}Enabled`].checked) return null;
+          const [actorId, skillId] = String(form[`${type}Skill`].value).split(":");
+          if (actorId !== form[`${type}ActorId`].value || !skillId) return false;
+          return game.actors.get(actorId)?.items.get(skillId) ?? false;
+        };
+        const limitedSkill = adjustment("limited");
+        const reinforcedSkill = adjustment("reinforced");
+        if (limitedSkill === false || reinforcedSkill === false) {
           ui.notifications.warn(game.i18n.localize("MYTHRASF.SkillRoll.SupportMismatch"));
           return null;
         }
-        const support = mode === "none" ? null : game.actors.get(actorId)?.items.get(skillId);
-        return { mode, difficulty: form.difficulty.value, support };
+        return { difficulty: form.difficulty.value, limitedSkill, reinforcedSkill };
       }
     }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
     rejectClose: false
@@ -55,6 +62,8 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   if (!result) return null;
   return { ...result, targets: resolveSkillRollTargets({
     baseTarget: item.system.total, difficulty: result.difficulty, imposedDifficulty,
-    adjustmentMode: result.mode, supportingTarget: result.support?.system.total
+    limited: Boolean(result.limitedSkill), limitedTarget: result.limitedSkill?.system.total,
+    reinforced: Boolean(result.reinforcedSkill),
+    reinforcedTarget: result.reinforcedSkill?.system.total
   }) };
 }

@@ -18,7 +18,7 @@ async function spendLuck(message) {
   const { DialogV2 } = foundry.applications.api;
   const choice = await DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Luck.Title") },
-    content: `<div class="mythras-foundry"><p>${game.i18n.localize("MYTHRASF.Luck.Confirm")}</p></div>`,
+    content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${game.i18n.localize("MYTHRASF.Luck.Confirm")}</p></div>`,
     buttons: [
       { action: "reroll", label: game.i18n.localize("MYTHRASF.Luck.Reroll"), icon: "fas fa-dice-d20", callback: () => "reroll" },
       { action: "invert", label: game.i18n.localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left", callback: () => "invert" },

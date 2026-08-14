@@ -23,6 +23,9 @@ const tooltipScript = readFileSync(new URL("../scripts/ui/tooltips.js", import.m
 const itemData = readFileSync(new URL("../scripts/data/item-data.js", import.meta.url), "utf8");
 const sheetSources = ["character-sheet.js", "npc-sheet.js", "item-sheet.js"]
   .map((name) => readFileSync(new URL(`../scripts/sheets/${name}`, import.meta.url), "utf8"));
+const systemScript = readFileSync(new URL("../scripts/mythras-foundry.js", import.meta.url), "utf8");
+const rollDialog = readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
+const rollChat = readFileSync(new URL("../scripts/rules/skill-roll-chat.js", import.meta.url), "utf8");
 
 test("hojas y mensajes Mythras comparten la superficie de papel", () => {
   assert.match(css, /--mythras-paper-texture:/);
@@ -31,6 +34,13 @@ test("hojas y mensajes Mythras comparten la superficie de papel", () => {
   assert.match(css, /\.chat-message\.mythras-chat-message/);
   assert.match(chatScript, /classList\.add\("mythras-chat-message"\)/);
   assert.ok(sheetSources.every((source) => source.includes('"mythras-paper-sheet"')));
+});
+
+test("los diálogos Mythras aplican la superficie de papel a la ventana completa", () => {
+  assert.match(rollDialog, /mythras-dialog skill-roll-dialog/);
+  assert.match(rollChat, /mythras-dialog luck-spend-dialog/);
+  assert.match(systemScript, /querySelector\?\.\("\.mythras-dialog"\)/);
+  assert.match(systemScript, /classList\.add\("mythras-foundry", "mythras-paper-sheet"\)/);
 });
 
 test("la superficie compartida queda registrada como estándar visual", () => {

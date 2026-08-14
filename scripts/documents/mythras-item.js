@@ -46,7 +46,7 @@ export class MythrasItem extends Item {
       }, ...modifiers]
     });
     if (!configured) return;
-    const { targets, mode, support } = configured;
+    const { targets, limitedSkill, reinforcedSkill } = configured;
     if (targets.difficulty === "automatic") {
       ui.notifications.info(game.i18n.localize("MYTHRASF.RollResult.automatic"));
       return;
@@ -58,7 +58,10 @@ export class MythrasItem extends Item {
     const roll = await new Roll("1d100").evaluate();
     const result = classifyRoll(roll.total, targets.target, targets.criticalTarget);
     const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
-    const adjustment = mode === "none" ? "" : `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${mode === "limited" ? "Limited" : "Reinforced"}`)}</span><strong>${foundry.utils.escapeHTML(support.name)} (${Number(support.system.total ?? 0)}%)</strong></div>`;
+    const adjustment = [["Limited", limitedSkill], ["Reinforced", reinforcedSkill]]
+      .filter((entry) => entry[1])
+      .map(([key, skill]) => `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${key}`)}</span><strong>${foundry.utils.escapeHTML(skill.name)} (${Number(skill.system.total ?? 0)}%)</strong></div>`)
+      .join("");
 
     const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),

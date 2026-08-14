@@ -161,10 +161,17 @@ function activateChatCards(message, html) {
 Hooks.on("renderChatMessageHTML", activateChatCards);
 Hooks.on("renderChatMessage", activateChatCards);
 Hooks.on("renderApplicationV2", (application, element) => {
+  if (element.querySelector?.(".mythras-dialog")) {
+    element.classList.add("mythras-foundry", "mythras-paper-sheet");
+  }
   activateDelayedTooltips(element);
   activateActionPointSettingVisibility(element);
 });
 Hooks.on("renderApplication", (application, html) => {
+  const element = html instanceof HTMLElement ? html : html?.[0];
+  if (element?.querySelector?.(".mythras-dialog")) {
+    element.classList.add("mythras-foundry", "mythras-paper-sheet");
+  }
   activateDelayedTooltips(html);
   activateActionPointSettingVisibility(html);
 });

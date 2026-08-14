@@ -136,8 +136,11 @@
 .skill-roll-dialog label,
 .skill-roll-modifier { display: grid; grid-template-columns: 9rem 1fr; align-items: center; gap: 0.5rem; }
 .skill-roll-dialog select { width: 100%; }
-.skill-roll-dialog fieldset:has(select[name="adjustmentMode"] option[value="none"]:checked) .skill-roll-support-field { display: none; }
+.skill-roll-dialog .skill-roll-adjustment-toggle { grid-template-columns: 1rem 1fr; }
+.skill-roll-dialog .skill-roll-adjustment-fields { display: grid; gap: 0.4rem; }
+.skill-roll-dialog .skill-roll-adjustment:not(:has(.skill-roll-adjustment-toggle input:checked)) .skill-roll-adjustment-fields { display: none; }
 .skill-roll-empty { margin: 0; font-size: var(--mythras-font-size-auxiliary); }
+.luck-spend-dialog { max-width: 28rem; }
 .chat-message .mythras-chat-total {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   padding: 0.35rem 0.5rem;
