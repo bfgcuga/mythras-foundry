@@ -130,6 +130,12 @@ function resolveContestSide(side = {}, byId) {
       contenders: members, memberResults: members,
       continuingIds: members.filter((entry) => successful(entry.result)).map((entry) => entry.id), eliminatedIds: [] };
   }
+  if (mode === "team" && side.representativeRule === "individual") {
+    return { mode, representativeRule: "individual", participantIds: members.map((entry) => entry.id),
+      representativeId: null, commonRoll: null, result: null, contenders: members, memberResults: members,
+      continuingIds: members.filter((entry) => successful(entry.result)).map((entry) => entry.id),
+      eliminatedIds: members.filter((entry) => entry.result && !successful(entry.result)).map((entry) => entry.id) };
+  }
   const representative = selectSideRepresentative(members, side);
   const commonRoll = representative?.rawRoll ?? members.find((entry) => entry.rawRoll != null)?.rawRoll ?? null;
   if (mode === "team") {

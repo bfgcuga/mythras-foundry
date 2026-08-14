@@ -6,7 +6,7 @@ const DIFFICULTIES = ["automatic", "veryEasy", "easy", "standard", "hard",
 const ABILITY_TYPES = ["skill", "combatStyle", "passion"];
 const RESOLUTION_MODES = ["difficulty", "opposed", "differential"];
 const SIDE_MODES = ["individual", "team", "elimination"];
-const TEAM_RULES = ["highest", "lowest", "designated"];
+const TEAM_RULES = ["highest", "lowest", "designated", "individual"];
 
 function escape(value) {
   return foundry.utils.escapeHTML(String(value ?? ""));

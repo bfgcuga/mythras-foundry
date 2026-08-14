@@ -67,7 +67,8 @@ módulo puro conserva el dado bruto separado de su clasificación, aplica la
 reducción común por objetivos superiores a 100 y separa el tipo de resolución
 —dificultad, enfrentada o diferencial— de la modalidad de cada lado
 —individual, equipo o eliminatoria—. Los equipos eligen mejor miembro, peor
-miembro o representante designado sin convertir esas reglas en tipos de tirada.
+miembro, representante designado o tiradas individuales de todos sus miembros
+sin convertir esas reglas en tipos de tirada.
 `scripts/rules/contest-chat.js` persiste
 el estado versionado en `flags.mythras-foundry.contest`, valida revisión y
 propiedad, y elige al DJ activo o al autor como coordinador de respaldo. Las

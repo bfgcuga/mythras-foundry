@@ -73,7 +73,7 @@ test("every opposed response opens the complete roll adjustment dialog", () => {
 test("configured contest cards separate sides and name multi-member team winners", () => {
   const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
   assert.match(script, /<section class="contest-side contest-side--\$\{name\}">/);
-  assert.match(script, /side\.mode === "team" && side\.participantIds\.length > 1/);
+  assert.match(script, /side\.mode === "team" && side\.representativeRule !== "individual" && side\.participantIds\.length > 1/);
   assert.match(script, /MYTHRASF\.Contest\.Team\.\$\{sideName\}/);
   assert.match(script, /contestRollHolder\(contest, request\.participantId\)/);
 });
@@ -82,6 +82,7 @@ test("resolution and participation are configured as independent axes", () => {
   const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
   assert.match(dialog, /const RESOLUTION_MODES = \["difficulty", "opposed", "differential"\]/);
   assert.match(dialog, /const SIDE_MODES = \["individual", "team", "elimination"\]/);
+  assert.match(dialog, /const TEAM_RULES = \["highest", "lowest", "designated", "individual"\]/);
   assert.match(dialog, /name="initiatorMode"/);
   assert.match(dialog, /name="opponentMode"/);
   assert.doesNotMatch(dialog, /inverseTeam/);

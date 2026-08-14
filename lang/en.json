@@ -906,6 +906,7 @@
   "MYTHRASF.Contest.TeamRule.highest": "Best member",
   "MYTHRASF.Contest.TeamRule.lowest": "Weakest member",
   "MYTHRASF.Contest.TeamRule.designated": "Designated representative",
+  "MYTHRASF.Contest.TeamRule.individual": "Individual rolls",
   "MYTHRASF.Contest.ConfiguredTitle": "{resolution} — {initiator}{opponent}",
   "MYTHRASF.Contest.Type.simple": "Simple",
   "MYTHRASF.Contest.Type.opposed": "Opposed",

@@ -72,6 +72,21 @@ test("an individual can oppose a team represented by its highest member", () => 
   assert.equal(result.comparisons[0].winnerId, "searcher-b");
 });
 
+test("every member of an individually rolling team contests the opponent", () => {
+  const result = resolveConfiguredContest({ resolutionMode: "opposed", participants: [
+    { id: "hero-a", target: 70, rawRoll: 44 }, { id: "hero-b", target: 35, rawRoll: 80 },
+    { id: "monster", target: 60, rawRoll: 51 }
+  ], sides: {
+    initiator: { mode: "team", participantIds: ["hero-a", "hero-b"], representativeRule: "individual" },
+    opponent: { mode: "individual", participantIds: ["monster"] }
+  } });
+  assert.equal(result.sides.initiator.representativeId, null);
+  assert.equal(result.sides.initiator.commonRoll, null);
+  assert.deepEqual(result.sides.initiator.memberResults.map((entry) => entry.rawRoll), [44, 80]);
+  assert.equal(result.comparisons.length, 2);
+  assert.deepEqual(result.comparisons.map((entry) => entry.winnerId), ["monster", "monster"]);
+});
+
 test("an elimination side drops failures before opposing the individual", () => {
   const result = resolveConfiguredContest({ resolutionMode: "opposed", participants: [
     { id: "rider", target: 60, rawRoll: 58 }, { id: "pursuer-a", target: 40, rawRoll: 50 }, { id: "pursuer-b", target: 70 }

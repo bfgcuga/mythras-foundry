@@ -906,6 +906,7 @@
   "MYTHRASF.Contest.TeamRule.highest": "Mejor miembro",
   "MYTHRASF.Contest.TeamRule.lowest": "Peor miembro",
   "MYTHRASF.Contest.TeamRule.designated": "Representante designado",
+  "MYTHRASF.Contest.TeamRule.individual": "Tiradas individuales",
   "MYTHRASF.Contest.ConfiguredTitle": "{resolution} — {initiator}{opponent}",
   "MYTHRASF.Contest.Type.simple": "Simple",
   "MYTHRASF.Contest.Type.opposed": "Enfrentada",

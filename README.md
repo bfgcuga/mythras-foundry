@@ -20,7 +20,8 @@ El sistema incluye actualmente:
   o invertir los dados, con resultados presentados en tarjetas de chat;
 - tiradas contra dificultad, enfrentadas y diferenciales con modalidad
   individual, de equipo o eliminatoria configurable de forma independiente para
-  cada lado, coordinadas desde una tarjeta de chat;
+  cada lado; los equipos admiten portavoz, miembro mayor o menor y tiradas
+  individuales, coordinadas desde una tarjeta de chat;
 - armas con varios modos, estilos de combate, familiaridad, rasgos reutilizables
   y resolución de ataques;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste

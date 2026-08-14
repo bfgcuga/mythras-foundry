@@ -50,7 +50,7 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     const members = participants.filter((entry) => entry.id === initiator.id
       ? name === "initiator" : entry.side === name);
     const designated = members.find((entry) => entry.actorId === source.designatedActorId) ?? members[0] ?? null;
-    const representative = source.mode === "individual" ? null : source.mode === "elimination" || source.representativeRule === "designated"
+    const representative = source.mode === "individual" || source.representativeRule === "individual" ? null : source.mode === "elimination" || source.representativeRule === "designated"
       ? designated : members.reduce((chosen, entry) => !chosen ? entry
         : source.representativeRule === "lowest" ? (entry.target < chosen.target ? entry : chosen)
           : (entry.target > chosen.target ? entry : chosen), null);
@@ -62,7 +62,7 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
   participants.forEach((entry) => { entry.pending = false; });
   for (const [name, side] of Object.entries(sides)) {
     if (name === "opponent" && setup.resolutionMode === "difficulty") continue;
-    if (side.mode === "individual") {
+    if (side.mode === "individual" || side.representativeRule === "individual") {
       side.participantIds.forEach((id) => {
         const entry = participants.find((candidate) => candidate.id === id);
         if (entry?.rawRoll == null) entry.pending = true;
@@ -195,7 +195,7 @@ function configuredWinnerName(contest, winner) {
   const sideEntry = Object.entries(contest.sides ?? {}).find(([, side]) => side.participantIds.includes(winner.id));
   if (!sideEntry) return winner.actorName;
   const [sideName, side] = sideEntry;
-  return side.mode === "team" && side.participantIds.length > 1
+  return side.mode === "team" && side.representativeRule !== "individual" && side.participantIds.length > 1
     ? localize(`MYTHRASF.Contest.Team.${sideName}`) : winner.actorName;
 }
 
@@ -400,7 +400,7 @@ function contestSideForParticipant(contest, participantId) {
 function contestRollHolder(contest, participantId) {
   const sideName = contestSideForParticipant(contest, participantId);
   const side = contest.sides?.[sideName];
-  const holderId = side && side.mode !== "individual" ? side.representativeId : participantId;
+  const holderId = side && side.mode !== "individual" && side.representativeRule !== "individual" ? side.representativeId : participantId;
   return contest.participants.find((entry) => entry.id === holderId) ?? null;
 }
 
@@ -439,7 +439,8 @@ function resetConfiguredRollers(contest, { keepInitiatorIndividual }) {
   contest.participants.forEach((entry) => { entry.pending = false; });
   for (const [name, side] of Object.entries(contest.sides)) {
     if (name === "opponent" && contest.resolutionMode === "difficulty") continue;
-    const rollerIds = side.mode === "individual" ? side.participantIds : [side.representativeId];
+    const rollerIds = side.mode === "individual" || side.representativeRule === "individual"
+      ? side.participantIds : [side.representativeId];
     for (const id of rollerIds.filter(Boolean)) {
       const entry = contest.participants.find((candidate) => candidate.id === id);
       if (!entry || (keepInitiatorIndividual && name === "initiator" && side.mode === "individual")) continue;
