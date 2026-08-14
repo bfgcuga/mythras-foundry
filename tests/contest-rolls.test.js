@@ -8,6 +8,16 @@ test("opposed rolls prefer grade, then the higher successful roll", () => {
   assert.equal(compareOpposed({ id: "a", result: "success", rawRoll: 35 }, { id: "b", result: "success", rawRoll: 62 }).winnerId, "b");
 });
 
+test("a Luck reroll that becomes critical is recalculated above a higher success", () => {
+  const result = resolveContest({ type: "opposed", initiatorId: "hero", participants: [
+    { id: "hero", target: 25, rawRoll: 1 }, { id: "ant", target: 53, rawRoll: 15 }
+  ] });
+  assert.equal(result.participants.find((entry) => entry.id === "hero").result, "critical");
+  assert.equal(result.participants.find((entry) => entry.id === "ant").result, "success");
+  assert.equal(result.comparisons[0].winnerId, "hero");
+  assert.equal(result.comparisons[0].reason, "grade");
+});
+
 test("mutual failure and exact ties can start a new round", () => {
   assert.equal(compareOpposed({ id: "a", result: "failure", rawRoll: 80 }, { id: "b", result: "fumble", rawRoll: 100 }).reason, "mutualFailure");
   assert.equal(compareOpposed({ id: "a", result: "success", rawRoll: 40 }, { id: "b", result: "success", rawRoll: 40 }).reason, "exactTie");

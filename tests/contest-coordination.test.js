@@ -28,6 +28,7 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
   assert.match(css, /\.mythras-contest-card/);
   assert.match(script, /preferredContestCoordinator\(game\.users, contest\.authorUserId\) === game\.user\.id/);
   assert.match(script, /contest-luck-button/);
+  assert.match(script, /button\.hidden = !eligibleLuckSpenders\(game\.user\)\.length/);
 });
 
 test("contest setup is limited to scene tokens and rivals choose their ability later", () => {
