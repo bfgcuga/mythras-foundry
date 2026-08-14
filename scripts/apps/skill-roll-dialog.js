@@ -1,4 +1,5 @@
 import { resolveSkillRollTargets } from "../rules/skill-roll.js";
+import { combineDifficulties } from "../rules/fatigue.js";
 
 const DIFFICULTIES = ["automatic", "veryEasy", "easy", "standard", "hard",
   "formidable", "herculean", "impossible"];
@@ -20,7 +21,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   const difficultyOptions = DIFFICULTIES.map((key) =>
     `<option value="${key}" ${key === defaultDifficulty ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
   const modifierRows = modifiers.length
-    ? modifiers.map(({ source, effect }) => `<div class="skill-roll-modifier"><span>${escape(source)}</span><strong>${escape(effect)}</strong></div>`).join("")
+    ? modifiers.map(({ source, effect, type = "penalty" }) => `<div class="skill-roll-modifier"><span>${escape(source)}</span><strong class="skill-roll-modifier-effect skill-roll-modifier-effect--${type}">${escape(effect)}</strong></div>`).join("")
     : `<p class="skill-roll-empty">${escape(game.i18n.localize("MYTHRASF.SkillRoll.NoModifiers"))}</p>`;
   const adjustmentPanel = (type) => `<fieldset class="skill-roll-adjustment" data-adjustment="${type}">
     <legend>${escape(game.i18n.localize(`MYTHRASF.SkillRoll.${type === "limited" ? "Limited" : "Reinforced"}`))}</legend>
@@ -33,11 +34,14 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   </fieldset>`;
   const result = await DialogV2.wait({
     window: { title: game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
-    content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog">
+    content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog" data-imposed-difficulty="${imposedDifficulty}">
       ${adjustmentPanel("limited")}
       ${adjustmentPanel("reinforced")}
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Skill.Difficulty"))}</legend><select name="difficulty">${difficultyOptions}</select></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>${modifierRows}</fieldset>
+      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}</legend><select name="difficulty">${difficultyOptions}</select></fieldset>
+      <fieldset class="skill-roll-effective-difficulty"><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.FinalDifficulty"))}</legend>
+        <output class="sheet-field-readonly" data-effective-difficulty>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${combineDifficulties(defaultDifficulty, imposedDifficulty)}`))}</output>
+      </fieldset>
     </div>`,
     buttons: [{ action: "roll", label: game.i18n.localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20", default: true,
       callback: (event, button) => {
@@ -66,4 +70,18 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
     reinforced: Boolean(result.reinforcedSkill),
     reinforcedTarget: result.reinforcedSkill?.system.total
   }) };
+}
+
+export function activateSkillRollDialog(element) {
+  const dialog = element.querySelector?.(".skill-roll-dialog");
+  const select = dialog?.querySelector("select[name='difficulty']");
+  const output = dialog?.querySelector("[data-effective-difficulty]");
+  if (!select || !output || select.dataset.difficultyListener) return;
+  const update = () => {
+    const difficulty = combineDifficulties(select.value, dialog.dataset.imposedDifficulty);
+    output.textContent = game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`);
+  };
+  select.dataset.difficultyListener = "true";
+  select.addEventListener("change", update);
+  update();
 }

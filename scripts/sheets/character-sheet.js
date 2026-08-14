@@ -832,7 +832,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!hasSeriousWound(locations)) return difficulty;
     const applyPenalty = await DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
-      content: `<p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p>`,
+      content: `<div class="mythras-foundry mythras-dialog"><p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p></div>`,
       yes: { label: game.i18n.localize("MYTHRASF.Wound.ApplyPenalty") },
       no: { label: game.i18n.localize("MYTHRASF.Wound.IgnorePenalty") }
     });
@@ -2402,14 +2402,52 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
-    let difficulty = combineDifficulties(
-      row?.querySelector("[data-difficulty]")?.value ?? "standard",
-      this.#conditionLevel().skillDifficulty);
-    if (skillUsesStrengthOrDexterity(item)) {
-      difficulty = worsenDifficulty(difficulty, this.#loadState().difficultySteps);
+    const defaultDifficulty = row?.querySelector("[data-difficulty]")?.value ?? "standard";
+    const locations = this.actor.items.filter((candidate) => candidate.type === "hitLocation");
+    const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
+    const currentWound = worstWoundLevel(locations);
+    const modifiers = [];
+    let difficulty = "standard";
+    if (currentFatigue.skillDifficulty !== "standard") {
+      difficulty = combineDifficulties(difficulty, currentFatigue.skillDifficulty);
+      modifiers.push({
+        source: game.i18n.format("MYTHRASF.SkillRoll.FatigueSource", {
+          level: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`)
+        }),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
+        type: "penalty"
+      });
     }
+    if (currentWound === "major") {
+      const woundDifficulty = combinedConditionLevel("fresh", "major").skillDifficulty;
+      difficulty = combineDifficulties(difficulty, woundDifficulty);
+      modifiers.push({
+        source: game.i18n.localize("MYTHRASF.Wound.major"),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${woundDifficulty}`),
+        type: "penalty"
+      });
+    }
+    if (skillUsesStrengthOrDexterity(item)) {
+      const load = this.#loadState();
+      if (load.difficultySteps > 0) {
+        difficulty = worsenDifficulty(difficulty, load.difficultySteps);
+        modifiers.push({
+          source: game.i18n.localize("MYTHRASF.SkillRoll.EncumbranceSource"),
+          effect: game.i18n.localize(`MYTHRASF.Encumbrance.Penalty.${load.key}`),
+          type: "penalty"
+        });
+      }
+    }
+    const beforeWoundPenalty = difficulty;
     difficulty = await this.#applySeriousWoundPenalty(difficulty);
-    await item?.rollSkill({ difficulty });
+    if (difficulty !== beforeWoundPenalty) {
+      modifiers.push({
+        source: game.i18n.localize("MYTHRASF.Wound.serious"),
+        effect: game.i18n.localize("MYTHRASF.SkillRoll.OneDifficultyStep"),
+        type: "penalty"
+      });
+    }
+    await item?.rollSkill({ difficulty, defaultDifficulty, modifiers });
   }
 
   async #improveSkill(event) {

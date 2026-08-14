@@ -44,6 +44,9 @@ código con `RULESET DIFFERENCE` y `TODO(rules-profile)`.
 Queda pendiente sustituir el JSON de reglas de selección de culturas y
 profesiones por un editor visual basado en menús y habilidades arrastrables.
 
+También queda pendiente revisar de forma conjunta el modelo de estados y
+condiciones y las reglas con las que se apilan sus modificadores de dificultad.
+
 ## Compendios
 
 El manifiesto declara diez compendios generados a partir de los módulos de

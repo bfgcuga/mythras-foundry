@@ -36,14 +36,13 @@ export class MythrasItem extends Item {
     this.system.experienceImprovementBonus = values.experienceImprovementBonus;
   }
 
-  async rollSkill({ difficulty = "standard", modifiers = [] } = {}) {
+  async rollSkill({ difficulty = "standard", defaultDifficulty = "standard",
+    modifiers = [] } = {}) {
     if (!["skill", "combatStyle"].includes(this.type)) return;
     const configured = await openSkillRollDialog(this, {
       imposedDifficulty: difficulty,
-      modifiers: difficulty === "standard" ? modifiers : [{
-        source: game.i18n.localize("MYTHRASF.SkillRoll.ActorConditions"),
-        effect: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)
-      }, ...modifiers]
+      defaultDifficulty,
+      modifiers
     });
     if (!configured) return;
     const { targets, limitedSkill, reinforcedSkill } = configured;

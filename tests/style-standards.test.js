@@ -43,6 +43,14 @@ test("los diálogos Mythras aplican la superficie de papel a la ventana completa
   assert.match(systemScript, /classList\.add\("mythras-foundry", "mythras-paper-sheet"\)/);
 });
 
+test("el diálogo de tirada separa origen, efecto y dificultad final", () => {
+  assert.match(css, /skill-roll-modifier > span \{ color: var\(--mythras-ink\) !important/);
+  assert.match(css, /skill-roll-modifier-effect--penalty \{ color: #a1241b !important/);
+  assert.match(css, /skill-roll-modifier-effect--bonus \{ color: #3f7138 !important/);
+  assert.match(rollDialog, /data-effective-difficulty/);
+  assert.match(standards, /penalizaciones se muestran en rojo y los bonificadores en verde/);
+});
+
 test("la superficie compartida queda registrada como estándar visual", () => {
   assert.match(standards, /Superficie estándar de papel/);
   assert.match(standards, /Toda hoja de documento/);
