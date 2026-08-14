@@ -24,6 +24,16 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
   fracaso, pérdida de 1d2 niveles; pifia, pérdida de 1d3 niveles.
 - Definir e implementar los efectos mecánicos de Sorprendido. Por ahora existe
   como estado manual y visual de Foundry, sin modificadores automáticos.
+- Revisar conjuntamente el catálogo propio de estados y los estados nativos de
+  Foundry antes de reducir los iconos disponibles en el HUD. Identificar qué
+  estados equivalentes deben fusionarse, qué integraciones nativas resultan
+  útiles para las reglas de Mythras —por ejemplo, la visión del token al estar
+  Cegado—, qué estados de Foundry conviene incorporar al sistema y cuáles pueden
+  eliminarse sin perder funcionalidad ni compatibilidad relevante.
+- Añadir contadores de duración a los estados cuando se implemente el tiempo de
+  combate. Su avance y vencimiento deberán vincularse explícitamente a asaltos
+  y turnos, compartiendo la misma fuente temporal que Sangrando, Ahogándose y
+  cualquier otra automatización periódica.
 
 ### Macros de daño y peligros
 

@@ -108,13 +108,15 @@ test("la pestaña de penalizaciones usa una tabla semántica y tipografía compa
   assert.match(css, /\.penalties-table \{[^}]*font-size: var\(--mythras-font-size-table\)/);
   assert.match(css, /\.penalties-table th,\s*\n\.mythras-foundry \.penalties-table td[^}]*white-space: normal/s);
   assert.match(characterTemplate, /data-status-toggle="{{status.id}}"/);
-  assert.match(characterTemplate, /penalties\.hasNonPenaltyStatuses/);
+  assert.match(characterTemplate, /hasActiveStatusControls/);
   assert.match(characterTemplate, /penalties\.hasRows/);
   assert.match(css, /\.penalties-table td \{ color: var\(--mythras-ink\); background: transparent; \}/);
   assert.match(systemScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
   assert.match(systemScript, /MYTHRAS_STATUS_EFFECTS/);
   assert.match(systemScript, /preDeleteActiveEffect/);
   assert.match(systemScript, /preUpdateActiveEffect/);
+  assert.match(systemScript, /deleteActiveEffect/);
+  assert.match(systemScript, /automatic\.length/);
 });
 
 test("la ficha de arma separa modos por tipo y expone parámetros de rasgo", () => {

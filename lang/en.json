@@ -206,6 +206,7 @@
   "MYTHRASF.Status.IncapacitatedCause.majorWound": "Major wound",
   "MYTHRASF.Status.IncapacitatedLocked": "Incapacitated cannot be removed while an automatic cause remains.",
   "MYTHRASF.Status.IncapacitatedManaged": "Incapacitated is managed by its causes. Remove the active causes first.",
+  "MYTHRASF.Status.IncapacitatedActiveCauses": "It cannot be removed while these causes remain: {causes}.",
   "MYTHRASF.Status.Active": "Active",
   "MYTHRASF.Status.Inactive": "Inactive",
   "MYTHRASF.Status.Blinded": "Blinded",

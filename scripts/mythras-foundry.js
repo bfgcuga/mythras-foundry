@@ -483,10 +483,15 @@ Hooks.on("deleteItem", async (item, options, userId) => {
   await syncIncapacitatedStatus(item.parent);
 });
 
+function incapacitatedEffectActor(effect) {
+  const actor = effect.parent;
+  return actor?.documentName === "Actor"
+    && effect.statuses?.has(INCAPACITATED_STATUS_ID) ? actor : null;
+}
+
 function protectedIncapacitatedEffect(effect) {
-  return effect.parent instanceof Actor
-    && effect.statuses?.has(INCAPACITATED_STATUS_ID)
-    && actorIncapacitatedState(effect.parent).active;
+  const actor = incapacitatedEffectActor(effect);
+  return Boolean(actor && actorIncapacitatedState(actor).automatic.length);
 }
 
 Hooks.on("preDeleteActiveEffect", (effect, options, userId) => {
@@ -503,6 +508,18 @@ Hooks.on("preUpdateActiveEffect", (effect, changed, options, userId) => {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.IncapacitatedManaged"));
   }
   return false;
+});
+
+async function clearDeletedManualIncapacitated(effect, userId) {
+  const actor = incapacitatedEffectActor(effect);
+  if (userId !== game.user.id || !actor
+    || !actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)) return;
+  await actor.unsetFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG);
+}
+
+Hooks.on("deleteActiveEffect", clearDeletedManualIncapacitated);
+Hooks.on("updateActiveEffect", async (effect, changed, options, userId) => {
+  if (changed.disabled === true) await clearDeletedManualIncapacitated(effect, userId);
 });
 
 async function ensureHumanHitLocations(actor) {

@@ -69,7 +69,8 @@ import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
-import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
+import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
+  INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
 import { activeSkillStatusPenalties, activeStatusRules, applyStatusAttributes, canActorAttack,
   statusSkillDifficulty, STUNNED_STATUS_ID, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
@@ -186,6 +187,40 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     );
     const activeSkillStatuses = activeSkillStatusPenalties(this.actor.statuses);
     const activeStatuses = activeStatusRules(this.actor.statuses);
+    const automaticIncapacitated = automaticIncapacitatedCauses({
+      fatigueKey: currentFatigue.key, woundLevel: currentWound
+    });
+    const configuredStatuses = Array.isArray(CONFIG.statusEffects)
+      ? CONFIG.statusEffects : Object.values(CONFIG.statusEffects ?? {});
+    const configuredStatusById = new Map(configuredStatuses.map((status) => [status.id, status]));
+    const mythrasStatusById = new Map(activeStatuses.map((status) => [status.id, status]));
+    const activeStatusControls = [
+      ...(this.actor.statuses.has(INCAPACITATED_STATUS_ID) ? [{
+        id: INCAPACITATED_STATUS_ID,
+        label: game.i18n.localize("MYTHRASF.Status.Incapacitated"),
+        locked: automaticIncapacitated.length > 0,
+        note: automaticIncapacitated.length > 0
+          ? game.i18n.format("MYTHRASF.Status.IncapacitatedActiveCauses", {
+            causes: automaticIncapacitated.map((cause) => game.i18n.localize(
+              `MYTHRASF.Status.IncapacitatedCause.${cause}`)).join(", ")
+          }) : ""
+      }] : []),
+      ...Array.from(this.actor.statuses).filter((id) => id !== INCAPACITATED_STATUS_ID)
+        .map((id) => {
+          const status = mythrasStatusById.get(id);
+          const configured = configuredStatusById.get(id);
+          const name = status?.name ?? configured?.name ?? configured?.label ?? id;
+          return {
+        id,
+        label: game.i18n.has(name) ? game.i18n.localize(name) : name,
+        locked: false,
+        note: status?.pendingRoundAutomation
+          ? game.i18n.localize("MYTHRASF.Status.RoundAutomationPending")
+          : status?.pendingDevelopment
+            ? game.i18n.localize("MYTHRASF.Status.SurprisedPending") : ""
+          };
+        })
+    ];
     const actionPointRules = getActionPointRules();
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, actionPointRules);
@@ -299,6 +334,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       },
       attributeTooltips,
       penalties,
+      activeStatusControls,
+      hasActiveStatusControls: activeStatusControls.length > 0,
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
@@ -467,22 +504,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           actionPoints: status.manuallyIncapacitated ? "−3" : "—"
         }
       ].filter((row) => row.active);
-    const nonPenaltyStatuses = status.activeStatuses
-      .filter((activeStatus) => !activeStatus.skillDifficulty && !activeStatus.zeroAttributes
-        && activeStatus.canAttack !== false)
-      .map((activeStatus) => ({
-        id: activeStatus.id,
-        label: game.i18n.localize(activeStatus.name),
-        note: activeStatus.pendingRoundAutomation
-          ? game.i18n.localize("MYTHRASF.Status.RoundAutomationPending")
-          : activeStatus.pendingDevelopment
-            ? game.i18n.localize("MYTHRASF.Status.SurprisedPending") : ""
-      }));
     return {
       rows,
       hasRows: rows.length > 0,
-      nonPenaltyStatuses,
-      hasNonPenaltyStatuses: nonPenaltyStatuses.length > 0,
       showPhysicalNote: load.difficultySteps > 0 || load.movement !== "none",
       showSituationalNote: wounds.situationalSteps > 0,
       skillTotals,

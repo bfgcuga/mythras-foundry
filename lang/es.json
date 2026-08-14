@@ -206,6 +206,7 @@
   "MYTHRASF.Status.IncapacitatedCause.majorWound": "Herida crítica",
   "MYTHRASF.Status.IncapacitatedLocked": "No se puede retirar Incapacitado mientras exista una causa automática.",
   "MYTHRASF.Status.IncapacitatedManaged": "Incapacitado está gestionado por sus causas. Retira primero las causas activas.",
+  "MYTHRASF.Status.IncapacitatedActiveCauses": "No se puede retirar mientras permanezcan estas causas: {causes}.",
   "MYTHRASF.Status.Active": "Activo",
   "MYTHRASF.Status.Inactive": "Inactivo",
   "MYTHRASF.Status.Blinded": "Cegado",

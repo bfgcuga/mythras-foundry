@@ -2,6 +2,11 @@ export const INCAPACITATED_STATUS_ID = "incapacitated";
 export const INCAPACITATED_FLAG_SCOPE = "mythras-foundry";
 export const INCAPACITATED_MANUAL_FLAG = "incapacitatedManual";
 
+export function hasActiveIncapacitatedEffect(effects = []) {
+  return Array.from(effects).some((effect) => !effect.disabled
+    && effect.statuses?.has(INCAPACITATED_STATUS_ID));
+}
+
 const FATIGUE_ORDER = Object.freeze([
   "fresh", "winded", "tired", "wearied", "exhausted", "debilitated",
   "incapacitated", "semiConscious", "comatose", "dead"

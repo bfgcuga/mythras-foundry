@@ -1,7 +1,7 @@
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID,
-  incapacitatedCauses } from "../rules/incapacitated.js";
+  hasActiveIncapacitatedEffect, incapacitatedCauses } from "../rules/incapacitated.js";
 
 function state(actor) {
   const woundLevel = worstWoundLevel(
@@ -24,7 +24,7 @@ export function actorIncapacitatedState(actor) {
 export async function syncIncapacitatedStatus(actor) {
   if (!actor || !["character", "npc"].includes(actor.type) || !actor.isOwner) return undefined;
   const { active } = actorIncapacitatedState(actor);
-  const displayed = actor.statuses?.has(INCAPACITATED_STATUS_ID) ?? false;
+  const displayed = hasActiveIncapacitatedEffect(actor.effects);
   if (active === displayed) return undefined;
   return actor.toggleStatusEffect(INCAPACITATED_STATUS_ID, {
     active,
@@ -41,7 +41,7 @@ export class MythrasActor extends Actor {
     }
 
     const current = actorIncapacitatedState(this);
-    const displayed = this.statuses?.has(statusId) ?? false;
+    const displayed = hasActiveIncapacitatedEffect(this.effects);
     const activate = options.active ?? !displayed;
     if (!activate && current.automatic.length) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.IncapacitatedLocked"));

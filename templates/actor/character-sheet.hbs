@@ -350,12 +350,13 @@
       <section class="tab-panel" data-tab-content="penalties">
         <fieldset class="penalties-panel">
           <legend>{{localize "MYTHRASF.Penalties.Title"}}</legend>
-          {{#if penalties.hasNonPenaltyStatuses}}
+          {{#if hasActiveStatusControls}}
             <section class="active-status-list" aria-label="{{localize "MYTHRASF.Status.ActiveStates"}}">
-              {{#each penalties.nonPenaltyStatuses as |status|}}
+              {{#each activeStatusControls as |status|}}
                 <div class="active-status-entry">
                   <label><input type="checkbox" class="sheet-state-box" data-status-toggle="{{status.id}}"
-                    checked {{#unless @root.editable}}disabled{{/unless}} aria-label="{{status.label}}">
+                    checked {{#if status.locked}}disabled{{else}}{{#unless @root.editable}}disabled{{/unless}}{{/if}}
+                    aria-label="{{status.label}}">
                     <strong>{{status.label}}</strong></label>
                   {{#if status.note}}<p>{{status.note}}</p>{{/if}}
                 </div>
@@ -389,7 +390,7 @@
             {{#if penalties.showSituationalNote}}<p>** {{localize "MYTHRASF.Penalties.SituationalNote"}}</p>{{/if}}
           </div>
           {{else}}
-            {{#unless penalties.hasNonPenaltyStatuses}}<p class="penalties-empty">{{localize "MYTHRASF.Penalties.None"}}</p>{{/unless}}
+            {{#unless hasActiveStatusControls}}<p class="penalties-empty">{{localize "MYTHRASF.Penalties.None"}}</p>{{/unless}}
           {{/if}}
         </fieldset>
       </section>

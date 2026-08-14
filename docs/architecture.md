@@ -61,9 +61,10 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
   de penalizaciones.
 
 La pestaña de penalizaciones es contextual: la tabla solo incluye fuentes con
-un efecto activo y conserva siempre superficies transparentes. Los estados
-activos sin penalización mecánica se muestran antes de la tabla; los estados
-inactivos no ocupan espacio en la pestaña.
+un efecto activo y conserva siempre superficies transparentes. Todos los
+estados activos del token se muestran antes de la tabla como controles para
+retirarlos; los que tienen consecuencias mecánicas aparecen además en la tabla.
+Los estados inactivos no ocupan espacio en la pestaña.
 
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las
