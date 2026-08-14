@@ -62,12 +62,11 @@ resolución directa del Game Master.
 - Valorar una galería variable de imágenes adicionales del personaje en lugar
   de reservar un número fijo de espacios.
 
-### Pestaña Estados y penalizaciones
+### Estados en la pestaña de penalizaciones
 
-- Añadir una pestaña que reúna estados, condiciones y sus efectos operativos.
+- Ampliar la pestaña de penalizaciones existente para reunir también estados y
+  condiciones adicionales a Incapacitado.
 - Determinar qué estados se calculan automáticamente y cuáles son manuales.
-- Mostrar de forma trazable los efectos procedentes de heridas, fatiga, carga y
-  otras fuentes.
 - Coordinar esta pestaña con la revisión del apilamiento de modificadores.
 
 ## Permisos y visibilidad
@@ -90,4 +89,3 @@ resolución directa del Game Master.
   diálogos y formularios.
 - Mantener sin traducir únicamente nombres propios o términos decididos
   expresamente como parte del modelo.
-

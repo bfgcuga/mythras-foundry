@@ -34,6 +34,11 @@ test("una herida critica equivale como minimo a incapacitado", () => {
   assert.equal(combinedConditionLevel("tired", "serious").key, "tired");
 });
 
+test("el estado incapacitado manual establece el mismo suelo", () => {
+  assert.equal(combinedConditionLevel("fresh", "healthy", true).key, "incapacitated");
+  assert.equal(combinedConditionLevel("comatose", "healthy", true).key, "comatose");
+});
+
 test("una herida grave situacional aumenta un grado la dificultad", () => {
   assert.equal(worsenDifficulty("standard"), "hard");
   assert.equal(worsenDifficulty("hard"), "formidable");

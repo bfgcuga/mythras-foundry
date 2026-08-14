@@ -52,8 +52,19 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
   `scripts/rules/npc.js`;
 - fatiga, heridas, carga y armadura transforman esos valores mediante sus módulos
   respectivos bajo `scripts/rules/`;
+- `scripts/rules/penalty-summary.js` compone el desglose trazable de esas cuatro
+  fuentes para la pestaña de penalizaciones sin duplicar sus reglas;
+- `scripts/rules/incapacitated.js` identifica por separado las causas de
+  Incapacitado. `MythrasActor` sincroniza un único estado de Foundry con las
+  causas automáticas —fatiga y herida crítica— y la bandera manual del Actor;
 - la hoja representa el valor base y el efectivo con los ayudantes compartidos
   de penalizaciones.
+
+El estado Incapacitado de Foundry es una representación semántica y visual, no
+una segunda fuente de cambios numéricos. Sus consecuencias proceden de las
+reglas de condición compartidas. Mientras exista una causa automática no puede
+retirarse el estado; una causa manual puede coexistir con ellas sin perderse
+cuando se resuelva una herida o cambie la fatiga.
 
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.

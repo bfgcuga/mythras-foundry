@@ -17,9 +17,9 @@ export function fatigueLevel(key) {
   return FATIGUE_LEVELS.find((level) => level.key === key) ?? FATIGUE_LEVELS[0];
 }
 
-export function combinedConditionLevel(fatigueKey, woundLevel = "healthy") {
+export function combinedConditionLevel(fatigueKey, woundLevel = "healthy", incapacitated = false) {
   const fatigueIndex = Math.max(0, FATIGUE_LEVELS.findIndex((level) => level.key === fatigueKey));
-  const woundIndex = woundLevel === "major"
+  const woundIndex = woundLevel === "major" || incapacitated
     ? FATIGUE_LEVELS.findIndex((level) => level.key === "incapacitated")
     : 0;
   return FATIGUE_LEVELS[Math.max(fatigueIndex, woundIndex)] ?? FATIGUE_LEVELS[0];

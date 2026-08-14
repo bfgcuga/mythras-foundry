@@ -346,6 +346,17 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         type: "penalty"
       });
     }
+    const beforeStatusPenalty = difficulty;
+    difficulty = combineDifficulties(
+      difficulty, this.actor.system.conditionLevel?.skillDifficulty ?? "standard"
+    );
+    if (difficulty !== beforeStatusPenalty) {
+      modifiers.push({
+        source: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`),
+        type: "penalty"
+      });
+    }
     const beforeWoundPenalty = difficulty;
     difficulty = await this.#applySeriousWoundPenalty(difficulty);
     if (difficulty !== beforeWoundPenalty) {

@@ -7,6 +7,8 @@ import { worstWoundLevel } from "../rules/hit-locations.js";
 import { getActionPointRules } from "../settings.js";
 import { applyArmorInitiativePenalty } from "../rules/armor.js";
 import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
+import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
+  INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
 
 const {
   BooleanField,
@@ -123,8 +125,10 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
 
     this.baseAttributes = calculateDerivedAttributes(this, getActionPointRules());
     const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
+    const incapacitated = Boolean(this.parent?.statuses?.has(INCAPACITATED_STATUS_ID)
+      || this.parent?.getFlag?.(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG));
     this.conditionLevel = combinedConditionLevel(
-      this.fatigueLevel, worstWoundLevel(locations));
+      this.fatigueLevel, worstWoundLevel(locations), incapacitated);
     const conditioned = applyFatigue(this.baseAttributes, this.conditionLevel.key);
     const armors = this.parent?.items?.filter((item) => item.type === "armor") ?? [];
     this.attributes = applyArmorInitiativePenalty(conditioned, armors);

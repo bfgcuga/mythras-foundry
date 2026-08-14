@@ -14,7 +14,9 @@ El sistema incluye actualmente:
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
   habilidades, estilos de combate, dinero y equipo inicial;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
-  penalizaciones, carga e iniciativa modificada por armadura;
+  carga e iniciativa modificada por armadura, con una pestaña que desglosa sus
+  penalizaciones y los totales aplicados; el estado Incapacitado se refleja en
+  el token y conserva por separado sus causas automáticas y manuales;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;

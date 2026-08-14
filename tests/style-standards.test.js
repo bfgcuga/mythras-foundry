@@ -99,6 +99,20 @@ test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula"
   assert.match(css, /\.inventory-tree-head \{[^}]*text-align: left/);
 });
 
+test("la pestaña de penalizaciones usa una tabla semántica y tipografía compartida", () => {
+  assert.match(characterTemplate, /data-tab="penalties"/);
+  assert.match(characterTemplate, /data-tab-content="penalties"/);
+  assert.match(characterTemplate, /<table class="penalties-table">/);
+  assert.match(characterTemplate, /<th scope="col">/);
+  assert.match(characterTemplate, /<th scope="row">/);
+  assert.match(css, /\.penalties-table \{[^}]*font-size: var\(--mythras-font-size-table\)/);
+  assert.match(css, /\.penalties-table th,\s*\n\.mythras-foundry \.penalties-table td[^}]*white-space: normal/s);
+  assert.match(characterTemplate, /data-incapacitated-manual/);
+  assert.match(systemScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
+  assert.match(systemScript, /preDeleteActiveEffect/);
+  assert.match(systemScript, /preUpdateActiveEffect/);
+});
+
 test("la ficha de arma separa modos por tipo y expone parámetros de rasgo", () => {
   assert.match(css, /\.weapon-mode-fields-melee/);
   assert.match(css, /\.weapon-mode-fields-ranged/);

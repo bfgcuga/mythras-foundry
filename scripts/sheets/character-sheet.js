@@ -68,6 +68,9 @@ import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel
 import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
+import { penaltySummary } from "../rules/penalty-summary.js";
+import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
+  INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
@@ -174,7 +177,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const loadState = encumbranceState(carriedEncumbrance, this.actor.system.strength);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
     const currentWound = worstWoundLevel(hitLocations);
-    const currentCondition = combinedConditionLevel(currentFatigue.key, currentWound);
+    const manuallyIncapacitated = Boolean(
+      this.actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
+    );
+    const automaticIncapacitated = automaticIncapacitatedCauses({
+      fatigueKey: currentFatigue.key, woundLevel: currentWound
+    });
+    const currentCondition = combinedConditionLevel(
+      currentFatigue.key, currentWound, manuallyIncapacitated
+    );
     const actionPointRules = getActionPointRules();
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, actionPointRules);
@@ -185,6 +196,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       actionPointRules, baseAttributes, effectiveAttributes, fatiguedAttributes,
       currentFatigue, currentCondition, equippedArmor, loadState
     });
+    const penalties = this.#preparePenaltySummary(penaltySummary({
+      baseAttributes,
+      fatigueKey: currentFatigue.key,
+      woundLevel: currentWound,
+      manuallyIncapacitated,
+      loadState,
+      armorPenalty: armorInitiativePenalty(equippedArmor)
+    }));
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
       baseAttributes.actionPointsMax,
@@ -274,6 +293,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         movement: penalizedValue(baseAttributes.movementRate, effectiveAttributes.movementRate)
       },
       attributeTooltips,
+      penalties,
+      incapacitatedStatus: {
+        active: automaticIncapacitated.length > 0 || manuallyIncapacitated,
+        manual: manuallyIncapacitated,
+        locked: automaticIncapacitated.length > 0,
+        causes: automaticIncapacitated.map((cause) => game.i18n.localize(
+          `MYTHRASF.Status.IncapacitatedCause.${cause}`
+        ))
+      },
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
@@ -351,6 +379,84 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))
     }, { inplace: false });
+  }
+
+  #preparePenaltySummary(summary) {
+    const difficulty = (key) => game.i18n.localize(`MYTHRASF.Difficulty.${key}`);
+    const signed = (value) => value > 0 ? `−${value}` : "—";
+    const movement = (row) => {
+      if (row.movement === "subtract") return `−${row.movementPenalty} m`;
+      if (row.movement === "half") return game.i18n.localize("MYTHRASF.Penalties.Half");
+      if (["immobile", "impossible"].includes(row.movement)) return "0 m";
+      return "—";
+    };
+    const fatigue = summary.rows.fatigue;
+    const wounds = summary.rows.wounds;
+    const load = summary.rows.encumbrance;
+    const armor = summary.rows.armor;
+    const status = summary.rows.status;
+    const totals = summary.totals;
+    const skillTotals = [{
+      label: game.i18n.localize("MYTHRASF.Penalties.General"),
+      value: difficulty(totals.difficulties.general)
+    }];
+    if (totals.difficulties.hasPhysicalVariant) skillTotals.push({
+      label: `${game.i18n.localize("MYTHRASF.Penalties.Physical")}*`,
+      value: difficulty(totals.difficulties.physical)
+    });
+    if (totals.difficulties.hasSituationalVariant) skillTotals.push({
+      label: `${game.i18n.localize("MYTHRASF.Penalties.Situational")}**`,
+      value: difficulty(totals.difficulties.situational)
+    });
+    if (totals.difficulties.hasPhysicalVariant && totals.difficulties.hasSituationalVariant) {
+      skillTotals.push({
+        label: `${game.i18n.localize("MYTHRASF.Penalties.PhysicalSituational")}*,**`,
+        value: difficulty(totals.difficulties.combined)
+      });
+    }
+    return {
+      rows: [
+        {
+          label: game.i18n.localize("MYTHRASF.Fatigue.Label"),
+          skills: fatigue.difficulty === "standard" ? "—" : difficulty(fatigue.difficulty),
+          movement: movement(fatigue), initiative: signed(fatigue.initiativePenalty),
+          actionPoints: signed(fatigue.actionPointPenalty)
+        },
+        {
+          label: game.i18n.localize("MYTHRASF.Penalties.Wounds"),
+          skills: wounds.incapacitated
+            ? game.i18n.format("MYTHRASF.Penalties.MinimumDifficulty", { difficulty: difficulty("herculean") })
+            : wounds.situationalSteps ? "+1**" : "—",
+          movement: wounds.incapacitated ? "0 m" : "—",
+          initiative: wounds.incapacitated ? "−8" : "—",
+          actionPoints: wounds.incapacitated ? "−3" : "—"
+        },
+        {
+          label: game.i18n.localize("MYTHRASF.Header.Encumbrance"),
+          skills: load.difficultySteps ? `+${load.difficultySteps}*` : "—",
+          movement: load.movement === "subtract" ? "−2 m"
+            : load.movement === "half" ? game.i18n.localize("MYTHRASF.Penalties.Half") : "—",
+          initiative: "—", actionPoints: "—"
+        },
+        {
+          label: game.i18n.localize("MYTHRASF.Penalties.Armor"), skills: "—", movement: "—",
+          initiative: signed(armor.initiativePenalty), actionPoints: "—"
+        },
+        {
+          label: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
+          skills: status.manuallyIncapacitated
+            ? game.i18n.format("MYTHRASF.Penalties.MinimumDifficulty", { difficulty: difficulty("herculean") })
+            : "—",
+          movement: status.manuallyIncapacitated ? "0 m" : "—",
+          initiative: status.manuallyIncapacitated ? "−8" : "—",
+          actionPoints: status.manuallyIncapacitated ? "−3" : "—"
+        }
+      ],
+      skillTotals,
+      movementTotal: `${totals.movement.base} → ${totals.movement.effective} m`,
+      initiativeTotal: `${totals.initiative.base} → ${totals.initiative.effective}`,
+      actionPointTotal: `${totals.actionPoints.base} → ${totals.actionPoints.effective}`
+    };
   }
 
   #prepareCombatWeapon(weapon, mode, combatStyles) {
@@ -521,6 +627,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-fatigue-level]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateFatigue(event));
     });
+    this.element.querySelector("[data-incapacitated-manual]")
+      ?.addEventListener("change", (event) => this.#toggleManualIncapacitated(event));
     this.element.querySelectorAll("[data-location-disabled]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateLocationDisabled(event));
     });
@@ -743,7 +851,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   #conditionLevel(fatigueKey = this.actor.system.fatigueLevel) {
     const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    return combinedConditionLevel(fatigueKey, worstWoundLevel(locations));
+    return combinedConditionLevel(fatigueKey, worstWoundLevel(locations), Boolean(
+      this.actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
+    ));
+  }
+
+  async #toggleManualIncapacitated(event) {
+    if (!this.isEditable) return;
+    await this.actor.update({
+      [`flags.${INCAPACITATED_FLAG_SCOPE}.${INCAPACITATED_MANUAL_FLAG}`]: event.currentTarget.checked
+    });
   }
 
   #loadState() {
@@ -2424,6 +2541,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       modifiers.push({
         source: game.i18n.localize("MYTHRASF.Wound.major"),
         effect: game.i18n.localize(`MYTHRASF.Difficulty.${woundDifficulty}`),
+        type: "penalty"
+      });
+    }
+    const beforeStatusPenalty = difficulty;
+    difficulty = combineDifficulties(difficulty, this.#conditionLevel().skillDifficulty);
+    if (difficulty !== beforeStatusPenalty) {
+      modifiers.push({
+        source: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`),
         type: "penalty"
       });
     }

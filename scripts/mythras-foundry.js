@@ -15,6 +15,8 @@ import {
   WeaponData
 } from "./data/item-data.js";
 import { MythrasItem } from "./documents/mythras-item.js";
+import { actorIncapacitatedState, MythrasActor,
+  syncIncapacitatedStatus } from "./documents/mythras-actor.js";
 import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
   worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
@@ -50,6 +52,8 @@ import { calculateNpcAttributes } from "./rules/npc.js";
 import { regenerateNpcActor } from "./rules/npc-token.js";
 import { activateActionPointSettingVisibility, getActionPointRules,
   getSystemSetting, registerSystemSettings, SETTING_KEYS } from "./settings.js";
+import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
+  INCAPACITATED_STATUS_ID } from "./rules/incapacitated.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -65,6 +69,20 @@ Hooks.once("init", async () => {
 
   CONFIG.Actor.dataModels.character = CharacterData;
   CONFIG.Actor.dataModels.npc = NpcData;
+  CONFIG.Actor.documentClass = MythrasActor;
+  const incapacitatedStatus = {
+    id: INCAPACITATED_STATUS_ID,
+    name: "MYTHRASF.Status.Incapacitated",
+    img: "icons/svg/unconscious.svg"
+  };
+  if (Array.isArray(CONFIG.statusEffects)) {
+    const existing = CONFIG.statusEffects.findIndex((status) =>
+      status.id === INCAPACITATED_STATUS_ID);
+    if (existing >= 0) CONFIG.statusEffects[existing] = incapacitatedStatus;
+    else CONFIG.statusEffects.push(incapacitatedStatus);
+  } else {
+    CONFIG.statusEffects[INCAPACITATED_STATUS_ID] = incapacitatedStatus;
+  }
   CONFIG.Item.documentClass = MythrasItem;
   CONFIG.Item.dataModels.skill = SkillData;
   CONFIG.Item.dataModels.combatStyle = CombatStyleData;
@@ -196,8 +214,16 @@ Hooks.on("preUpdateActor", (actor, changed) => {
   const baseAttributes = actor.type === "npc"
     ? calculateNpcAttributes(candidate)
     : calculateDerivedAttributes(candidate, getActionPointRules());
+  const changedManualCause = foundry.utils.getProperty(
+    changed, `flags.${INCAPACITATED_FLAG_SCOPE}.${INCAPACITATED_MANUAL_FLAG}`
+  );
+  const manuallyIncapacitated = changedManualCause ?? actor.getFlag(
+    INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG
+  );
   const condition = combinedConditionLevel(candidate.fatigueLevel,
-    worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")));
+    worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")),
+    Boolean(manuallyIncapacitated
+      || actor.statuses?.has(INCAPACITATED_STATUS_ID)));
   const attributes = applyFatigue(baseAttributes, condition.key);
 
   clampResource(changed, candidate, "actionPoints", attributes.actionPointsMax);
@@ -212,12 +238,15 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
     ? calculateNpcAttributes(actor.system)
     : calculateDerivedAttributes(actor.system, getActionPointRules());
   const condition = combinedConditionLevel(actor.system.fatigueLevel,
-    worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")));
+    worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")),
+    Boolean(actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
+      || actor.statuses?.has(INCAPACITATED_STATUS_ID)));
   const maximum = applyFatigue(baseAttributes, condition.key).actionPointsMax;
   const current = Number(actor.system.resources.actionPoints.value ?? 0);
   if (current > maximum) {
     await actor.update({ "system.resources.actionPoints.value": maximum });
   }
+  await syncIncapacitatedStatus(actor);
 });
 
 Hooks.on("preCreateItem", (item, data) => {
@@ -309,6 +338,7 @@ Hooks.on("createActor", async (actor, options, userId) => {
     await ensureDefaultHome(actor);
     await actor.update({ "system.backgroundCreationEnabled": true });
   }
+  await syncIncapacitatedStatus(actor);
 });
 
 Hooks.once("ready", async () => {
@@ -356,6 +386,7 @@ Hooks.once("ready", async () => {
     if (actor.type === "character") await ensureHumanHitLocations(actor);
     if (actor.type === "character") await ensureDefaultHome(actor);
     await migrateActorArmor(actor);
+    await syncIncapacitatedStatus(actor);
   }
   const worldIconUpdates = game.items
     .map(getLegacyItemIconUpdate)
@@ -421,6 +452,7 @@ Hooks.on("updateActor", async (actor, changed, options, userId) => {
     const fumbleUpdates = fumbledSkillUpdatesAtZero(actor.system.experienceRolls, actor.items);
     if (fumbleUpdates.length) await actor.updateEmbeddedDocuments("Item", fumbleUpdates);
   }
+  await syncIncapacitatedStatus(actor);
   if (!foundry.utils.hasProperty(changed, "system.constitution")
     && !foundry.utils.hasProperty(changed, "system.size")) return;
   const updates = actor.items.filter((item) => item.type === "hitLocation"
@@ -437,6 +469,38 @@ Hooks.on("updateActor", async (actor, changed, options, userId) => {
       };
     });
   if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+});
+
+Hooks.on("createItem", async (item, options, userId) => {
+  if (userId !== game.user.id || item.type !== "hitLocation" || !isCombatActor(item.parent)) return;
+  await syncIncapacitatedStatus(item.parent);
+});
+
+Hooks.on("deleteItem", async (item, options, userId) => {
+  if (userId !== game.user.id || item.type !== "hitLocation" || !isCombatActor(item.parent)) return;
+  await syncIncapacitatedStatus(item.parent);
+});
+
+function protectedIncapacitatedEffect(effect) {
+  return effect.parent instanceof Actor
+    && effect.statuses?.has(INCAPACITATED_STATUS_ID)
+    && actorIncapacitatedState(effect.parent).active;
+}
+
+Hooks.on("preDeleteActiveEffect", (effect, options, userId) => {
+  if (!protectedIncapacitatedEffect(effect)) return true;
+  if (userId === game.user.id) {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.IncapacitatedManaged"));
+  }
+  return false;
+});
+
+Hooks.on("preUpdateActiveEffect", (effect, changed, options, userId) => {
+  if (changed.disabled !== true || !protectedIncapacitatedEffect(effect)) return true;
+  if (userId === game.user.id) {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.IncapacitatedManaged"));
+  }
+  return false;
 });
 
 async function ensureHumanHitLocations(actor) {

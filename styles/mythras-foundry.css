@@ -1597,6 +1597,24 @@
 }
 
 .mythras-foundry .tab-panel[data-tab-content="combat"] { container-type: inline-size; }
+.mythras-foundry .penalties-panel { margin: 0; }
+.mythras-foundry .incapacitated-status-panel { display: grid; grid-template-columns: minmax(12rem, 1fr) auto; align-items: center; gap: 0.45rem 1rem; margin-bottom: 0.75rem; padding: 0.55rem 0.65rem; border: 1px solid var(--mythras-border); }
+.mythras-foundry .incapacitated-status-heading { display: flex; align-items: center; gap: 0.4rem; }
+.mythras-foundry .incapacitated-status-state { color: var(--color-text-subtle); }
+.mythras-foundry .incapacitated-status-panel label { display: flex; align-items: center; gap: 0.4rem; }
+.mythras-foundry .incapacitated-status-lock { grid-column: 1 / -1; margin: 0; font-size: var(--mythras-font-size-auxiliary); }
+.mythras-foundry .penalties-table-wrapper { overflow-x: auto; }
+.mythras-foundry .penalties-table { width: 100%; border-collapse: collapse; font-size: var(--mythras-font-size-table); }
+.mythras-foundry .penalties-table th,
+.mythras-foundry .penalties-table td { padding: 0.55rem 0.65rem; border-bottom: 1px solid var(--mythras-border); text-align: center; vertical-align: middle; white-space: normal; overflow-wrap: anywhere; }
+.mythras-foundry .penalties-table thead th { font-weight: 700; }
+.mythras-foundry .penalties-table th:first-child { min-width: 7rem; text-align: left; }
+.mythras-foundry .penalties-table tfoot th,
+.mythras-foundry .penalties-table tfoot td { border-top: 2px solid var(--mythras-accent); border-bottom: 0; font-weight: 700; }
+.mythras-foundry .penalties-skill-totals { min-width: 14rem; }
+.mythras-foundry .penalties-skill-totals span { display: block; line-height: 1.45; }
+.mythras-foundry .penalties-notes { margin-top: 0.75rem; font-size: var(--mythras-font-size-auxiliary); }
+.mythras-foundry .penalties-notes p { margin: 0.2rem 0; }
 
 .mythras-foundry .combat-paper-panel {
   position: relative;
