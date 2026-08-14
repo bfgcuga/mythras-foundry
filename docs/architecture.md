@@ -69,6 +69,9 @@ diferenciales, equipos y eliminatorias. `scripts/rules/contest-chat.js` persiste
 el estado versionado en `flags.mythras-foundry.contest`, valida revisión y
 propiedad, y elige al DJ activo o al autor como coordinador de respaldo. Las
 tarjetas antiguas y las tiradas simples no requieren migración.
+Cada participante interactivo puede gastar suerte repetidas veces sobre su dado;
+el historial permanece en la misma fila y cada cambio vuelve a resolver la
+comparación completa.
 
 ## Compendios
 

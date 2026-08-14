@@ -26,4 +26,14 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
   assert.match(script, /MYTHRASF\.Contest\.Pending/);
   assert.match(script, /button\.hidden = !game\.user\.isGM && !actor\?\.isOwner/);
   assert.match(css, /\.mythras-contest-card/);
+  assert.match(script, /preferredContestCoordinator\(game\.users, contest\.authorUserId\) === game\.user\.id/);
+  assert.match(script, /contest-luck-button/);
+});
+
+test("contest setup is limited to scene tokens and rivals choose their ability later", () => {
+  const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
+  assert.match(dialog, /canvas\?\.tokens\?\.placeables/);
+  assert.match(dialog, /if \(!groupType\) return actor \? \{ actorId: actor\.id, actorName: actor\.name,/);
+  assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
+  assert.match(dialog, /skill-roll-adjustment-fields/);
 });

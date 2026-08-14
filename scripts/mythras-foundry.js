@@ -26,7 +26,7 @@ import { NpcSheet } from "./sheets/npc-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
 import { activateSkillRollCard } from "./rules/skill-roll-chat.js";
-import { activateSkillRollDialog } from "./apps/skill-roll-dialog.js";
+import { activateContestResponseDialog, activateSkillRollDialog } from "./apps/skill-roll-dialog.js";
 import { activateContestCard, registerContestSocket } from "./rules/contest-chat.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
@@ -169,6 +169,7 @@ Hooks.on("renderApplicationV2", (application, element) => {
     element.classList.add("mythras-foundry", "mythras-paper-sheet");
   }
   activateSkillRollDialog(element);
+  activateContestResponseDialog(element);
   activateDelayedTooltips(element);
   activateActionPointSettingVisibility(element);
 });
@@ -178,6 +179,7 @@ Hooks.on("renderApplication", (application, html) => {
     element.classList.add("mythras-foundry", "mythras-paper-sheet");
   }
   if (element) activateSkillRollDialog(element);
+  if (element) activateContestResponseDialog(element);
   activateDelayedTooltips(html);
   activateActionPointSettingVisibility(html);
 });

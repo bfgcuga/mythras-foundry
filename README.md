@@ -50,9 +50,9 @@ profesiones por un editor visual basado en menús y habilidades arrastrables.
 También queda pendiente revisar de forma conjunta el modelo de estados y
 condiciones y las reglas con las que se apilan sus modificadores de dificultad.
 
-Quedan pendientes la suerte repetible sobre tiradas propias o rivales, la
-integración del motor interactivo con ataques, defensas, daño y efectos de
-combate, y el método porcentual para resolver multitudes.
+Quedan pendientes unificar la suerte repetible de las tarjetas interactivas con
+las tiradas simples, la integración del motor con ataques, defensas, daño y
+efectos de combate, y el método porcentual para resolver multitudes.
 
 ## Compendios
 

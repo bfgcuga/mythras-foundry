@@ -1,5 +1,5 @@
 import { openContestResponseDialog } from "../apps/skill-roll-dialog.js";
-import { resolveSkillRollTargets } from "./skill-roll.js";
+import { invertD100, resolveSkillRollTargets } from "./skill-roll.js";
 import { resolveContest } from "./contest-rolls.js";
 
 const FLAG_SCOPE = "mythras-foundry";
@@ -63,13 +63,16 @@ export function renderContestCard(contest) {
   const rows = contest.participants.map((participant) => {
     const final = resolvedById.get(participant.id) ?? participant;
     const roll = participant.rawRoll == null ? localize("MYTHRASF.Contest.Pending") : participant.rawRoll;
+    const ability = participant.abilityName ?? localize("MYTHRASF.Contest.ChosenOnResponse");
+    const target = final.target == null ? "—" : `${final.target}%`;
     const result = resolved && final.result ? `<span class="contest-participant-result mythras-chat-result--${final.result}">${escape(localize(`MYTHRASF.RollResult.${final.result}`))}</span>` : "";
     const button = participant.pending && contest.status === "pending"
       ? `<button type="button" class="sheet-icon-button contest-response-button" data-contest-action="respond" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Contest.Respond"))}" title="${escape(localize("MYTHRASF.Contest.Respond"))}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>` : "";
-    const replace = participant.rawRoll != null ? `<button type="button" class="sheet-icon-button contest-gm-only" data-contest-action="replace" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Contest.Replace"))}" title="${escape(localize("MYTHRASF.Contest.Replace"))}"><i class="fas fa-rotate" aria-hidden="true"></i></button>` : "";
+    const luck = participant.rawRoll != null ? `<button type="button" class="sheet-icon-button contest-luck-button" data-contest-action="luck" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Luck.Use"))}" title="${escape(localize("MYTHRASF.Luck.Use"))}"><i class="fas fa-clover" aria-hidden="true"></i></button>` : "";
+    const history = (participant.luckHistory ?? []).map((value) => `<strong class="mythras-chat-roll-value">${escape(value)}</strong><span class="mythras-chat-luck-spent">${escape(localize("MYTHRASF.Luck.Spent"))}</span>`).join("");
     return `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
-      <span><strong>${escape(participant.actorName)}</strong><small>${escape(participant.abilityName)}</small></span>
-      <span class="contest-participant-values"><span>${escape(final.target ?? participant.target)}%</span><strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}${button}${replace}</span>
+      <span><strong>${escape(participant.actorName)}</strong><small>${escape(ability)}</small></span>
+      <span class="contest-participant-values"><span>${escape(target)}</span>${history}<strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}${button}${luck}</span>
     </div>`;
   }).join("");
   const comparisons = resolved ? renderResolution(contest, resolved) : "";
@@ -121,11 +124,12 @@ export function validateContestResponse(contest, { revision, participantId, user
 
 export function registerContestSocket() {
   game.socket.on(SOCKET, async (request) => {
-    if (request?.action !== "contestResponse") return;
+    if (!["contestResponse", "contestLuck"].includes(request?.action)) return;
     const message = game.messages.get(request.messageId);
     const contest = message?.getFlag(FLAG_SCOPE, "contest");
     if (!contest || preferredContestCoordinator(game.users, contest.authorUserId) !== game.user.id) return;
-    await applyContestResponse(message, request);
+    if (request.action === "contestLuck") await applyContestLuck(message, request);
+    else await applyContestResponse(message, request);
   });
 }
 
@@ -169,13 +173,18 @@ export function activateContestCard(message, html) {
     const actor = game.actors.get(participant?.actorId);
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
+  card.querySelectorAll(".contest-luck-button").forEach((button) => {
+    const participant = contest.participants.find((entry) => entry.id === button.dataset.participantId);
+    const actor = game.actors.get(participant?.actorId);
+    button.hidden = !game.user.isGM && !actor?.isOwner;
+  });
   const gmActions = card.querySelector("[data-contest-gm-actions]");
   if (gmActions) gmActions.hidden = !game.user.isGM;
-  card.querySelectorAll(".contest-gm-only").forEach((button) => { button.hidden = !game.user.isGM; });
   card.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-contest-action]");
     if (!button) return;
     if (button.dataset.contestAction === "respond") return respond(message, contest, button.dataset.participantId);
+    if (button.dataset.contestAction === "luck") return spendContestLuck(message, contest, button.dataset.participantId);
     if (!game.user.isGM) return;
     await gmAction(message, contest, button.dataset.contestAction, button.dataset.participantId);
   });
@@ -190,7 +199,46 @@ async function respond(message, contest, id) {
   const roll = await new Roll("1d100").evaluate();
   const request = { action: "contestResponse", messageId: message.id, revision: contest.revision,
     participantId: id, userId: game.user.id, config, rawRoll: roll.total, serializedRoll: roll.toJSON() };
-  game.socket.emit(SOCKET, request);
+  if (preferredContestCoordinator(game.users, contest.authorUserId) === game.user.id) await applyContestResponse(message, request);
+  else game.socket.emit(SOCKET, request);
+}
+
+async function spendContestLuck(message, contest, id) {
+  const participant = contest.participants.find((entry) => entry.id === id);
+  const actor = game.actors.get(participant?.actorId);
+  if (!actor || participant.rawRoll == null || (!game.user.isGM && !actor.isOwner)) return;
+  const points = Number(actor.system.resources?.luckPoints?.value ?? 0);
+  if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  const { DialogV2 } = foundry.applications.api;
+  const choice = await DialogV2.wait({ window: { title: localize("MYTHRASF.Luck.Title") },
+    content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${escape(localize("MYTHRASF.Luck.Confirm"))}</p></div>`,
+    buttons: [{ action: "reroll", label: localize("MYTHRASF.Luck.Reroll"), icon: "fas fa-dice-d20", callback: () => "reroll" },
+      { action: "invert", label: localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left", callback: () => "invert" },
+      { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
+  if (!choice) return;
+  const roll = choice === "reroll" ? await new Roll("1d100").evaluate() : null;
+  const request = { action: "contestLuck", messageId: message.id, revision: contest.revision,
+    participantId: id, userId: game.user.id, rawRoll: roll?.total ?? invertD100(participant.rawRoll),
+    serializedRoll: roll?.toJSON?.() ?? null };
+  await actor.update({ "system.resources.luckPoints.value": points - 1 });
+  if (preferredContestCoordinator(game.users, contest.authorUserId) === game.user.id) await applyContestLuck(message, request);
+  else game.socket.emit(SOCKET, request);
+}
+
+async function applyContestLuck(message, request) {
+  const contest = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "contest"));
+  if (Number(request.revision) !== Number(contest.revision)) return;
+  const participant = contest.participants.find((entry) => entry.id === request.participantId);
+  const actor = game.actors.get(participant?.actorId);
+  const user = game.users.get(request.userId);
+  if (!participant || participant.rawRoll == null || !user || (!user.isGM && !actor?.testUserPermission(user, "OWNER"))) return;
+  participant.luckHistory = [...(participant.luckHistory ?? []), participant.rawRoll];
+  participant.rawRoll = Number(request.rawRoll); participant.serializedRoll = request.serializedRoll;
+  contest.revision += 1;
+  if (contest.participants.every((entry) => !entry.pending)) {
+    contest.resolution = resolveContest(contest); contest.status = "resolved";
+  }
+  await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
 }
 
 async function gmAction(message, current, action, participantId = null) {
@@ -212,13 +260,6 @@ async function gmAction(message, current, action, participantId = null) {
     contest.rounds.push({ participants: foundry.utils.deepClone(contest.participants), resolution: contest.resolution });
     contest.status = "pending"; contest.resolution = null;
     contest.participants.forEach((entry) => { entry.pending = true; entry.rawRoll = null; });
-  }
-  if (action === "replace") {
-    const participant = contest.participants.find((entry) => entry.id === participantId);
-    if (participant) {
-      participant.pending = true; participant.rawRoll = null; participant.serializedRoll = null;
-      contest.status = "pending"; contest.resolution = null;
-    }
   }
   contest.revision += 1;
   await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
