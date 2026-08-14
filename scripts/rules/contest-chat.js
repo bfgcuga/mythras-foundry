@@ -83,7 +83,7 @@ export function renderContestCard(contest) {
   const configuredResults = contest.schemaVersion >= 2 && resolved
     ? [resolved.sides.initiator, resolved.sides.opponent].filter(Boolean).flatMap((side) => side.memberResults ?? []) : [];
   const resolvedById = new Map((configuredResults.length ? configuredResults : resolved?.participants ?? []).map((entry) => [entry.id, entry]));
-  const rows = contest.participants.map((participant) => {
+  const rowEntries = contest.participants.map((participant) => {
     const final = resolvedById.get(participant.id) ?? participant;
     const shownRoll = final.rawRoll ?? participant.rawRoll;
     const roll = shownRoll == null ? localize("MYTHRASF.Contest.Pending") : shownRoll;
@@ -92,27 +92,33 @@ export function renderContestCard(contest) {
     const result = resolved && final.result ? `<span class="contest-participant-result mythras-chat-result--${final.result}">${escape(localize(`MYTHRASF.RollResult.${final.result}`))}</span>` : "";
     const button = participant.pending && contest.status === "pending"
       ? `<button type="button" class="sheet-icon-button contest-response-button" data-contest-action="respond" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Contest.Respond"))}" title="${escape(localize("MYTHRASF.Contest.Respond"))}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>` : "";
-    const luck = participant.rawRoll != null ? `<button type="button" class="sheet-icon-button contest-luck-button" data-contest-action="luck" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Luck.Use"))}" title="${escape(localize("MYTHRASF.Luck.Use"))}"><i class="fas fa-clover" aria-hidden="true"></i></button>` : "";
+    const luck = shownRoll != null ? `<button type="button" class="sheet-icon-button mythras-chat-luck-button contest-luck-button" data-contest-action="luck" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Luck.Use"))}" title="${escape(localize("MYTHRASF.Luck.Use"))}"><i class="fas fa-clover" aria-hidden="true"></i></button>` : "";
     const history = participant.luckHistory ?? [];
     const oldAttempts = history.map((entry, index) => {
       const value = typeof entry === "object" ? entry.value : entry;
       if (index === 0) return `<div class="contest-roll-attempt"><strong class="mythras-chat-roll-value">${escape(value)}</strong></div>`;
-      const previous = history[index - 1];
-      const spender = typeof previous === "object" ? previous.spenderName : null;
-      const text = spender ? game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: spender }) : localize("MYTHRASF.Luck.Spent");
-      return `<div class="contest-roll-attempt"><span class="mythras-chat-luck-spent">${escape(text)}</span><strong class="mythras-chat-roll-value">${escape(value)}</strong></div>`;
+      return `<div class="contest-roll-attempt"><strong class="mythras-chat-roll-value">${escape(value)}</strong></div>`;
     }).join("");
-    const lastLuck = history.at(-1);
-    const currentLuckText = lastLuck
-      ? (typeof lastLuck === "object" && lastLuck.spenderName
-        ? game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: lastLuck.spenderName })
-        : localize("MYTHRASF.Luck.Spent")) : "";
-    const attempts = `${oldAttempts}<div class="contest-roll-attempt contest-roll-attempt--current">${currentLuckText ? `<span class="mythras-chat-luck-spent">${escape(currentLuckText)}</span>` : ""}<strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}${button}${luck}</div>`;
-    return `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
-      <span><strong>${escape(participant.actorName)}</strong><small>${escape(ability)}</small></span>
+    const luckNotes = history.map((entry) => {
+      const spender = typeof entry === "object" ? entry.spenderName : null;
+      return `<small class="mythras-chat-luck-spent">${escape(spender ? game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: spender }) : localize("MYTHRASF.Luck.Spent"))}</small>`;
+    }).join("");
+    const attempts = `${oldAttempts}<div class="contest-roll-attempt contest-roll-attempt--current"><strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}</div>`;
+    const html = `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
+      <span class="contest-participant-identity"><strong>${escape(participant.actorName)}</strong><small>${escape(ability)}</small>${luckNotes}</span>
       <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}</span><span class="contest-roll-attempts">${attempts}</span></span>
+      <span class="contest-participant-actions">${button}${luck}</span>
     </div>`;
-  }).join("");
+    return [participant.id, html];
+  });
+  const rowById = new Map(rowEntries);
+  const sideRows = (name) => {
+    const side = contest.sides?.[name];
+    if (!side || (name === "opponent" && contest.resolutionMode === "difficulty")) return "";
+    const label = localize(`MYTHRASF.Contest.Side.${name}`);
+    return `<section class="contest-side contest-side--${name}"><div class="contest-side-title">${escape(label)}</div>${side.participantIds.map((id) => rowById.get(id) ?? "").join("")}</section>`;
+  };
+  const rows = contest.schemaVersion >= 2 ? sideRows("initiator") + sideRows("opponent") : rowEntries.map((entry) => entry[1]).join("");
   const comparisons = resolved ? renderResolution(contest, resolved) : "";
   const penalty = resolved?.penalty > 0 ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Over100Penalty"))}</span><strong class="skill-roll-modifier-effect--penalty">−${resolved.penalty}</strong></div>` : "";
   const gm = `<div class="contest-gm-actions" data-contest-gm-actions>
@@ -165,11 +171,19 @@ function renderConfiguredResolution(contest, resolved) {
     const antagonist = contest.participants.find((participant) => participant.id === entry.antagonistId);
     if (contest.resolutionMode === "differential") return `<div class="mythras-chat-total"><span>${escape(`${protagonist?.actorName} / ${antagonist?.actorName}`)}</span><strong>${entry.advantage > 0 ? "+" : ""}${entry.advantage}</strong></div>`;
     const winner = contest.participants.find((participant) => participant.id === entry.winnerId);
-    const outcome = winner ? game.i18n.format("MYTHRASF.Contest.WinnerValue", { actor: winner.actorName })
+    const outcome = winner ? game.i18n.format("MYTHRASF.Contest.WinnerValue", { actor: configuredWinnerName(contest, winner) })
       : localize(`MYTHRASF.Contest.Resolution.${entry.reason}`);
     return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(`${protagonist?.actorName} / ${antagonist?.actorName}`)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(outcome)}</strong></div>`;
   }).join("");
   return summaries + comparisons;
+}
+
+function configuredWinnerName(contest, winner) {
+  const sideEntry = Object.entries(contest.sides ?? {}).find(([, side]) => side.participantIds.includes(winner.id));
+  if (!sideEntry) return winner.actorName;
+  const [sideName, side] = sideEntry;
+  return side.mode === "team" && side.participantIds.length > 1
+    ? localize(`MYTHRASF.Contest.Team.${sideName}`) : winner.actorName;
 }
 
 function namesFor(contest, ids) {
@@ -243,7 +257,7 @@ export function activateContestCard(message, html) {
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
   card.querySelectorAll(".contest-luck-button").forEach((button) => {
-    button.hidden = !eligibleLuckSpenders(game.user, contest).length;
+    button.hidden = !contestLuckContext(game.user, contest, button.dataset.participantId).spenders.length;
   });
   const gmActions = card.querySelector("[data-contest-gm-actions]");
   if (gmActions) gmActions.hidden = !game.user.isGM;
@@ -277,11 +291,12 @@ async function respond(message, contest, id) {
 async function spendContestLuck(message, contest, id) {
   const participant = contest.participants.find((entry) => entry.id === id);
   const rolledActor = game.actors.get(participant?.actorId);
-  if (!rolledActor || participant.rawRoll == null) return;
-  const spenders = eligibleLuckSpenders(game.user, contest);
+  const currentRoll = contestRollForParticipant(contest, id);
+  if (!rolledActor || currentRoll == null) return;
+  const context = contestLuckContext(game.user, contest, id);
+  const spenders = context.spenders;
   if (!spenders.length) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-  const ownRoll = !game.user.isGM && rolledActor.testUserPermission(game.user, "OWNER")
-    && spenders.some((actor) => actor.id === rolledActor.id);
+  const ownRoll = context.ownRoll;
   const { DialogV2 } = foundry.applications.api;
   const spenderControl = spenders.length === 1
     ? `<div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(spenders[0].name)} (${Number(spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorId" value="${escape(spenders[0].id)}"></div>`
@@ -298,7 +313,7 @@ async function spendContestLuck(message, contest, id) {
   const roll = choice.mode === "reroll" ? await new Roll("1d100").evaluate() : null;
   const request = { action: "contestLuck", messageId: message.id, revision: contest.revision,
     participantId: id, userId: game.user.id, luckActorId: luckActor.id,
-    rawRoll: roll?.total ?? invertD100(participant.rawRoll),
+    rawRoll: roll?.total ?? invertD100(currentRoll),
     serializedRoll: roll?.toJSON?.() ?? null };
   if (game.user.isGM || luckActor.isOwner) {
     await luckActor.update({ "system.resources.luckPoints.value": points - 1 });
@@ -312,10 +327,11 @@ async function applyContestLuck(message, request) {
   const contest = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "contest"));
   if (Number(request.revision) !== Number(contest.revision)) return;
   const participant = contest.participants.find((entry) => entry.id === request.participantId);
+  const rollHolder = contestRollHolder(contest, request.participantId);
   const luckActor = game.actors.get(request.luckActorId);
   const user = game.users.get(request.userId);
-  const eligible = eligibleLuckSpenders(user, contest, { requirePoints: false });
-  if (!participant || participant.rawRoll == null || !user || !luckActor
+  const eligible = contestLuckContext(user, contest, request.participantId, { requirePoints: false }).spenders;
+  if (!participant || !rollHolder || contestRollForParticipant(contest, request.participantId) == null || !user || !luckActor
     || !eligible.some((actor) => actor.id === luckActor.id)) return;
   if (!request.luckAlreadySpent) {
     const points = Number(luckActor.system.resources?.luckPoints?.value ?? 0);
@@ -323,9 +339,9 @@ async function applyContestLuck(message, request) {
     await luckActor.update({ "system.resources.luckPoints.value": points - 1 });
   }
   participant.luckHistory = [...(participant.luckHistory ?? []), {
-    value: participant.rawRoll, spenderId: luckActor.id, spenderName: luckActor.name
+    value: contestRollForParticipant(contest, request.participantId), spenderId: luckActor.id, spenderName: luckActor.name
   }];
-  participant.rawRoll = Number(request.rawRoll); participant.serializedRoll = request.serializedRoll;
+  rollHolder.rawRoll = Number(request.rawRoll); rollHolder.serializedRoll = request.serializedRoll;
   contest.revision += 1;
   if (contest.participants.every((entry) => !entry.pending)) {
     contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
@@ -342,6 +358,39 @@ function eligibleLuckSpenders(user, contest, { requirePoints = true } = {}) {
     if (requirePoints && Number(actor.system.resources?.luckPoints?.value ?? 0) < 1) return false;
     return partyIds.has(actor.id) && participantIds.has(actor.id);
   });
+}
+
+function contestLuckContext(user, contest, participantId, { requirePoints = true } = {}) {
+  const participant = contest.participants.find((entry) => entry.id === participantId);
+  const actor = game.actors.get(participant?.actorId);
+  const eligible = eligibleLuckSpenders(user, contest, { requirePoints });
+  const ownRoll = Boolean(actor && eligible.some((candidate) => candidate.id === actor.id)
+    && (user.isGM || actor.isOwner));
+  if (ownRoll) return { ownRoll: true, spenders: [actor] };
+  if (contest.resolutionMode === "difficulty") return { ownRoll: false, spenders: [] };
+  const clickedSide = contestSideForParticipant(contest, participantId);
+  const spenders = eligible.filter((candidate) => {
+    if (!user.isGM && !candidate.isOwner) return false;
+    const candidateParticipant = contest.participants.find((entry) => entry.actorId === candidate.id);
+    return contestSideForParticipant(contest, candidateParticipant?.id) !== clickedSide;
+  });
+  return { ownRoll: false, spenders };
+}
+
+function contestSideForParticipant(contest, participantId) {
+  if (contest.schemaVersion < 2) return participantId === contest.initiatorId ? "initiator" : "opponent";
+  return Object.entries(contest.sides).find(([, side]) => side.participantIds.includes(participantId))?.[0] ?? null;
+}
+
+function contestRollHolder(contest, participantId) {
+  const sideName = contestSideForParticipant(contest, participantId);
+  const side = contest.sides?.[sideName];
+  const holderId = side && side.mode !== "individual" ? side.representativeId : participantId;
+  return contest.participants.find((entry) => entry.id === holderId) ?? null;
+}
+
+function contestRollForParticipant(contest, participantId) {
+  return contestRollHolder(contest, participantId)?.rawRoll ?? null;
 }
 
 async function gmAction(message, current, action, participantId = null) {

@@ -939,6 +939,8 @@
   "MYTHRASF.Contest.Against": "Against",
   "MYTHRASF.Contest.Outcome": "Outcome",
   "MYTHRASF.Contest.WinnerValue": "Winner: {actor}",
+  "MYTHRASF.Contest.Team.initiator": "Initiating team",
+  "MYTHRASF.Contest.Team.opponent": "Opposing team",
   "MYTHRASF.Contest.Rejected.state": "This roll no longer accepts responses.",
   "MYTHRASF.Contest.Rejected.revision": "The card changed; try again.",
   "MYTHRASF.Contest.Rejected.duplicate": "This participant has already responded.",

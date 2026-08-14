@@ -29,10 +29,10 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
     .map((skill) => `<option value="${escape(actor.id)}:${escape(skill.id)}" data-target="${Number(skill.system.total ?? 0)}">${escape(actor.name)} — ${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`))
     .join("");
   const targetedActorIds = new Set(Array.from(game.user?.targets ?? []).map((token) => token.actor?.id).filter(Boolean));
-  const participantDifficultyOptions = DIFFICULTIES.map((key) => `<option value="${key}" ${key === "standard" ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
+  const participantDifficultyOptions = DIFFICULTIES.map((key) => `<option value="${key}" ${key === defaultDifficulty ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
   const participantRows = actors.filter((actor) => actor.id !== item.actor?.id).map((actor) => {
     const abilities = actor.items.filter((candidate) => ABILITY_TYPES.includes(candidate.type));
-    const options = abilities.map((ability) => `<option value="${escape(ability.id)}" data-target="${Number(ability.system.total ?? 0)}">${escape(ability.name)} (${Number(ability.system.total ?? 0)}%)</option>`).join("");
+    const options = abilities.map((ability) => `<option value="${escape(ability.id)}" data-target="${Number(ability.system.total ?? 0)}" ${ability.type === item.type && ability.name === item.name ? "selected" : ""}>${escape(ability.name)} (${Number(ability.system.total ?? 0)}%)</option>`).join("");
     const checked = targetedActorIds.has(actor.id) ? "checked" : "";
     return `<div class="skill-roll-participant" data-actor-id="${escape(actor.id)}">
       <span class="skill-roll-participant-name">${escape(actor.name)}</span>
@@ -82,7 +82,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
             <label data-designated hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.Representative"))}</span><select name="opponentDesignatedActorId">${actorOptions}</select></label>
             <label data-party-loader hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.LoadGroup"))}</span><select name="opponentPartyId">${partyOptions}</select></label>
           </fieldset>
-          <div class="skill-roll-participants">${participantRows}</div>
+          <div class="skill-roll-participants" hidden>${participantRows}</div>
         </div>
       </fieldset>
       ${adjustmentPanel("limited")}
@@ -131,7 +131,10 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
             participants, valid: participants.length === controls.length };
         };
         const initiatorSide = sideConfig("initiator");
-        const opponentSide = sideConfig("opponent");
+        const opponentSide = resolutionMode === "difficulty"
+          ? { mode: form.opponentMode.value, representativeRule: form.opponentTeamRule.value,
+            designatedActorId: null, participants: [], valid: true }
+          : sideConfig("opponent");
         if (resolutionMode !== "difficulty" && !opponentSide.participants.length) {
           ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired")); return null;
         }
@@ -207,6 +210,9 @@ function refreshContestFields(dialog) {
   const resolution = dialog.querySelector("select[name='resolutionMode']")?.value ?? "difficulty";
   const opponentPanel = dialog.querySelector("[data-contest-side='opponent']");
   if (opponentPanel) opponentPanel.hidden = resolution === "difficulty";
+  const initiatorMode = dialog.querySelector("select[name='initiatorMode']")?.value ?? "individual";
+  const participantList = dialog.querySelector(".skill-roll-participants");
+  if (participantList) participantList.hidden = resolution === "difficulty" && initiatorMode === "individual";
   for (const side of ["initiator", "opponent"]) {
     const mode = dialog.querySelector(`select[name='${side}Mode']`)?.value ?? "individual";
     const group = mode !== "individual";

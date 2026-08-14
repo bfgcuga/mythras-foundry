@@ -28,7 +28,8 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
   assert.match(css, /\.mythras-contest-card/);
   assert.match(script, /preferredContestCoordinator\(game\.users, contest\.authorUserId\) === game\.user\.id/);
   assert.match(script, /contest-luck-button/);
-  assert.match(script, /button\.hidden = !eligibleLuckSpenders\(game\.user, contest\)\.length/);
+  assert.match(script, /contestLuckContext\(game\.user, contest, button\.dataset\.participantId\)\.spenders\.length/);
+  assert.match(script, /sheet-icon-button mythras-chat-luck-button contest-luck-button/);
   assert.match(script, /contest-roll-attempt contest-roll-attempt--current/);
   assert.match(css, /\.contest-roll-attempts \{ display: grid/);
 });
@@ -48,6 +49,17 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   assert.match(dialog, /if \(mode === "individual"\) return \{ actorId: actor\.id, actorName: actor\.name,/);
   assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
   assert.match(dialog, /skill-roll-adjustment-fields/);
+  assert.match(dialog, /<div class="skill-roll-participants" hidden>/);
+  assert.match(dialog, /resolutionMode === "difficulty"[\s\S]*participants: \[\], valid: true/);
+  assert.match(dialog, /ability\.type === item\.type && ability\.name === item\.name \? "selected"/);
+});
+
+test("configured contest cards separate sides and name multi-member team winners", () => {
+  const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
+  assert.match(script, /<section class="contest-side contest-side--\$\{name\}">/);
+  assert.match(script, /side\.mode === "team" && side\.participantIds\.length > 1/);
+  assert.match(script, /MYTHRASF\.Contest\.Team\.\$\{sideName\}/);
+  assert.match(script, /contestRollHolder\(contest, request\.participantId\)/);
 });
 
 test("resolution and participation are configured as independent axes", () => {

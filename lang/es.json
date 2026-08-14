@@ -939,6 +939,8 @@
   "MYTHRASF.Contest.Against": "Contra",
   "MYTHRASF.Contest.Outcome": "Resultado",
   "MYTHRASF.Contest.WinnerValue": "Vencedor: {actor}",
+  "MYTHRASF.Contest.Team.initiator": "Equipo iniciador",
+  "MYTHRASF.Contest.Team.opponent": "Equipo rival",
   "MYTHRASF.Contest.Rejected.state": "La tirada ya no admite respuestas.",
   "MYTHRASF.Contest.Rejected.revision": "La tarjeta ha cambiado; vuelve a intentarlo.",
   "MYTHRASF.Contest.Rejected.duplicate": "Este participante ya ha respondido.",
