@@ -37,7 +37,10 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
 test("Luck spenders only need to be active-party participants", () => {
   const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
   assert.match(script, /getActiveParty\?\.\(\)/);
-  assert.match(script, /return partyIds\.has\(actor\.id\) && participantIds\.has\(actor\.id\)/);
+  assert.match(script, /actorIdentity\(contestActor\(participant\)\)/);
+  assert.match(script, /return partyIds\.has\(identity\) && participantIds\.has\(identity\)/);
+  assert.match(script, /participant\.actorUuid && globalThis\.fromUuidSync/);
+  assert.match(script, /entry\.actorId === actorIdentity\(candidate\)/);
   assert.doesNotMatch(script, /playerOwned/);
   assert.match(script, /spenders\.length === 1/);
   assert.match(script, /type="hidden" name="luckActorId"/);

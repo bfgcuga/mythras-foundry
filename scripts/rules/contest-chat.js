@@ -17,10 +17,23 @@ function participantId(actorId) {
   return foundry.utils.randomID(12) + actorId.slice(0, 4);
 }
 
+function actorIdentity(actor) {
+  return actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
+}
+
+function contestActor(participant) {
+  if (!participant) return null;
+  const byUuid = participant.actorUuid && globalThis.fromUuidSync?.(participant.actorUuid);
+  if (byUuid) return byUuid;
+  const tokenActor = Array.from(canvas?.tokens?.placeables ?? []).map((token) => token.actor)
+    .find((actor) => actorIdentity(actor) === participant.actorId || actor?.id === participant.actorId);
+  return tokenActor ?? game.actors.get(participant.actorId) ?? null;
+}
+
 export async function createContestMessage(item, configured, initiatorRoll = null) {
   const setup = configured.contest;
   const initiator = {
-    id: participantId(item.actor.id), actorId: item.actor.id, actorName: item.actor.name,
+    id: participantId(item.actor.id), actorId: actorIdentity(item.actor), actorUuid: item.actor.uuid, actorName: item.actor.name,
     abilityId: item.id, abilityName: item.name, target: configured.targets.target,
     rawRoll: initiatorRoll?.total ?? null, pending: !initiatorRoll,
     serializedRoll: initiatorRoll?.toJSON?.() ?? null,
@@ -219,7 +232,7 @@ export function registerContestSocket() {
 async function applyContestResponse(message, request) {
   const contest = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "contest"));
   const participant = contest.participants.find((entry) => entry.id === request.participantId);
-  const actor = game.actors.get(participant?.actorId);
+  const actor = contestActor(participant);
   const user = game.users.get(request.userId);
   const invalid = validateContestResponse(contest, request, { actor, user });
   if (invalid) return ui.notifications.warn(game.i18n.localize(`MYTHRASF.Contest.Rejected.${invalid}`));
@@ -253,7 +266,7 @@ export function activateContestCard(message, html) {
   card.dataset.contestActive = "true";
   card.querySelectorAll(".contest-response-button").forEach((button) => {
     const participant = contest.participants.find((entry) => entry.id === button.dataset.participantId);
-    const actor = game.actors.get(participant?.actorId);
+    const actor = contestActor(participant);
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
   card.querySelectorAll(".contest-luck-button").forEach((button) => {
@@ -273,7 +286,7 @@ export function activateContestCard(message, html) {
 
 async function respond(message, contest, id) {
   const participant = contest.participants.find((entry) => entry.id === id);
-  const actor = game.actors.get(participant?.actorId);
+  const actor = contestActor(participant);
   if (!actor || (!game.user.isGM && !actor.isOwner)) return;
   const config = await openContestResponseDialog(actor, participant.abilityId, participant.config?.difficulty);
   if (!config) return;
@@ -286,7 +299,7 @@ async function respond(message, contest, id) {
 
 async function spendContestLuck(message, contest, id) {
   const participant = contest.participants.find((entry) => entry.id === id);
-  const rolledActor = game.actors.get(participant?.actorId);
+  const rolledActor = contestActor(participant);
   const currentRoll = contestRollForParticipant(contest, id);
   if (!rolledActor || currentRoll == null) return;
   const context = contestLuckContext(game.user, contest, id);
@@ -295,20 +308,21 @@ async function spendContestLuck(message, contest, id) {
   const ownRoll = context.ownRoll;
   const { DialogV2 } = foundry.applications.api;
   const spenderControl = spenders.length === 1
-    ? `<div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(spenders[0].name)} (${Number(spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorId" value="${escape(spenders[0].id)}"></div>`
-    : `<label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorId">${spenders.map((actor) => `<option value="${escape(actor.id)}">${escape(actor.name)} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label>`;
+    ? `<div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(spenders[0].name)} (${Number(spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorId" value="${escape(actorIdentity(spenders[0]))}"></div>`
+    : `<label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorId">${spenders.map((actor) => `<option value="${escape(actorIdentity(actor))}">${escape(actor.name)} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label>`;
   const choice = await DialogV2.wait({ window: { title: localize("MYTHRASF.Luck.Title") },
     content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${escape(localize(ownRoll ? "MYTHRASF.Luck.Confirm" : "MYTHRASF.Luck.ForceRerollConfirm"))}</p>${spenderControl}</div>`,
     buttons: [{ action: "reroll", label: localize(ownRoll ? "MYTHRASF.Luck.Reroll" : "MYTHRASF.Luck.ForceReroll"), icon: "fas fa-dice-d20", callback: (event, button) => ({ mode: "reroll", luckActorId: button.form.elements.luckActorId.value }) },
       ...(ownRoll ? [{ action: "invert", label: localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left", callback: (event, button) => ({ mode: "invert", luckActorId: button.form.elements.luckActorId.value }) }] : []),
       { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
   if (!choice) return;
-  const luckActor = game.actors.get(choice.luckActorId);
+  const luckParticipant = contest.participants.find((entry) => entry.actorId === choice.luckActorId);
+  const luckActor = contestActor(luckParticipant) ?? game.actors.get(choice.luckActorId);
   const points = Number(luckActor?.system.resources?.luckPoints?.value ?? 0);
-  if (!luckActor || !spenders.some((actor) => actor.id === luckActor.id) || points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  if (!luckActor || !spenders.some((actor) => actorIdentity(actor) === choice.luckActorId) || points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
   const roll = choice.mode === "reroll" ? await new Roll("1d100").evaluate() : null;
   const request = { action: "contestLuck", messageId: message.id, revision: contest.revision,
-    participantId: id, userId: game.user.id, luckActorId: luckActor.id,
+    participantId: id, userId: game.user.id, luckActorId: actorIdentity(luckActor),
     rawRoll: roll?.total ?? invertD100(currentRoll),
     serializedRoll: roll?.toJSON?.() ?? null };
   if (game.user.isGM || luckActor.isOwner) {
@@ -324,11 +338,12 @@ async function applyContestLuck(message, request) {
   if (Number(request.revision) !== Number(contest.revision)) return;
   const participant = contest.participants.find((entry) => entry.id === request.participantId);
   const rollHolder = contestRollHolder(contest, request.participantId);
-  const luckActor = game.actors.get(request.luckActorId);
+  const luckParticipant = contest.participants.find((entry) => entry.actorId === request.luckActorId);
+  const luckActor = contestActor(luckParticipant) ?? game.actors.get(request.luckActorId);
   const user = game.users.get(request.userId);
   const eligible = contestLuckContext(user, contest, request.participantId, { requirePoints: false }).spenders;
   if (!participant || !rollHolder || contestRollForParticipant(contest, request.participantId) == null || !user || !luckActor
-    || !eligible.some((actor) => actor.id === luckActor.id)) return;
+    || !eligible.some((actor) => actorIdentity(actor) === request.luckActorId)) return;
   if (!request.luckAlreadySpent) {
     const points = Number(luckActor.system.resources?.luckPoints?.value ?? 0);
     if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
@@ -349,16 +364,20 @@ async function applyContestLuck(message, request) {
 function eligibleLuckSpenders(user, contest, { requirePoints = true } = {}) {
   const activeParty = game.mythrasFoundry?.party?.getActiveParty?.();
   const partyIds = new Set(activeParty?.memberIds ?? []);
-  const participantIds = new Set((contest?.participants ?? []).map((participant) => participant.actorId));
-  return game.actors.filter((actor) => {
+  const participantIds = new Set((contest?.participants ?? []).map((participant) => actorIdentity(contestActor(participant))).filter(Boolean));
+  const seen = new Set();
+  return (contest?.participants ?? []).map((participant) => contestActor(participant)).filter((actor) => {
+    const identity = actorIdentity(actor);
+    if (!actor || seen.has(identity)) return false;
+    seen.add(identity);
     if (requirePoints && Number(actor.system.resources?.luckPoints?.value ?? 0) < 1) return false;
-    return partyIds.has(actor.id) && participantIds.has(actor.id);
+    return partyIds.has(identity) && participantIds.has(identity);
   });
 }
 
 function contestLuckContext(user, contest, participantId, { requirePoints = true } = {}) {
   const participant = contest.participants.find((entry) => entry.id === participantId);
-  const actor = game.actors.get(participant?.actorId);
+  const actor = contestActor(participant);
   const eligible = eligibleLuckSpenders(user, contest, { requirePoints });
   const ownRoll = Boolean(actor && eligible.some((candidate) => candidate.id === actor.id)
     && (user.isGM || actor.isOwner));
@@ -367,7 +386,7 @@ function contestLuckContext(user, contest, participantId, { requirePoints = true
   const clickedSide = contestSideForParticipant(contest, participantId);
   const spenders = eligible.filter((candidate) => {
     if (!user.isGM && !candidate.isOwner) return false;
-    const candidateParticipant = contest.participants.find((entry) => entry.actorId === candidate.id);
+    const candidateParticipant = contest.participants.find((entry) => entry.actorId === actorIdentity(candidate));
     return contestSideForParticipant(contest, candidateParticipant?.id) !== clickedSide;
   });
   return { ownRoll: false, spenders };
