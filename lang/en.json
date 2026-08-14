@@ -114,6 +114,7 @@
   "MYTHRASF.SkillRoll.Modifiers": "Applied modifiers",
   "MYTHRASF.SkillRoll.ChosenDifficulty": "Action difficulty",
   "MYTHRASF.SkillRoll.FinalDifficulty": "Final applied difficulty",
+  "MYTHRASF.SkillRoll.FinalSkillValue": "Final skill value",
   "MYTHRASF.SkillRoll.FatigueSource": "Fatigue ({level})",
   "MYTHRASF.SkillRoll.EncumbranceSource": "Carried load",
   "MYTHRASF.SkillRoll.OneDifficultyStep": "+1 grade",

@@ -85,6 +85,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 
 - Variables de tema y componentes compartidos se definen una sola vez en `styles/mythras-foundry.css`.
 - Los diálogos de tirada enumeran por separado cada modificador y su procedencia: el origen conserva `--mythras-ink`, las penalizaciones se muestran en rojo y los bonificadores en verde. La dificultad combinada se presenta después en un recuadro independiente.
+- Al final del diálogo se muestra el valor propio de la habilidad y, solo cuando cambia, el objetivo final calculado inmediatamente después entre paréntesis; el objetivo es rojo si disminuye y verde si aumenta.
 - Antes de añadir CSS, comprobar si el patrón ya existe. Si será usado en dos o más lugares, crear o ampliar una clase compartida.
 - Las nuevas vistas deben usar elementos semánticos, textos localizados y controles accesibles.
 - Los valores derivados que aparecen en una hoja y participan en reglas deben proceder del mismo ayudante puro. No duplicar cálculos entre la preparación de contexto, plantillas y resolución de combate.

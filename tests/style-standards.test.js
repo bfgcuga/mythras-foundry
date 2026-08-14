@@ -48,6 +48,12 @@ test("el diálogo de tirada separa origen, efecto y dificultad final", () => {
   assert.match(css, /skill-roll-modifier-effect--penalty \{ color: #a1241b !important/);
   assert.match(css, /skill-roll-modifier-effect--bonus \{ color: #3f7138 !important/);
   assert.match(rollDialog, /data-effective-difficulty/);
+  assert.match(rollDialog, /data-base-target-value/);
+  assert.match(rollDialog, /data-final-target-value/);
+  assert.match(rollDialog, /penalized-value/);
+  assert.match(rollDialog, /targets\.target === targets\.baseTarget/);
+  assert.match(css, /skill-roll-target--penalty \{ color: #a1241b !important/);
+  assert.match(css, /skill-roll-target--bonus \{ color: #3f7138 !important/);
   assert.match(standards, /penalizaciones se muestran en rojo y los bonificadores en verde/);
 });
 

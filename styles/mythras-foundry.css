@@ -145,6 +145,10 @@
 .skill-roll-modifier-effect--bonus { color: #3f7138 !important; }
 .skill-roll-modifier-effect--neutral { color: var(--mythras-ink) !important; }
 .skill-roll-effective-difficulty output { display: block; text-align: center; font-weight: 700; }
+.skill-roll-final-target > div { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.skill-roll-target--penalty { color: #a1241b !important; }
+.skill-roll-target--bonus { color: #3f7138 !important; }
+.skill-roll-target--neutral { color: var(--mythras-ink) !important; }
 .luck-spend-dialog { max-width: 28rem; }
 .chat-message .mythras-chat-total {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;

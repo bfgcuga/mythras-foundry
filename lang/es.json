@@ -114,6 +114,7 @@
   "MYTHRASF.SkillRoll.Modifiers": "Modificadores aplicados",
   "MYTHRASF.SkillRoll.ChosenDifficulty": "Dificultad de la acción",
   "MYTHRASF.SkillRoll.FinalDifficulty": "Dificultad final aplicada",
+  "MYTHRASF.SkillRoll.FinalSkillValue": "Valor final de la habilidad",
   "MYTHRASF.SkillRoll.FatigueSource": "Fatiga ({level})",
   "MYTHRASF.SkillRoll.EncumbranceSource": "Carga transportada",
   "MYTHRASF.SkillRoll.OneDifficultyStep": "+1 grado",
