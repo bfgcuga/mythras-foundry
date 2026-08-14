@@ -73,9 +73,11 @@ sin convertir esas reglas en tipos de tirada.
 el estado versionado en `flags.mythras-foundry.contest`, valida revisión y
 propiedad, y elige al DJ activo o al autor como coordinador de respaldo. Las
 tarjetas antiguas y las tiradas simples no requieren migración.
-Cada participante interactivo puede gastar suerte repetidas veces sobre su dado;
-el historial permanece en la misma fila y cada cambio vuelve a resolver la
-comparación completa.
+Las tiradas simples y cada participante interactivo pueden gastar suerte
+repetidas veces sobre su último dado mientras dispongan de puntos. El historial
+permanece en la tarjeta; en las tiradas enfrentadas cada cambio vuelve a resolver
+la comparación completa. En ambos casos sólo pueden gastar suerte los personajes
+participantes que pertenecen al grupo activo.
 
 ## Compendios
 

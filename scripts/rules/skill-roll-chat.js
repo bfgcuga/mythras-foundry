@@ -1,10 +1,13 @@
 import { classifyRoll, renderRollLine, renderRollResult, rollThresholdRanges } from "../documents/mythras-item.js";
 import { invertD100 } from "./skill-roll.js";
 
-export function activateSkillRollCard(message, html) {
+export async function activateSkillRollCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
   const button = root?.querySelector?.("[data-action='spend-luck']");
   if (!button || button.dataset.listenerAttached) return;
+  const data = message.getFlag("mythras-foundry", "skillRoll");
+  const actor = data?.actorUuid ? await fromUuid(data.actorUuid) : null;
+  button.hidden = !canUseSimpleRollLuck(actor);
   button.dataset.listenerAttached = "true";
   button.addEventListener("click", () => spendLuck(message));
 }
@@ -12,7 +15,7 @@ export function activateSkillRollCard(message, html) {
 async function spendLuck(message) {
   const data = message.getFlag("mythras-foundry", "skillRoll");
   const actor = data?.actorUuid ? await fromUuid(data.actorUuid) : null;
-  if (!actor || !actor.isOwner || data.luckSpent) return;
+  if (!canUseSimpleRollLuck(actor)) return;
   const luck = Number(actor.system.resources?.luckPoints?.value ?? 0);
   if (luck < 1) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.None"));
   const { DialogV2 } = foundry.applications.api;
@@ -33,12 +36,19 @@ async function spendLuck(message) {
   const result = classifyRoll(value, data.target, data.criticalTarget);
   const card = document.createElement("div");
   card.innerHTML = message.content;
-  card.querySelector(".mythras-chat-roll-line")?.replaceWith(fragment(renderRollLine(value, { previous, luckSpent: true })));
+  const label = card.querySelector(".mythras-chat-roll-line")?.dataset.rollLabel ?? "MYTHRASF.Chat.SkillRoll";
+  card.querySelector(".mythras-chat-roll-line")?.replaceWith(fragment(renderRollLine(value, { previous, label })));
   card.querySelector(".mythras-chat-result-block")?.replaceWith(fragment(renderRollResult(result, rollThresholdRanges(data.target, data.criticalTarget))));
   await actor.update({ "system.resources.luckPoints.value": luck - 1 });
   await message.update({ content: card.innerHTML, rolls: roll ? [...message.rolls, roll] : message.rolls,
-    "flags.mythras-foundry.skillRoll.rolls": [...previous, value],
-    "flags.mythras-foundry.skillRoll.luckSpent": true });
+    "flags.mythras-foundry.skillRoll.rolls": [...previous, value] });
+}
+
+function canUseSimpleRollLuck(actor) {
+  if (!actor || (!game.user.isGM && !actor.isOwner)) return false;
+  const identity = actor.parent?.actorId ?? actor.token?.actorId ?? actor.id;
+  const activeParty = game.mythrasFoundry?.party?.getActiveParty?.();
+  return (activeParty?.memberIds ?? []).includes(identity);
 }
 
 function fragment(html) {

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 globalThis.Item = class {};
 
-const { classifyRoll, rollThresholdRanges } = await import("../scripts/documents/mythras-item.js");
+const { classifyRoll, renderRollLine, rollThresholdRanges } = await import("../scripts/documents/mythras-item.js");
 const { invertD100, resolveSkillRollTargets, supportingSkillAdjustment } = await import("../scripts/rules/skill-roll.js");
 
 test("01-05 siempre tiene éxito y el umbral crítico prevalece", () => {
@@ -56,4 +56,14 @@ test("la leyenda muestra los rangos de crítico y pifia aplicados", () => {
     critical: "01–11",
     fumble: "00"
   });
+});
+
+test("la línea de tirada conserva la suerte para usos repetidos", () => {
+  globalThis.game = { i18n: { localize: (key) => key } };
+  const html = renderRollLine(39, { previous: [93, 59] });
+  assert.equal((html.match(/mythras-chat-simple-roll-attempt/g) ?? []).length, 2);
+  assert.match(html, /data-action="spend-luck"/);
+  assert.match(html, /93/);
+  assert.match(html, /59/);
+  assert.match(html, /39/);
 });

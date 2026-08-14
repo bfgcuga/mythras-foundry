@@ -1,6 +1,6 @@
 # Mythras Foundry
 
-Sistema independiente de Mythras Imperativo para Foundry Virtual Tabletop 13.
+Sistema independiente de Mythras básico revisado para Foundry Virtual Tabletop 13.
 El proyecto no está publicado en el catálogo oficial de Foundry; las versiones
 instalables se distribuyen mediante las releases de GitHub.
 
@@ -40,20 +40,12 @@ El sistema incluye actualmente:
 - interfaz localizada en español e inglés;
 - migraciones automáticas de datos heredados al abrir un mundo con un GM activo.
 
-La implementación usa Mythras Imperativo como perfil predeterminado. Los Puntos
-de Acción pueden configurarse como un valor fijo —2 por defecto— o calcularse a
-partir de INT y DES. Las diferencias pendientes de perfil se identifican en el
-código con `RULESET DIFFERENCE` y `TODO(rules-profile)`.
+La implementación usa Mythras básico revisado como perfil predeterminado. Los
+Puntos de Acción conservan sus dos modos válidos: un valor fijo —2 por defecto—
+o el cálculo a partir de INT y DES.
 
-Queda pendiente sustituir el JSON de reglas de selección de culturas y
-profesiones por un editor visual basado en menús y habilidades arrastrables.
-
-También queda pendiente revisar de forma conjunta el modelo de estados y
-condiciones y las reglas con las que se apilan sus modificadores de dificultad.
-
-Quedan pendientes unificar la suerte repetible de las tarjetas interactivas con
-las tiradas simples, la integración del motor con ataques, defensas, daño y
-efectos de combate, y el método porcentual para resolver multitudes.
+El trabajo futuro confirmado, sus dependencias y las decisiones todavía
+abiertas se mantienen en [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Compendios
 

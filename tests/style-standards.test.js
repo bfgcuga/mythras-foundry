@@ -43,6 +43,14 @@ test("los diálogos Mythras aplican la superficie de papel a la ventana completa
   assert.match(systemScript, /classList\.add\("mythras-foundry", "mythras-paper-sheet"\)/);
 });
 
+test("la suerte simple es repetible y usa el personaje participante del grupo activo", () => {
+  assert.doesNotMatch(rollChat, /data\.luckSpent/);
+  assert.doesNotMatch(rollChat, /skillRoll\.luckSpent/);
+  assert.match(rollChat, /getActiveParty\?\.\(\)/);
+  assert.match(rollChat, /flags\.mythras-foundry\.skillRoll\.rolls/);
+  assert.match(css, /mythras-chat-simple-roll-attempt/);
+});
+
 test("el diálogo de tirada separa origen, efecto y dificultad final", () => {
   assert.match(css, /skill-roll-modifier > span \{ color: var\(--mythras-ink\) !important/);
   assert.match(css, /skill-roll-modifier-effect--penalty \{ color: #a1241b !important/);

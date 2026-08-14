@@ -88,7 +88,7 @@ export class MythrasItem extends Item {
       `,
       flags: { "mythras-foundry": { skillRoll: {
         actorUuid: this.actor.uuid, itemId: this.id, target: targets.target,
-        criticalTarget: targets.criticalTarget, rolls: [roll.total], luckSpent: false
+        criticalTarget: targets.criticalTarget, rolls: [roll.total]
       } } }
     };
     ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
@@ -122,21 +122,24 @@ export class MythrasItem extends Item {
         <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
         <div class="mythras-chat-details">
           <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Target")}</span><strong>${target}%</strong></div>
-          <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.PassionRoll")} (1d100)</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div>
+          ${renderRollLine(roll.total, { label: "MYTHRASF.Chat.PassionRoll" })}
         </div>
         ${renderRollResult(result, ranges)}
-      </section>`
+      </section>`,
+      flags: { "mythras-foundry": { skillRoll: {
+        actorUuid: this.actor.uuid, itemId: this.id, target,
+        criticalTarget, rolls: [roll.total]
+      } } }
     };
     ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
     await ChatMessage.create(messageData);
   }
 }
 
-export function renderRollLine(value, { previous = [], luckSpent = false } = {}) {
-  const history = previous.map((old) => `<strong class="mythras-chat-roll-value">${old}</strong>`).join(" ");
-  const spent = luckSpent && history ? ` <span class="mythras-chat-luck-spent">${game.i18n.localize("MYTHRASF.Luck.Spent")}</span> ` : "";
-  const button = luckSpent ? "" : `<button type="button" class="sheet-icon-button mythras-chat-luck-button" data-action="spend-luck" aria-label="${game.i18n.localize("MYTHRASF.Luck.Use")}" title="${game.i18n.localize("MYTHRASF.Luck.Use")}"><i class="fas fa-clover" aria-hidden="true"></i></button>`;
-  return `<div class="mythras-chat-row mythras-chat-roll-line"><span>${game.i18n.localize("MYTHRASF.Chat.SkillRoll")} (1d100)</span><span class="mythras-chat-roll-controls">${history}${spent}<strong class="mythras-chat-roll-value">${value}</strong>${button}</span></div>`;
+export function renderRollLine(value, { previous = [], label = "MYTHRASF.Chat.SkillRoll" } = {}) {
+  const history = previous.map((old) => `<div class="mythras-chat-simple-roll-attempt"><strong class="mythras-chat-roll-value">${old}</strong><small class="mythras-chat-luck-spent">${game.i18n.localize("MYTHRASF.Luck.Spent")}</small></div>`).join("");
+  const button = `<button type="button" class="sheet-icon-button mythras-chat-luck-button" data-action="spend-luck" aria-label="${game.i18n.localize("MYTHRASF.Luck.Use")}" title="${game.i18n.localize("MYTHRASF.Luck.Use")}"><i class="fas fa-clover" aria-hidden="true"></i></button>`;
+  return `<div class="mythras-chat-row mythras-chat-roll-line" data-roll-label="${label}"><span>${game.i18n.localize(label)} (1d100)</span><span class="mythras-chat-roll-controls">${history}<span class="mythras-chat-simple-roll-current"><strong class="mythras-chat-roll-value">${value}</strong>${button}</span></span></div>`;
 }
 
 export function classifyRoll(value, target, criticalTarget) {
