@@ -51,3 +51,22 @@ test("la causa manual de incapacitado aplica las mismas consecuencias", () => {
   assert.equal(summary.totals.initiative.effective, 4);
   assert.equal(summary.totals.actionPoints.effective, 0);
 });
+
+test("los estados de habilidad se combinan antes de los incrementos por grados", () => {
+  const summary = penaltySummary({ baseAttributes,
+    skillStatuses: [{ id: "prone", name: "Prone", skillDifficulty: "formidable" }],
+    loadState: ENCUMBRANCE_STATES.loaded });
+  assert.equal(summary.totals.difficulties.general, "formidable");
+  assert.equal(summary.totals.difficulties.physical, "herculean");
+  assert.equal(summary.rows.status.skillStatuses[0].id, "prone");
+});
+
+test("inconsciente reduce a cero los atributos totales", () => {
+  const summary = penaltySummary({ baseAttributes, unconscious: true,
+    skillStatuses: [{ id: "unconscious", name: "Unconscious",
+      skillDifficulty: "impossible" }], loadState: ENCUMBRANCE_STATES.unencumbered });
+  assert.equal(summary.totals.difficulties.general, "impossible");
+  assert.equal(summary.totals.movement.effective, 0);
+  assert.equal(summary.totals.initiative.effective, 0);
+  assert.equal(summary.totals.actionPoints.effective, 0);
+});

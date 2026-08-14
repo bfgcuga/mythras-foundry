@@ -108,7 +108,15 @@ test("la pestaña de penalizaciones usa una tabla semántica y tipografía compa
   assert.match(css, /\.penalties-table \{[^}]*font-size: var\(--mythras-font-size-table\)/);
   assert.match(css, /\.penalties-table th,\s*\n\.mythras-foundry \.penalties-table td[^}]*white-space: normal/s);
   assert.match(characterTemplate, /data-incapacitated-manual/);
+  assert.match(characterTemplate, /data-status-toggle="blinded"/);
+  assert.match(characterTemplate, /data-status-toggle="prone"/);
+  assert.match(characterTemplate, /data-status-toggle="unconscious"/);
+  assert.match(characterTemplate, /data-status-toggle="stunned"/);
+  assert.match(characterTemplate, /data-status-toggle="bleeding"/);
+  assert.match(characterTemplate, /data-status-toggle="drowning"/);
+  assert.match(characterTemplate, /data-status-toggle="surprised"/);
   assert.match(systemScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
+  assert.match(systemScript, /MYTHRAS_STATUS_EFFECTS/);
   assert.match(systemScript, /preDeleteActiveEffect/);
   assert.match(systemScript, /preUpdateActiveEffect/);
 });

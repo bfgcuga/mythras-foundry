@@ -2,13 +2,16 @@ import {
   CHARACTERISTIC_KEYS,
   calculateDerivedAttributes
 } from "../rules/derived-attributes.js";
-import { applyFatigue, combinedConditionLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { applyFatigue, combinedConditionLevel, combineDifficulties,
+  FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { getActionPointRules } from "../settings.js";
 import { applyArmorInitiativePenalty } from "../rules/armor.js";
 import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
 import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
+import { applyStatusAttributes, statusSkillDifficulty,
+  UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 
 const {
   BooleanField,
@@ -129,15 +132,21 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
       || this.parent?.getFlag?.(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG));
     this.conditionLevel = combinedConditionLevel(
       this.fatigueLevel, worstWoundLevel(locations), incapacitated);
+    this.skillDifficulty = combineDifficulties(
+      this.conditionLevel.skillDifficulty,
+      statusSkillDifficulty(this.parent?.statuses)
+    );
     const conditioned = applyFatigue(this.baseAttributes, this.conditionLevel.key);
     const armors = this.parent?.items?.filter((item) => item.type === "armor") ?? [];
-    this.attributes = applyArmorInitiativePenalty(conditioned, armors);
+    this.attributes = applyStatusAttributes(
+      applyArmorInitiativePenalty(conditioned, armors), this.parent?.statuses);
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;
 
+    const unconscious = this.parent?.statuses?.has(UNCONSCIOUS_STATUS_ID);
     for (const resource of Object.values(this.resources)) {
-      resource.value = Math.min(resource.value, resource.max);
+      if (!unconscious) resource.value = Math.min(resource.value, resource.max);
     }
   }
 }

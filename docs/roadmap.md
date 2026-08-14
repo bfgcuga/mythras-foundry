@@ -18,6 +18,12 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
   de fatiga, heridas, carga y otros efectos.
 - Mantener una única fuente de verdad entre hojas, diálogos de tirada y
   resolución de reglas.
+- Automatizar Sangrando y Ahogándose cuando existan asaltos de combate. Mientras
+  permanezca cualquiera de esos estados se realizará una tirada de Aguante en
+  cada asalto: éxito crítico sin efecto; éxito, pérdida de 1 nivel de Fatiga;
+  fracaso, pérdida de 1d2 niveles; pifia, pérdida de 1d3 niveles.
+- Definir e implementar los efectos mecánicos de Sorprendido. Por ahora existe
+  como estado manual y visual de Foundry, sin modificadores automáticos.
 
 ### Macros de daño y peligros
 

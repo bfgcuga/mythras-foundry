@@ -66,6 +66,21 @@ reglas de condición compartidas. Mientras exista una causa automática no puede
 retirarse el estado; una causa manual puede coexistir con ellas sin perderse
 cuando se resuelva una herida o cambie la fatiga.
 
+Los estados manuales Cegado y Derribado también son `statusEffects` de Foundry.
+Solo establecen una dificultad mínima de habilidad —Hercúlea y Formidable,
+respectivamente— mediante `scripts/rules/statuses.js`; no transforman los
+atributos derivados. Si coinciden varios estados se conserva la peor dificultad
+mínima antes de aplicar incrementos por grados.
+
+Los estados manuales adicionales se resuelven en el mismo módulo. Inconsciente
+establece la dificultad Imposible —objetivo cero— y transforma a cero los
+atributos derivados efectivos sin modificar sus valores base. Aturdido e
+Inconsciente impiden iniciar ataques, pero Aturdido no impide las defensas.
+Sangrando y Ahogándose son estados semánticos sin automatización temporal hasta
+que el sistema disponga de asaltos y turnos de combate.
+Sorprendido también se registra como estado semántico manual, sin efectos
+mecánicos hasta que se complete la regla pendiente indicada en el roadmap.
+
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.
 

@@ -10,6 +10,8 @@ import { armorFitsWearer, totalArmorPoints, wornArmorPoints } from "../rules/arm
 import { npcWeaponDurability, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
 import { hasSeriousWound, worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { activeSkillStatusPenalties, canActorAttack,
+  UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -105,8 +107,10 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         : this.actor.system.attributes.damageModifier.label,
       headerStatus: {
         actionPoints: actionPointsDisplay,
-        magicPoints: `${this.actor.system.resources.magicPoints.value}/${effectiveAttributes.magicPointsMax}`,
-        luckPoints: `${this.actor.system.resources.luckPoints.value}/${effectiveAttributes.luckPointsMax}`,
+        magicPoints: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID) ? "0/0"
+          : `${this.actor.system.resources.magicPoints.value}/${effectiveAttributes.magicPointsMax}`,
+        luckPoints: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID) ? "0/0"
+          : `${this.actor.system.resources.luckPoints.value}/${effectiveAttributes.luckPointsMax}`,
         fatigue: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`),
         fatigueKey: currentFatigue.key,
         wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
@@ -120,12 +124,12 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       skills: skills.map((item) => {
         const total = Number(item.system.total ?? 0);
         return { item, total, display: penalizedValue(total,
-          difficultyTarget(total, this.actor.system.conditionLevel?.skillDifficulty ?? "standard")) };
+          difficultyTarget(total, this.actor.system.skillDifficulty ?? "standard")) };
       }),
       combatStyles: combatStyles.map((item) => {
         const total = Number(item.system.total ?? 0);
         return { item, total, display: penalizedValue(total,
-          difficultyTarget(total, this.actor.system.conditionLevel?.skillDifficulty ?? "standard")) };
+          difficultyTarget(total, this.actor.system.skillDifficulty ?? "standard")) };
       }),
       passions: items.filter((item) => item.type === "passion"),
       traits: items.filter((item) => item.type === "trait"),
@@ -164,7 +168,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarity: mode.familiarity
     });
     resolution.difficulty = combineDifficulties(
-      resolution.difficulty, this.actor.system.conditionLevel?.skillDifficulty ?? "standard");
+      resolution.difficulty, this.actor.system.skillDifficulty ?? "standard");
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
     const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
     const durability = npcWeaponDurability(weapon, hitLocations);
@@ -183,7 +187,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       baseTarget: resolution.target,
       effectiveTarget,
       hasTargetPenalty: effectiveTarget !== resolution.target,
-      canAttack: resolution.difficulty !== "impossible" && weapon.system.equipped
+      canAttack: canActorAttack(this.actor.statuses)
+        && resolution.difficulty !== "impossible" && weapon.system.equipped
         && weapon.system.activeModeKey === mode.key
         && (Boolean(resolution.style) || resolution.usesBase || candidates.length > 0),
       durability: `${durability.armorPoints}/${durability.currentHitPoints}`
@@ -357,6 +362,14 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         type: "penalty"
       });
     }
+    for (const status of activeSkillStatusPenalties(this.actor.statuses)) {
+      difficulty = combineDifficulties(difficulty, status.skillDifficulty);
+      modifiers.push({
+        source: game.i18n.localize(status.name),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${status.skillDifficulty}`),
+        type: "penalty"
+      });
+    }
     const beforeWoundPenalty = difficulty;
     difficulty = await this.#applySeriousWoundPenalty(difficulty);
     if (difficulty !== beforeWoundPenalty) {
@@ -377,6 +390,9 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #rollWeaponAttack(event) {
     event.preventDefault();
+    if (!canActorAttack(this.actor.statuses)) {
+      return ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.CannotAttack"));
+    }
     const row = event.currentTarget.closest("[data-item-id]");
     const weapon = this.actor.items.get(row?.dataset.itemId);
     const mode = weapon ? findWeaponMode(weapon, row.dataset.modeKey) : null;
@@ -390,7 +406,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarity: row.querySelector("[data-combat-familiarity]")?.value ?? mode.familiarity
     });
     resolution.difficulty = combineDifficulties(
-      resolution.difficulty, this.actor.system.conditionLevel?.skillDifficulty ?? "standard");
+      resolution.difficulty, this.actor.system.skillDifficulty ?? "standard");
     resolution.difficulty = await this.#applySeriousWoundPenalty(resolution.difficulty);
     if (resolution.difficulty === "impossible" || (!resolution.style && !resolution.usesBase)) {
       return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));

@@ -362,6 +362,40 @@
                 aria-label="{{localize "MYTHRASF.Status.IncapacitatedManual"}}">
               <span>{{localize "MYTHRASF.Status.IncapacitatedManual"}}</span>
             </label>
+            <label>
+              <input type="checkbox" class="sheet-state-box" data-status-toggle="blinded"
+                {{checked skillStatuses.blinded}} {{#unless editable}}disabled{{/unless}}
+                aria-label="{{localize "MYTHRASF.Status.Blinded"}}">
+              <span>{{localize "MYTHRASF.Status.Blinded"}}</span>
+            </label>
+            <label>
+              <input type="checkbox" class="sheet-state-box" data-status-toggle="prone"
+                {{checked skillStatuses.prone}} {{#unless editable}}disabled{{/unless}}
+                aria-label="{{localize "MYTHRASF.Status.Prone"}}">
+              <span>{{localize "MYTHRASF.Status.Prone"}}</span>
+            </label>
+            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="unconscious"
+              {{checked skillStatuses.unconscious}} {{#unless editable}}disabled{{/unless}}
+              aria-label="{{localize "MYTHRASF.Status.Unconscious"}}">
+              <span>{{localize "MYTHRASF.Status.Unconscious"}}</span></label>
+            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="stunned"
+              {{checked skillStatuses.stunned}} {{#unless editable}}disabled{{/unless}}
+              aria-label="{{localize "MYTHRASF.Status.Stunned"}}">
+              <span>{{localize "MYTHRASF.Status.Stunned"}}</span></label>
+            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="bleeding"
+              {{checked skillStatuses.bleeding}} {{#unless editable}}disabled{{/unless}}
+              aria-label="{{localize "MYTHRASF.Status.Bleeding"}}">
+              <span>{{localize "MYTHRASF.Status.Bleeding"}}</span></label>
+            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="drowning"
+              {{checked skillStatuses.drowning}} {{#unless editable}}disabled{{/unless}}
+              aria-label="{{localize "MYTHRASF.Status.Drowning"}}">
+              <span>{{localize "MYTHRASF.Status.Drowning"}}</span></label>
+            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="surprised"
+              {{checked skillStatuses.surprised}} {{#unless editable}}disabled{{/unless}}
+              aria-label="{{localize "MYTHRASF.Status.Surprised"}}">
+              <span>{{localize "MYTHRASF.Status.Surprised"}}</span></label>
+            <p class="incapacitated-status-lock">{{localize "MYTHRASF.Status.RoundAutomationPending"}}</p>
+            <p class="incapacitated-status-lock">{{localize "MYTHRASF.Status.SurprisedPending"}}</p>
             {{#if incapacitatedStatus.locked}}
               <p class="incapacitated-status-lock"><i class="fas fa-lock" aria-hidden="true"></i>
                 {{localize "MYTHRASF.Status.IncapacitatedAutomatic"}}:

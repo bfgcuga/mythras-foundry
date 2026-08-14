@@ -16,7 +16,13 @@ El sistema incluye actualmente:
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña que desglosa sus
   penalizaciones y los totales aplicados; el estado Incapacitado se refleja en
-  el token y conserva por separado sus causas automáticas y manuales;
+  el token y conserva por separado sus causas automáticas y manuales, mientras
+  Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
+  Inconsciente reduce habilidades y atributos efectivos a cero, y Aturdido
+  impide atacar. Sangrando y Ahogándose están disponibles como estados, con su
+  automatización por asalto registrada como pendiente;
+  Sorprendido está disponible como estado visual y su mecánica permanece
+  pendiente de desarrollo;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;

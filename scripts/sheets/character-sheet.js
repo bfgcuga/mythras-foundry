@@ -71,6 +71,10 @@ import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
+import { activeSkillStatusPenalties, activeStatusRules, applyStatusAttributes, BLINDED_STATUS_ID,
+  BLEEDING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, PRONE_STATUS_ID,
+  statusSkillDifficulty, STUNNED_STATUS_ID, SURPRISED_STATUS_ID,
+  UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
@@ -186,12 +190,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const currentCondition = combinedConditionLevel(
       currentFatigue.key, currentWound, manuallyIncapacitated
     );
+    const activeSkillStatuses = activeSkillStatusPenalties(this.actor.statuses);
+    const activeStatuses = activeStatusRules(this.actor.statuses);
     const actionPointRules = getActionPointRules();
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, actionPointRules);
     const fatiguedAttributes = applyFatigue(baseAttributes, currentCondition.key);
-    const effectiveAttributes = applyArmorInitiativePenalty(
-      applyEncumbrance(fatiguedAttributes, loadState), equippedArmor);
+    const effectiveAttributes = applyStatusAttributes(applyArmorInitiativePenalty(
+      applyEncumbrance(fatiguedAttributes, loadState), equippedArmor), this.actor.statuses);
     const attributeTooltips = this.#attributeTooltips({
       actionPointRules, baseAttributes, effectiveAttributes, fatiguedAttributes,
       currentFatigue, currentCondition, equippedArmor, loadState
@@ -201,8 +207,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       fatigueKey: currentFatigue.key,
       woundLevel: currentWound,
       manuallyIncapacitated,
+      skillStatuses: activeSkillStatuses,
+      activeStatuses,
       loadState,
-      armorPenalty: armorInitiativePenalty(equippedArmor)
+      armorPenalty: armorInitiativePenalty(equippedArmor),
+      unconscious: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID)
     }));
     const actionPointsDisplay = penalizedResource(
       this.actor.system.resources.actionPoints.value,
@@ -264,8 +273,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       editMode: Boolean(this._editMode),
       headerStatus: {
         actionPoints: actionPointsDisplay,
-        magicPoints: `${this.actor.system.resources.magicPoints.value}/${this.actor.system.attributes.magicPointsMax}`,
-        luckPoints: `${this.actor.system.resources.luckPoints.value}/${this.actor.system.attributes.luckPointsMax}`,
+        magicPoints: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID) ? "0/0"
+          : `${this.actor.system.resources.magicPoints.value}/${this.actor.system.attributes.magicPointsMax}`,
+        luckPoints: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID) ? "0/0"
+          : `${this.actor.system.resources.luckPoints.value}/${this.actor.system.attributes.luckPointsMax}`,
         fatigue: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`),
         fatigueKey: currentFatigue.key,
         wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
@@ -301,6 +312,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         causes: automaticIncapacitated.map((cause) => game.i18n.localize(
           `MYTHRASF.Status.IncapacitatedCause.${cause}`
         ))
+      },
+      skillStatuses: {
+        blinded: this.actor.statuses.has(BLINDED_STATUS_ID),
+        prone: this.actor.statuses.has(PRONE_STATUS_ID),
+        unconscious: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID),
+        stunned: this.actor.statuses.has(STUNNED_STATUS_ID),
+        bleeding: this.actor.statuses.has(BLEEDING_STATUS_ID),
+        drowning: this.actor.statuses.has(DROWNING_STATUS_ID),
+        surprised: this.actor.statuses.has(SURPRISED_STATUS_ID)
       },
       generationMethod,
       generationMethods,
@@ -356,7 +376,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         totalDisplay: penalizedValue(
           Number(style.system.total ?? 0),
           difficultyTarget(Number(style.system.total ?? 0), worsenDifficulty(
-            currentCondition.skillDifficulty, loadState.difficultySteps))
+            combineDifficulties(currentCondition.skillDifficulty,
+              statusSkillDifficulty(this.actor.statuses)), loadState.difficultySteps))
         )
       })),
       inventoryArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
@@ -442,6 +463,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           label: game.i18n.localize("MYTHRASF.Penalties.Armor"), skills: "—", movement: "—",
           initiative: signed(armor.initiativePenalty), actionPoints: "—"
         },
+        ...status.activeStatuses.map((activeStatus) => ({
+          label: game.i18n.localize(activeStatus.name),
+          skills: activeStatus.id === UNCONSCIOUS_STATUS_ID ? "0"
+            : activeStatus.id === STUNNED_STATUS_ID
+              ? game.i18n.localize("MYTHRASF.Status.DefendOnly")
+              : activeStatus.skillDifficulty ? difficulty(activeStatus.skillDifficulty) : "—",
+          movement: activeStatus.zeroAttributes ? "0 m" : "—",
+          initiative: activeStatus.zeroAttributes ? "0" : "—",
+          actionPoints: activeStatus.zeroAttributes ? "0" : "—"
+        })),
         {
           label: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
           skills: status.manuallyIncapacitated
@@ -468,7 +499,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarity: mode.familiarity
     });
     resolution.difficulty = combineDifficulties(resolution.difficulty,
-      this.#conditionLevel().skillDifficulty);
+      this.#skillDifficulty());
     resolution.difficulty = worsenDifficulty(resolution.difficulty,
       this.#loadState().difficultySteps);
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
@@ -503,7 +534,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       baseTarget: resolution.target,
       effectiveTarget,
       hasTargetPenalty: effectiveTarget !== resolution.target,
-      canAttack: resolution.difficulty !== "impossible" && weapon.system.equipped && weapon.system.activeModeKey === mode.key
+      canAttack: canActorAttack(this.actor.statuses)
+        && resolution.difficulty !== "impossible" && weapon.system.equipped && weapon.system.activeModeKey === mode.key
         && (Boolean(resolution.style) || resolution.usesBase)
     };
   }
@@ -629,6 +661,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     this.element.querySelector("[data-incapacitated-manual]")
       ?.addEventListener("change", (event) => this.#toggleManualIncapacitated(event));
+    this.element.querySelectorAll("[data-status-toggle]").forEach((field) => {
+      field.addEventListener("change", (event) => this.#toggleStatus(event));
+    });
     this.element.querySelectorAll("[data-location-disabled]").forEach((field) => {
       field.addEventListener("change", (event) => this.#updateLocationDisabled(event));
     });
@@ -856,10 +891,24 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     ));
   }
 
+  #skillDifficulty() {
+    return combineDifficulties(
+      this.#conditionLevel().skillDifficulty,
+      statusSkillDifficulty(this.actor.statuses)
+    );
+  }
+
   async #toggleManualIncapacitated(event) {
     if (!this.isEditable) return;
     await this.actor.update({
       [`flags.${INCAPACITATED_FLAG_SCOPE}.${INCAPACITATED_MANUAL_FLAG}`]: event.currentTarget.checked
+    });
+  }
+
+  async #toggleStatus(event) {
+    if (!this.isEditable) return;
+    await this.actor.toggleStatusEffect(event.currentTarget.dataset.statusToggle, {
+      active: event.currentTarget.checked
     });
   }
 
@@ -974,6 +1023,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #rollWeaponAttack(event) {
     event.preventDefault();
+    if (!canActorAttack(this.actor.statuses)) {
+      return ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.CannotAttack"));
+    }
     const row = event.currentTarget.closest("[data-item-id]");
     const weapon = this.actor.items.get(row?.dataset.itemId);
     if (!weapon) return;
@@ -992,7 +1044,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         ?? mode.familiarity
     });
     resolution.difficulty = combineDifficulties(resolution.difficulty,
-      this.#conditionLevel().skillDifficulty);
+      this.#skillDifficulty());
     resolution.difficulty = worsenDifficulty(resolution.difficulty,
       this.#loadState().difficultySteps);
     resolution.difficulty = await this.#applySeriousWoundPenalty(resolution.difficulty);
@@ -1334,7 +1386,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   #prepareSkillRow(item, draft) {
     const total = Number(item.system.total ?? 0);
-    const conditionDifficulty = this.#conditionLevel().skillDifficulty;
+    const conditionDifficulty = this.#skillDifficulty();
     const difficulty = skillUsesStrengthOrDexterity(item)
       ? worsenDifficulty(conditionDifficulty, this.#loadState().difficultySteps)
       : conditionDifficulty;
@@ -2550,6 +2602,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       modifiers.push({
         source: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
         effect: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`),
+        type: "penalty"
+      });
+    }
+    for (const status of activeSkillStatusPenalties(this.actor.statuses)) {
+      difficulty = combineDifficulties(difficulty, status.skillDifficulty);
+      modifiers.push({
+        source: game.i18n.localize(status.name),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${status.skillDifficulty}`),
         type: "penalty"
       });
     }

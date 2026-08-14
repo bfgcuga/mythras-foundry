@@ -54,6 +54,7 @@ import { activateActionPointSettingVisibility, getActionPointRules,
   getSystemSetting, registerSystemSettings, SETTING_KEYS } from "./settings.js";
 import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "./rules/incapacitated.js";
+import { MYTHRAS_STATUS_EFFECTS } from "./rules/statuses.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -70,18 +71,19 @@ Hooks.once("init", async () => {
   CONFIG.Actor.dataModels.character = CharacterData;
   CONFIG.Actor.dataModels.npc = NpcData;
   CONFIG.Actor.documentClass = MythrasActor;
-  const incapacitatedStatus = {
-    id: INCAPACITATED_STATUS_ID,
-    name: "MYTHRASF.Status.Incapacitated",
-    img: "icons/svg/unconscious.svg"
-  };
-  if (Array.isArray(CONFIG.statusEffects)) {
-    const existing = CONFIG.statusEffects.findIndex((status) =>
-      status.id === INCAPACITATED_STATUS_ID);
-    if (existing >= 0) CONFIG.statusEffects[existing] = incapacitatedStatus;
-    else CONFIG.statusEffects.push(incapacitatedStatus);
-  } else {
-    CONFIG.statusEffects[INCAPACITATED_STATUS_ID] = incapacitatedStatus;
+  const systemStatuses = [
+    { id: INCAPACITATED_STATUS_ID, name: "MYTHRASF.Status.Incapacitated",
+      img: "icons/svg/unconscious.svg" },
+    ...MYTHRAS_STATUS_EFFECTS.map(({ id, name, img }) => ({ id, name, img }))
+  ];
+  for (const statusEffect of systemStatuses) {
+    if (Array.isArray(CONFIG.statusEffects)) {
+      const existing = CONFIG.statusEffects.findIndex((status) => status.id === statusEffect.id);
+      if (existing >= 0) CONFIG.statusEffects[existing] = statusEffect;
+      else CONFIG.statusEffects.push(statusEffect);
+    } else {
+      CONFIG.statusEffects[statusEffect.id] = statusEffect;
+    }
   }
   CONFIG.Item.documentClass = MythrasItem;
   CONFIG.Item.dataModels.skill = SkillData;
