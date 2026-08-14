@@ -69,12 +69,9 @@ import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
-import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
-  INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
-import { activeSkillStatusPenalties, activeStatusRules, applyStatusAttributes, BLINDED_STATUS_ID,
-  BLEEDING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, PRONE_STATUS_ID,
-  statusSkillDifficulty, STUNNED_STATUS_ID, SURPRISED_STATUS_ID,
-  UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
+import { activeSkillStatusPenalties, activeStatusRules, applyStatusAttributes, canActorAttack,
+  statusSkillDifficulty, STUNNED_STATUS_ID, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
@@ -184,9 +181,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const manuallyIncapacitated = Boolean(
       this.actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
     );
-    const automaticIncapacitated = automaticIncapacitatedCauses({
-      fatigueKey: currentFatigue.key, woundLevel: currentWound
-    });
     const currentCondition = combinedConditionLevel(
       currentFatigue.key, currentWound, manuallyIncapacitated
     );
@@ -305,23 +299,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       },
       attributeTooltips,
       penalties,
-      incapacitatedStatus: {
-        active: automaticIncapacitated.length > 0 || manuallyIncapacitated,
-        manual: manuallyIncapacitated,
-        locked: automaticIncapacitated.length > 0,
-        causes: automaticIncapacitated.map((cause) => game.i18n.localize(
-          `MYTHRASF.Status.IncapacitatedCause.${cause}`
-        ))
-      },
-      skillStatuses: {
-        blinded: this.actor.statuses.has(BLINDED_STATUS_ID),
-        prone: this.actor.statuses.has(PRONE_STATUS_ID),
-        unconscious: this.actor.statuses.has(UNCONSCIOUS_STATUS_ID),
-        stunned: this.actor.statuses.has(STUNNED_STATUS_ID),
-        bleeding: this.actor.statuses.has(BLEEDING_STATUS_ID),
-        drowning: this.actor.statuses.has(DROWNING_STATUS_ID),
-        surprised: this.actor.statuses.has(SURPRISED_STATUS_ID)
-      },
       generationMethod,
       generationMethods,
       isPointAllocation: !characteristicsGenerated && generationMethod === "points",
@@ -435,15 +412,17 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         value: difficulty(totals.difficulties.combined)
       });
     }
-    return {
-      rows: [
+    const rows = [
         {
+          active: fatigue.difficulty !== "standard" || fatigue.movement !== "none"
+            || fatigue.initiativePenalty > 0 || fatigue.actionPointPenalty > 0,
           label: game.i18n.localize("MYTHRASF.Fatigue.Label"),
           skills: fatigue.difficulty === "standard" ? "—" : difficulty(fatigue.difficulty),
           movement: movement(fatigue), initiative: signed(fatigue.initiativePenalty),
           actionPoints: signed(fatigue.actionPointPenalty)
         },
         {
+          active: wounds.incapacitated || wounds.situationalSteps > 0,
           label: game.i18n.localize("MYTHRASF.Penalties.Wounds"),
           skills: wounds.incapacitated
             ? game.i18n.format("MYTHRASF.Penalties.MinimumDifficulty", { difficulty: difficulty("herculean") })
@@ -453,6 +432,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           actionPoints: wounds.incapacitated ? "−3" : "—"
         },
         {
+          active: load.difficultySteps > 0 || load.movement !== "none",
           label: game.i18n.localize("MYTHRASF.Header.Encumbrance"),
           skills: load.difficultySteps ? `+${load.difficultySteps}*` : "—",
           movement: load.movement === "subtract" ? "−2 m"
@@ -460,10 +440,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           initiative: "—", actionPoints: "—"
         },
         {
+          active: armor.initiativePenalty > 0,
           label: game.i18n.localize("MYTHRASF.Penalties.Armor"), skills: "—", movement: "—",
           initiative: signed(armor.initiativePenalty), actionPoints: "—"
         },
-        ...status.activeStatuses.map((activeStatus) => ({
+        ...status.activeStatuses.filter((activeStatus) => activeStatus.skillDifficulty
+          || activeStatus.zeroAttributes || activeStatus.canAttack === false).map((activeStatus) => ({
+          active: true,
           label: game.i18n.localize(activeStatus.name),
           skills: activeStatus.id === UNCONSCIOUS_STATUS_ID ? "0"
             : activeStatus.id === STUNNED_STATUS_ID
@@ -474,6 +457,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           actionPoints: activeStatus.zeroAttributes ? "0" : "—"
         })),
         {
+          active: status.manuallyIncapacitated,
           label: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
           skills: status.manuallyIncapacitated
             ? game.i18n.format("MYTHRASF.Penalties.MinimumDifficulty", { difficulty: difficulty("herculean") })
@@ -482,7 +466,25 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           initiative: status.manuallyIncapacitated ? "−8" : "—",
           actionPoints: status.manuallyIncapacitated ? "−3" : "—"
         }
-      ],
+      ].filter((row) => row.active);
+    const nonPenaltyStatuses = status.activeStatuses
+      .filter((activeStatus) => !activeStatus.skillDifficulty && !activeStatus.zeroAttributes
+        && activeStatus.canAttack !== false)
+      .map((activeStatus) => ({
+        id: activeStatus.id,
+        label: game.i18n.localize(activeStatus.name),
+        note: activeStatus.pendingRoundAutomation
+          ? game.i18n.localize("MYTHRASF.Status.RoundAutomationPending")
+          : activeStatus.pendingDevelopment
+            ? game.i18n.localize("MYTHRASF.Status.SurprisedPending") : ""
+      }));
+    return {
+      rows,
+      hasRows: rows.length > 0,
+      nonPenaltyStatuses,
+      hasNonPenaltyStatuses: nonPenaltyStatuses.length > 0,
+      showPhysicalNote: load.difficultySteps > 0 || load.movement !== "none",
+      showSituationalNote: wounds.situationalSteps > 0,
       skillTotals,
       movementTotal: `${totals.movement.base} → ${totals.movement.effective} m`,
       initiativeTotal: `${totals.initiative.base} → ${totals.initiative.effective}`,

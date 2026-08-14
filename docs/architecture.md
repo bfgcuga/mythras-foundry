@@ -60,6 +60,11 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
 - la hoja representa el valor base y el efectivo con los ayudantes compartidos
   de penalizaciones.
 
+La pestaña de penalizaciones es contextual: la tabla solo incluye fuentes con
+un efecto activo y conserva siempre superficies transparentes. Los estados
+activos sin penalización mecánica se muestran antes de la tabla; los estados
+inactivos no ocupan espacio en la pestaña.
+
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las
 reglas de condición compartidas. Mientras exista una causa automática no puede

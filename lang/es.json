@@ -197,6 +197,8 @@
   "MYTHRASF.Penalties.MinimumDifficulty": "Mínimo {difficulty}",
   "MYTHRASF.Penalties.PhysicalNote": "La carga solo incrementa la dificultad de los estilos de combate y de las habilidades basadas en FUE o DES.",
   "MYTHRASF.Penalties.SituationalNote": "La penalización de una herida grave solo se aplica cuando afecta a la acción, a criterio del DJ o del jugador.",
+  "MYTHRASF.Penalties.None": "No hay estados ni penalizaciones activos.",
+  "MYTHRASF.Status.ActiveStates": "Estados activos sin penalización",
   "MYTHRASF.Status.Incapacitated": "Incapacitado",
   "MYTHRASF.Status.IncapacitatedManual": "Incapacitado por otra causa",
   "MYTHRASF.Status.IncapacitatedAutomatic": "Causas automáticas",

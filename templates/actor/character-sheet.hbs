@@ -350,59 +350,19 @@
       <section class="tab-panel" data-tab-content="penalties">
         <fieldset class="penalties-panel">
           <legend>{{localize "MYTHRASF.Penalties.Title"}}</legend>
-          <section class="incapacitated-status-panel" aria-label="{{localize "MYTHRASF.Status.Incapacitated"}}">
-            <div class="incapacitated-status-heading">
-              <i class="fas fa-bed-pulse" aria-hidden="true"></i>
-              <strong>{{localize "MYTHRASF.Status.Incapacitated"}}</strong>
-              <span class="incapacitated-status-state">{{#if incapacitatedStatus.active}}{{localize "MYTHRASF.Status.Active"}}{{else}}{{localize "MYTHRASF.Status.Inactive"}}{{/if}}</span>
-            </div>
-            <label>
-              <input type="checkbox" class="sheet-state-box" data-incapacitated-manual
-                {{checked incapacitatedStatus.manual}} {{#unless editable}}disabled{{/unless}}
-                aria-label="{{localize "MYTHRASF.Status.IncapacitatedManual"}}">
-              <span>{{localize "MYTHRASF.Status.IncapacitatedManual"}}</span>
-            </label>
-            <label>
-              <input type="checkbox" class="sheet-state-box" data-status-toggle="blinded"
-                {{checked skillStatuses.blinded}} {{#unless editable}}disabled{{/unless}}
-                aria-label="{{localize "MYTHRASF.Status.Blinded"}}">
-              <span>{{localize "MYTHRASF.Status.Blinded"}}</span>
-            </label>
-            <label>
-              <input type="checkbox" class="sheet-state-box" data-status-toggle="prone"
-                {{checked skillStatuses.prone}} {{#unless editable}}disabled{{/unless}}
-                aria-label="{{localize "MYTHRASF.Status.Prone"}}">
-              <span>{{localize "MYTHRASF.Status.Prone"}}</span>
-            </label>
-            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="unconscious"
-              {{checked skillStatuses.unconscious}} {{#unless editable}}disabled{{/unless}}
-              aria-label="{{localize "MYTHRASF.Status.Unconscious"}}">
-              <span>{{localize "MYTHRASF.Status.Unconscious"}}</span></label>
-            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="stunned"
-              {{checked skillStatuses.stunned}} {{#unless editable}}disabled{{/unless}}
-              aria-label="{{localize "MYTHRASF.Status.Stunned"}}">
-              <span>{{localize "MYTHRASF.Status.Stunned"}}</span></label>
-            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="bleeding"
-              {{checked skillStatuses.bleeding}} {{#unless editable}}disabled{{/unless}}
-              aria-label="{{localize "MYTHRASF.Status.Bleeding"}}">
-              <span>{{localize "MYTHRASF.Status.Bleeding"}}</span></label>
-            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="drowning"
-              {{checked skillStatuses.drowning}} {{#unless editable}}disabled{{/unless}}
-              aria-label="{{localize "MYTHRASF.Status.Drowning"}}">
-              <span>{{localize "MYTHRASF.Status.Drowning"}}</span></label>
-            <label><input type="checkbox" class="sheet-state-box" data-status-toggle="surprised"
-              {{checked skillStatuses.surprised}} {{#unless editable}}disabled{{/unless}}
-              aria-label="{{localize "MYTHRASF.Status.Surprised"}}">
-              <span>{{localize "MYTHRASF.Status.Surprised"}}</span></label>
-            <p class="incapacitated-status-lock">{{localize "MYTHRASF.Status.RoundAutomationPending"}}</p>
-            <p class="incapacitated-status-lock">{{localize "MYTHRASF.Status.SurprisedPending"}}</p>
-            {{#if incapacitatedStatus.locked}}
-              <p class="incapacitated-status-lock"><i class="fas fa-lock" aria-hidden="true"></i>
-                {{localize "MYTHRASF.Status.IncapacitatedAutomatic"}}:
-                {{#each incapacitatedStatus.causes as |cause|}}{{#unless @first}}, {{/unless}}{{cause}}{{/each}}
-              </p>
-            {{/if}}
-          </section>
+          {{#if penalties.hasNonPenaltyStatuses}}
+            <section class="active-status-list" aria-label="{{localize "MYTHRASF.Status.ActiveStates"}}">
+              {{#each penalties.nonPenaltyStatuses as |status|}}
+                <div class="active-status-entry">
+                  <label><input type="checkbox" class="sheet-state-box" data-status-toggle="{{status.id}}"
+                    checked {{#unless @root.editable}}disabled{{/unless}} aria-label="{{status.label}}">
+                    <strong>{{status.label}}</strong></label>
+                  {{#if status.note}}<p>{{status.note}}</p>{{/if}}
+                </div>
+              {{/each}}
+            </section>
+          {{/if}}
+          {{#if penalties.hasRows}}
           <div class="penalties-table-wrapper">
             <table class="penalties-table">
               <thead><tr>
@@ -425,9 +385,12 @@
             </table>
           </div>
           <div class="penalties-notes">
-            <p>* {{localize "MYTHRASF.Penalties.PhysicalNote"}}</p>
-            <p>** {{localize "MYTHRASF.Penalties.SituationalNote"}}</p>
+            {{#if penalties.showPhysicalNote}}<p>* {{localize "MYTHRASF.Penalties.PhysicalNote"}}</p>{{/if}}
+            {{#if penalties.showSituationalNote}}<p>** {{localize "MYTHRASF.Penalties.SituationalNote"}}</p>{{/if}}
           </div>
+          {{else}}
+            {{#unless penalties.hasNonPenaltyStatuses}}<p class="penalties-empty">{{localize "MYTHRASF.Penalties.None"}}</p>{{/unless}}
+          {{/if}}
         </fieldset>
       </section>
 

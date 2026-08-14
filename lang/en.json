@@ -197,6 +197,8 @@
   "MYTHRASF.Penalties.MinimumDifficulty": "Minimum {difficulty}",
   "MYTHRASF.Penalties.PhysicalNote": "Encumbrance only increases the difficulty of combat styles and skills based on STR or DEX.",
   "MYTHRASF.Penalties.SituationalNote": "A serious wound penalty only applies when it affects the action, at the GM's or player's discretion.",
+  "MYTHRASF.Penalties.None": "There are no active statuses or penalties.",
+  "MYTHRASF.Status.ActiveStates": "Active statuses without penalties",
   "MYTHRASF.Status.Incapacitated": "Incapacitated",
   "MYTHRASF.Status.IncapacitatedManual": "Incapacitated by another cause",
   "MYTHRASF.Status.IncapacitatedAutomatic": "Automatic causes",
