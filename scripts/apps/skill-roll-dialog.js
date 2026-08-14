@@ -123,7 +123,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
             const ability = actor.items.get(form[`participantAbility-${actor.id}`]?.value);
             const participantDifficulty = form[`participantDifficulty-${actor.id}`]?.value ?? "standard";
             return ability ? { actorId: actor.id, actorName: actor.name, abilityId: ability.id,
-              abilityName: ability.name, difficulty: participantDifficulty, side,
+              abilityName: side === "opponent" ? null : ability.name, difficulty: participantDifficulty, side,
               target: resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: participantDifficulty }).target } : null;
           }).filter(Boolean);
           return { mode, representativeRule: form[`${side}TeamRule`].value,
@@ -229,13 +229,11 @@ function refreshContestFields(dialog) {
   dialog.querySelectorAll(".skill-roll-participant").forEach((row) => {
     const initiatorGroup = dialog.querySelector("select[name='initiatorMode']")?.value !== "individual"
       && row.querySelector("input[name='initiatorParticipant']")?.checked;
-    const opponentGroup = resolution !== "difficulty" && dialog.querySelector("select[name='opponentMode']")?.value !== "individual"
-      && row.querySelector("input[name='opponentParticipant']")?.checked;
-    row.querySelectorAll(".skill-roll-participant-configuration").forEach((node) => { node.hidden = !initiatorGroup && !opponentGroup; });
+    row.querySelectorAll(".skill-roll-participant-configuration").forEach((node) => { node.hidden = !initiatorGroup; });
   });
 }
 
-export async function openContestResponseDialog(actor, defaultAbilityId) {
+export async function openContestResponseDialog(actor, defaultAbilityId, defaultDifficulty = "standard") {
   const { DialogV2 } = foundry.applications.api;
   const abilities = actor.items.filter((item) => ABILITY_TYPES.includes(item.type));
   const options = abilities.map((item) => `<option value="${escape(item.id)}" ${item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`).join("");
@@ -248,7 +246,7 @@ export async function openContestResponseDialog(actor, defaultAbilityId) {
     window: { title: game.i18n.format("MYTHRASF.Contest.ResponseTitle", { actor: actor.name }) },
     content: `<div class="mythras-foundry mythras-dialog contest-response-dialog"><fieldset><legend>${escape(actor.name)}</legend>
       <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}</span><select name="abilityId">${options}</select></label>
-      <label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}</span><select name="difficulty">${DIFFICULTIES.map((key) => `<option value="${key}" ${key === "standard" ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("")}</select></label>
+      <label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}</span><select name="difficulty">${DIFFICULTIES.map((key) => `<option value="${key}" ${key === (defaultDifficulty ?? "standard") ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("")}</select></label>
     </fieldset>${adjustment("limited", "Limited")}${adjustment("reinforced", "Reinforced")}</div>`,
     buttons: [{ action: "roll", label: game.i18n.localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20", default: true,
       callback: (event, button) => ({ abilityId: button.form.elements.abilityId.value,

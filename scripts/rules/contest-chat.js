@@ -257,7 +257,7 @@ export function activateContestCard(message, html) {
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
   card.querySelectorAll(".contest-luck-button").forEach((button) => {
-    button.hidden = !contestLuckContext(game.user, contest, button.dataset.participantId).spenders.length;
+    button.hidden = !contestLuckContext(game.user, contest, button.dataset.participantId, { requirePoints: false }).spenders.length;
   });
   const gmActions = card.querySelector("[data-contest-gm-actions]");
   if (gmActions) gmActions.hidden = !game.user.isGM;
@@ -275,11 +275,7 @@ async function respond(message, contest, id) {
   const participant = contest.participants.find((entry) => entry.id === id);
   const actor = game.actors.get(participant?.actorId);
   if (!actor || (!game.user.isGM && !actor.isOwner)) return;
-  const configuredSide = contest.schemaVersion >= 2
-    ? Object.values(contest.sides).find((side) => side.participantIds.includes(id)) : null;
-  const config = configuredSide && configuredSide.mode !== "individual"
-    ? { ...participant.config, abilityId: participant.abilityId }
-    : await openContestResponseDialog(actor, participant.abilityId);
+  const config = await openContestResponseDialog(actor, participant.abilityId, participant.config?.difficulty);
   if (!config) return;
   const roll = await new Roll("1d100").evaluate();
   const request = { action: "contestResponse", messageId: message.id, revision: contest.revision,

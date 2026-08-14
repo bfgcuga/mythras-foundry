@@ -28,7 +28,7 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
   assert.match(css, /\.mythras-contest-card/);
   assert.match(script, /preferredContestCoordinator\(game\.users, contest\.authorUserId\) === game\.user\.id/);
   assert.match(script, /contest-luck-button/);
-  assert.match(script, /contestLuckContext\(game\.user, contest, button\.dataset\.participantId\)\.spenders\.length/);
+  assert.match(script, /contestLuckContext\(game\.user, contest, button\.dataset\.participantId, \{ requirePoints: false \}\)\.spenders\.length/);
   assert.match(script, /sheet-icon-button mythras-chat-luck-button contest-luck-button/);
   assert.match(script, /contest-roll-attempt contest-roll-attempt--current/);
   assert.match(css, /\.contest-roll-attempts \{ display: grid/);
@@ -52,6 +52,19 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   assert.match(dialog, /<div class="skill-roll-participants" hidden>/);
   assert.match(dialog, /resolutionMode === "difficulty"[\s\S]*participants: \[\], valid: true/);
   assert.match(dialog, /ability\.type === item\.type && ability\.name === item\.name \? "selected"/);
+  assert.match(dialog, /node\.hidden = !initiatorGroup/);
+  assert.match(dialog, /abilityName: side === "opponent" \? null : ability\.name/);
+});
+
+test("every opposed response opens the complete roll adjustment dialog", () => {
+  const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
+  const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
+  assert.match(script, /openContestResponseDialog\(actor, participant\.abilityId, participant\.config\?\.difficulty\)/);
+  assert.doesNotMatch(script, /configuredSide && configuredSide\.mode !== "individual"/);
+  assert.match(dialog, /name="abilityId"/);
+  assert.match(dialog, /name="difficulty"/);
+  assert.match(dialog, /adjustment\("limited", "Limited"\)/);
+  assert.match(dialog, /adjustment\("reinforced", "Reinforced"\)/);
 });
 
 test("configured contest cards separate sides and name multi-member team winners", () => {
