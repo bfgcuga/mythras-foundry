@@ -1,6 +1,6 @@
 import { openContestResponseDialog } from "../apps/skill-roll-dialog.js";
 import { invertD100, resolveSkillRollTargets } from "./skill-roll.js";
-import { resolveContest } from "./contest-rolls.js";
+import { resolveConfiguredContest, resolveContest } from "./contest-rolls.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -32,21 +32,42 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     id: participantId(entry.actorId), ...entry,
     rawRoll: null, pending: true, config: { difficulty: entry.difficulty }
   }))];
-  const designated = participants.find((entry) => entry.actorId === setup.designatedActorId) ?? initiator;
-  if (["team", "inverseTeam", "elimination"].includes(setup.type)) {
-    const representative = setup.type === "elimination" ? designated : participants.reduce((chosen, entry) => {
-      if (!chosen) return entry;
-      return setup.type === "inverseTeam"
-        ? (entry.target < chosen.target ? entry : chosen)
-        : (entry.target > chosen.target ? entry : chosen);
-    }, null);
-    participants.forEach((entry) => { entry.pending = entry.id === representative.id; });
+  const buildSide = (name) => {
+    const source = setup.sides[name];
+    const members = participants.filter((entry) => entry.id === initiator.id
+      ? name === "initiator" : entry.side === name);
+    const designated = members.find((entry) => entry.actorId === source.designatedActorId) ?? members[0] ?? null;
+    const representative = source.mode === "individual" ? null : source.mode === "elimination" || source.representativeRule === "designated"
+      ? designated : members.reduce((chosen, entry) => !chosen ? entry
+        : source.representativeRule === "lowest" ? (entry.target < chosen.target ? entry : chosen)
+          : (entry.target > chosen.target ? entry : chosen), null);
+    return { mode: source.mode, representativeRule: source.representativeRule,
+      participantIds: members.map((entry) => entry.id), designatedId: designated?.id ?? null,
+      representativeId: representative?.id ?? null };
+  };
+  const sides = { initiator: buildSide("initiator"), opponent: buildSide("opponent") };
+  participants.forEach((entry) => { entry.pending = false; });
+  for (const [name, side] of Object.entries(sides)) {
+    if (name === "opponent" && setup.resolutionMode === "difficulty") continue;
+    if (side.mode === "individual") {
+      side.participantIds.forEach((id) => {
+        const entry = participants.find((candidate) => candidate.id === id);
+        if (entry?.rawRoll == null) entry.pending = true;
+      });
+    } else {
+      const entry = participants.find((candidate) => candidate.id === side.representativeId);
+      if (entry) entry.pending = entry.rawRoll == null;
+    }
   }
   const contest = {
-    schemaVersion: 1, type: setup.type, status: "pending", revision: 0,
+    schemaVersion: 2, resolutionMode: setup.resolutionMode, sides,
+    status: "pending", revision: 0,
     authorUserId: game.user.id, initiatorId: initiator.id,
-    designatedId: designated.id, participants, rounds: [], resolution: null
+    participants, rounds: [], resolution: null
   };
+  if (participants.every((entry) => !entry.pending)) {
+    contest.resolution = resolveConfiguredContest(contest); contest.status = "resolved";
+  }
   const messageData = {
     speaker: ChatMessage.getSpeaker({ actor: item.actor }),
     content: renderContestCard(contest),
@@ -59,10 +80,13 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
 
 export function renderContestCard(contest) {
   const resolved = contest.status === "resolved" ? contest.resolution : null;
-  const resolvedById = new Map((resolved?.participants ?? []).map((entry) => [entry.id, entry]));
+  const configuredResults = contest.schemaVersion >= 2 && resolved
+    ? [resolved.sides.initiator, resolved.sides.opponent].filter(Boolean).flatMap((side) => side.memberResults ?? []) : [];
+  const resolvedById = new Map((configuredResults.length ? configuredResults : resolved?.participants ?? []).map((entry) => [entry.id, entry]));
   const rows = contest.participants.map((participant) => {
     const final = resolvedById.get(participant.id) ?? participant;
-    const roll = participant.rawRoll == null ? localize("MYTHRASF.Contest.Pending") : participant.rawRoll;
+    const shownRoll = final.rawRoll ?? participant.rawRoll;
+    const roll = shownRoll == null ? localize("MYTHRASF.Contest.Pending") : shownRoll;
     const ability = participant.abilityName ?? localize("MYTHRASF.Contest.ChosenOnResponse");
     const target = final.target == null ? "—" : `${final.target}%`;
     const result = resolved && final.result ? `<span class="contest-participant-result mythras-chat-result--${final.result}">${escape(localize(`MYTHRASF.RollResult.${final.result}`))}</span>` : "";
@@ -96,13 +120,20 @@ export function renderContestCard(contest) {
     ${contest.status !== "pending" ? `<button type="button" data-contest-action="reopen" title="${escape(localize("MYTHRASF.Contest.Reopen"))}">${escape(localize("MYTHRASF.Contest.Reopen"))}</button>` : ""}
     ${resolved?.comparisons?.some((entry) => entry.repeatable) ? `<button type="button" data-contest-action="repeat" title="${escape(localize("MYTHRASF.Contest.Repeat"))}">${escape(localize("MYTHRASF.Contest.Repeat"))}</button><button type="button" data-contest-action="close" title="${escape(localize("MYTHRASF.Contest.CloseWithoutWinner"))}">${escape(localize("MYTHRASF.Contest.CloseWithoutWinner"))}</button>` : ""}
   </div>`;
+  const title = contest.schemaVersion >= 2
+    ? game.i18n.format("MYTHRASF.Contest.ConfiguredTitle", {
+      resolution: localize(`MYTHRASF.Contest.ResolutionMode.${contest.resolutionMode}`),
+      initiator: localize(`MYTHRASF.Contest.SideMode.${contest.sides.initiator.mode}`),
+      opponent: contest.resolutionMode === "difficulty" ? "" : ` / ${localize(`MYTHRASF.Contest.SideMode.${contest.sides.opponent.mode}`)}`
+    }) : localize(`MYTHRASF.Contest.Type.${contest.type}`);
   return `<section class="mythras-chat-card mythras-contest-card" data-contest-revision="${contest.revision}">
-    <div class="mythras-chat-title">${escape(localize(`MYTHRASF.Contest.Type.${contest.type}`))}</div>
+    <div class="mythras-chat-title">${escape(title)}</div>
     <div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.StatusLabel"))}</span><strong>${escape(localize(`MYTHRASF.Contest.Status.${contest.status}`))}</strong></div>
     <div class="contest-participants">${rows}</div>${penalty}${comparisons}${gm}</section>`;
 }
 
 function renderResolution(contest, resolved) {
+  if (contest.schemaVersion >= 2) return renderConfiguredResolution(contest, resolved);
   if (contest.type === "opposed") return resolved.comparisons.map((entry) => {
     const opponent = contest.participants.find((participant) => participant.id === entry.antagonistId);
     const winner = contest.participants.find((participant) => participant.id === entry.winnerId);
@@ -117,6 +148,28 @@ function renderResolution(contest, resolved) {
   }).join("");
   if (contest.type === "elimination") return `<div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Continue"))}</span><strong>${escape(namesFor(contest, resolved.continuingIds))}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Eliminated"))}</span><strong>${escape(namesFor(contest, resolved.eliminatedIds))}</strong></div>`;
   return `<div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.Result"))}</span><strong>${escape(localize(`MYTHRASF.RollResult.${resolved.result}`))}</strong></div>`;
+}
+
+function renderConfiguredResolution(contest, resolved) {
+  const sideSummary = (sideName) => {
+    const side = resolved.sides[sideName];
+    if (!side) return "";
+    if (side.mode === "elimination") return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Continue"))}</span><strong>${escape(namesFor(contest, side.continuingIds))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Eliminated"))}</span><strong>${escape(namesFor(contest, side.eliminatedIds))}</strong></div>`;
+    if (contest.resolutionMode === "difficulty" && side.result) return `<div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.Result"))}</span><strong>${escape(localize(`MYTHRASF.RollResult.${side.result}`))}</strong></div>`;
+    return "";
+  };
+  const summaries = sideSummary("initiator") + sideSummary("opponent");
+  if (contest.resolutionMode === "difficulty") return summaries;
+  const comparisons = resolved.comparisons.map((entry) => {
+    const protagonist = contest.participants.find((participant) => participant.id === entry.protagonistId);
+    const antagonist = contest.participants.find((participant) => participant.id === entry.antagonistId);
+    if (contest.resolutionMode === "differential") return `<div class="mythras-chat-total"><span>${escape(`${protagonist?.actorName} / ${antagonist?.actorName}`)}</span><strong>${entry.advantage > 0 ? "+" : ""}${entry.advantage}</strong></div>`;
+    const winner = contest.participants.find((participant) => participant.id === entry.winnerId);
+    const outcome = winner ? game.i18n.format("MYTHRASF.Contest.WinnerValue", { actor: winner.actorName })
+      : localize(`MYTHRASF.Contest.Resolution.${entry.reason}`);
+    return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(`${protagonist?.actorName} / ${antagonist?.actorName}`)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(outcome)}</strong></div>`;
+  }).join("");
+  return summaries + comparisons;
 }
 
 function namesFor(contest, ids) {
@@ -172,7 +225,7 @@ async function applyContestResponse(message, request) {
     rawRoll: Number(request.rawRoll), serializedRoll: request.serializedRoll, pending: false, config: request.config });
   contest.revision += 1;
   if (contest.participants.every((entry) => !entry.pending)) {
-    contest.resolution = resolveContest(contest);
+    contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
     contest.status = "resolved";
   }
   await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
@@ -208,7 +261,11 @@ async function respond(message, contest, id) {
   const participant = contest.participants.find((entry) => entry.id === id);
   const actor = game.actors.get(participant?.actorId);
   if (!actor || (!game.user.isGM && !actor.isOwner)) return;
-  const config = await openContestResponseDialog(actor, participant.abilityId);
+  const configuredSide = contest.schemaVersion >= 2
+    ? Object.values(contest.sides).find((side) => side.participantIds.includes(id)) : null;
+  const config = configuredSide && configuredSide.mode !== "individual"
+    ? { ...participant.config, abilityId: participant.abilityId }
+    : await openContestResponseDialog(actor, participant.abilityId);
   if (!config) return;
   const roll = await new Roll("1d100").evaluate();
   const request = { action: "contestResponse", messageId: message.id, revision: contest.revision,
@@ -243,7 +300,10 @@ async function spendContestLuck(message, contest, id) {
     participantId: id, userId: game.user.id, luckActorId: luckActor.id,
     rawRoll: roll?.total ?? invertD100(participant.rawRoll),
     serializedRoll: roll?.toJSON?.() ?? null };
-  await luckActor.update({ "system.resources.luckPoints.value": points - 1 });
+  if (game.user.isGM || luckActor.isOwner) {
+    await luckActor.update({ "system.resources.luckPoints.value": points - 1 });
+    request.luckAlreadySpent = true;
+  }
   if (preferredContestCoordinator(game.users, contest.authorUserId) === game.user.id) await applyContestLuck(message, request);
   else game.socket.emit(SOCKET, request);
 }
@@ -254,29 +314,33 @@ async function applyContestLuck(message, request) {
   const participant = contest.participants.find((entry) => entry.id === request.participantId);
   const luckActor = game.actors.get(request.luckActorId);
   const user = game.users.get(request.userId);
+  const eligible = eligibleLuckSpenders(user, contest, { requirePoints: false });
   if (!participant || participant.rawRoll == null || !user || !luckActor
-    || (!user.isGM && !luckActor.testUserPermission(user, "OWNER"))) return;
+    || !eligible.some((actor) => actor.id === luckActor.id)) return;
+  if (!request.luckAlreadySpent) {
+    const points = Number(luckActor.system.resources?.luckPoints?.value ?? 0);
+    if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+    await luckActor.update({ "system.resources.luckPoints.value": points - 1 });
+  }
   participant.luckHistory = [...(participant.luckHistory ?? []), {
     value: participant.rawRoll, spenderId: luckActor.id, spenderName: luckActor.name
   }];
   participant.rawRoll = Number(request.rawRoll); participant.serializedRoll = request.serializedRoll;
   contest.revision += 1;
   if (contest.participants.every((entry) => !entry.pending)) {
-    contest.resolution = resolveContest(contest); contest.status = "resolved";
+    contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
+    contest.status = "resolved";
   }
   await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
 }
 
-function eligibleLuckSpenders(user, contest) {
+function eligibleLuckSpenders(user, contest, { requirePoints = true } = {}) {
   const activeParty = game.mythrasFoundry?.party?.getActiveParty?.();
   const partyIds = new Set(activeParty?.memberIds ?? []);
   const participantIds = new Set((contest?.participants ?? []).map((participant) => participant.actorId));
-  const players = Array.from(game.users ?? []).filter((candidate) => !candidate.isGM);
   return game.actors.filter((actor) => {
-    if (actor.type !== "character" || Number(actor.system.resources?.luckPoints?.value ?? 0) < 1) return false;
-    const playerOwned = players.some((player) => actor.testUserPermission(player, "OWNER"));
-    if (!playerOwned || !partyIds.has(actor.id) || !participantIds.has(actor.id)) return false;
-    return user.isGM || actor.testUserPermission(user, "OWNER");
+    if (requirePoints && Number(actor.system.resources?.luckPoints?.value ?? 0) < 1) return false;
+    return partyIds.has(actor.id) && participantIds.has(actor.id);
   });
 }
 
@@ -285,7 +349,9 @@ async function gmAction(message, current, action, participantId = null) {
   if (action === "cancel" || action === "close") contest.status = action === "cancel" ? "cancelled" : "closed";
   if (action === "reopen") {
     contest.status = "pending"; contest.resolution = null;
-    if (["team", "inverseTeam", "elimination"].includes(contest.type)) {
+    if (contest.schemaVersion >= 2) {
+      resetConfiguredRollers(contest, { keepInitiatorIndividual: true });
+    } else if (["team", "inverseTeam", "elimination"].includes(contest.type)) {
       const representativeId = current.resolution?.representativeId ?? contest.designatedId;
       contest.participants.forEach((entry) => {
         entry.pending = entry.id === representativeId;
@@ -298,8 +364,22 @@ async function gmAction(message, current, action, participantId = null) {
   if (action === "repeat") {
     contest.rounds.push({ participants: foundry.utils.deepClone(contest.participants), resolution: contest.resolution });
     contest.status = "pending"; contest.resolution = null;
-    contest.participants.forEach((entry) => { entry.pending = true; entry.rawRoll = null; });
+    if (contest.schemaVersion >= 2) resetConfiguredRollers(contest, { keepInitiatorIndividual: false });
+    else contest.participants.forEach((entry) => { entry.pending = true; entry.rawRoll = null; });
   }
   contest.revision += 1;
   await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
+}
+
+function resetConfiguredRollers(contest, { keepInitiatorIndividual }) {
+  contest.participants.forEach((entry) => { entry.pending = false; });
+  for (const [name, side] of Object.entries(contest.sides)) {
+    if (name === "opponent" && contest.resolutionMode === "difficulty") continue;
+    const rollerIds = side.mode === "individual" ? side.participantIds : [side.representativeId];
+    for (const id of rollerIds.filter(Boolean)) {
+      const entry = contest.participants.find((candidate) => candidate.id === id);
+      if (!entry || (keepInitiatorIndividual && name === "initiator" && side.mode === "individual")) continue;
+      entry.pending = true; entry.rawRoll = null; entry.serializedRoll = null;
+    }
+  }
 }

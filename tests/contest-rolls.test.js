@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { applySharedOver100Penalty, compareOpposed, differentialAdvantage,
-  resolveContest, selectTeamRepresentative } from "../scripts/rules/contest-rolls.js";
+  resolveConfiguredContest, resolveContest, selectTeamRepresentative } from "../scripts/rules/contest-rolls.js";
 
 test("opposed rolls prefer grade, then the higher successful roll", () => {
   assert.equal(compareOpposed({ id: "a", result: "critical", rawRoll: 4 }, { id: "b", result: "success", rawRoll: 70 }).winnerId, "a");
@@ -59,4 +59,40 @@ test("elimination applies one die to every individual target", () => {
   assert.equal(result.commonRoll, 55);
   assert.deepEqual(result.continuingIds, ["a", "c"]);
   assert.deepEqual(result.eliminatedIds, ["b"]);
+});
+
+test("an individual can oppose a team represented by its highest member", () => {
+  const result = resolveConfiguredContest({ resolutionMode: "opposed", participants: [
+    { id: "hidden", target: 70, rawRoll: 44 }, { id: "searcher-a", target: 35 }, { id: "searcher-b", target: 65, rawRoll: 51 }
+  ], sides: {
+    initiator: { mode: "individual", participantIds: ["hidden"] },
+    opponent: { mode: "team", participantIds: ["searcher-a", "searcher-b"], representativeRule: "highest" }
+  } });
+  assert.equal(result.sides.opponent.representativeId, "searcher-b");
+  assert.equal(result.comparisons[0].winnerId, "searcher-b");
+});
+
+test("an elimination side drops failures before opposing the individual", () => {
+  const result = resolveConfiguredContest({ resolutionMode: "opposed", participants: [
+    { id: "rider", target: 60, rawRoll: 58 }, { id: "pursuer-a", target: 40, rawRoll: 50 }, { id: "pursuer-b", target: 70 }
+  ], sides: {
+    initiator: { mode: "individual", participantIds: ["rider"] },
+    opponent: { mode: "elimination", participantIds: ["pursuer-a", "pursuer-b"], designatedId: "pursuer-a" }
+  } });
+  assert.deepEqual(result.sides.opponent.eliminatedIds, ["pursuer-a"]);
+  assert.deepEqual(result.sides.opponent.continuingIds, ["pursuer-b"]);
+  assert.equal(result.comparisons.length, 1);
+});
+
+test("team and elimination modes also resolve directly against difficulty", () => {
+  const team = resolveConfiguredContest({ resolutionMode: "difficulty", participants: [
+    { id: "a", target: 35 }, { id: "b", target: 65, rawRoll: 51 }
+  ], sides: { initiator: { mode: "team", participantIds: ["a", "b"], representativeRule: "highest" } } });
+  assert.equal(team.sides.initiator.representativeId, "b");
+  assert.equal(team.sides.initiator.result, "success");
+  const elimination = resolveConfiguredContest({ resolutionMode: "difficulty", participants: [
+    { id: "a", target: 35, rawRoll: 50 }, { id: "b", target: 65 }
+  ], sides: { initiator: { mode: "elimination", participantIds: ["a", "b"], designatedId: "a" } } });
+  assert.deepEqual(elimination.sides.initiator.eliminatedIds, ["a"]);
+  assert.deepEqual(elimination.sides.initiator.continuingIds, ["b"]);
 });

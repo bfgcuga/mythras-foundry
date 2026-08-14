@@ -99,3 +99,62 @@ export function resolveContest({ type, participants = [], initiatorId, designate
   return { type, penalty: adjusted.penalty, representativeId: representative?.id ?? null,
     commonRoll, result: representativeResult, participants: resolved };
 }
+
+export function resolveConfiguredContest({ resolutionMode = "difficulty", sides = {}, participants = [] } = {}) {
+  const adjusted = applySharedOver100Penalty(participants);
+  const byId = new Map(adjusted.participants.map((entry) => [entry.id, entry]));
+  const initiator = resolveContestSide(sides.initiator, byId);
+  const opponent = resolutionMode === "difficulty" ? null : resolveContestSide(sides.opponent, byId);
+  const comparisons = [];
+  if (opponent) {
+    for (const protagonist of initiator.contenders) {
+      for (const antagonist of opponent.contenders) {
+        comparisons.push({ protagonistId: protagonist.id, antagonistId: antagonist.id,
+          ...(resolutionMode === "differential"
+            ? { advantage: differentialAdvantage(protagonist.result, antagonist.result) }
+            : compareOpposed(protagonist, antagonist)) });
+      }
+    }
+  }
+  return { resolutionMode, penalty: adjusted.penalty, participants: adjusted.participants,
+    sides: { initiator, opponent }, comparisons };
+}
+
+function resolveContestSide(side = {}, byId) {
+  const members = (side.participantIds ?? []).map((id) => byId.get(id)).filter(Boolean);
+  const mode = side.mode ?? "individual";
+  if (mode === "individual") {
+    const participant = members[0] ?? null;
+    return { mode, participantIds: members.map((entry) => entry.id), representativeId: participant?.id ?? null,
+      commonRoll: null, result: members.length === 1 ? participant?.result ?? null : null,
+      contenders: members, memberResults: members,
+      continuingIds: members.filter((entry) => successful(entry.result)).map((entry) => entry.id), eliminatedIds: [] };
+  }
+  const representative = selectSideRepresentative(members, side);
+  const commonRoll = representative?.rawRoll ?? members.find((entry) => entry.rawRoll != null)?.rawRoll ?? null;
+  if (mode === "team") {
+    const result = commonRoll == null || !representative ? null : classifyContestRoll(commonRoll, representative.target);
+    const contender = representative ? { ...representative, rawRoll: commonRoll, result } : null;
+    return { mode, participantIds: members.map((entry) => entry.id), representativeId: representative?.id ?? null,
+      commonRoll, result, contenders: contender ? [contender] : [],
+      memberResults: members.map((entry) => ({ ...entry, rawRoll: commonRoll, result })),
+      continuingIds: result && successful(result) ? members.map((entry) => entry.id) : [], eliminatedIds: result && !successful(result) ? members.map((entry) => entry.id) : [] };
+  }
+  const evaluated = members.map((entry) => ({ ...entry, rawRoll: commonRoll,
+    result: commonRoll == null ? null : classifyContestRoll(commonRoll, entry.target) }));
+  return { mode, participantIds: members.map((entry) => entry.id), representativeId: representative?.id ?? null,
+    commonRoll, result: null, contenders: evaluated.filter((entry) => successful(entry.result)), memberResults: evaluated,
+    continuingIds: evaluated.filter((entry) => successful(entry.result)).map((entry) => entry.id),
+    eliminatedIds: evaluated.filter((entry) => entry.result && !successful(entry.result)).map((entry) => entry.id) };
+}
+
+function selectSideRepresentative(members, side) {
+  if (side.representativeRule === "designated" || side.mode === "elimination") {
+    return members.find((entry) => entry.id === side.designatedId) ?? members[0] ?? null;
+  }
+  return selectTeamRepresentative(members, { inverse: side.representativeRule === "lowest" });
+}
+
+function successful(result) {
+  return result === "success" || result === "critical";
+}

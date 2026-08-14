@@ -18,9 +18,9 @@ El sistema incluye actualmente:
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;
-- tiradas enfrentadas, diferenciales, de equipo, de equipo inversas y
-  eliminatorias coordinadas desde una tarjeta de chat, con actores, objetivos o
-  grupos y respuestas restringidas a sus propietarios y al DJ;
+- tiradas contra dificultad, enfrentadas y diferenciales con modalidad
+  individual, de equipo o eliminatoria configurable de forma independiente para
+  cada lado, coordinadas desde una tarjeta de chat;
 - armas con varios modos, estilos de combate, familiaridad, rasgos reutilizables
   y resolución de ataques;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste

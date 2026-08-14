@@ -55,9 +55,10 @@ export class MythrasItem extends Item {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.RollResult.impossible"));
       return;
     }
-    if (configured.contest?.type !== "simple") {
-      const isGroup = ["team", "inverseTeam", "elimination"].includes(configured.contest.type);
-      const initialRoll = isGroup ? null : await new Roll("1d100").evaluate();
+    const interactive = configured.contest?.resolutionMode !== "difficulty"
+      || configured.contest?.sides?.initiator?.mode !== "individual";
+    if (interactive) {
+      const initialRoll = configured.contest.sides.initiator.mode === "individual" ? await new Roll("1d100").evaluate() : null;
       await createContestMessage(this, configured, initialRoll);
       return;
     }
@@ -102,9 +103,11 @@ export class MythrasItem extends Item {
     if (this.type !== "passion") return;
     const configured = await openSkillRollDialog(this);
     if (!configured) return;
-    if (configured.contest?.type !== "simple") {
-      const isGroup = ["team", "inverseTeam", "elimination"].includes(configured.contest.type);
-      await createContestMessage(this, configured, isGroup ? null : await new Roll("1d100").evaluate());
+    const interactive = configured.contest?.resolutionMode !== "difficulty"
+      || configured.contest?.sides?.initiator?.mode !== "individual";
+    if (interactive) {
+      const initialRoll = configured.contest.sides.initiator.mode === "individual" ? await new Roll("1d100").evaluate() : null;
+      await createContestMessage(this, configured, initialRoll);
       return;
     }
     const target = configured.targets.target;

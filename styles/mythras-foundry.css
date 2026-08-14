@@ -2476,7 +2476,9 @@
 .mythras-foundry .skill-roll-contest [data-contest-settings] > label,
 .mythras-foundry .contest-response-dialog label { display: grid; grid-template-columns: minmax(8rem, 0.7fr) minmax(10rem, 1fr); align-items: center; gap: 0.45rem; }
 .mythras-foundry .skill-roll-participants { display: grid; gap: 0.3rem; margin-top: 0.5rem; }
-.mythras-foundry .skill-roll-participant { display: grid; grid-template-columns: minmax(8rem, 0.8fr) minmax(9rem, 1fr) minmax(7rem, 0.65fr) auto; align-items: center; gap: 0.4rem; padding-block: 0.2rem; border-bottom: 1px solid color-mix(in srgb, var(--mythras-border) 55%, transparent); }
+.mythras-foundry .skill-roll-side { display: grid; gap: 0.35rem; }
+.mythras-foundry .skill-roll-side > label { display: grid; grid-template-columns: minmax(9rem, 0.8fr) minmax(9rem, 1fr); align-items: center; gap: 0.4rem; }
+.mythras-foundry .skill-roll-participant { display: grid; grid-template-columns: minmax(7rem, 1fr) auto auto minmax(8rem, 1fr) minmax(7rem, 0.7fr); align-items: center; gap: 0.4rem; padding-block: 0.2rem; border-bottom: 1px solid color-mix(in srgb, var(--mythras-border) 55%, transparent); }
 .mythras-foundry .skill-roll-participant > label { display: flex; align-items: center; gap: 0.35rem; }
 .chat-message .mythras-contest-card .contest-participants { display: grid; gap: 0.25rem; margin-block: 0.45rem; }
 .chat-message .mythras-contest-card .contest-participant > span:first-child { display: grid; min-width: 0; }

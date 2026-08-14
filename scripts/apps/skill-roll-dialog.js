@@ -4,7 +4,9 @@ import { combineDifficulties } from "../rules/fatigue.js";
 const DIFFICULTIES = ["automatic", "veryEasy", "easy", "standard", "hard",
   "formidable", "herculean", "impossible"];
 const ABILITY_TYPES = ["skill", "combatStyle", "passion"];
-const CONTEST_TYPES = ["simple", "opposed", "differential", "team", "inverseTeam", "elimination"];
+const RESOLUTION_MODES = ["difficulty", "opposed", "differential"];
+const SIDE_MODES = ["individual", "team", "elimination"];
+const TEAM_RULES = ["highest", "lowest", "designated"];
 
 function escape(value) {
   return foundry.utils.escapeHTML(String(value ?? ""));
@@ -28,18 +30,21 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
     .join("");
   const targetedActorIds = new Set(Array.from(game.user?.targets ?? []).map((token) => token.actor?.id).filter(Boolean));
   const participantDifficultyOptions = DIFFICULTIES.map((key) => `<option value="${key}" ${key === "standard" ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
-  const participantRows = actors.map((actor) => {
+  const participantRows = actors.filter((actor) => actor.id !== item.actor?.id).map((actor) => {
     const abilities = actor.items.filter((candidate) => ABILITY_TYPES.includes(candidate.type));
     const options = abilities.map((ability) => `<option value="${escape(ability.id)}" data-target="${Number(ability.system.total ?? 0)}">${escape(ability.name)} (${Number(ability.system.total ?? 0)}%)</option>`).join("");
     const checked = targetedActorIds.has(actor.id) ? "checked" : "";
     return `<div class="skill-roll-participant" data-actor-id="${escape(actor.id)}">
-      <label><input type="checkbox" class="sheet-state-box" name="participantActor" value="${escape(actor.id)}" ${checked}><span>${escape(actor.name)}</span></label>
+      <span class="skill-roll-participant-name">${escape(actor.name)}</span>
+      <label><input type="checkbox" class="sheet-state-box" name="initiatorParticipant" value="${escape(actor.id)}"><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.initiator"))}</span></label>
+      <label><input type="checkbox" class="sheet-state-box" name="opponentParticipant" value="${escape(actor.id)}" ${checked}><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.opponent"))}</span></label>
       <select class="skill-roll-participant-configuration" name="participantAbility-${escape(actor.id)}" aria-label="${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}">${options}</select>
       <select class="skill-roll-participant-configuration" name="participantDifficulty-${escape(actor.id)}" aria-label="${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}">${participantDifficultyOptions}</select>
-      <label class="skill-roll-representative"><input type="radio" class="sheet-state-box" name="designatedActor" value="${escape(actor.id)}"><span>${escape(game.i18n.localize("MYTHRASF.Contest.Representative"))}</span></label>
     </div>`;
   }).join("");
-  const contestOptions = CONTEST_TYPES.map((type) => `<option value="${type}">${escape(game.i18n.localize(`MYTHRASF.Contest.Type.${type}`))}</option>`).join("");
+  const resolutionOptions = RESOLUTION_MODES.map((mode) => `<option value="${mode}">${escape(game.i18n.localize(`MYTHRASF.Contest.ResolutionMode.${mode}`))}</option>`).join("");
+  const sideModeOptions = SIDE_MODES.map((mode) => `<option value="${mode}">${escape(game.i18n.localize(`MYTHRASF.Contest.SideMode.${mode}`))}</option>`).join("");
+  const teamRuleOptions = TEAM_RULES.map((rule) => `<option value="${rule}">${escape(game.i18n.localize(`MYTHRASF.Contest.TeamRule.${rule}`))}</option>`).join("");
   const partyOptions = [`<option value="">${escape(game.i18n.localize("MYTHRASF.Contest.NoGroup"))}</option>`,
     ...(game.mythrasFoundry?.party?.parties ?? []).map((party) => `<option value="${escape(party.id)}" data-members="${escape((party.memberIds ?? []).join(","))}">${escape(party.name)}</option>`)].join("");
   const difficultyOptions = DIFFICULTIES.map((key) =>
@@ -63,9 +68,20 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
     window: { title: game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
     content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog" data-imposed-difficulty="${imposedDifficulty}" data-base-target="${Number(item.system.total ?? 0)}">
       <fieldset class="skill-roll-contest"><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Title"))}</legend>
-        <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.RollType"))}</span><select name="contestType">${contestOptions}</select></label>
-        <div data-contest-settings hidden>
-          <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.LoadGroup"))}</span><select name="partyId">${partyOptions}</select></label>
+        <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.ResolutionLabel"))}</span><select name="resolutionMode">${resolutionOptions}</select></label>
+        <div data-contest-settings>
+          <fieldset class="skill-roll-side" data-contest-side="initiator"><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Side.initiator"))}</legend>
+            <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.Participation"))}</span><select name="initiatorMode">${sideModeOptions}</select></label>
+            <label data-team-rule hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.TeamRule.Label"))}</span><select name="initiatorTeamRule">${teamRuleOptions}</select></label>
+            <label data-designated hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.Representative"))}</span><select name="initiatorDesignatedActorId">${actorOptions}</select></label>
+            <label data-party-loader hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.LoadGroup"))}</span><select name="initiatorPartyId">${partyOptions}</select></label>
+          </fieldset>
+          <fieldset class="skill-roll-side" data-contest-side="opponent" hidden><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Side.opponent"))}</legend>
+            <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.Participation"))}</span><select name="opponentMode">${sideModeOptions}</select></label>
+            <label data-team-rule hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.TeamRule.Label"))}</span><select name="opponentTeamRule">${teamRuleOptions}</select></label>
+            <label data-designated hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.Representative"))}</span><select name="opponentDesignatedActorId">${actorOptions}</select></label>
+            <label data-party-loader hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.LoadGroup"))}</span><select name="opponentPartyId">${partyOptions}</select></label>
+          </fieldset>
           <div class="skill-roll-participants">${participantRows}</div>
         </div>
       </fieldset>
@@ -95,31 +111,36 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           ui.notifications.warn(game.i18n.localize("MYTHRASF.SkillRoll.SupportMismatch"));
           return null;
         }
-        const type = form.contestType.value;
-        const selectedParticipants = type === "simple" ? [] : Array.from(button.form.querySelectorAll("input[name='participantActor']:checked"));
-        const groupType = ["team", "inverseTeam", "elimination"].includes(type);
-        const participants = selectedParticipants.map((control) => {
-          const actor = game.actors.get(control.value);
-          if (!groupType) return actor ? { actorId: actor.id, actorName: actor.name,
-            abilityId: null, abilityName: null, difficulty: null, target: null } : null;
-          const abilityId = form[`participantAbility-${control.value}`]?.value;
-          const ability = actor?.items.get(abilityId);
-          const participantDifficulty = form[`participantDifficulty-${control.value}`]?.value ?? "standard";
-          return actor && ability ? { actorId: actor.id, actorName: actor.name, abilityId: ability.id,
-            abilityName: ability.name, difficulty: participantDifficulty,
-            target: resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: participantDifficulty }).target } : null;
-        }).filter(Boolean);
-        if (type !== "simple" && !participants.length) {
-          ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired"));
-          return null;
+        const resolutionMode = form.resolutionMode.value;
+        const sideConfig = (side) => {
+          const mode = form[`${side}Mode`].value;
+          const controls = Array.from(button.form.querySelectorAll(`input[name='${side}Participant']:checked`));
+          const participants = controls.map((control) => {
+            const actor = game.actors.get(control.value);
+            if (!actor) return null;
+            if (mode === "individual") return { actorId: actor.id, actorName: actor.name,
+              abilityId: null, abilityName: null, difficulty: null, target: null, side };
+            const ability = actor.items.get(form[`participantAbility-${actor.id}`]?.value);
+            const participantDifficulty = form[`participantDifficulty-${actor.id}`]?.value ?? "standard";
+            return ability ? { actorId: actor.id, actorName: actor.name, abilityId: ability.id,
+              abilityName: ability.name, difficulty: participantDifficulty, side,
+              target: resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: participantDifficulty }).target } : null;
+          }).filter(Boolean);
+          return { mode, representativeRule: form[`${side}TeamRule`].value,
+            designatedActorId: form[`${side}DesignatedActorId`].value || participants[0]?.actorId || null,
+            participants, valid: participants.length === controls.length };
+        };
+        const initiatorSide = sideConfig("initiator");
+        const opponentSide = sideConfig("opponent");
+        if (resolutionMode !== "difficulty" && !opponentSide.participants.length) {
+          ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired")); return null;
         }
-        if (groupType && participants.length !== selectedParticipants.length) {
-          ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired"));
-          return null;
+        if (!initiatorSide.valid || !opponentSide.valid) {
+          ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired")); return null;
         }
-        const designatedActorId = form.designatedActor?.value || (type === "elimination" ? participants[0]?.actorId : null);
         return { difficulty: form.difficulty.value, limitedSkill, reinforcedSkill,
-          contest: { type, participants, designatedActorId } };
+          contest: { resolutionMode, sides: { initiator: initiatorSide, opponent: opponentSide },
+            participants: [...initiatorSide.participants, ...opponentSide.participants] } };
       }
     }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
     rejectClose: false
@@ -160,26 +181,52 @@ export function activateSkillRollDialog(element) {
   };
   dialog.dataset.rollPreviewListener = "true";
   dialog.addEventListener("change", (event) => {
-    if (event.target.name === "contestType") {
-      const simple = event.target.value === "simple";
-      const group = ["team", "inverseTeam", "elimination"].includes(event.target.value);
-      dialog.querySelector("[data-contest-settings]").hidden = simple;
-      dialog.querySelectorAll(".skill-roll-participant-configuration").forEach((node) => { node.hidden = !group; });
-      dialog.querySelectorAll(".skill-roll-representative").forEach((node) => {
-        node.hidden = event.target.value !== "elimination";
-      });
-    }
+    if (["resolutionMode", "initiatorMode", "opponentMode", "initiatorTeamRule", "opponentTeamRule"].includes(event.target.name)) refreshContestFields(dialog);
     if (/^(limited|reinforced)ActorId$/.test(event.target.name)) syncAdjustmentSkill(dialog, event.target.name.replace("ActorId", ""));
-    if (event.target.name === "partyId") {
+    if (/^(initiator|opponent)PartyId$/.test(event.target.name)) {
+      const side = event.target.name.startsWith("initiator") ? "initiator" : "opponent";
       const members = new Set(String(event.target.selectedOptions[0]?.dataset.members ?? "").split(",").filter(Boolean));
-      if (members.size) dialog.querySelectorAll("input[name='participantActor']").forEach((control) => { control.checked = members.has(control.value); });
+      if (members.size) dialog.querySelectorAll(`input[name='${side}Participant']`).forEach((control) => { control.checked = members.has(control.value); });
+      refreshContestFields(dialog);
+    }
+    if (["initiatorParticipant", "opponentParticipant"].includes(event.target.name) && event.target.checked) {
+      const other = event.target.name === "initiatorParticipant" ? "opponentParticipant" : "initiatorParticipant";
+      const opposite = event.target.closest(".skill-roll-participant")?.querySelector(`input[name='${other}']`);
+      if (opposite) opposite.checked = false;
+      refreshContestFields(dialog);
     }
     update();
   });
-  dialog.querySelectorAll(".skill-roll-participant-configuration, .skill-roll-representative").forEach((node) => { node.hidden = true; });
+  refreshContestFields(dialog);
   syncAdjustmentSkill(dialog, "limited");
   syncAdjustmentSkill(dialog, "reinforced");
   update();
+}
+
+function refreshContestFields(dialog) {
+  const resolution = dialog.querySelector("select[name='resolutionMode']")?.value ?? "difficulty";
+  const opponentPanel = dialog.querySelector("[data-contest-side='opponent']");
+  if (opponentPanel) opponentPanel.hidden = resolution === "difficulty";
+  for (const side of ["initiator", "opponent"]) {
+    const mode = dialog.querySelector(`select[name='${side}Mode']`)?.value ?? "individual";
+    const group = mode !== "individual";
+    const panel = dialog.querySelector(`[data-contest-side='${side}']`);
+    panel?.querySelectorAll("[data-party-loader]").forEach((node) => { node.hidden = !group; });
+    panel?.querySelectorAll("[data-team-rule]").forEach((node) => { node.hidden = mode !== "team"; });
+    const rule = dialog.querySelector(`select[name='${side}TeamRule']`)?.value;
+    const designated = panel?.querySelector("[data-designated]");
+    if (designated) designated.hidden = !group || (mode !== "elimination" && rule !== "designated");
+    dialog.querySelectorAll(`input[name='${side}Participant']`).forEach((control) => {
+      control.closest("label").hidden = (side === "initiator" && !group) || (side === "opponent" && resolution === "difficulty");
+    });
+  }
+  dialog.querySelectorAll(".skill-roll-participant").forEach((row) => {
+    const initiatorGroup = dialog.querySelector("select[name='initiatorMode']")?.value !== "individual"
+      && row.querySelector("input[name='initiatorParticipant']")?.checked;
+    const opponentGroup = resolution !== "difficulty" && dialog.querySelector("select[name='opponentMode']")?.value !== "individual"
+      && row.querySelector("input[name='opponentParticipant']")?.checked;
+    row.querySelectorAll(".skill-roll-participant-configuration").forEach((node) => { node.hidden = !initiatorGroup && !opponentGroup; });
+  });
 }
 
 export async function openContestResponseDialog(actor, defaultAbilityId) {

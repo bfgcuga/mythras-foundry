@@ -33,10 +33,11 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
   assert.match(css, /\.contest-roll-attempts \{ display: grid/);
 });
 
-test("Luck spenders must be player-owned active-party participants", () => {
+test("Luck spenders only need to be active-party participants", () => {
   const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
   assert.match(script, /getActiveParty\?\.\(\)/);
-  assert.match(script, /!playerOwned \|\| !partyIds\.has\(actor\.id\) \|\| !participantIds\.has\(actor\.id\)/);
+  assert.match(script, /return partyIds\.has\(actor\.id\) && participantIds\.has\(actor\.id\)/);
+  assert.doesNotMatch(script, /playerOwned/);
   assert.match(script, /spenders\.length === 1/);
   assert.match(script, /type="hidden" name="luckActorId"/);
 });
@@ -44,7 +45,16 @@ test("Luck spenders must be player-owned active-party participants", () => {
 test("contest setup is limited to scene tokens and rivals choose their ability later", () => {
   const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
   assert.match(dialog, /canvas\?\.tokens\?\.placeables/);
-  assert.match(dialog, /if \(!groupType\) return actor \? \{ actorId: actor\.id, actorName: actor\.name,/);
+  assert.match(dialog, /if \(mode === "individual"\) return \{ actorId: actor\.id, actorName: actor\.name,/);
   assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
   assert.match(dialog, /skill-roll-adjustment-fields/);
+});
+
+test("resolution and participation are configured as independent axes", () => {
+  const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
+  assert.match(dialog, /const RESOLUTION_MODES = \["difficulty", "opposed", "differential"\]/);
+  assert.match(dialog, /const SIDE_MODES = \["individual", "team", "elimination"\]/);
+  assert.match(dialog, /name="initiatorMode"/);
+  assert.match(dialog, /name="opponentMode"/);
+  assert.doesNotMatch(dialog, /inverseTeam/);
 });
