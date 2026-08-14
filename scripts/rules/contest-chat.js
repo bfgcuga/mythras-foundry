@@ -69,15 +69,24 @@ export function renderContestCard(contest) {
     const button = participant.pending && contest.status === "pending"
       ? `<button type="button" class="sheet-icon-button contest-response-button" data-contest-action="respond" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Contest.Respond"))}" title="${escape(localize("MYTHRASF.Contest.Respond"))}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>` : "";
     const luck = participant.rawRoll != null ? `<button type="button" class="sheet-icon-button contest-luck-button" data-contest-action="luck" data-participant-id="${escape(participant.id)}" aria-label="${escape(localize("MYTHRASF.Luck.Use"))}" title="${escape(localize("MYTHRASF.Luck.Use"))}"><i class="fas fa-clover" aria-hidden="true"></i></button>` : "";
-    const history = (participant.luckHistory ?? []).map((entry) => {
+    const history = participant.luckHistory ?? [];
+    const oldAttempts = history.map((entry, index) => {
       const value = typeof entry === "object" ? entry.value : entry;
-      const spender = typeof entry === "object" ? entry.spenderName : null;
+      if (index === 0) return `<div class="contest-roll-attempt"><strong class="mythras-chat-roll-value">${escape(value)}</strong></div>`;
+      const previous = history[index - 1];
+      const spender = typeof previous === "object" ? previous.spenderName : null;
       const text = spender ? game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: spender }) : localize("MYTHRASF.Luck.Spent");
-      return `<strong class="mythras-chat-roll-value">${escape(value)}</strong><span class="mythras-chat-luck-spent">${escape(text)}</span>`;
+      return `<div class="contest-roll-attempt"><span class="mythras-chat-luck-spent">${escape(text)}</span><strong class="mythras-chat-roll-value">${escape(value)}</strong></div>`;
     }).join("");
+    const lastLuck = history.at(-1);
+    const currentLuckText = lastLuck
+      ? (typeof lastLuck === "object" && lastLuck.spenderName
+        ? game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: lastLuck.spenderName })
+        : localize("MYTHRASF.Luck.Spent")) : "";
+    const attempts = `${oldAttempts}<div class="contest-roll-attempt contest-roll-attempt--current">${currentLuckText ? `<span class="mythras-chat-luck-spent">${escape(currentLuckText)}</span>` : ""}<strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}${button}${luck}</div>`;
     return `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
       <span><strong>${escape(participant.actorName)}</strong><small>${escape(ability)}</small></span>
-      <span class="contest-participant-values"><span>${escape(target)}</span>${history}<strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}${button}${luck}</span>
+      <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}</span><span class="contest-roll-attempts">${attempts}</span></span>
     </div>`;
   }).join("");
   const comparisons = resolved ? renderResolution(contest, resolved) : "";
@@ -181,7 +190,7 @@ export function activateContestCard(message, html) {
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
   card.querySelectorAll(".contest-luck-button").forEach((button) => {
-    button.hidden = !eligibleLuckSpenders(game.user).length;
+    button.hidden = !eligibleLuckSpenders(game.user, contest).length;
   });
   const gmActions = card.querySelector("[data-contest-gm-actions]");
   if (gmActions) gmActions.hidden = !game.user.isGM;
@@ -212,14 +221,16 @@ async function spendContestLuck(message, contest, id) {
   const participant = contest.participants.find((entry) => entry.id === id);
   const rolledActor = game.actors.get(participant?.actorId);
   if (!rolledActor || participant.rawRoll == null) return;
-  const spenders = eligibleLuckSpenders(game.user);
+  const spenders = eligibleLuckSpenders(game.user, contest);
   if (!spenders.length) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
   const ownRoll = !game.user.isGM && rolledActor.testUserPermission(game.user, "OWNER")
     && spenders.some((actor) => actor.id === rolledActor.id);
   const { DialogV2 } = foundry.applications.api;
-  const spenderOptions = spenders.map((actor) => `<option value="${escape(actor.id)}">${escape(actor.name)} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("");
+  const spenderControl = spenders.length === 1
+    ? `<div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(spenders[0].name)} (${Number(spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorId" value="${escape(spenders[0].id)}"></div>`
+    : `<label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorId">${spenders.map((actor) => `<option value="${escape(actor.id)}">${escape(actor.name)} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label>`;
   const choice = await DialogV2.wait({ window: { title: localize("MYTHRASF.Luck.Title") },
-    content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${escape(localize(ownRoll ? "MYTHRASF.Luck.Confirm" : "MYTHRASF.Luck.ForceRerollConfirm"))}</p><label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorId">${spenderOptions}</select></label></div>`,
+    content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${escape(localize(ownRoll ? "MYTHRASF.Luck.Confirm" : "MYTHRASF.Luck.ForceRerollConfirm"))}</p>${spenderControl}</div>`,
     buttons: [{ action: "reroll", label: localize(ownRoll ? "MYTHRASF.Luck.Reroll" : "MYTHRASF.Luck.ForceReroll"), icon: "fas fa-dice-d20", callback: (event, button) => ({ mode: "reroll", luckActorId: button.form.elements.luckActorId.value }) },
       ...(ownRoll ? [{ action: "invert", label: localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left", callback: (event, button) => ({ mode: "invert", luckActorId: button.form.elements.luckActorId.value }) }] : []),
       { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
@@ -256,13 +267,15 @@ async function applyContestLuck(message, request) {
   await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
 }
 
-function eligibleLuckSpenders(user) {
-  const partyIds = new Set((game.mythrasFoundry?.party?.parties ?? []).flatMap((party) => party.memberIds ?? []));
+function eligibleLuckSpenders(user, contest) {
+  const activeParty = game.mythrasFoundry?.party?.getActiveParty?.();
+  const partyIds = new Set(activeParty?.memberIds ?? []);
+  const participantIds = new Set((contest?.participants ?? []).map((participant) => participant.actorId));
   const players = Array.from(game.users ?? []).filter((candidate) => !candidate.isGM);
   return game.actors.filter((actor) => {
     if (actor.type !== "character" || Number(actor.system.resources?.luckPoints?.value ?? 0) < 1) return false;
     const playerOwned = players.some((player) => actor.testUserPermission(player, "OWNER"));
-    if (!playerOwned && !partyIds.has(actor.id)) return false;
+    if (!playerOwned || !partyIds.has(actor.id) || !participantIds.has(actor.id)) return false;
     return user.isGM || actor.testUserPermission(user, "OWNER");
   });
 }

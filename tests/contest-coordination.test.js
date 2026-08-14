@@ -28,7 +28,17 @@ test("contest UI uses the shared card, pending state and ownership visibility", 
   assert.match(css, /\.mythras-contest-card/);
   assert.match(script, /preferredContestCoordinator\(game\.users, contest\.authorUserId\) === game\.user\.id/);
   assert.match(script, /contest-luck-button/);
-  assert.match(script, /button\.hidden = !eligibleLuckSpenders\(game\.user\)\.length/);
+  assert.match(script, /button\.hidden = !eligibleLuckSpenders\(game\.user, contest\)\.length/);
+  assert.match(script, /contest-roll-attempt contest-roll-attempt--current/);
+  assert.match(css, /\.contest-roll-attempts \{ display: grid/);
+});
+
+test("Luck spenders must be player-owned active-party participants", () => {
+  const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
+  assert.match(script, /getActiveParty\?\.\(\)/);
+  assert.match(script, /!playerOwned \|\| !partyIds\.has\(actor\.id\) \|\| !participantIds\.has\(actor\.id\)/);
+  assert.match(script, /spenders\.length === 1/);
+  assert.match(script, /type="hidden" name="luckActorId"/);
 });
 
 test("contest setup is limited to scene tokens and rivals choose their ability later", () => {
