@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.0.117",
+  "version": "0.0.118",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.117/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.0.118/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -104,6 +104,13 @@
       "name": "traits",
       "label": "Rasgos",
       "path": "packs/traits",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "combat-styles",
+      "label": "Estilos de combate",
+      "path": "packs/combat-styles",
       "type": "Item",
       "system": "mythras-foundry"
     },

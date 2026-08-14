@@ -91,7 +91,7 @@ en `scripts/data/`. El creador homebrew permite seleccionar uno existente o
 crearlo, lo registra como fuente del catálogo y genera un documento inicial
 válido mediante `scripts/rules/homebrew-items.js`.
 
-Los diez compendios declarados en `system.json` deben mantenerse sincronizados
+Los once compendios declarados en `system.json` deben mantenerse sincronizados
 con las llamadas de construcción de `build-packs.mjs`. Cualquier cambio en sus
 fuentes requiere ejecutar `npm run build:packs` antes de `npm run check`.
 

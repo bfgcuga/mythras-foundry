@@ -15,6 +15,7 @@ import { MACRO_SOURCES } from "../data/macros.js";
 import { TRAIT_SOURCES } from "../data/traits.js";
 import { CREATURE_SOURCES } from "../data/creatures.js";
 import { SOCIAL_CLASS_TABLE_SOURCES } from "../data/social-classes.js";
+import { COMBAT_STYLE_SOURCES } from "../data/combat-styles.js";
 import { deterministicPackId } from "./pack-ids.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
@@ -205,6 +206,7 @@ await buildPack("weapons", WEAPON_SOURCES, "weapon");
 await buildPack("equipment", EQUIPMENT_SOURCES, "equipment");
 await buildPack("armor-pieces", ARMOR_SOURCES, "armor-piece");
 await buildPack("traits", TRAIT_SOURCES, "trait");
+await buildPack("combat-styles", COMBAT_STYLE_SOURCES, "combat-style");
 await buildActorPack("creatures", CREATURE_SOURCES, "creature");
 await buildMacroPack("macros", MACRO_SOURCES, "macro");
 await buildRollTablePack("social-class-tables", SOCIAL_CLASS_TABLE_SOURCES, "table");

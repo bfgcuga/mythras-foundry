@@ -49,12 +49,12 @@ abiertas se mantienen en [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Compendios
 
-El manifiesto declara diez compendios generados a partir de los módulos de
+El manifiesto declara once compendios generados a partir de los módulos de
 `scripts/data/`:
 
 - habilidades, culturas y profesiones;
 - armas, equipo y piezas de armadura;
-- rasgos y criaturas;
+- rasgos, estilos de combate y criaturas;
 - macros y tablas de clase social.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
