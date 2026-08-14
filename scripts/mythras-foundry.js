@@ -25,6 +25,7 @@ import { CharacterSheet } from "./sheets/character-sheet.js";
 import { NpcSheet } from "./sheets/npc-sheet.js";
 import { MythrasItemSheet } from "./sheets/item-sheet.js";
 import { activateCombatCard } from "./rules/combat-chat.js";
+import { activateSkillRollCard } from "./rules/skill-roll-chat.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
 import { PartyManager } from "./apps/party-manager.js";
@@ -153,8 +154,12 @@ Hooks.once("setup", () => {
   });
 });
 
-Hooks.on("renderChatMessageHTML", (message, html) => activateCombatCard(message, html));
-Hooks.on("renderChatMessage", (message, html) => activateCombatCard(message, html));
+function activateChatCards(message, html) {
+  activateCombatCard(message, html);
+  activateSkillRollCard(message, html);
+}
+Hooks.on("renderChatMessageHTML", activateChatCards);
+Hooks.on("renderChatMessage", activateChatCards);
 Hooks.on("renderApplicationV2", (application, element) => {
   activateDelayedTooltips(element);
   activateActionPointSettingVisibility(element);

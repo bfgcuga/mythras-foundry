@@ -58,6 +58,10 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.
 
+Las tiradas de habilidad se resuelven en `scripts/rules/skill-roll.js`; el
+diálogo de ajustes, el documento de Item y la interacción de suerte de la tarjeta
+consumen esos mismos objetivos y umbrales para no duplicar reglas.
+
 ## Compendios
 
 Los módulos de `scripts/data/` son la fuente de verdad de los compendios. El

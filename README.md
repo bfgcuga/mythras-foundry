@@ -15,8 +15,9 @@ El sistema incluye actualmente:
   habilidades, estilos de combate, dinero y equipo inicial;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   penalizaciones, carga e iniciativa modificada por armadura;
-- habilidades y tiradas porcentuales con resultados de crítico, éxito, fallo y
-  pifia presentados en tarjetas de chat;
+- habilidades y tiradas porcentuales configurables por dificultad, tiradas
+  limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
+  o invertir los dados, con resultados presentados en tarjetas de chat;
 - armas con varios modos, estilos de combate, familiaridad, rasgos reutilizables
   y resolución de ataques;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste

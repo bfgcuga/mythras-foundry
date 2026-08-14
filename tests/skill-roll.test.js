@@ -4,14 +4,35 @@ import assert from "node:assert/strict";
 globalThis.Item = class {};
 
 const { classifyRoll, rollThresholdRanges } = await import("../scripts/documents/mythras-item.js");
+const { invertD100, resolveSkillRollTargets, supportingSkillAdjustment } = await import("../scripts/rules/skill-roll.js");
 
 test("01-05 siempre tiene éxito y el umbral crítico prevalece", () => {
   assert.equal(classifyRoll(4, 3, 1), "success");
   assert.equal(classifyRoll(1, 3, 1), "critical");
 });
 
+test("una habilidad limitada queda topada y una reforzada suma el 20% hacia arriba", () => {
+  assert.equal(supportingSkillAdjustment(70, 45, "limited"), 45);
+  assert.equal(supportingSkillAdjustment(70, 46, "reinforced"), 80);
+});
+
+test("la dificultad se aplica después del ajuste y el crítico usa el objetivo efectivo", () => {
+  assert.deepEqual(resolveSkillRollTargets({ baseTarget: 70, supportingTarget: 46,
+    adjustmentMode: "reinforced", difficulty: "hard" }), {
+    baseTarget: 70, adjustedTarget: 80, difficulty: "hard", target: 54, criticalTarget: 6
+  });
+});
+
+test("invertir conserva los dos dígitos y trata 00 como 100", () => {
+  assert.equal(invertD100(59), 95);
+  assert.equal(invertD100(93), 39);
+  assert.equal(invertD100(50), 5);
+  assert.equal(invertD100(100), 100);
+});
+
 test("96-00 siempre falla", () => {
   assert.equal(classifyRoll(96, 150, 15), "failure");
+  assert.equal(classifyRoll(99, 1000, 100), "failure");
   assert.equal(classifyRoll(100, 150, 15), "fumble");
 });
 

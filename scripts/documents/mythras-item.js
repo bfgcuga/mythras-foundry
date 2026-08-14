@@ -1,6 +1,7 @@
 import { calculateSkillValues } from "../rules/skills.js";
 import { calculatePassionValues } from "../rules/passions.js";
 import { woundLevel } from "../rules/hit-locations.js";
+import { openSkillRollDialog } from "../apps/skill-roll-dialog.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
@@ -35,38 +36,29 @@ export class MythrasItem extends Item {
     this.system.experienceImprovementBonus = values.experienceImprovementBonus;
   }
 
-  async rollSkill({ difficulty = "standard" } = {}) {
+  async rollSkill({ difficulty = "standard", modifiers = [] } = {}) {
     if (!["skill", "combatStyle"].includes(this.type)) return;
-
-    const multipliers = {
-      automatic: null,
-      veryEasy: 2,
-      easy: 1.5,
-      standard: 1,
-      hard: 2 / 3,
-      formidable: 0.5,
-      herculean: 0.2,
-      impossible: null
-    };
-    if (difficulty === "automatic") {
+    const configured = await openSkillRollDialog(this, {
+      imposedDifficulty: difficulty,
+      modifiers: difficulty === "standard" ? modifiers : [{
+        source: game.i18n.localize("MYTHRASF.SkillRoll.ActorConditions"),
+        effect: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)
+      }, ...modifiers]
+    });
+    if (!configured) return;
+    const { targets, mode, support } = configured;
+    if (targets.difficulty === "automatic") {
       ui.notifications.info(game.i18n.localize("MYTHRASF.RollResult.automatic"));
       return;
     }
-    if (difficulty === "impossible") {
+    if (targets.difficulty === "impossible") {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.RollResult.impossible"));
       return;
     }
-
-    const multiplier = multipliers[difficulty] ?? 1;
-    const baseTarget = Number(this.system.total);
-    const target = Math.max(0, Math.ceil(baseTarget * multiplier));
-    const criticalTarget = Math.max(
-      1,
-      Math.floor(Math.ceil(baseTarget / 10) * multiplier)
-    );
     const roll = await new Roll("1d100").evaluate();
-    const result = classifyRoll(roll.total, target, criticalTarget);
-    const ranges = rollThresholdRanges(target, criticalTarget);
+    const result = classifyRoll(roll.total, targets.target, targets.criticalTarget);
+    const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
+    const adjustment = mode === "none" ? "" : `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${mode === "limited" ? "Limited" : "Reinforced"}`)}</span><strong>${foundry.utils.escapeHTML(support.name)} (${Number(support.system.total ?? 0)}%)</strong></div>`;
 
     const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
@@ -75,14 +67,19 @@ export class MythrasItem extends Item {
         <section class="mythras-chat-card">
           <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>
           <div class="mythras-chat-details">
-            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`)}</strong></div>
-            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${baseTarget}%</strong></div>
-            ${target !== baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${target}%</strong></div>` : ""}
-            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.SkillRoll")} (1d100)</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div>
+            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${targets.difficulty}`)}</strong></div>
+            <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${targets.baseTarget}%</strong></div>
+            ${adjustment}
+            ${targets.target !== targets.baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${targets.target}%</strong></div>` : ""}
+            ${renderRollLine(roll.total)}
           </div>
           ${renderRollResult(result, ranges)}
         </section>
-      `
+      `,
+      flags: { "mythras-foundry": { skillRoll: {
+        actorUuid: this.actor.uuid, itemId: this.id, target: targets.target,
+        criticalTarget: targets.criticalTarget, rolls: [roll.total], luckSpent: false
+      } } }
     };
     ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
     await ChatMessage.create(messageData);
@@ -116,10 +113,18 @@ export class MythrasItem extends Item {
   }
 }
 
+export function renderRollLine(value, { previous = [], luckSpent = false } = {}) {
+  const history = previous.map((old) => `<strong class="mythras-chat-roll-value">${old}</strong>`).join(" ");
+  const spent = luckSpent && history ? ` <span class="mythras-chat-luck-spent">${game.i18n.localize("MYTHRASF.Luck.Spent")}</span> ` : "";
+  const button = luckSpent ? "" : `<button type="button" class="sheet-icon-button mythras-chat-luck-button" data-action="spend-luck" aria-label="${game.i18n.localize("MYTHRASF.Luck.Use")}" title="${game.i18n.localize("MYTHRASF.Luck.Use")}"><i class="fas fa-clover" aria-hidden="true"></i></button>`;
+  return `<div class="mythras-chat-row mythras-chat-roll-line"><span>${game.i18n.localize("MYTHRASF.Chat.SkillRoll")} (1d100)</span><span class="mythras-chat-roll-controls">${history}${spent}<strong class="mythras-chat-roll-value">${value}</strong>${button}</span></div>`;
+}
+
 export function classifyRoll(value, target, criticalTarget) {
-  if (value <= criticalTarget) return "critical";
-  if (value <= 5 || (value <= target && value <= 95)) return "success";
   if (value === 100 || (target <= 100 && value === 99)) return "fumble";
+  if (value >= 96) return "failure";
+  if (value <= criticalTarget) return "critical";
+  if (value <= 5 || value <= target) return "success";
   return "failure";
 }
 

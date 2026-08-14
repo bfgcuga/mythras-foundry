@@ -1,0 +1,48 @@
+import { classifyRoll, renderRollLine, renderRollResult, rollThresholdRanges } from "../documents/mythras-item.js";
+import { invertD100 } from "./skill-roll.js";
+
+export function activateSkillRollCard(message, html) {
+  const root = html instanceof HTMLElement ? html : html?.[0];
+  const button = root?.querySelector?.("[data-action='spend-luck']");
+  if (!button || button.dataset.listenerAttached) return;
+  button.dataset.listenerAttached = "true";
+  button.addEventListener("click", () => spendLuck(message));
+}
+
+async function spendLuck(message) {
+  const data = message.getFlag("mythras-foundry", "skillRoll");
+  const actor = data?.actorUuid ? await fromUuid(data.actorUuid) : null;
+  if (!actor || !actor.isOwner || data.luckSpent) return;
+  const luck = Number(actor.system.resources?.luckPoints?.value ?? 0);
+  if (luck < 1) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.None"));
+  const { DialogV2 } = foundry.applications.api;
+  const choice = await DialogV2.wait({
+    window: { title: game.i18n.localize("MYTHRASF.Luck.Title") },
+    content: `<div class="mythras-foundry"><p>${game.i18n.localize("MYTHRASF.Luck.Confirm")}</p></div>`,
+    buttons: [
+      { action: "reroll", label: game.i18n.localize("MYTHRASF.Luck.Reroll"), icon: "fas fa-dice-d20", callback: () => "reroll" },
+      { action: "invert", label: game.i18n.localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left", callback: () => "invert" },
+      { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }
+    ], rejectClose: false
+  });
+  if (!choice) return;
+  const previous = [...(data.rolls ?? [])];
+  const current = previous.at(-1);
+  const roll = choice === "reroll" ? await new Roll("1d100").evaluate() : null;
+  const value = choice === "reroll" ? roll.total : invertD100(current);
+  const result = classifyRoll(value, data.target, data.criticalTarget);
+  const card = document.createElement("div");
+  card.innerHTML = message.content;
+  card.querySelector(".mythras-chat-roll-line")?.replaceWith(fragment(renderRollLine(value, { previous, luckSpent: true })));
+  card.querySelector(".mythras-chat-result-block")?.replaceWith(fragment(renderRollResult(result, rollThresholdRanges(data.target, data.criticalTarget))));
+  await actor.update({ "system.resources.luckPoints.value": luck - 1 });
+  await message.update({ content: card.innerHTML, rolls: roll ? [...message.rolls, roll] : message.rolls,
+    "flags.mythras-foundry.skillRoll.rolls": [...previous, value],
+    "flags.mythras-foundry.skillRoll.luckSpent": true });
+}
+
+function fragment(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild;
+}
