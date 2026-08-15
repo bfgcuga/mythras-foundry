@@ -19,6 +19,11 @@ verdad que deben consultarse antes de cambiar modelos, reglas o compendios.
   catálogo, creación homebrew, configuración de armaduras y fusión de modos de
   arma.
 - `scripts/api/`: APIs públicas que se publican bajo `game.mythrasFoundry`.
+- `scripts/system/`: composición del ciclo de vida de Foundry. El registro de
+  documentos, hojas y API vive en `registration.js`; los hooks transversales de
+  interfaz viven en `ui-hooks.js`.
+- `scripts/ui/`: adaptadores de presentación reutilizables, incluido el registro
+  declarativo de eventos de las hojas.
 - `templates/`, `styles/` y `lang/`: presentación Handlebars, tema compartido y
   localizaciones. Las reglas visuales obligatorias están en `AGENTS.md`.
 - `tests/`: pruebas con el runner nativo de Node. Cubren reglas, datos, manifiesto,
@@ -27,7 +32,9 @@ verdad que deben consultarse antes de cambiar modelos, reglas o compendios.
 ## Registro y ciclo de vida
 
 `scripts/mythras-foundry.js` es el único módulo declarado por `system.json` y el
-punto de composición del sistema.
+punto de composición del sistema. Delega cada grupo de registros estable en
+`scripts/system/`, para que el entrypoint no acumule implementación de interfaz
+o configuración.
 
 Durante `init` registra:
 
@@ -53,6 +60,9 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
 - fatiga, heridas, carga, armadura y estados producen descriptores semánticos
   mediante `scripts/rules/condition-resolver.js`; el resolvedor puro combina sus
   suelos, incrementos, transformaciones y bloqueos en un orden único;
+- `scripts/rules/actor-conditions.js` es el adaptador común que reúne esas fuentes
+  desde un Actor ya preparado. Character, PNJ, hojas y límites de recursos deben
+  consumirlo en lugar de reconstruir por separado carga, heridas o estados;
 - los descriptores son datos derivados transitorios y no se persisten en Actor.
   El resultado común contiene condición, atributos efectivos, variantes de
   dificultad, capacidades y el desglose trazable consumido por hojas, tiradas y

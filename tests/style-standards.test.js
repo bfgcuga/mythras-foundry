@@ -30,6 +30,12 @@ const itemData = readFileSync(new URL("../scripts/data/item-data.js", import.met
 const sheetSources = ["character-sheet.js", "npc-sheet.js", "item-sheet.js"]
   .map((name) => readFileSync(new URL(`../scripts/sheets/${name}`, import.meta.url), "utf8"));
 const systemScript = readFileSync(new URL("../scripts/mythras-foundry.js", import.meta.url), "utf8");
+const registrationScript = readFileSync(
+  new URL("../scripts/system/registration.js", import.meta.url), "utf8"
+);
+const uiHooksScript = readFileSync(
+  new URL("../scripts/system/ui-hooks.js", import.meta.url), "utf8"
+);
 const rollDialog = readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
 const rollChat = readFileSync(new URL("../scripts/rules/skill-roll-chat.js", import.meta.url), "utf8");
 
@@ -45,8 +51,8 @@ test("hojas y mensajes Mythras comparten la superficie de papel", () => {
 test("los diálogos Mythras aplican la superficie de papel a la ventana completa", () => {
   assert.match(rollDialog, /mythras-dialog skill-roll-dialog/);
   assert.match(rollChat, /mythras-dialog luck-spend-dialog/);
-  assert.match(systemScript, /querySelector\?\.\("\.mythras-dialog"\)/);
-  assert.match(systemScript, /classList\.add\("mythras-foundry", "mythras-paper-sheet"\)/);
+  assert.match(uiHooksScript, /querySelector\?\.\("\.mythras-dialog"\)/);
+  assert.match(uiHooksScript, /classList\.add\("mythras-foundry", "mythras-paper-sheet"\)/);
 });
 
 test("la suerte simple es repetible y usa el personaje participante del grupo activo", () => {
@@ -121,8 +127,8 @@ test("la pestaña de penalizaciones usa una tabla semántica y tipografía compa
   assert.match(npcTemplate, /data-tab-content="penalties"/);
   assert.match(npcTemplate, /parts\/penalties-tab\.hbs/);
   assert.match(css, /\.penalties-table td \{ color: var\(--mythras-ink\); background: transparent; \}/);
-  assert.match(systemScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
-  assert.match(systemScript, /MYTHRAS_STATUS_EFFECTS/);
+  assert.match(registrationScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
+  assert.match(registrationScript, /MYTHRAS_STATUS_EFFECTS/);
   assert.match(systemScript, /preDeleteActiveEffect/);
   assert.match(systemScript, /preUpdateActiveEffect/);
   assert.match(systemScript, /deleteActiveEffect/);

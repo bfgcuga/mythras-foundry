@@ -69,12 +69,13 @@ import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
-import { conditionDescriptors, resolveConditions } from "../rules/condition-resolver.js";
+import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { INCAPACITATED_FLAG_SCOPE,
-  INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
+  INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
 import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
-  STUNNED_STATUS_ID, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+  UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
+import { bindSheetEvents } from "../ui/sheet-events.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
@@ -195,10 +196,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const actionPointRules = getActionPointRules();
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, actionPointRules);
-    const conditionResolution = resolveConditions({ baseAttributes,
-      descriptors: conditionDescriptors({ fatigueKey: currentFatigue.key,
-        woundLevel: currentWound, manuallyIncapacitated, loadState,
-        armorPenalty: armorInitiativePenalty(equippedArmor), statuses: activeStatuses }) });
+    const conditionResolution = resolveActorConditions(this.actor, {
+      baseAttributes, fatigueKey: currentFatigue.key, loadState
+    });
     const fatiguedAttributes = applyFatigue(baseAttributes, currentCondition.key);
     const effectiveAttributes = conditionResolution.attributes;
     const attributeTooltips = this.#attributeTooltips({
@@ -389,106 +389,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }, { inplace: false });
   }
 
-  #preparePenaltySummary(summary) {
-    const difficulty = (key) => game.i18n.localize(`MYTHRASF.Difficulty.${key}`);
-    const signed = (value) => value > 0 ? `−${value}` : "—";
-    const movement = (row) => {
-      if (row.movement === "subtract") return `−${row.movementPenalty} m`;
-      if (row.movement === "half") return game.i18n.localize("MYTHRASF.Penalties.Half");
-      if (["immobile", "impossible"].includes(row.movement)) return "0 m";
-      return "—";
-    };
-    const fatigue = summary.rows.fatigue;
-    const wounds = summary.rows.wounds;
-    const load = summary.rows.encumbrance;
-    const armor = summary.rows.armor;
-    const status = summary.rows.status;
-    const totals = summary.totals;
-    const skillTotals = [{
-      label: game.i18n.localize("MYTHRASF.Penalties.General"),
-      value: difficulty(totals.difficulties.general)
-    }];
-    if (totals.difficulties.hasPhysicalVariant) skillTotals.push({
-      label: `${game.i18n.localize("MYTHRASF.Penalties.Physical")}*`,
-      value: difficulty(totals.difficulties.physical)
-    });
-    if (totals.difficulties.hasSituationalVariant) skillTotals.push({
-      label: `${game.i18n.localize("MYTHRASF.Penalties.Situational")}**`,
-      value: difficulty(totals.difficulties.situational)
-    });
-    if (totals.difficulties.hasPhysicalVariant && totals.difficulties.hasSituationalVariant) {
-      skillTotals.push({
-        label: `${game.i18n.localize("MYTHRASF.Penalties.PhysicalSituational")}*,**`,
-        value: difficulty(totals.difficulties.combined)
-      });
-    }
-    const rows = [
-        {
-          active: fatigue.difficulty !== "standard" || fatigue.movement !== "none"
-            || fatigue.initiativePenalty > 0 || fatigue.actionPointPenalty > 0,
-          label: game.i18n.localize("MYTHRASF.Fatigue.Label"),
-          skills: fatigue.difficulty === "standard" ? "—" : difficulty(fatigue.difficulty),
-          movement: movement(fatigue), initiative: signed(fatigue.initiativePenalty),
-          actionPoints: signed(fatigue.actionPointPenalty)
-        },
-        {
-          active: wounds.incapacitated || wounds.situationalSteps > 0,
-          label: game.i18n.localize("MYTHRASF.Penalties.Wounds"),
-          skills: wounds.incapacitated
-            ? game.i18n.format("MYTHRASF.Penalties.MinimumDifficulty", { difficulty: difficulty("herculean") })
-            : wounds.situationalSteps ? "+1**" : "—",
-          movement: wounds.incapacitated ? "0 m" : "—",
-          initiative: wounds.incapacitated ? "−8" : "—",
-          actionPoints: wounds.incapacitated ? "−3" : "—"
-        },
-        {
-          active: load.difficultySteps > 0 || load.movement !== "none",
-          label: game.i18n.localize("MYTHRASF.Header.Encumbrance"),
-          skills: load.difficultySteps ? `+${load.difficultySteps}*` : "—",
-          movement: load.movement === "subtract" ? "−2 m"
-            : load.movement === "half" ? game.i18n.localize("MYTHRASF.Penalties.Half") : "—",
-          initiative: "—", actionPoints: "—"
-        },
-        {
-          active: armor.initiativePenalty > 0,
-          label: game.i18n.localize("MYTHRASF.Penalties.Armor"), skills: "—", movement: "—",
-          initiative: signed(armor.initiativePenalty), actionPoints: "—"
-        },
-        ...status.activeStatuses.filter((activeStatus) => activeStatus.skillDifficulty
-          || activeStatus.zeroAttributes || activeStatus.canAttack === false).map((activeStatus) => ({
-          active: true,
-          label: game.i18n.localize(activeStatus.name),
-          skills: activeStatus.id === UNCONSCIOUS_STATUS_ID ? "0"
-            : activeStatus.id === STUNNED_STATUS_ID
-              ? game.i18n.localize("MYTHRASF.Status.DefendOnly")
-              : activeStatus.skillDifficulty ? difficulty(activeStatus.skillDifficulty) : "—",
-          movement: activeStatus.zeroAttributes ? "0 m" : "—",
-          initiative: activeStatus.zeroAttributes ? "0" : "—",
-          actionPoints: activeStatus.zeroAttributes ? "0" : "—"
-        })),
-        {
-          active: status.manuallyIncapacitated,
-          label: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
-          skills: status.manuallyIncapacitated
-            ? game.i18n.format("MYTHRASF.Penalties.MinimumDifficulty", { difficulty: difficulty("herculean") })
-            : "—",
-          movement: status.manuallyIncapacitated ? "0 m" : "—",
-          initiative: status.manuallyIncapacitated ? "−8" : "—",
-          actionPoints: status.manuallyIncapacitated ? "−3" : "—"
-        }
-      ].filter((row) => row.active);
-    return {
-      rows,
-      hasRows: rows.length > 0,
-      showPhysicalNote: load.difficultySteps > 0 || load.movement !== "none",
-      showSituationalNote: wounds.situationalSteps > 0,
-      skillTotals,
-      movementTotal: `${totals.movement.base} → ${totals.movement.effective} m`,
-      initiativeTotal: `${totals.initiative.base} → ${totals.initiative.effective}`,
-      actionPointTotal: `${totals.actionPoints.base} → ${totals.actionPoints.effective}`
-    };
-  }
-
   #prepareCombatWeapon(weapon, mode, combatStyles) {
     const modeWeapon = weaponModeView(weapon, mode);
     const resolution = resolveWeaponStyle({
@@ -549,160 +449,66 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         .forEach((field) => { field.disabled = true; });
     }
 
-    this.element.querySelectorAll("[data-tab]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#activateTab(event));
-    });
-    this.#showTab(this._activeTab ?? "character");
-    this.element.querySelector("[data-action='confirm-characteristics']")
-      ?.addEventListener("click", () => this.#confirmCharacteristics());
-    this.element.querySelectorAll("[data-generation-method]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#selectGenerationMethod(event));
-    });
-    this.element.querySelector("[data-action='toggle-edit-mode']")
-      ?.addEventListener("click", () => this.#toggleEditMode());
-    this.element.querySelector("[data-action='train-skill']")
-      ?.addEventListener("click", () => this.#showTrainingPlaceholder());
-    this.element.querySelector("[data-action='choose-portrait']")
-      ?.addEventListener("click", () => this.#choosePortrait());
-    this.element.querySelector("[data-action='view-portrait']")
-      ?.addEventListener("click", () => this.#viewPortrait());
-    this.element.querySelectorAll("[data-action='adjust-characteristic']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#adjustCharacteristic(event));
-    });
-    this.element.querySelectorAll("[data-swap-characteristic]").forEach((select) => {
-      select.addEventListener("change", (event) => this.#swapCharacteristic(event));
-    });
-    this.element.querySelectorAll("[data-background-select]").forEach((select) => {
-      select.addEventListener("change", (event) => this.#selectBackground(event));
-    });
-    this.element.querySelectorAll("[data-background-choice]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#toggleBackgroundChoice(event));
-    });
-    this.element.querySelectorAll("[data-background-passion-field]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateBackgroundPassion(event));
-    });
-    this.element.querySelectorAll("[data-background-professional]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#toggleBackgroundProfessional(event));
-    });
-    this.element.querySelectorAll("[data-background-specialization]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateBackgroundSpecialization(event));
-    });
-    this.element.querySelectorAll("[data-background-style-field]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateBackgroundStyle(event));
-    });
-    this.element.querySelectorAll("[data-background-style-trait]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#toggleBackgroundStyleTrait(event));
-    });
-    this.element.querySelectorAll("[data-background-style-action]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#changeBackgroundStyles(event));
-    });
-    this.element.querySelectorAll("[data-background-free-field]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateFreeSkill(event));
-    });
-    this.element.querySelectorAll("[data-background-age-field]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateBackgroundAge(event));
-    });
-    this.element.querySelector("[data-action='roll-background-age']")
-      ?.addEventListener("click", (event) => this.#rollBackgroundAge(event));
-    this.element.querySelector("[data-background-social-class]")
-      ?.addEventListener("change", (event) => this.#selectSocialClass(event));
-    this.element.querySelector("[data-action='roll-social-class']")
-      ?.addEventListener("click", (event) => this.#rollSocialClass(event));
-    this.element.querySelectorAll("[data-background-points]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateBackgroundPoints(event));
-    });
-    this.element.querySelectorAll("[data-background-points-action]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#adjustBackgroundPoints(event));
-    });
-    this.element.querySelectorAll("[data-background-navigation]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#navigateBackground(event));
-    });
-    this.element.querySelector("[data-action='confirm-background']")
-      ?.addEventListener("click", () => this.#confirmBackground());
-    this.element.querySelectorAll("[data-action='create-item']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#createItem(event));
-    });
-    this.element.querySelectorAll("[data-action='edit-item']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#editItem(event));
-    });
-    this.element.querySelectorAll("[data-action='delete-item']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#deleteItem(event));
-    });
-    this.element.querySelectorAll("[data-action='toggle-equipped']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#toggleEquipped(event));
-    });
-    this.element.querySelectorAll("[data-action='toggle-container']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#toggleContainer(event));
-    });
-    this.element.querySelectorAll("[data-action='sell-item']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#sellItem(event));
-    });
-    this.element.querySelectorAll("[data-property-funds]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updatePropertyFunds(event));
-    });
-    this.element.querySelectorAll("[data-action='buy-item']").forEach((button) => {
-      button.addEventListener("click", (event) => game.mythrasFoundry?.shop?.open?.({
+    bindSheetEvents(this.element, [
+      ["[data-tab]", "click", (event) => this.#activateTab(event)],
+      ["[data-action='confirm-characteristics']", "click", () => this.#confirmCharacteristics()],
+      ["[data-generation-method]", "click", (event) => this.#selectGenerationMethod(event)],
+      ["[data-action='toggle-edit-mode']", "click", () => this.#toggleEditMode()],
+      ["[data-action='train-skill']", "click", () => this.#showTrainingPlaceholder()],
+      ["[data-action='choose-portrait']", "click", () => this.#choosePortrait()],
+      ["[data-action='view-portrait']", "click", () => this.#viewPortrait()],
+      ["[data-action='adjust-characteristic']", "click", (event) => this.#adjustCharacteristic(event)],
+      ["[data-swap-characteristic]", "change", (event) => this.#swapCharacteristic(event)],
+      ["[data-background-select]", "change", (event) => this.#selectBackground(event)],
+      ["[data-background-choice]", "change", (event) => this.#toggleBackgroundChoice(event)],
+      ["[data-background-passion-field]", "change", (event) => this.#updateBackgroundPassion(event)],
+      ["[data-background-professional]", "change", (event) => this.#toggleBackgroundProfessional(event)],
+      ["[data-background-specialization]", "change", (event) => this.#updateBackgroundSpecialization(event)],
+      ["[data-background-style-field]", "change", (event) => this.#updateBackgroundStyle(event)],
+      ["[data-background-style-trait]", "change", (event) => this.#toggleBackgroundStyleTrait(event)],
+      ["[data-background-style-action]", "click", (event) => this.#changeBackgroundStyles(event)],
+      ["[data-background-free-field]", "change", (event) => this.#updateFreeSkill(event)],
+      ["[data-background-age-field]", "change", (event) => this.#updateBackgroundAge(event)],
+      ["[data-action='roll-background-age']", "click", (event) => this.#rollBackgroundAge(event)],
+      ["[data-background-social-class]", "change", (event) => this.#selectSocialClass(event)],
+      ["[data-action='roll-social-class']", "click", (event) => this.#rollSocialClass(event)],
+      ["[data-background-points]", "change", (event) => this.#updateBackgroundPoints(event)],
+      ["[data-background-points-action]", "click", (event) => this.#adjustBackgroundPoints(event)],
+      ["[data-background-navigation]", "click", (event) => this.#navigateBackground(event)],
+      ["[data-action='confirm-background']", "click", () => this.#confirmBackground()],
+      ["[data-action='create-item']", "click", (event) => this.#createItem(event)],
+      ["[data-action='edit-item']", "click", (event) => this.#editItem(event)],
+      ["[data-action='delete-item']", "click", (event) => this.#deleteItem(event)],
+      ["[data-action='toggle-equipped']", "click", (event) => this.#toggleEquipped(event)],
+      ["[data-action='toggle-container']", "click", (event) => this.#toggleContainer(event)],
+      ["[data-action='sell-item']", "click", (event) => this.#sellItem(event)],
+      ["[data-property-funds]", "change", (event) => this.#updatePropertyFunds(event)],
+      ["[data-action='buy-item']", "click", (event) => game.mythrasFoundry?.shop?.open?.({
         actorUuid: this.actor.uuid,
         destinationId: event.currentTarget.dataset.walletId ?? "person"
-      }));
-    });
-    this.element.querySelectorAll("[data-action='transfer-money']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#transferMoney(event));
-    });
+      })],
+      ["[data-action='transfer-money']", "click", (event) => this.#transferMoney(event)],
+      ["[data-active-weapon-mode]", "change", (event) => this.#prepareWeaponMode(event)],
+      ["[data-fatigue-level]", "change", (event) => this.#updateFatigue(event)],
+      ["[data-incapacitated-manual]", "change", (event) => this.#toggleManualIncapacitated(event)],
+      ["[data-status-toggle]", "change", (event) => this.#toggleStatus(event)],
+      ["[data-location-disabled]", "change", (event) => this.#updateLocationDisabled(event)],
+      ["[data-location-armor]", "change", (event) => this.#updateLocationArmor(event)],
+      ["[data-action='roll-skill']", "click", (event) => this.#rollSkill(event)],
+      ["[data-action='improve-skill']", "click", (event) => this.#improveSkill(event)],
+      ["[data-action='roll-passion']", "click", (event) => this.#rollPassion(event)],
+      ["[data-passion-adjust]", "click", (event) => this.#adjustPassion(event)],
+      ["[data-action='add-skill-from-pack']", "click", (event) => this.#addSkillFromPack(event)],
+      ["[data-action='create-combat-style']", "click", () => this.#createCombatStyle()],
+      ["[data-resource-action]", "click", (event) => this.#adjustResource(event)],
+      ["[data-skill-field]", "change", (event) => this.#updateSkillField(event)],
+      ["[data-passion-field]", "change", (event) => this.#updatePassionField(event)],
+      ["[data-combat-style]", "change", (event) => this.#updateWeaponCombatChoice(event)],
+      ["[data-combat-familiarity]", "change", (event) => this.#updateWeaponCombatChoice(event)],
+      ["[data-action='roll-weapon-attack']", "click", (event) => this.#rollWeaponAttack(event)]
+    ]);
+    this.#showTab(this._activeTab ?? "character");
     this.#activateInventoryDragAndDrop();
-    this.element.querySelectorAll("[data-active-weapon-mode]").forEach((select) => {
-      select.addEventListener("change", (event) => this.#prepareWeaponMode(event));
-    });
-    this.element.querySelectorAll("[data-fatigue-level]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateFatigue(event));
-    });
-    this.element.querySelector("[data-incapacitated-manual]")
-      ?.addEventListener("change", (event) => this.#toggleManualIncapacitated(event));
-    this.element.querySelectorAll("[data-status-toggle]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#toggleStatus(event));
-    });
-    this.element.querySelectorAll("[data-location-disabled]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateLocationDisabled(event));
-    });
-    this.element.querySelectorAll("[data-location-armor]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateLocationArmor(event));
-    });
-    this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#rollSkill(event));
-    });
-    this.element.querySelectorAll("[data-action='improve-skill']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#improveSkill(event));
-    });
-    this.element.querySelectorAll("[data-action='roll-passion']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#rollPassion(event));
-    });
-    this.element.querySelectorAll("[data-passion-adjust]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#adjustPassion(event));
-    });
-    this.element.querySelectorAll("[data-action='add-skill-from-pack']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#addSkillFromPack(event));
-    });
-    this.element.querySelectorAll("[data-action='create-combat-style']").forEach((button) => {
-      button.addEventListener("click", () => this.#createCombatStyle());
-    });
-    this.element.querySelectorAll("[data-resource-action]").forEach((button) => {
-      button.addEventListener("click", (event) => this.#adjustResource(event));
-    });
-    this.element.querySelectorAll("[data-skill-field]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateSkillField(event));
-    });
-    this.element.querySelectorAll("[data-passion-field]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updatePassionField(event));
-    });
-    this.element.querySelectorAll("[data-combat-style]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event));
-    });
-    this.element.querySelectorAll("[data-combat-familiarity]").forEach((field) => {
-      field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event));
-    });
-    this.element.querySelectorAll("[data-action='roll-weapon-attack']").forEach((button) => {
-      button.addEventListener("click", (event) => this.#rollWeaponAttack(event));
-    });
     this.#fitCombatEffects();
 
     if (context.backgroundWizard && !this._backgroundSyncing) {
@@ -891,16 +697,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   #conditionResolution({ baseDifficulty = "standard", physical = false,
     situational = false, fatigueKey = this.actor.system.fatigueLevel } = {}) {
-    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    const armors = this.actor.items.filter((item) => item.type === "armor" && item.system.equipped);
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, getActionPointRules());
-    return resolveConditions({ baseAttributes, baseDifficulty, context: { physical, situational },
-      descriptors: conditionDescriptors({ fatigueKey, woundLevel: worstWoundLevel(locations),
-        manuallyIncapacitated: Boolean(this.actor.getFlag(
-          INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)),
-        loadState: this.#loadState(), armorPenalty: armorInitiativePenalty(armors),
-        statuses: activeStatusRules(this.actor.statuses) }) });
+    return resolveActorConditions(this.actor, { baseAttributes, baseDifficulty, physical,
+      situational, fatigueKey, loadState: this.#loadState() });
   }
 
   async #toggleManualIncapacitated(event) {
@@ -918,9 +718,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #loadState() {
-    const items = this.actor.items.filter((item) => ["equipment", "weapon", "armor"]
-      .includes(item.type));
-    return encumbranceState(totalCarriedEncumbrance(items), this.actor.system.strength);
+    return actorLoadState(this.actor);
   }
 
   #initiativePenaltyTitle(condition, equippedArmor, causedByWound = false) {

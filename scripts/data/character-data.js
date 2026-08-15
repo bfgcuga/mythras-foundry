@@ -3,14 +3,10 @@ import {
   calculateDerivedAttributes
 } from "../rules/derived-attributes.js";
 import { FATIGUE_LEVELS } from "../rules/fatigue.js";
-import { worstWoundLevel } from "../rules/hit-locations.js";
 import { getActionPointRules } from "../settings.js";
-import { armorInitiativePenalty } from "../rules/armor.js";
-import { conditionDescriptors, resolveConditions } from "../rules/condition-resolver.js";
+import { resolveActorConditions } from "../rules/actor-conditions.js";
 import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
-import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
-  INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
-import { activeStatusRules, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 
 const {
   BooleanField,
@@ -126,18 +122,9 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
     super.prepareDerivedData();
 
     this.baseAttributes = calculateDerivedAttributes(this, getActionPointRules());
-    const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
-    const incapacitated = Boolean(this.parent?.statuses?.has(INCAPACITATED_STATUS_ID)
-      || this.parent?.getFlag?.(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG));
-    const armors = this.parent?.items?.filter((item) => item.type === "armor") ?? [];
-    const condition = resolveConditions({ baseAttributes: this.baseAttributes,
-      descriptors: conditionDescriptors({
-        fatigueKey: this.fatigueLevel,
-        woundLevel: worstWoundLevel(locations),
-        manuallyIncapacitated: incapacitated,
-        armorPenalty: armorInitiativePenalty(armors),
-        statuses: activeStatusRules(this.parent?.statuses)
-      }) });
+    const condition = resolveActorConditions(this.parent, {
+      baseAttributes: this.baseAttributes, fatigueKey: this.fatigueLevel
+    });
     this.conditionLevel = condition.condition;
     this.skillDifficulty = condition.difficulties.general;
     this.attributes = condition.attributes;

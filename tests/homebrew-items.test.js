@@ -16,7 +16,7 @@ test("el creador homebrew cubre todos los tipos Item del sistema", () => {
 });
 
 test("registra el menú GM, la API y los formularios del creador", () => {
-  const entrypoint = readFileSync(new URL("../scripts/mythras-foundry.js", import.meta.url), "utf8");
+  const entrypoint = readFileSync(new URL("../scripts/system/registration.js", import.meta.url), "utf8");
   const template = readFileSync(new URL(
     "../templates/apps/homebrew-item-creator.hbs", import.meta.url), "utf8");
   assert.match(entrypoint, /registerMenu\("mythras-foundry", "homebrewItemCreator"/);

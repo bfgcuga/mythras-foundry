@@ -1,173 +1,34 @@
-import { CharacterData } from "./data/character-data.js";
-import { NpcData } from "./data/npc-data.js";
 import { ensureBasicSkills } from "./data/basic-skills.js";
 import { defaultItemIcon } from "./data/item-icons.js";
 import { DEFAULT_HOME_DATA, equipmentIcon } from "./data/equipment.js";
-import {
-  BackgroundData,
-  ArmorData,
-  CombatStyleData,
-  EquipmentData,
-  HitLocationData,
-  PassionData,
-  SkillData,
-  TraitData,
-  WeaponData
-} from "./data/item-data.js";
-import { MythrasItem } from "./documents/mythras-item.js";
-import { actorIncapacitatedState, MythrasActor,
-  syncIncapacitatedStatus } from "./documents/mythras-actor.js";
+import { actorIncapacitatedState, syncIncapacitatedStatus
+} from "./documents/mythras-actor.js";
 import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
   worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { mergeWeaponProfiles } from "./rules/combat-style-weapons.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
 import { styleAbilityKey } from "./rules/background-generation.js";
-import { CharacterSheet } from "./sheets/character-sheet.js";
-import { NpcSheet } from "./sheets/npc-sheet.js";
-import { MythrasItemSheet } from "./sheets/item-sheet.js";
-import { activateCombatCard } from "./rules/combat-chat.js";
-import { activateSkillRollCard } from "./rules/skill-roll-chat.js";
-import { activateContestResponseDialog, activateSkillRollDialog } from "./apps/skill-roll-dialog.js";
-import { activateContestCard, registerContestSocket } from "./rules/contest-chat.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
-import { WeaponModeMergeTool } from "./apps/weapon-mode-merge-tool.js";
-import { PartyManager } from "./apps/party-manager.js";
-import { CatalogSourceManager } from "./apps/catalog-source-manager.js";
-import { HomebrewItemCreator, createHomebrewApi } from "./apps/homebrew-item-creator.js";
-import { createCatalogApi } from "./apps/item-catalog.js";
-import { createPartyApi } from "./api/party-api.js";
 import { conditionDescriptors, resolveConditions } from "./rules/condition-resolver.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
 import { ARMOR_MATERIAL_MODIFIERS, armorLocationForReference,
   armorPieceTypeForLocation } from "./rules/armor.js";
 import { isGenericItemName, nextNumberedItemName } from "./rules/item-names.js";
-import { activateDelayedTooltips } from "./ui/tooltips.js";
 import { fumbledSkillUpdatesAtZero } from "./rules/skills.js";
 import { managedMacroUpdate } from "./data/macros.js";
 import { TRAIT_SOURCES } from "./data/traits.js";
-import { hasTrait, mergeTraitReferences, parseLegacyTraitText, registerTraitRule,
-  resolveTraitRules, traitReferences, traitSlug, unregisterTraitRule } from "./rules/traits.js";
+import { mergeTraitReferences, parseLegacyTraitText, traitSlug } from "./rules/traits.js";
 import { calculateNpcAttributes } from "./rules/npc.js";
 import { regenerateNpcActor } from "./rules/npc-token.js";
-import { activateActionPointSettingVisibility, getActionPointRules,
-  getSystemSetting, registerSystemSettings, SETTING_KEYS } from "./settings.js";
+import { getActionPointRules } from "./settings.js";
 import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "./rules/incapacitated.js";
-import { MYTHRAS_STATUS_EFFECTS } from "./rules/statuses.js";
+import { registerSystemInitialization } from "./system/registration.js";
+import { registerUiHooks } from "./system/ui-hooks.js";
 
-const PARTIALS = [
-  "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
-  "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
-  "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs",
-  "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
-  "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs",
-  "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs",
-  "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
-];
-
-Hooks.once("init", async () => {
-  console.log("Mythras Foundry | Inicializando sistema");
-
-  CONFIG.Actor.dataModels.character = CharacterData;
-  CONFIG.Actor.dataModels.npc = NpcData;
-  CONFIG.Actor.documentClass = MythrasActor;
-  const systemStatuses = [
-    { id: INCAPACITATED_STATUS_ID, name: "MYTHRASF.Status.Incapacitated",
-      img: "icons/svg/unconscious.svg" },
-    ...MYTHRAS_STATUS_EFFECTS.map(({ id, name, img }) => ({ id, name, img }))
-  ];
-  for (const statusEffect of systemStatuses) {
-    if (Array.isArray(CONFIG.statusEffects)) {
-      const existing = CONFIG.statusEffects.findIndex((status) => status.id === statusEffect.id);
-      if (existing >= 0) CONFIG.statusEffects[existing] = statusEffect;
-      else CONFIG.statusEffects.push(statusEffect);
-    } else {
-      CONFIG.statusEffects[statusEffect.id] = statusEffect;
-    }
-  }
-  CONFIG.Item.documentClass = MythrasItem;
-  CONFIG.Item.dataModels.skill = SkillData;
-  CONFIG.Item.dataModels.combatStyle = CombatStyleData;
-  CONFIG.Item.dataModels.culture = BackgroundData;
-  CONFIG.Item.dataModels.profession = BackgroundData;
-  CONFIG.Item.dataModels.equipment = EquipmentData;
-  CONFIG.Item.dataModels.passion = PassionData;
-  CONFIG.Item.dataModels.weapon = WeaponData;
-  CONFIG.Item.dataModels.armor = ArmorData;
-  CONFIG.Item.dataModels.hitLocation = HitLocationData;
-  CONFIG.Item.dataModels.trait = TraitData;
-  registerSystemSettings();
-  game.settings.registerMenu("mythras-foundry", "partyManager", {
-    name: "MYTHRASF.Party.Manager", label: "MYTHRASF.Party.ManagerOpen",
-    hint: "MYTHRASF.Party.ManagerHint", icon: "fas fa-users",
-    type: PartyManager, restricted: true
-  });
-  game.settings.registerMenu("mythras-foundry", "weaponModeMerge", {
-    name: "MYTHRASF.Weapon.MergeTool", label: "MYTHRASF.Weapon.MergeTool",
-    hint: "MYTHRASF.Weapon.MergeHelp", icon: "fas fa-object-group",
-    type: WeaponModeMergeTool, restricted: true
-  });
-  game.settings.registerMenu("mythras-foundry", "catalogSources", {
-    name: "MYTHRASF.Catalog.Sources.Title", label: "MYTHRASF.Catalog.Sources.OpenManager",
-    hint: "MYTHRASF.Catalog.Sources.Hint", icon: "fas fa-store",
-    type: CatalogSourceManager, restricted: true
-  });
-  game.settings.registerMenu("mythras-foundry", "homebrewItemCreator", {
-    name: "MYTHRASF.Homebrew.Title", label: "MYTHRASF.Homebrew.Open",
-    hint: "MYTHRASF.Homebrew.Hint", icon: "fas fa-hammer",
-    type: HomebrewItemCreator, restricted: true
-  });
-  game.mythrasFoundry = {
-    ...(game.mythrasFoundry ?? {}),
-    shop: createCatalogApi(),
-    homebrew: createHomebrewApi(),
-    party: createPartyApi({
-      getConfig: () => getSystemSetting(SETTING_KEYS.parties),
-      getActors: () => game.actors,
-      openManager: () => {
-        if (!game.user.isGM) return null;
-        const manager = new PartyManager();
-        manager.render({ force: true });
-        return manager;
-      }
-    }),
-    traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
-      registerRule: registerTraitRule, unregisterRule: unregisterTraitRule }
-  };
-
-  foundry.documents.collections.Actors.registerSheet(
-    "mythras-foundry",
-    CharacterSheet,
-    {
-      types: ["character"],
-      makeDefault: true,
-      label: "MYTHRASF.Sheet.Character"
-    }
-  );
-
-  foundry.documents.collections.Actors.registerSheet(
-    "mythras-foundry",
-    NpcSheet,
-    {
-      types: ["npc"],
-      makeDefault: true,
-      label: "MYTHRASF.Sheet.Npc"
-    }
-  );
-
-  foundry.documents.collections.Items.registerSheet(
-    "mythras-foundry",
-    MythrasItemSheet,
-    {
-      types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment", "weapon", "armor", "hitLocation", "trait"],
-      makeDefault: true,
-      label: "MYTHRASF.Sheet.Item"
-    }
-  );
-
-  await loadTemplates(PARTIALS);
-});
+registerSystemInitialization();
+registerUiHooks();
 
 Hooks.once("setup", () => {
   // Character documents were first prepared before world settings became
@@ -175,34 +36,6 @@ Hooks.once("setup", () => {
   game.actors?.forEach((actor) => {
     if (actor.type === "character") actor.prepareData();
   });
-});
-
-function activateChatCards(message, html) {
-  activateCombatCard(message, html);
-  activateSkillRollCard(message, html);
-  activateContestCard(message, html);
-}
-Hooks.on("renderChatMessageHTML", activateChatCards);
-Hooks.on("renderChatMessage", activateChatCards);
-Hooks.once("ready", registerContestSocket);
-Hooks.on("renderApplicationV2", (application, element) => {
-  if (element.querySelector?.(".mythras-dialog")) {
-    element.classList.add("mythras-foundry", "mythras-paper-sheet");
-  }
-  activateSkillRollDialog(element);
-  activateContestResponseDialog(element);
-  activateDelayedTooltips(element);
-  activateActionPointSettingVisibility(element);
-});
-Hooks.on("renderApplication", (application, html) => {
-  const element = html instanceof HTMLElement ? html : html?.[0];
-  if (element?.querySelector?.(".mythras-dialog")) {
-    element.classList.add("mythras-foundry", "mythras-paper-sheet");
-  }
-  if (element) activateSkillRollDialog(element);
-  if (element) activateContestResponseDialog(element);
-  activateDelayedTooltips(html);
-  activateActionPointSettingVisibility(html);
 });
 
 Hooks.on("preUpdateActor", (actor, changed) => {

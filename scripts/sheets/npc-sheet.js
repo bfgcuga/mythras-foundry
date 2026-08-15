@@ -14,12 +14,12 @@ import { hasSeriousWound, worstWoundLevel, woundPenaltyKey } from "../rules/hit-
 import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
-import { conditionDescriptors, resolveConditions } from "../rules/condition-resolver.js";
 import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
 import { encumbranceState, skillUsesStrengthOrDexterity, totalCarriedEncumbrance
 } from "../rules/encumbrance.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
+import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -70,10 +70,9 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const activeStatuses = activeStatusRules(this.actor.statuses);
     const manuallyIncapacitated = Boolean(this.actor.getFlag(
       INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG));
-    const conditionResolution = resolveConditions({ baseAttributes,
-      descriptors: conditionDescriptors({ fatigueKey: currentFatigue.key,
-        woundLevel: currentWound, manuallyIncapacitated, loadState,
-        armorPenalty: armorInitiativePenalty(equippedArmor), statuses: activeStatuses }) });
+    const conditionResolution = resolveActorConditions(this.actor, {
+      baseAttributes, fatigueKey: currentFatigue.key, loadState
+    });
     const effectiveAttributes = conditionResolution.attributes;
     const activeStatusControls = prepareActiveStatusControls(this.actor, {
       fatigueKey: currentFatigue.key, woundLevel: currentWound
@@ -463,22 +462,14 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   #conditionResolution({ baseDifficulty = "standard", physical = false,
     situational = false } = {}) {
-    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    const armors = this.actor.items.filter((item) => item.type === "armor" && item.system.equipped);
-    return resolveConditions({ baseAttributes: this.actor.system.baseAttributes ?? {},
-      baseDifficulty, context: { physical, situational }, descriptors: conditionDescriptors({
-        fatigueKey: this.actor.system.fatigueLevel, woundLevel: worstWoundLevel(locations),
-        manuallyIncapacitated: Boolean(this.actor.getFlag(
-          INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)),
-        loadState: this.#loadState(),
-        armorPenalty: armorInitiativePenalty(armors),
-        statuses: activeStatusRules(this.actor.statuses) }) });
+    return resolveActorConditions(this.actor, {
+      baseAttributes: this.actor.system.baseAttributes ?? {}, baseDifficulty, physical,
+      situational, loadState: this.#loadState()
+    });
   }
 
   #loadState() {
-    const inventory = this.actor.items.filter((item) =>
-      ["equipment", "weapon", "armor"].includes(item.type));
-    return encumbranceState(totalCarriedEncumbrance(inventory), this.actor.system.strength);
+    return actorLoadState(this.actor);
   }
 
   async #resolveSituationalDifficulty(baseDifficulty, physical = false) {

@@ -92,12 +92,11 @@ test("los modelos y hojas de personaje y PNJ consumen el resolvedor compartido",
     "scripts/sheets/character-sheet.js", "scripts/sheets/npc-sheet.js"
   ]) {
     const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-    assert.match(source, /conditionDescriptors/);
-    assert.match(source, /resolveConditions/);
+    assert.match(source, /resolveActorConditions/);
   }
   const npcData = readFileSync(new URL("../scripts/data/npc-data.js", import.meta.url), "utf8");
   const npcSheet = readFileSync(new URL("../scripts/sheets/npc-sheet.js", import.meta.url), "utf8");
-  assert.match(npcData, /totalCarriedEncumbrance/);
+  assert.match(npcData, /actorLoadState/);
   assert.match(npcData, /loadState: this\.loadState/);
   assert.match(npcSheet, /skillUsesStrengthOrDexterity/);
   assert.match(npcSheet, /physical: true/);
