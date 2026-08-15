@@ -128,6 +128,23 @@ permanece en la tarjeta; en las tiradas enfrentadas cada cambio vuelve a resolve
 la comparación completa. En ambos casos sólo pueden gastar suerte los personajes
 participantes que pertenecen al grupo activo.
 
+Los ataques interactivos se persisten como transacciones versionadas en
+`flags.mythras-foundry.combat`. `scripts/rules/combat.js` resuelve de forma pura
+la clasificación y ventaja diferencial, incluido el fallo automático al no
+defenderse. Si la defensa estaba predeclarada, ataque y defensa comparten la
+reducción por el mayor porcentaje superior a 100; una defensa tardía conserva
+la clasificación ya obtenida por el ataque. `scripts/rules/combat-chat.js`
+coordina por socket la respuesta de Parar, Evadir o no defenderse, valida
+revisión y propiedad y permite modificar ambos dados mediante suerte. El daño,
+la localización y la armadura continúan en la misma transacción. Parar reduce el
+daño según el tamaño de ambas armas; Evadir decide si existe impacto comparando
+primero el grado y después el dado más alto. La tarjeta conserva una instantánea
+de armadura y PG, pero solo el DJ o el propietario defensor puede confirmar la
+aplicación. Los cambios concurrentes convierten la propuesta en obsoleta y
+obligan a recalcularla. Los puntos de acción, la selección de efectos y las
+consecuencias secundarias de las heridas permanecen fuera de esta transacción
+hasta sus respectivas fases de automatización.
+
 ## Compendios
 
 Los módulos de `scripts/data/` son la fuente de verdad de los compendios. El

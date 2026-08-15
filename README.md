@@ -31,8 +31,12 @@ El sistema incluye actualmente:
   individual, de equipo o eliminatoria configurable de forma independiente para
   cada lado; los equipos admiten portavoz, miembro mayor o menor y tiradas
   individuales, coordinadas desde una tarjeta de chat;
-- armas con varios modos, estilos de combate, familiaridad, rasgos reutilizables
-  y resolución de ataques;
+- armas con varios modos, estilos de combate, familiaridad y rasgos
+  reutilizables; los ataques crean intercambios diferenciales interactivos con
+  Parar, Evadir o renunciar a la defensa, respetando el momento de declaración
+  para la regla compartida de porcentajes superiores al 100 %; los impactos
+  resuelven tamaño de parada, golpe contenido, daño, localización y armadura y
+  proponen al DJ o propietario defensor la aplicación de PG y heridas;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
   y conflictos de equipación;
 - inventario jerárquico por persona y propiedades, contenedores, monedas,

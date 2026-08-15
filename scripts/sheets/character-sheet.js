@@ -863,11 +863,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     const targets = Array.from(game.user.targets ?? []);
-    if (targets.length > 1) {
-      ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.OneTarget"));
-      return;
-    }
-    await createAttackMessage({ actor: this.actor, weapon, mode, resolution, target: targets[0] });
+    await createAttackMessage({ actor: this.actor, weapon, mode, resolution,
+      target: targets.length === 1 ? targets[0] : null });
   }
 
   async #choosePortrait() {

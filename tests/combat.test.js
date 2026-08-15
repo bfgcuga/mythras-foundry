@@ -3,9 +3,14 @@ import assert from "node:assert/strict";
 
 import {
   applyArmor,
+  combatAttackHits,
   difficultyTarget,
+  evasionWinner,
   normalizeWeaponProfile,
   parseWeaponProfileReferences,
+  parryReduction,
+  resolveDamage,
+  resolveCombatExchange,
   resolveWeaponStyle,
   UNTRAINED_COMBAT_STYLE_ID
 } from "../scripts/rules/combat.js";
@@ -156,4 +161,84 @@ test("una tirada localiza el rango correspondiente o devuelve null", () => {
   ];
   assert.equal(findHitLocation(locations, 17), locations[1]);
   assert.equal(findHitLocation(locations, 21), null);
+});
+
+test("una defensa predeclarada comparte la mayor reduccion por encima de 100", () => {
+  const result = resolveCombatExchange({ predeclared: true,
+    attack: { target: 130, rawRoll: 90 },
+    defense: { type: "parry", target: 85, rawRoll: 60 } });
+  assert.equal(result.sharedPenalty, 30);
+  assert.equal(result.attack.target, 100);
+  assert.equal(result.defense.target, 55);
+  assert.equal(result.advantage, 1);
+  assert.equal(result.winner, "attacker");
+  assert.equal(result.effects, 1);
+});
+
+test("una defensa tardia no reclasifica ni reduce el ataque", () => {
+  const result = resolveCombatExchange({ predeclared: false,
+    attack: { target: 130, rawRoll: 90 },
+    defense: { type: "evade", target: 85, rawRoll: 60 } });
+  assert.equal(result.sharedPenalty, 0);
+  assert.equal(result.attack.target, 130);
+  assert.equal(result.attack.result, "success");
+  assert.equal(result.defense.target, 85);
+  assert.equal(result.defense.result, "success");
+  assert.equal(result.effects, 0);
+});
+
+test("no defenderse es un fallo automatico sin dado ni reduccion compartida", () => {
+  const result = resolveCombatExchange({ predeclared: true,
+    attack: { target: 130, rawRoll: 60 }, defense: { type: "none" } });
+  assert.equal(result.sharedPenalty, 0);
+  assert.equal(result.attack.target, 130);
+  assert.equal(result.defense.result, "failure");
+  assert.equal(result.defense.rawRoll, null);
+  assert.equal(result.defense.automaticFailure, true);
+  assert.equal(result.effects, 1);
+});
+
+test("una defensa puede obtener efectos contra un ataque fallido", () => {
+  const result = resolveCombatExchange({ attack: { target: 55, rawRoll: 80 },
+    defense: { type: "parry", target: 70, rawRoll: 40 } });
+  assert.equal(result.attack.result, "failure");
+  assert.equal(result.defense.result, "success");
+  assert.equal(result.advantage, -1);
+  assert.equal(result.winner, "defender");
+});
+
+test("Evadir desempata grados iguales con el dado mas alto", () => {
+  const attackWins = { attack: { result: "success", rawRoll: 65 },
+    defense: { type: "evade", result: "success", rawRoll: 40 } };
+  const defenseWins = { attack: { result: "critical", rawRoll: 4 },
+    defense: { type: "evade", result: "critical", rawRoll: 7 } };
+  assert.equal(evasionWinner(attackWins), "attacker");
+  assert.equal(combatAttackHits(attackWins), true);
+  assert.equal(evasionWinner(defenseWins), "defender");
+  assert.equal(combatAttackHits(defenseWins), false);
+  assert.equal(combatAttackHits({ attack: { result: "success", rawRoll: 50 },
+    defense: { type: "evade", result: "success", rawRoll: 50 } }), false);
+});
+
+test("la parada compara las cinco categorias de tamaño", () => {
+  assert.equal(parryReduction("M", "G").type, "full");
+  assert.equal(parryReduction("G", "M").type, "half");
+  assert.equal(parryReduction("E", "P").type, "none");
+  assert.equal(parryReduction("?", "M").type, "unknown");
+});
+
+test("golpe contenido y parada parcial dividen redondeando hacia arriba", () => {
+  const result = resolveDamage({ rolledDamage: 11, containedBlow: true,
+    parry: { type: "half" }, armorPoints: 2, targetSize: 4 });
+  assert.equal(result.afterContainedBlow, 6);
+  assert.equal(result.afterParry, 3);
+  assert.equal(result.penetratingDamage, 1);
+  assert.deepEqual(result.push, { triggered: true, excess: 2, distance: 1 });
+});
+
+test("una parada completa y la armadura nunca producen daño negativo", () => {
+  assert.equal(resolveDamage({ rolledDamage: 9, parry: { type: "full" },
+    armorPoints: 4 }).penetratingDamage, 0);
+  assert.equal(resolveDamage({ rolledDamage: 3, parry: { type: "none" },
+    armorPoints: 8 }).penetratingDamage, 0);
 });

@@ -8,8 +8,9 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Integración de tiradas con combate
 
-- Integrar el motor interactivo con ataques, defensas, daño y efectos de
-  combate.
+- Integrar los intercambios diferenciales interactivos ya disponibles con
+  puntos de acción y selección de efectos de combate. La parada por tamaño,
+  el daño localizado y su aplicación confirmada ya están disponibles.
 
 ### Estados y penalizaciones
 

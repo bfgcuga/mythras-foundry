@@ -2265,6 +2265,15 @@
 .mythras-combat-card .combat-card-damage { display: grid; gap: 0.3rem; }
 .mythras-combat-card .combat-card-applied { font-weight: 700; }
 .mythras-combat-card .combat-card-warning { color: #8a1818; }
+.mythras-combat-card .combat-exchange-side { border-top: 1px solid rgb(156 135 102 / 55%); padding-top: 0.3rem; }
+.mythras-combat-card .combat-defense-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mythras-combat-card [data-combat-gm-actions] { display: flex; justify-content: flex-end; }
+.mythras-combat-card .combat-damage-panel { display: grid; gap: 0.3rem; }
+.mythras-combat-card .combat-damage-panel label { display: grid; grid-template-columns: 1fr minmax(8rem, auto); align-items: center; gap: 0.5rem; }
+.mythras-foundry .combat-attack-setup,
+.mythras-foundry .combat-defense-dialog { display: grid; gap: 0.45rem; }
+.mythras-foundry .combat-attack-setup label,
+.mythras-foundry .combat-defense-dialog label { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
 
 /* NPC sheet */
 .mythras-foundry .npc-sheet-content {

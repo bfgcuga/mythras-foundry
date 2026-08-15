@@ -452,8 +452,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
     }
     const targets = Array.from(game.user.targets ?? []);
-    if (targets.length > 1) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.OneTarget"));
-    await createAttackMessage({ actor: this.actor, weapon, mode, resolution, target: targets[0] });
+    await createAttackMessage({ actor: this.actor, weapon, mode, resolution,
+      target: targets.length === 1 ? targets[0] : null });
   }
 
   async #applySeriousWoundPenalty(difficulty) {

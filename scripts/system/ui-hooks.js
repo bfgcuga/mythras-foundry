@@ -1,5 +1,5 @@
 import { activateContestResponseDialog, activateSkillRollDialog } from "../apps/skill-roll-dialog.js";
-import { activateCombatCard } from "../rules/combat-chat.js";
+import { activateCombatCard, registerCombatSocket } from "../rules/combat-chat.js";
 import { activateContestCard, registerContestSocket } from "../rules/contest-chat.js";
 import { activateSkillRollCard } from "../rules/skill-roll-chat.js";
 import { activateActionPointSettingVisibility } from "../settings.js";
@@ -26,7 +26,10 @@ function activateApplicationUi(element) {
 export function registerUiHooks() {
   Hooks.on("renderChatMessageHTML", activateChatCards);
   Hooks.on("renderChatMessage", activateChatCards);
-  Hooks.once("ready", registerContestSocket);
+  Hooks.once("ready", () => {
+    registerContestSocket();
+    registerCombatSocket();
+  });
   Hooks.on("renderApplicationV2", (application, element) => activateApplicationUi(element));
   Hooks.on("renderApplication", (application, html) => {
     activateApplicationUi(html instanceof HTMLElement ? html : html?.[0]);

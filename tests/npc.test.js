@@ -52,6 +52,6 @@ test("un arma natural toma PA y PG de su localización", () => {
 
 test("el modificador de daño manual conserva la fórmula para cada ataque", () => {
   assert.equal(damageModifierFormula("+1d6", "full"), "1d6");
-  assert.equal(damageModifierFormula("+1d6", "half"), "floor((1d6) / 2)");
+  assert.equal(damageModifierFormula("+1d6", "half"), "ceil((1d6) / 2)");
   assert.equal(damageModifierFormula("+1d6", "none"), "0");
 });
