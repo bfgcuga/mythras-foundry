@@ -16,6 +16,12 @@ const characteristicsTemplate = readFileSync(
 const combatTemplate = readFileSync(
   new URL("../templates/actor/parts/combat-tab.hbs", import.meta.url), "utf8"
 );
+const penaltiesTemplate = readFileSync(
+  new URL("../templates/actor/parts/penalties-tab.hbs", import.meta.url), "utf8"
+);
+const npcTemplate = readFileSync(
+  new URL("../templates/actor/npc-sheet.hbs", import.meta.url), "utf8"
+);
 const itemTemplate = readFileSync(
   new URL("../templates/item/item-sheet.hbs", import.meta.url), "utf8"
 );
@@ -102,14 +108,18 @@ test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula"
 test("la pestaña de penalizaciones usa una tabla semántica y tipografía compartida", () => {
   assert.match(characterTemplate, /data-tab="penalties"/);
   assert.match(characterTemplate, /data-tab-content="penalties"/);
-  assert.match(characterTemplate, /<table class="penalties-table">/);
-  assert.match(characterTemplate, /<th scope="col">/);
-  assert.match(characterTemplate, /<th scope="row">/);
+  assert.match(penaltiesTemplate, /<table class="penalties-table">/);
+  assert.match(penaltiesTemplate, /<th scope="col">/);
+  assert.match(penaltiesTemplate, /<th scope="row">/);
   assert.match(css, /\.penalties-table \{[^}]*font-size: var\(--mythras-font-size-table\)/);
   assert.match(css, /\.penalties-table th,\s*\n\.mythras-foundry \.penalties-table td[^}]*white-space: normal/s);
-  assert.match(characterTemplate, /data-status-toggle="{{status.id}}"/);
-  assert.match(characterTemplate, /hasActiveStatusControls/);
-  assert.match(characterTemplate, /penalties\.hasRows/);
+  assert.match(penaltiesTemplate, /data-status-toggle="{{status.id}}"/);
+  assert.match(penaltiesTemplate, /hasActiveStatusControls/);
+  assert.match(penaltiesTemplate, /penalties\.hasRows/);
+  assert.match(characterTemplate, /parts\/penalties-tab\.hbs/);
+  assert.match(npcTemplate, /data-tab="penalties"/);
+  assert.match(npcTemplate, /data-tab-content="penalties"/);
+  assert.match(npcTemplate, /parts\/penalties-tab\.hbs/);
   assert.match(css, /\.penalties-table td \{ color: var\(--mythras-ink\); background: transparent; \}/);
   assert.match(systemScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
   assert.match(systemScript, /MYTHRAS_STATUS_EFFECTS/);

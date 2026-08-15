@@ -14,8 +14,9 @@ El sistema incluye actualmente:
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
   habilidades, estilos de combate, dinero y equipo inicial;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
-  carga e iniciativa modificada por armadura, con una pestaña que desglosa sus
-  penalizaciones y los totales aplicados; el estado Incapacitado se refleja en
+  carga e iniciativa modificada por armadura, con una pestaña en las hojas de
+  personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
+  el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
   Inconsciente reduce habilidades y atributos efectivos a cero, y Aturdido

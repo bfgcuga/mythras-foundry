@@ -57,10 +57,10 @@ import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { inventoryCarried, inventoryLocation, inventoryRows,
   inventorySections } from "../rules/inventory.js";
-import { applyEncumbrance, encumbranceState, itemEncumbrance,
+import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
-import { applyArmorInitiativePenalty, armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
+import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty, totalArmorPoints,
   wornArmorPoints } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
@@ -69,10 +69,12 @@ import { hasSeriousWound, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
-import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
+import { conditionDescriptors, resolveConditions } from "../rules/condition-resolver.js";
+import { INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
-import { activeSkillStatusPenalties, activeStatusRules, applyStatusAttributes, canActorAttack,
-  statusSkillDifficulty, STUNNED_STATUS_ID, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
+  STUNNED_STATUS_ID, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
@@ -187,51 +189,23 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     );
     const activeSkillStatuses = activeSkillStatusPenalties(this.actor.statuses);
     const activeStatuses = activeStatusRules(this.actor.statuses);
-    const automaticIncapacitated = automaticIncapacitatedCauses({
+    const activeStatusControls = prepareActiveStatusControls(this.actor, {
       fatigueKey: currentFatigue.key, woundLevel: currentWound
     });
-    const configuredStatuses = Array.isArray(CONFIG.statusEffects)
-      ? CONFIG.statusEffects : Object.values(CONFIG.statusEffects ?? {});
-    const configuredStatusById = new Map(configuredStatuses.map((status) => [status.id, status]));
-    const mythrasStatusById = new Map(activeStatuses.map((status) => [status.id, status]));
-    const activeStatusControls = [
-      ...(this.actor.statuses.has(INCAPACITATED_STATUS_ID) ? [{
-        id: INCAPACITATED_STATUS_ID,
-        label: game.i18n.localize("MYTHRASF.Status.Incapacitated"),
-        locked: automaticIncapacitated.length > 0,
-        note: automaticIncapacitated.length > 0
-          ? game.i18n.format("MYTHRASF.Status.IncapacitatedActiveCauses", {
-            causes: automaticIncapacitated.map((cause) => game.i18n.localize(
-              `MYTHRASF.Status.IncapacitatedCause.${cause}`)).join(", ")
-          }) : ""
-      }] : []),
-      ...Array.from(this.actor.statuses).filter((id) => id !== INCAPACITATED_STATUS_ID)
-        .map((id) => {
-          const status = mythrasStatusById.get(id);
-          const configured = configuredStatusById.get(id);
-          const name = status?.name ?? configured?.name ?? configured?.label ?? id;
-          return {
-        id,
-        label: game.i18n.has(name) ? game.i18n.localize(name) : name,
-        locked: false,
-        note: status?.pendingRoundAutomation
-          ? game.i18n.localize("MYTHRASF.Status.RoundAutomationPending")
-          : status?.pendingDevelopment
-            ? game.i18n.localize("MYTHRASF.Status.SurprisedPending") : ""
-          };
-        })
-    ];
     const actionPointRules = getActionPointRules();
     const baseAttributes = this.actor.system.baseAttributes
       ?? calculateDerivedAttributes(this.actor.system, actionPointRules);
+    const conditionResolution = resolveConditions({ baseAttributes,
+      descriptors: conditionDescriptors({ fatigueKey: currentFatigue.key,
+        woundLevel: currentWound, manuallyIncapacitated, loadState,
+        armorPenalty: armorInitiativePenalty(equippedArmor), statuses: activeStatuses }) });
     const fatiguedAttributes = applyFatigue(baseAttributes, currentCondition.key);
-    const effectiveAttributes = applyStatusAttributes(applyArmorInitiativePenalty(
-      applyEncumbrance(fatiguedAttributes, loadState), equippedArmor), this.actor.statuses);
+    const effectiveAttributes = conditionResolution.attributes;
     const attributeTooltips = this.#attributeTooltips({
       actionPointRules, baseAttributes, effectiveAttributes, fatiguedAttributes,
       currentFatigue, currentCondition, equippedArmor, loadState
     });
-    const penalties = this.#preparePenaltySummary(penaltySummary({
+    const penalties = preparePenaltySummary(penaltySummary({
       baseAttributes,
       fatigueKey: currentFatigue.key,
       woundLevel: currentWound,
@@ -389,9 +363,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         total: Number(style.system.total ?? 0),
         totalDisplay: penalizedValue(
           Number(style.system.total ?? 0),
-          difficultyTarget(Number(style.system.total ?? 0), worsenDifficulty(
-            combineDifficulties(currentCondition.skillDifficulty,
-              statusSkillDifficulty(this.actor.statuses)), loadState.difficultySteps))
+          difficultyTarget(Number(style.system.total ?? 0),
+            conditionResolution.difficulties.physical)
         )
       })),
       inventoryArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
@@ -524,10 +497,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       selectedStyleId: mode.preferredCombatStyleId,
       familiarity: mode.familiarity
     });
-    resolution.difficulty = combineDifficulties(resolution.difficulty,
-      this.#skillDifficulty());
-    resolution.difficulty = worsenDifficulty(resolution.difficulty,
-      this.#loadState().difficultySteps);
+    resolution.difficulty = this.#conditionResolution({ baseDifficulty: resolution.difficulty,
+      physical: true }).difficulty;
     const candidates = resolution.matching.length ? resolution.matching : combatStyles;
     const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
     return {
@@ -911,17 +882,25 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #conditionLevel(fatigueKey = this.actor.system.fatigueLevel) {
-    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    return combinedConditionLevel(fatigueKey, worstWoundLevel(locations), Boolean(
-      this.actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
-    ));
+    return this.#conditionResolution({ fatigueKey }).condition;
   }
 
   #skillDifficulty() {
-    return combineDifficulties(
-      this.#conditionLevel().skillDifficulty,
-      statusSkillDifficulty(this.actor.statuses)
-    );
+    return this.#conditionResolution().difficulties.general;
+  }
+
+  #conditionResolution({ baseDifficulty = "standard", physical = false,
+    situational = false, fatigueKey = this.actor.system.fatigueLevel } = {}) {
+    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
+    const armors = this.actor.items.filter((item) => item.type === "armor" && item.system.equipped);
+    const baseAttributes = this.actor.system.baseAttributes
+      ?? calculateDerivedAttributes(this.actor.system, getActionPointRules());
+    return resolveConditions({ baseAttributes, baseDifficulty, context: { physical, situational },
+      descriptors: conditionDescriptors({ fatigueKey, woundLevel: worstWoundLevel(locations),
+        manuallyIncapacitated: Boolean(this.actor.getFlag(
+          INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)),
+        loadState: this.#loadState(), armorPenalty: armorInitiativePenalty(armors),
+        statuses: activeStatusRules(this.actor.statuses) }) });
   }
 
   async #toggleManualIncapacitated(event) {
@@ -1020,15 +999,21 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #applySeriousWoundPenalty(difficulty) {
+    return this.#resolveSituationalDifficulty(difficulty);
+  }
+
+  async #resolveSituationalDifficulty(baseDifficulty, physical = false) {
     const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    if (!hasSeriousWound(locations)) return difficulty;
-    const applyPenalty = await DialogV2.confirm({
-      window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
-      content: `<div class="mythras-foundry mythras-dialog"><p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p></div>`,
-      yes: { label: game.i18n.localize("MYTHRASF.Wound.ApplyPenalty") },
-      no: { label: game.i18n.localize("MYTHRASF.Wound.IgnorePenalty") }
-    });
-    return applyPenalty ? worsenDifficulty(difficulty) : difficulty;
+    let situational = false;
+    if (hasSeriousWound(locations)) {
+      situational = await DialogV2.confirm({
+        window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
+        content: `<div class="mythras-foundry mythras-dialog"><p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p></div>`,
+        yes: { label: game.i18n.localize("MYTHRASF.Wound.ApplyPenalty") },
+        no: { label: game.i18n.localize("MYTHRASF.Wound.IgnorePenalty") }
+      });
+    }
+    return this.#conditionResolution({ baseDifficulty, physical, situational }).difficulty;
   }
 
   async #updateWeaponCombatChoice(event) {
@@ -1069,11 +1054,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       familiarity: row.querySelector("[data-combat-familiarity]")?.value
         ?? mode.familiarity
     });
-    resolution.difficulty = combineDifficulties(resolution.difficulty,
-      this.#skillDifficulty());
-    resolution.difficulty = worsenDifficulty(resolution.difficulty,
-      this.#loadState().difficultySteps);
-    resolution.difficulty = await this.#applySeriousWoundPenalty(resolution.difficulty);
+    resolution.difficulty = await this.#resolveSituationalDifficulty(
+      resolution.difficulty, true);
     if (resolution.difficulty === "impossible") {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Fatigue.NoActivity"));
       return;
@@ -1412,10 +1394,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   #prepareSkillRow(item, draft) {
     const total = Number(item.system.total ?? 0);
-    const conditionDifficulty = this.#skillDifficulty();
-    const difficulty = skillUsesStrengthOrDexterity(item)
-      ? worsenDifficulty(conditionDifficulty, this.#loadState().difficultySteps)
-      : conditionDifficulty;
+    const difficulty = this.#conditionResolution({
+      physical: skillUsesStrengthOrDexterity(item)
+    }).difficulty;
     const row = {
       id: item.id,
       name: item.name,
@@ -2650,6 +2631,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         });
       }
     }
+    difficulty = this.#conditionResolution({
+      physical: skillUsesStrengthOrDexterity(item)
+    }).difficulty;
     const beforeWoundPenalty = difficulty;
     difficulty = await this.#applySeriousWoundPenalty(difficulty);
     if (difficulty !== beforeWoundPenalty) {

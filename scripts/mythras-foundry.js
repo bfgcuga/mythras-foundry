@@ -37,7 +37,7 @@ import { CatalogSourceManager } from "./apps/catalog-source-manager.js";
 import { HomebrewItemCreator, createHomebrewApi } from "./apps/homebrew-item-creator.js";
 import { createCatalogApi } from "./apps/item-catalog.js";
 import { createPartyApi } from "./api/party-api.js";
-import { applyFatigue, combinedConditionLevel } from "./rules/fatigue.js";
+import { conditionDescriptors, resolveConditions } from "./rules/condition-resolver.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
 import { ARMOR_MATERIAL_MODIFIERS, armorLocationForReference,
   armorPieceTypeForLocation } from "./rules/armor.js";
@@ -62,6 +62,7 @@ const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs",
+  "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
 ];
 
@@ -222,11 +223,12 @@ Hooks.on("preUpdateActor", (actor, changed) => {
   const manuallyIncapacitated = changedManualCause ?? actor.getFlag(
     INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG
   );
-  const condition = combinedConditionLevel(candidate.fatigueLevel,
-    worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")),
-    Boolean(manuallyIncapacitated
-      || actor.statuses?.has(INCAPACITATED_STATUS_ID)));
-  const attributes = applyFatigue(baseAttributes, condition.key);
+  const attributes = resolveConditions({ baseAttributes, descriptors: conditionDescriptors({
+    fatigueKey: candidate.fatigueLevel,
+    woundLevel: worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")),
+    manuallyIncapacitated: Boolean(manuallyIncapacitated
+      || actor.statuses?.has(INCAPACITATED_STATUS_ID))
+  }) }).attributes;
 
   clampResource(changed, candidate, "actionPoints", attributes.actionPointsMax);
   clampResource(changed, candidate, "luckPoints", attributes.luckPointsMax);
@@ -239,11 +241,13 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
   const baseAttributes = actor.type === "npc"
     ? calculateNpcAttributes(actor.system)
     : calculateDerivedAttributes(actor.system, getActionPointRules());
-  const condition = combinedConditionLevel(actor.system.fatigueLevel,
-    worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")),
-    Boolean(actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
-      || actor.statuses?.has(INCAPACITATED_STATUS_ID)));
-  const maximum = applyFatigue(baseAttributes, condition.key).actionPointsMax;
+  const maximum = resolveConditions({ baseAttributes, descriptors: conditionDescriptors({
+    fatigueKey: actor.system.fatigueLevel,
+    woundLevel: worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")),
+    manuallyIncapacitated: Boolean(actor.getFlag(
+      INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
+      || actor.statuses?.has(INCAPACITATED_STATUS_ID))
+  }) }).attributes.actionPointsMax;
   const current = Number(actor.system.resources.actionPoints.value ?? 0);
   if (current > maximum) {
     await actor.update({ "system.resources.actionPoints.value": maximum });

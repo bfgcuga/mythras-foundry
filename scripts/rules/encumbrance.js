@@ -1,5 +1,6 @@
 import { armorPieceEncumbrance } from "./armor.js";
 import { inventoryCarried } from "./inventory.js";
+import { encumbranceDescriptors, resolveConditions } from "./condition-resolver.js";
 
 export const ENCUMBRANCE_STATES = Object.freeze({
   unencumbered: { key: "unencumbered", difficultySteps: 0, movement: "none", effort: "none" },
@@ -39,12 +40,8 @@ export function encumbranceState(encumbrance, strength) {
 }
 
 export function applyEncumbrance(attributes, state) {
-  const movementRate = state.movement === "half"
-    ? Math.floor(Number(attributes.movementRate ?? 0) / 2)
-    : state.movement === "subtract"
-      ? Math.max(0, Number(attributes.movementRate ?? 0) - 2)
-      : Number(attributes.movementRate ?? 0);
-  return { ...attributes, movementRate, encumbrance: state };
+  return { ...resolveConditions({ baseAttributes: attributes,
+    descriptors: encumbranceDescriptors(state) }).attributes, encumbrance: state };
 }
 
 export function skillUsesStrengthOrDexterity(skill) {

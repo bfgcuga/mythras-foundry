@@ -2,16 +2,15 @@ import {
   CHARACTERISTIC_KEYS,
   calculateDerivedAttributes
 } from "../rules/derived-attributes.js";
-import { applyFatigue, combinedConditionLevel, combineDifficulties,
-  FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { getActionPointRules } from "../settings.js";
-import { applyArmorInitiativePenalty } from "../rules/armor.js";
+import { armorInitiativePenalty } from "../rules/armor.js";
+import { conditionDescriptors, resolveConditions } from "../rules/condition-resolver.js";
 import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
 import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
-import { applyStatusAttributes, statusSkillDifficulty,
-  UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { activeStatusRules, UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 
 const {
   BooleanField,
@@ -130,16 +129,18 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
     const locations = this.parent?.items?.filter((item) => item.type === "hitLocation") ?? [];
     const incapacitated = Boolean(this.parent?.statuses?.has(INCAPACITATED_STATUS_ID)
       || this.parent?.getFlag?.(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG));
-    this.conditionLevel = combinedConditionLevel(
-      this.fatigueLevel, worstWoundLevel(locations), incapacitated);
-    this.skillDifficulty = combineDifficulties(
-      this.conditionLevel.skillDifficulty,
-      statusSkillDifficulty(this.parent?.statuses)
-    );
-    const conditioned = applyFatigue(this.baseAttributes, this.conditionLevel.key);
     const armors = this.parent?.items?.filter((item) => item.type === "armor") ?? [];
-    this.attributes = applyStatusAttributes(
-      applyArmorInitiativePenalty(conditioned, armors), this.parent?.statuses);
+    const condition = resolveConditions({ baseAttributes: this.baseAttributes,
+      descriptors: conditionDescriptors({
+        fatigueKey: this.fatigueLevel,
+        woundLevel: worstWoundLevel(locations),
+        manuallyIncapacitated: incapacitated,
+        armorPenalty: armorInitiativePenalty(armors),
+        statuses: activeStatusRules(this.parent?.statuses)
+      }) });
+    this.conditionLevel = condition.condition;
+    this.skillDifficulty = condition.difficulties.general;
+    this.attributes = condition.attributes;
     this.resources.actionPoints.max = this.attributes.actionPointsMax;
     this.resources.luckPoints.max = this.attributes.luckPointsMax;
     this.resources.magicPoints.max = this.attributes.magicPointsMax;

@@ -1,3 +1,5 @@
+import { armorDescriptors, resolveConditions } from "./condition-resolver.js";
+
 export const ARMOR_REFERENCE_LOCATIONS = Object.freeze([
   "rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head", "special"
 ]);
@@ -119,8 +121,8 @@ export function armorInitiativePenalty(armors = []) {
 export function applyArmorInitiativePenalty(attributes, armors = []) {
   const penalty = armorInitiativePenalty(armors);
   return {
-    ...attributes,
-    initiative: Math.max(0, Number(attributes?.initiative ?? 0) - penalty),
+    ...resolveConditions({ baseAttributes: attributes,
+      descriptors: armorDescriptors(penalty) }).attributes,
     armorEncumbrance: totalArmorEncumbrance(armors),
     armorInitiativePenalty: penalty
   };

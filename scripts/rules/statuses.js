@@ -1,4 +1,4 @@
-import { combineDifficulties } from "./fatigue.js";
+import { resolveConditions, statusDescriptors } from "./condition-resolver.js";
 
 export const BLINDED_STATUS_ID = "blinded";
 export const PRONE_STATUS_ID = "prone";
@@ -37,22 +37,16 @@ export function activeSkillStatusPenalties(statuses = new Set()) {
 }
 
 export function canActorAttack(statuses = new Set()) {
-  return !activeStatusRules(statuses).some((status) => status.canAttack === false);
+  return resolveConditions({ descriptors: statusDescriptors(activeStatusRules(statuses)) })
+    .capabilities.canAttack;
 }
 
 export function applyStatusAttributes(attributes = {}, statuses = new Set()) {
-  if (!statuses.has(UNCONSCIOUS_STATUS_ID)) return { ...attributes };
-  return Object.fromEntries(Object.entries(attributes).map(([key, value]) => {
-    if (key === "damageModifier") {
-      return [key, typeof value === "string" ? "0" : { sign: 0, terms: [], label: "0" }];
-    }
-    return [key, typeof value === "number" ? 0 : value];
-  }));
+  return { ...resolveConditions({ baseAttributes: attributes,
+    descriptors: statusDescriptors(activeStatusRules(statuses)) }).attributes };
 }
 
 export function statusSkillDifficulty(statuses = new Set()) {
-  return activeSkillStatusPenalties(statuses).reduce(
-    (difficulty, status) => combineDifficulties(difficulty, status.skillDifficulty),
-    "standard"
-  );
+  return resolveConditions({ descriptors: statusDescriptors(activeStatusRules(statuses)) })
+    .difficulties.general;
 }

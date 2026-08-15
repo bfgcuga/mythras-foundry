@@ -50,18 +50,25 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
 
 - atributos y máximos proceden de `scripts/rules/derived-attributes.js` y
   `scripts/rules/npc.js`;
-- fatiga, heridas, carga y armadura transforman esos valores mediante sus módulos
-  respectivos bajo `scripts/rules/`;
-- `scripts/rules/penalty-summary.js` compone el desglose trazable de esas cuatro
-  fuentes para la pestaña de penalizaciones sin duplicar sus reglas;
+- fatiga, heridas, carga, armadura y estados producen descriptores semánticos
+  mediante `scripts/rules/condition-resolver.js`; el resolvedor puro combina sus
+  suelos, incrementos, transformaciones y bloqueos en un orden único;
+- los descriptores son datos derivados transitorios y no se persisten en Actor.
+  El resultado común contiene condición, atributos efectivos, variantes de
+  dificultad, capacidades y el desglose trazable consumido por hojas, tiradas y
+  límites de recursos;
+- `scripts/rules/penalty-summary.js` adapta ese resultado para la pestaña de
+  penalizaciones. Los ayudantes históricos de fatiga, carga, armadura y estados
+  permanecen como adaptadores compatibles y no contienen una segunda
+  implementación de las reglas;
 - `scripts/rules/incapacitated.js` identifica por separado las causas de
   Incapacitado. `MythrasActor` sincroniza un único estado de Foundry con las
   causas automáticas —fatiga y herida crítica— y la bandera manual del Actor;
 - la hoja representa el valor base y el efectivo con los ayudantes compartidos
   de penalizaciones.
 
-La pestaña de penalizaciones es contextual: la tabla solo incluye fuentes con
-un efecto activo y conserva siempre superficies transparentes. Todos los
+La pestaña de penalizaciones de personajes y PNJ es contextual: la tabla solo
+incluye fuentes con un efecto activo y conserva siempre superficies transparentes. Todos los
 estados activos del token se muestran antes de la tabla como controles para
 retirarlos; los que tienen consecuencias mecánicas aparecen además en la tabla.
 Los estados inactivos no ocupan espacio en la pestaña.

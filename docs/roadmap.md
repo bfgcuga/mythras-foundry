@@ -13,11 +13,6 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Estados y penalizaciones
 
-- Revisar el modelo completo de estados y condiciones.
-- Definir cómo se identifican, combinan y apilan los modificadores procedentes
-  de fatiga, heridas, carga y otros efectos.
-- Mantener una única fuente de verdad entre hojas, diálogos de tirada y
-  resolución de reglas.
 - Automatizar Sangrando y Ahogándose cuando existan asaltos de combate. Mientras
   permanezca cualquiera de esos estados se realizará una tirada de Aguante en
   cada asalto: éxito crítico sin efecto; éxito, pérdida de 1 nivel de Fatiga;
@@ -77,13 +72,6 @@ resolución directa del Game Master.
   contactos, rivales, enemigos y notas.
 - Valorar una galería variable de imágenes adicionales del personaje en lugar
   de reservar un número fijo de espacios.
-
-### Estados en la pestaña de penalizaciones
-
-- Ampliar la pestaña de penalizaciones existente para reunir también estados y
-  condiciones adicionales a Incapacitado.
-- Determinar qué estados se calculan automáticamente y cuáles son manuales.
-- Coordinar esta pestaña con la revisión del apilamiento de modificadores.
 
 ## Permisos y visibilidad
 

@@ -31,13 +31,14 @@
       <label class="npc-header-resource"><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><div class="npc-header-resource-control"><button type="button" data-resource="luckPoints" data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}" title="{{localize "MYTHRASF.Resource.Decrease"}}"><i class="fas fa-minus" aria-hidden="true"></i></button><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output><button type="button" data-resource="luckPoints" data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}" title="{{localize "MYTHRASF.Resource.Increase"}}"><i class="fas fa-plus" aria-hidden="true"></i></button><button type="button" data-resource="luckPoints" data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}" title="{{localize "MYTHRASF.Resource.Restore"}}"><i class="fas fa-arrow-up" aria-hidden="true"></i></button></div></label>
       <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.woundPenalty}}</output></label>
       <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.fatiguePenalty}}</output></label>
-      <span aria-hidden="true"></span>
+      <label class="header-penalty" title="{{headerStatus.encumbrancePenaltyTitle}}"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrancePenalty}}</output></label>
     </section>
   </header>
 
   <nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">
     <button type="button" class="active" data-tab="general">{{localize "MYTHRASF.Npc.Tab.General"}}</button>
     <button type="button" data-tab="combat">{{localize "MYTHRASF.Tab.Combat"}}</button>
+    <button type="button" data-tab="penalties">{{localize "MYTHRASF.Tab.Penalties"}}</button>
     {{#if canRegenerate}}<button type="button" class="npc-regenerate" data-action="regenerate-npc"
       title="{{localize "MYTHRASF.Npc.RegenerateWarning"}}"><i class="fas fa-dice" aria-hidden="true"></i>
       {{localize "MYTHRASF.Npc.Regenerate"}}</button>{{/if}}
@@ -146,6 +147,10 @@
         <fieldset class="npc-list-panel"><legend>{{localize "MYTHRASF.Equipment"}}</legend>{{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="equipment" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}{{#each equipment as |item|}}<div class="npc-compact-row" data-item-id="{{item.id}}"><img src="{{item.img}}" alt=""><button type="button" class="npc-item-name" data-action="edit-item">{{item.name}}</button><span>&times;{{item.system.quantity}}</span>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Equipment"}}</p>{{/each}}</fieldset>
       </div>
       <fieldset><legend>{{localize "MYTHRASF.Npc.ArmorNotes"}}</legend><input class="sheet-field-editable" type="text" name="system.armorNotes" value="{{actor.system.armorNotes}}"></fieldset>
+    </section>
+
+    <section class="tab-panel" data-tab-content="penalties">
+      {{> "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs"}}
     </section>
   </main>
 </div>

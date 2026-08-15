@@ -348,51 +348,7 @@
       </section>
 
       <section class="tab-panel" data-tab-content="penalties">
-        <fieldset class="penalties-panel">
-          <legend>{{localize "MYTHRASF.Penalties.Title"}}</legend>
-          {{#if hasActiveStatusControls}}
-            <section class="active-status-list" aria-label="{{localize "MYTHRASF.Status.ActiveStates"}}">
-              {{#each activeStatusControls as |status|}}
-                <div class="active-status-entry">
-                  <label><input type="checkbox" class="sheet-state-box" data-status-toggle="{{status.id}}"
-                    checked {{#if status.locked}}disabled{{else}}{{#unless @root.editable}}disabled{{/unless}}{{/if}}
-                    aria-label="{{status.label}}">
-                    <strong>{{status.label}}</strong></label>
-                  {{#if status.note}}<p>{{status.note}}</p>{{/if}}
-                </div>
-              {{/each}}
-            </section>
-          {{/if}}
-          {{#if penalties.hasRows}}
-          <div class="penalties-table-wrapper">
-            <table class="penalties-table">
-              <thead><tr>
-                <th scope="col">{{localize "MYTHRASF.Penalties.Source"}}</th>
-                <th scope="col">{{localize "MYTHRASF.Penalties.Skills"}}</th>
-                <th scope="col">{{localize "MYTHRASF.Attribute.MovementRate"}}</th>
-                <th scope="col">{{localize "MYTHRASF.Attribute.Initiative"}}</th>
-                <th scope="col">{{localize "MYTHRASF.Attribute.ActionPoints"}}</th>
-              </tr></thead>
-              <tbody>
-                {{#each penalties.rows as |row|}}
-                  <tr><th scope="row">{{row.label}}</th><td>{{row.skills}}</td><td>{{row.movement}}</td><td>{{row.initiative}}</td><td>{{row.actionPoints}}</td></tr>
-                {{/each}}
-              </tbody>
-              <tfoot><tr>
-                <th scope="row">{{localize "MYTHRASF.Penalties.Total"}}</th>
-                <td class="penalties-skill-totals">{{#each penalties.skillTotals as |total|}}<span><b>{{total.label}}:</b> {{total.value}}</span>{{/each}}</td>
-                <td>{{penalties.movementTotal}}</td><td>{{penalties.initiativeTotal}}</td><td>{{penalties.actionPointTotal}}</td>
-              </tr></tfoot>
-            </table>
-          </div>
-          <div class="penalties-notes">
-            {{#if penalties.showPhysicalNote}}<p>* {{localize "MYTHRASF.Penalties.PhysicalNote"}}</p>{{/if}}
-            {{#if penalties.showSituationalNote}}<p>** {{localize "MYTHRASF.Penalties.SituationalNote"}}</p>{{/if}}
-          </div>
-          {{else}}
-            {{#unless hasActiveStatusControls}}<p class="penalties-empty">{{localize "MYTHRASF.Penalties.None"}}</p>{{/unless}}
-          {{/if}}
-        </fieldset>
+        {{> "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs"}}
       </section>
 
       <section class="tab-panel" data-tab-content="inventory">
