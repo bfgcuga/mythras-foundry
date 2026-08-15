@@ -339,3 +339,27 @@ export class TraitData extends foundry.abstract.TypeDataModel {
     };
   }
 }
+
+export class CombatEffectData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      key: textField(),
+      source: textField(),
+      offensive: new BooleanField({ required: true, nullable: false, initial: false }),
+      defensive: new BooleanField({ required: true, nullable: false, initial: false }),
+      weaponRestriction: textField(),
+      rollRestriction: textField(),
+      stackable: new BooleanField({ required: true, nullable: false, initial: false }),
+      ruleKey: textField("guided"),
+      stage: textField("afterEffect"),
+      requiresWound: new BooleanField({ required: true, nullable: false, initial: false }),
+      endurance: new BooleanField({ required: true, nullable: false, initial: false }),
+      tableColumns: new ArrayField(textField(), { required: true, nullable: false, initial: [] }),
+      tableRows: new ArrayField(new ArrayField(textField(), {
+        required: true, nullable: false, initial: []
+      }), { required: true, nullable: false, initial: [] }),
+      tableNote: textField(),
+      description: descriptionField()
+    };
+  }
+}

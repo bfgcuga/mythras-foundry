@@ -36,14 +36,18 @@ El sistema incluye actualmente:
   Parar, Evadir o renunciar a la defensa, respetando el momento de declaración
   para la regla compartida de porcentajes superiores al 100 %; los impactos
   resuelven tamaño de parada, golpe contenido, daño, localización y armadura y
-  proponen al DJ o propietario defensor la aplicación de PG y heridas;
+  proponen al DJ o propietario defensor la aplicación de PG y heridas. Antes
+  del daño, el ganador selecciona o renuncia a sus efectos de combate; la
+  tarjeta filtra los 44 efectos por lado, tirada y arma, automatiza los
+  modificadores compatibles y ordena las tiradas de Aguante de efectos antes
+  que las derivadas de heridas;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
   y conflictos de equipación;
 - inventario jerárquico por persona y propiedades, contenedores, monedas,
   transferencias y compras con cambio;
 - catálogo extensible que combina los compendios oficiales con fuentes de Items
   configuradas por el mundo;
-- creador homebrew para los diez tipos de Item, con selección o creación de un
+- creador homebrew para los once tipos de Item, con selección o creación de un
   compendio mundial, imagen elegida mediante el navegador de Foundry y acceso
   desde Ajustes o una macro exclusiva del DJ; las armas y estilos continúan su
   edición en versiones acotadas de sus hojas completas;
@@ -62,12 +66,11 @@ abiertas se mantienen en [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Compendios
 
-El manifiesto declara once compendios generados a partir de los módulos de
-`scripts/data/`:
+El manifiesto declara doce compendios generados a partir de fuentes canónicas:
 
 - habilidades, culturas y profesiones;
 - armas, equipo y piezas de armadura;
-- rasgos, estilos de combate y criaturas;
+- rasgos, efectos de combate, estilos de combate y criaturas;
 - macros y tablas de clase social.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma

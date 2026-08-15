@@ -2553,3 +2553,8 @@
   .mythras-foundry .npc-compact-grid { grid-template-columns: 1fr; }
   .mythras-foundry .npc-skill-grid-headers .npc-skill-header:last-child { display: none; }
 }
+.combat-effect-table { width: 100%; border-collapse: collapse; font-size: var(--mythras-font-size-table); }
+.combat-effect-table th,
+.combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
+.combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
+.combat-effect-description { white-space: normal; line-height: 1.45; }

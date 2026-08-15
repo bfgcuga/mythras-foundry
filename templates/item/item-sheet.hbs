@@ -322,6 +322,22 @@
     </fieldset>
   {{/if}}
 
-  {{#unless isWeapon}}{{#unless isCombatStyle}}{{#unless isArmor}}{{#unless isTrait}}<label>{{localize "MYTHRASF.Item.Description"}}</label>
-  <textarea name="system.description">{{item.system.description}}</textarea>{{/unless}}{{/unless}}{{/unless}}{{/unless}}
+  {{#if isCombatEffect}}
+    <fieldset class="combat-effect-sheet-summary"><legend>{{localize "MYTHRASF.CombatEffect.Configuration"}}</legend>
+      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.Item.Source"}}</span><strong>{{item.system.source}}</strong></div>
+      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.Side"}}</span><strong>{{#if item.system.offensive}}{{localize "MYTHRASF.CombatEffect.Offensive"}}{{/if}}{{#if item.system.defensive}} {{localize "MYTHRASF.CombatEffect.Defensive"}}{{/if}}</strong></div>
+      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.WeaponRestriction"}}</span><strong>{{#if item.system.weaponRestriction}}{{item.system.weaponRestriction}}{{else}}—{{/if}}</strong></div>
+      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><strong>{{#if item.system.rollRestriction}}{{item.system.rollRestriction}}{{else}}—{{/if}}</strong></div>
+      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.Stackable"}}</span><strong>{{#if item.system.stackable}}{{localize "MYTHRASF.Yes"}}{{else}}{{localize "MYTHRASF.No"}}{{/if}}</strong></div>
+    </fieldset>
+    <fieldset class="combat-effect-sheet-description"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><div class="sheet-field-readonly combat-effect-description">{{{item.system.description}}}</div></fieldset>
+    {{#if item.system.tableColumns.length}}<fieldset class="combat-effect-table-panel"><legend>{{localize "MYTHRASF.CombatEffect.ImpalingTable"}}</legend>
+      <table class="combat-effect-table"><thead><tr>{{#each item.system.tableColumns as |column|}}<th scope="col">{{column}}</th>{{/each}}</tr></thead>
+      <tbody>{{#each item.system.tableRows as |row|}}<tr>{{#each row as |cell|}}{{#if @first}}<th scope="row">{{cell}}</th>{{else}}<td>{{cell}}</td>{{/if}}{{/each}}</tr>{{/each}}</tbody></table>
+      <p class="combat-effect-table-note">{{item.system.tableNote}}</p>
+    </fieldset>{{/if}}
+  {{/if}}
+
+  {{#unless isWeapon}}{{#unless isCombatStyle}}{{#unless isArmor}}{{#unless isTrait}}{{#unless isCombatEffect}}<label>{{localize "MYTHRASF.Item.Description"}}</label>
+  <textarea name="system.description">{{item.system.description}}</textarea>{{/unless}}{{/unless}}{{/unless}}{{/unless}}{{/unless}}
 </div>

@@ -76,6 +76,7 @@ export class HomebrewItemCreator extends HandlebarsApplicationMixin(ApplicationV
       isArmor: selectedType === "armor",
       isHitLocation: selectedType === "hitLocation",
       isTrait: selectedType === "trait",
+      isCombatEffect: selectedType === "combatEffect",
       characteristics: CHARACTERISTIC_KEYS.map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Characteristic.${value}`) })),
       skillCategories: ["basic", "professional"].map((value) => ({ value,

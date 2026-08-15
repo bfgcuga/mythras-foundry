@@ -9,8 +9,11 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 ### Integración de tiradas con combate
 
 - Integrar los intercambios diferenciales interactivos ya disponibles con
-  puntos de acción y selección de efectos de combate. La parada por tamaño,
-  el daño localizado y su aplicación confirmada ya están disponibles.
+  puntos de acción. La selección de los 44 efectos de combate, sus resoluciones
+  guiadas y los modificadores compatibles con daño, parada, localización y
+  armadura ya están disponibles.
+- Automatizar las consecuencias persistentes de los efectos guiados cuando
+  existan asaltos, alcance, postura y duración compartidos por el combate.
 
 ### Estados y penalizaciones
 

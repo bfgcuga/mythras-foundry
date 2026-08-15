@@ -24,7 +24,8 @@
       "weapon": {},
       "armor": {},
       "hitLocation": {},
-      "trait": {}
+      "trait": {},
+      "combatEffect": {}
     }
   },
   "authors": [
@@ -104,6 +105,13 @@
       "name": "traits",
       "label": "Rasgos",
       "path": "packs/traits",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "combat-effects",
+      "label": "Efectos de combate",
+      "path": "packs/combat-effects",
       "type": "Item",
       "system": "mythras-foundry"
     },

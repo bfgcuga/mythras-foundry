@@ -240,6 +240,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       armorTotals,
       isHitLocation: this.item.type === "hitLocation",
       isTrait: this.item.type === "trait",
+      isCombatEffect: this.item.type === "combatEffect",
       traitTypeChoices: TRAIT_TYPES.map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Trait.Type.${value}`) })),
       weaponLocationChoices: this.item.type === "weapon" && this.item.actor

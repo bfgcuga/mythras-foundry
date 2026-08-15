@@ -13,6 +13,7 @@ const EXPECTED_PACKS = Object.freeze({
   "armor-pieces": { label: "Piezas de armadura", path: "packs/armor-pieces", type: "Item" },
   macros: { label: "Macros", path: "packs/macros", type: "Macro" },
   traits: { label: "Rasgos", path: "packs/traits", type: "Item" },
+  "combat-effects": { label: "Efectos de combate", path: "packs/combat-effects", type: "Item" },
   "combat-styles": {
     label: "Estilos de combate",
     path: "packs/combat-styles",

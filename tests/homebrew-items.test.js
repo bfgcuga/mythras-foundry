@@ -7,7 +7,7 @@ import { HOMEBREW_ITEM_TYPES, buildHomebrewItem, homebrewPackName }
 test("el creador homebrew cubre todos los tipos Item del sistema", () => {
   assert.deepEqual(new Set(HOMEBREW_ITEM_TYPES), new Set([
     "skill", "combatStyle", "culture", "profession", "passion",
-    "equipment", "weapon", "armor", "hitLocation", "trait"
+    "equipment", "weapon", "armor", "hitLocation", "trait", "combatEffect"
   ]));
   for (const type of HOMEBREW_ITEM_TYPES) {
     const fields = { name: `Prueba ${type}`, rules: "{}", objectDescription: "Prueba" };
@@ -22,7 +22,7 @@ test("registra el menú GM, la API y los formularios del creador", () => {
   assert.match(entrypoint, /registerMenu\("mythras-foundry", "homebrewItemCreator"/);
   assert.match(entrypoint, /homebrew: createHomebrewApi\(\)/);
   for (const type of ["Skill", "CombatStyle", "Background", "Passion", "Equipment",
-    "Weapon", "Armor", "HitLocation", "Trait"]) {
+    "Weapon", "Armor", "HitLocation", "Trait", "CombatEffect"]) {
     assert.match(template, new RegExp(`is${type}`));
   }
 });

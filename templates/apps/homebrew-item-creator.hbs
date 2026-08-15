@@ -154,6 +154,13 @@
             <label class="homebrew-checkbox"><input type="checkbox" class="sheet-state-box" name="requiresAllGroupMembers">
               <span>{{localize "MYTHRASF.Trait.RequiresAllGroupMembers.Label"}}</span></label>
           {{/if}}
+          {{#if isCombatEffect}}
+            <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="offensive"> <span>{{localize "MYTHRASF.CombatEffect.Offensive"}}</span></label>
+            <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="defensive"> <span>{{localize "MYTHRASF.CombatEffect.Defensive"}}</span></label>
+            <label><span>{{localize "MYTHRASF.CombatEffect.WeaponRestriction"}}</span><input name="weaponRestriction"></label>
+            <label><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><input name="rollRestriction"></label>
+            <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="stackable"> <span>{{localize "MYTHRASF.CombatEffect.Stackable"}}</span></label>
+          {{/if}}
 
           <label class="homebrew-wide"><span>{{localize "MYTHRASF.Item.Description"}}</span>
             <textarea class="sheet-field-editable" name="description" rows="5"></textarea></label>

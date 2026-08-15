@@ -1,6 +1,6 @@
 export const HOMEBREW_ITEM_TYPES = Object.freeze([
   "equipment", "weapon", "armor", "skill", "combatStyle",
-  "trait", "culture", "profession", "passion", "hitLocation"
+  "trait", "combatEffect", "culture", "profession", "passion", "hitLocation"
 ]);
 
 const number = (value, fallback = 0) => {
@@ -127,6 +127,15 @@ export function buildHomebrewItem(type, fields = {}) {
       armorCostPercentage: Math.max(0, number(fields.armorCostPercentage, 10)), description
     } };
   }
+
+  if (type === "combatEffect") return { ...common, system: {
+    key: homebrewSlug(fields.key || name), source, description,
+    offensive: checked(fields.offensive), defensive: checked(fields.defensive),
+    weaponRestriction: String(fields.weaponRestriction ?? ""),
+    rollRestriction: String(fields.rollRestriction ?? ""), stackable: checked(fields.stackable),
+    ruleKey: "guided", stage: "afterEffect", requiresWound: checked(fields.requiresWound),
+    endurance: checked(fields.endurance), tableColumns: [], tableRows: [], tableNote: ""
+  } };
 
   return { ...common, system: {
     key: homebrewSlug(fields.key || name), source, description,

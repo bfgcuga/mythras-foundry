@@ -39,7 +39,7 @@ o configuración.
 Durante `init` registra:
 
 - los modelos `character` y `npc`;
-- la clase de documento de Item y los modelos de los diez tipos de Item;
+- la clase de documento de Item y los modelos de los once tipos de Item;
 - hojas Application V2, ajustes y menús de administración;
 - las APIs `game.mythrasFoundry.shop`, `homebrew`, `party` y `traits`;
 - los parciales Handlebars compartidos.
@@ -141,9 +141,23 @@ daño según el tamaño de ambas armas; Evadir decide si existe impacto comparan
 primero el grado y después el dado más alto. La tarjeta conserva una instantánea
 de armadura y PG, pero solo el DJ o el propietario defensor puede confirmar la
 aplicación. Los cambios concurrentes convierten la propuesta en obsoleta y
-obligan a recalcularla. Los puntos de acción, la selección de efectos y las
-consecuencias secundarias de las heridas permanecen fuera de esta transacción
-hasta sus respectivas fases de automatización.
+obligan a recalcularla. Los puntos de acción permanecen fuera de esta
+transacción hasta su fase de automatización.
+
+La transacción de combate usa el esquema 4 e intercala `awaitingEffects` entre
+la defensa y el daño. El número de huecos procede de la ventaja diferencial;
+el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la
+confirmación bloquea la suerte de ataque y defensa. `scripts/rules/combat-effects.js`
+contiene únicamente metadatos de ejecución, filtros y ayudantes puros. El texto
+reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera el
+compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item
+Empalar. Los efectos no modelados se conservan como resoluciones guiadas y
+confirmadas, sin inventar geometría, turnos ni estados persistentes.
+
+Las comprobaciones secundarias forman una cola persistida: primero se resuelven
+las tiradas de Aguante de efectos, después se confirma su consecuencia y por
+último se resuelven las tiradas de Aguante de heridas. Solo entonces puede
+aplicarse la propuesta de PG.
 
 ## Compendios
 
@@ -157,7 +171,7 @@ en `scripts/data/`. El creador homebrew permite seleccionar uno existente o
 crearlo, lo registra como fuente del catálogo y genera un documento inicial
 válido mediante `scripts/rules/homebrew-items.js`.
 
-Los once compendios declarados en `system.json` deben mantenerse sincronizados
+Los doce compendios declarados en `system.json` deben mantenerse sincronizados
 con las llamadas de construcción de `build-packs.mjs`. Cualquier cambio en sus
 fuentes requiere ejecutar `npm run build:packs` antes de `npm run check`.
 

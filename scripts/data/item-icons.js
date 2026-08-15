@@ -8,7 +8,8 @@ export const ITEM_TYPE_ICONS = Object.freeze({
   weapon: "icons/svg/sword.svg",
   armor: "systems/mythras-foundry/assets/icons/armor.svg",
   hitLocation: "icons/svg/blood.svg",
-  trait: "icons/svg/aura.svg"
+  trait: "icons/svg/aura.svg",
+  combatEffect: "icons/svg/combat.svg"
 });
 
 export function defaultItemIcon(type) {

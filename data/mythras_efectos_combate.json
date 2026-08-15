@@ -1,0 +1,463 @@
+{
+  "titulo": "Mythras - Efectos de Combate",
+  "fuente": "PDF proporcionado por el usuario",
+  "campos": {
+    "ofensivo": "Booleano. Indica si el efecto puede elegirse ofensivamente.",
+    "defensivo": "Booleano. Indica si el efecto puede elegirse defensivamente.",
+    "tipo_arma_especifica": "Restricción de arma o estilo indicada por la tabla; null si no existe.",
+    "tirada_especifica": "Condición especial indicada por la tabla; null si no existe.",
+    "apilable": "Booleano. Indica si el efecto puede acumularse."
+  },
+  "efectos_combate": [
+    {
+      "nombre": "Abrir Distancia",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite que el personaje cambie automáticamente la distancia de enfrentamiento entre él y el oponente, de tal manera que termine a un Alcance que favorezca al arma más larga (ver Alcance de las armas: Abrir y cerrar distancias, pág. 109)."
+    },
+    {
+      "nombre": "Agarrar",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Pelea",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Siempre que el oponente se encuentre dentro del alcance de Pelea del personaje, este puede usar una mano libre (u otro miembro similar capaz de agarrar, como garras, colas o tentáculos) para sujetar a su oponente, impidiendo que pueda cambiar la distancia de su arma o que se pueda Destrabar del combate. El oponente puede intentar liberarse en su Turno, lo que requiere una tirada enfrentada de Músculo o Pelea contra cualquiera de las dos Habilidades que el agarrador prefiera. Si la víctima gana, consigue liberarse. Nótese que algunos atacantes que usan su Músculo pueden ser tan fuertes que ninguna cantidad de fuerza bruta o técnica astuta pueden imponerse a su agarre (ver Músculo, pág. 42)."
+    },
+    {
+      "nombre": "Alzarse",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite al defensor aprovechar un resquicio para rodar y ponerse de nuevo en pie."
+    },
+    {
+      "nombre": "Aprovechar la Ventaja",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El atacante presiona a su oponente, de tal manera que el enemigo se ve obligado a permanecer a la defensiva y no puede atacar en su siguiente Turno. Esto posiblemente permita al atacante establecer una secuencia de ataques continuos mientras el oponente bloquea desesperadamente. Solo es efectivo contra enemigos interesados en defenderse. Los enemigos que se vean constantemente atrapados en una incesante secuencia de Aprovechar la ventaja probablemente traten de Destrabarse del combate, pidan ayuda o usen Ardid para dar a su atacante una desagradable sorpresa."
+    },
+    {
+      "nombre": "Ardid",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": true,
+      "descripcion": "El defensor lee los patrones de ataque de su enemigo y planea de antemano un ardid contra un Efecto de Combate específico (que se debe anotar en secreto). Si su oponente intenta infligir el Efecto de Combate elegido durante el combate, el defensor instantáneamente sustituye el efecto del atacante con uno propio, que tiene éxito de manera automática."
+    },
+    {
+      "nombre": "Arrebatar Arma",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": "Pelea",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite a un personaje desarmado retorcer o tirar de un arma para quitársela de las manos a su oponente. Este debe hacer una tirada enfrentada de su Estilo de Combate contra la tirada original de Pelea del personaje. Si el objetivo pierde, le arrebatan el arma y a partir de ese momento, la puede usar otro personaje. Arrebatar Arma difiere de Desarmar Oponente en que el Tamaño del arma es en gran medida irrelevante. Sin embargo, esta técnica solo funciona con criaturas de hasta el doble de la FUE del atacante."
+    },
+    {
+      "nombre": "Arruinar Conjuro",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El personaje automáticamente contrarresta un conjuro en proceso de invocación, siempre que el golpe supere los Puntos de Armadura del objetivo y lo hiera."
+    },
+    {
+      "nombre": "Aturdir Localización",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas contundentes",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El atacante puede usar un arma contundente para aturdir temporalmente la parte del cuerpo golpeada. Si el golpe supera los Puntos de Armadura y hiere al objetivo, el defensor debe superar una tirada enfrentada de Aguante contra la tirada de ataque original. Si el defensor falla, la Localización de Impacto queda incapacitada durante un número de Turnos igual al daño infligido. Un golpe al torso hace que el defensor se tambalee sin resuello, incapaz de hacer otra cosa salvo defenderse. Un golpe en la cabeza deja al enemigo brevemente inconsciente."
+    },
+    {
+      "nombre": "Cegar Oponente",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Crítico del defensor",
+      "apilable": false,
+      "descripcion": "Con un Crítico el defensor ciega brevemente a su oponente tirándole arena, reflejando la luz del sol en su escudo o usando alguna otra táctica que interfiera brevemente con la visión de su atacante. El atacante debe superar una tirada enfrentada de su Habilidad de Evadir (o Estilo de Combate si está usando un escudo) contra la tirada de parada original del defensor. Si el atacante falla, sufre durante los siguientes 1d3 Turnos el Modificador circunstancial de Cegado (pág. 104)."
+    },
+    {
+      "nombre": "Cerrar Distancia",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite que el personaje cambie automáticamente la distancia de enfrentamiento entre él y el oponente, de tal manera que termine a un Alcance que favorezca al arma más corta (ver Alcance de las armas: Abrir y cerrar distancias, pág. 109)."
+    },
+    {
+      "nombre": "Dañar Arma",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite al personaje dañar el arma de su oponente como parte de un ataque o parada. Si está atacando, el personaje apunta específicamente al arma de parada del defensor y le aplica su tirada de daño en vez de aplicarla a su portador. El arma objetivo usa sus propios Puntos de Armadura para resistir el daño. Si es reducida a cero Puntos de Golpe, el arma se rompe."
+    },
+    {
+      "nombre": "Derribar Oponente",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El personaje intenta hacer tropezar o lanzar a su oponente al suelo. El oponente debe superar una tirada enfrentada de su Músculo, Evadir o Acrobacias contra la tirada original del personaje. Si el objetivo falla, cae derribado. Los oponentes cuadrúpedos (o seres con aún más patas) pueden sustituir Evadir con su Habilidad de Atletismo y tratar la tirada como si su dificultad fuera un Grado menor."
+    },
+    {
+      "nombre": "Desangrar",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas cortantes",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El atacante puede intentar cortar un vaso sanguíneo principal. Si el golpe supera los Puntos de Armadura y daña al objetivo, el defensor debe hacer una tirada enfrentada de Aguante contra la tirada de ataque original. Si el defensor falla, empieza a sangrar profusamente. Al principio de cada Asalto de Combate la víctima pierde un Nivel de Fatiga, hasta el colapso y posiblemente la muerte. Las heridas sangrantes se pueden restañar con una tirada exitosa de Primeros Auxilios, pero el receptor ya no podrá realizar acciones violentas o extenuantes sin que se le reabra la herida. Ver Pérdida de sangre, página 84."
+    },
+    {
+      "nombre": "Desarmar Oponente",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El personaje golpea, retuerce o tira del arma del oponente para quitársela de las manos. El oponente debe superar una tirada enfrentada de su Estilo de Combate contra la tirada original del personaje. Si la víctima del desarme pierde, su arma vuela una distancia en metros igual a una tirada del Modificador de Daño del personaje; o, si tiene una mano libre, puede adueñarse del arma del oponente. Si no hay Modificador de Daño, el arma se cae a los pies de la persona desarmada. El Tamaño comparativo de las armas afecta a la tirada. Por cada Categoría superior del arma del personaje, la dificultad de la tirada del oponente aumenta en un Grado. Inversamente, por cada Categoría inferior del arma arrebatada se reduce la dificultad en un Grado. Desarmar Oponente solo funciona con criaturas de hasta el doble de la FUE del atacante."
+    },
+    {
+      "nombre": "Desequilibrar Oponente",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": true,
+      "descripcion": "El defensor se hace a un lado o se retira en un momento inconveniente, haciendo que el atacante dé un traspié hacia delante. El oponente no puede atacar durante su siguiente Turno. Este Efecto de Combate se puede apilar."
+    },
+    {
+      "nombre": "Disparo de Supresión",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas a distancia",
+      "tirada_especifica": null,
+      "apilable": true,
+      "descripcion": "Similar a Aprovechar la Ventaja, este Efecto de Combate obliga al objetivo a hacer una tirada enfrentada de su Voluntad contra la tirada de ataque del tirador. Un fallo indica que el objetivo se agacha tras cualquier cobertura disponible y no puede devolver los disparos en su siguiente Turno. Hay que tener en cuenta que un Disparo de Supresión funciona incluso si no se ha infligido ningún daño real al objetivo (quizá por una evasión exitosa o porque los disparos hayan impactado en su cobertura en vez de en él), ya que depende del efecto intimidante de los proyectiles silbando de cerca. Aunque una víctima suprimida no es capaz de devolver el fuego durante el tiempo indicado, puede realizar otras acciones como arrastrarse hacia una nueva cobertura, comunicarse con otros, recargar un arma y demás, siempre que no se exponga a los disparos al hacerlo."
+    },
+    {
+      "nombre": "Disparo y a Cubierto",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas a distancia",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite al tirador agacharse de nuevo inmediatamente para volver a ponerse a cubierto, sin necesidad de esperar a su siguiente Turno para poder usar la acción Buscar Cobertura. El personaje debe encontrarse ya de pie o agachado junto algún tipo de cobertura para poder usarlo."
+    },
+    {
+      "nombre": "Elegir Localización",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Ver descripción",
+      "apilable": false,
+      "descripcion": "Al usar armas cuerpo a cuerpo el atacante puede elegir libremente la Localización donde impacta su ataque, siempre que se encuentre dentro de su Alcance normal. Si se usan armas a distancia, solo puede utilizarse con un éxito Crítico, a no ser que el objetivo esté a Alcance Corto y o bien esté inmóvil o no sea consciente del ataque."
+    },
+    {
+      "nombre": "Empalar",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas perforantes",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El atacante puede intentar clavar profundamente un arma empalante en el defensor. Se tira el daño dos veces y el atacante elige cuál de los dos resultados usa para el ataque. Si se penetra la armadura y se causa una herida, el atacante tiene la opción de dejar el arma en la herida, o liberarla de un tirón en su siguiente Turno. Dejar el arma en la herida aumenta en un Grado o más la dificultad de las futuras tiradas de Habilidad de la víctima. La gravedad de la penalización depende del Tamaño tanto de la criatura como del arma que la empala, según se indica en la Tabla de efectos de empalamiento. En aras de la sencillez, los empalamientos posteriores con armas del mismo Tamaño no infligen penalizaciones adicionales. Retirar un arma empalada durante una melé requiere el uso de la acción de combate Aprestar Arma. El portador debe pasar una tirada simple de Músculo (o ganar una tirada enfrentada de Músculo si el oponente se resiste). Un éxito libera el arma, causando un daño a la misma Localización igual a la mitad de una tirada normal de daño con esa arma, pero sin ningún Modificador de Daño. Un fallo implica que el arma se queda atascada en la herida sin efectos adicionales, aunque el portador puede volver a intentarlo en su siguiente Turno. Las armas barbadas (deliberadamente creadas con púas, lengüetas y puntas de presa, como los arpones) infligen su daño normal. La armadura no reduce el daño al extraer el arma. Mientras siga clavada, el atacante no puede usar el arma empalada para parar."
+    },
+    {
+      "nombre": "Enredar",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": "Armas atrapadoras",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite a un personaje usar un arma con la capacidad de enredarse, como un látigo o una red, para inmovilizar la Localización golpeada. Un brazo enredado no puede usar lo que esté sujetando; una pierna atrapada impide que el objetivo se mueva; mientras que atar la cabeza, pecho o abdomen hace que todas las tiradas de Habilidad tengan un Grado más de dificultad. En su siguiente Turno el portador puede gastar un Punto de Acción para hacer un intento automático de Derribar Oponente. Una víctima enredada puede intentar liberarse en su Turno ya sea intentando una tirada enfrentada de Músculo para soltarse, o logrando un Efecto de Combate y escogiendo Dañar Arma, Desarmar Oponente o Liberarse."
+    },
+    {
+      "nombre": "Escoger Objetivo",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Pifia del atacante",
+      "apilable": false,
+      "descripcion": "Cuando un atacante Pifia, el defensor puede maniobrar o desviar el golpe de tal manera que impacte a un transeúnte adyacente en lugar de al objetivo inicial. Esto exige que el nuevo objetivo esté dentro del Alcance del arma cuerpo a cuerpo del atacante, o en el caso de un ataque a distancia, que se encuentre a lo largo de la línea de tiro. El inesperado accidente pilla absolutamente por sorpresa a la nueva víctima y por tanto no puede evitar el ataque, que impacta automáticamente. A modo de compensación, sin embargo, no sufre ningún Efecto de Combate."
+    },
+    {
+      "nombre": "Forzar Fallo",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Pifia del oponente",
+      "apilable": false,
+      "descripcion": "Se usa cuando un oponente Pifia. El personaje puede combinar Forzar Fallo con cualquier otro Efecto de Combate que requiera una tirada enfrentada para funcionar. Forzar Fallo hace que el oponente falle directamente su tirada de resistencia, resultando en consecuencia automáticamente derribado, desarmado, etc."
+    },
+    {
+      "nombre": "Forzar Rendición",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Le da al personaje una oportunidad de forzar la rendición de un oponente indefenso o en desventaja. Por ejemplo, alguien que ha sido desarmado, está en el suelo incapaz de ponerse en pie, ha sufrido una Herida Grave (o peor), etc. No se inflige ningún daño al objetivo, este solo se ve amenazado. Suponiendo que sea racional y capaz de entender la orden, el objetivo debe hacer una tirada enfrentada de Voluntad contra la tirada original de ataque o parada. Si falla, se rinde. El Director de Juego puede querer reservar el uso de Forzar Rendición para usarse exclusivamente contra personajes no jugadores."
+    },
+    {
+      "nombre": "Golpetazo",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Escudos o armas contundentes",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El atacante golpea deliberadamente al oponente para desequilibrarle. La distancia que el defensor se tambalea hacia atrás o hacia un lado depende del arma usada. Los escudos empujan hacia atrás al oponente un metro por cada dos puntos de daño generados (antes de cualquier resta por armadura, parada, etc.), mientras que las armas contundentes empujan hacia atrás un metro por cada tres puntos. Los Golpetazos solo funcionan con criaturas de hasta el doble de TAM del atacante. Si el receptor se ve empujado contra un obstáculo, tiene que superar una tirada Difícil de Atletismo o Acrobacias para evitar tropezar y caer."
+    },
+    {
+      "nombre": "Hender Armadura",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Hachas, armas a dos manos",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El atacante debe usar un arma apropiada para dañar la armadura o protección natural de un oponente. Todo el daño del arma, tras las reducciones por parada o magia, se aplica contra el valor de Puntos de Armadura de la protección. El daño sobrante que excede los Puntos de Armadura se usa para reducir el valor de PA de la localización protegida, cortando cinchas, rompiendo anillos, hendiendo las placas o desgarrando la piel, escamas o quitina de los monstruos. Si quedan puntos de daño después de que la protección se haya reducido a cero PA, el exceso se traspasa a los Puntos de Golpe de la localización impactada."
+    },
+    {
+      "nombre": "Herida Accidental",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Pifia del atacante",
+      "apilable": false,
+      "descripcion": "El defensor desvía o le da la vuelta al ataque del oponente de tal manera que le provoca una Pifia, hiriéndose a sí mismo. El atacante debe tirar el daño contra sí mismo en una Localización de Impacto al azar usando el arma empleada para atacar. Si está desarmado, se rompe o desgarra algo interno y la tirada de daño ignora toda armadura."
+    },
+    {
+      "nombre": "Inmovilizar Arma",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Solo Crítico",
+      "apilable": false,
+      "descripcion": "Con un Crítico, el personaje puede inmovilizar una de las armas o el escudo de su oponente, usando su propio cuerpo o el posicionamiento para sujetarla. En su Turno el oponente puede intentar forcejear o maniobrar para liberar el objeto inmovilizado. Esto cuesta un Punto de Acción y funciona igual que el Efecto de Combate Agarrar. Un fallo indica que el objeto inmovilizado sigue sin poder usarse. Mientras tanto, un oponente que no tenga un arma o escudo en la otra mano solo puede evitar los ataques evadiéndolos, usando su Habilidad de Pelea o destrabándose por completo."
+    },
+    {
+      "nombre": "Inutilizar Arma",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas a distancia",
+      "tirada_especifica": "Pifia del atacante",
+      "apilable": false,
+      "descripcion": "El arma del atacante se estropea, de modo que la deja inservible hasta que se pueda pasar un tiempo reparándola."
+    },
+    {
+      "nombre": "Liberarse",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Crítico del defensor",
+      "apilable": false,
+      "descripcion": "Con un Crítico, el defensor puede escapar automáticamente de los efectos de Enredar, Agarrar o Inmovilizar Arma."
+    },
+    {
+      "nombre": "Mantenerse Firme",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El defensor se afianza contra la fuerza de un ataque, permitiéndole evitar el efecto del Empujón (pág. 108) de cualquier daño recibido."
+    },
+    {
+      "nombre": "Marcar Enemigo",
+      "ofensivo": true,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El combatiente le deja a su oponente una cicatriz que le desfigurará durante el resto de su vida, como un corte en la cara o una letra arteramente tallada en el pecho."
+    },
+    {
+      "nombre": "Maximizar Daño",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Crítico del atacante",
+      "apilable": true,
+      "descripcion": "Con un Crítico el personaje puede sustituir uno de los dados de daño de su arma por su resultado máximo. Por ejemplo, una hachuela que normalmente hace 1d6 puntos de daño se puede tratar como un 6, mientras que una gran clava con un daño de 2d6 infligiría 1d6+6 puntos de daño. Este Efecto de Combate se puede apilar. Aunque también se puede usar para armas naturales, Maximizar Daño no afecta al Modificador de Daño del atacante, que se debe tirar normalmente."
+    },
+    {
+      "nombre": "Mejorar Parada",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Crítico del defensor",
+      "apilable": false,
+      "descripcion": "Con un Crítico el defensor logra desviar toda la fuerza del ataque, sin tener en cuenta el Tamaño de su arma."
+    },
+    {
+      "nombre": "Muerte Silenciosa",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas Pequeñas",
+      "tirada_especifica": "Ver descripción",
+      "apilable": false,
+      "descripcion": "Este Efecto está limitado a aquellos que poseen un Estilo de Combate con el beneficio Asesino. Permite al atacante neutralizar a la víctima en completo silencio, tapándole la boca o agarrándola del cuello mientras la apuñala, raja o estrangula. Esto impide que la víctima grite o haga saltar la alarma durante todo ese Asalto. Además, si durante este tiempo el ataque inflige una Herida Grave o Crítica, la víctima fallará la tirada de Aguante. Muerte Silenciosa solo se puede usar contra un oponente sorprendido, y solo durante el primer ataque contra el mismo."
+    },
+    {
+      "nombre": "Potenciar Penetración",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas a distancia",
+      "tirada_especifica": "Solo Crítico",
+      "apilable": false,
+      "descripcion": "Si se está disparando a oponentes situados en fila o a un grupo densamente apretado, este Efecto de Combate permite que el disparo atraviese a la primera víctima para alcanzar a una segunda detrás de ella, suponiendo que pueda penetrar la armadura del primer objetivo. La segunda víctima solo sufre la mitad del daño debido a la atenuación de la fuerza del disparo. Este Efecto por lo general es más útil con armas de gran potencia que infligen grandes cantidades de daño o aquellas que tienen algún tipo de capacidad para penetrar armaduras. Cualquier Efecto de Combate usado contra el primer objetivo no se aplica al segundo."
+    },
+    {
+      "nombre": "Ráfaga",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Pelea",
+      "tirada_especifica": null,
+      "apilable": true,
+      "descripcion": "Un atacante o criatura sin armas puede hacer un ataque inmediato como continuación del primero, usando una extremidad o parte del cuerpo distinta y sin tener que esperar a su siguiente Turno. Un atacante humano, por ejemplo, podría asestar un puñetazo en el abdomen seguido de un rodillazo en la cara. El ataque adicional sigue costando un Punto de Acción, pero posiblemente permita realizar varios ataques secuenciales antes de que el defensor pueda responder ofensivamente."
+    },
+    {
+      "nombre": "Recarga Rápida",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": true,
+      "descripcion": "Al usar un arma a distancia, el atacante reduce el tiempo de recarga del próximo disparo en uno. Este efecto es apilable."
+    },
+    {
+      "nombre": "Redoblar Ataque",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas Pequeñas",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Como continuación de un ataque, el atacante realiza un segundo ataque secuencial con un arma de Tamaño Pequeño durante el siguiente Turno de su oponente, lo que fuerza al enemigo a cambiar su acción proactiva por una reactiva."
+    },
+    {
+      "nombre": "Retirada",
+      "ofensivo": false,
+      "defensivo": true,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "El defensor puede retirarse automáticamente y salir del alcance, destrabándose de ese enemigo concreto."
+    },
+    {
+      "nombre": "Sortear Cobertura",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas a distancia",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Suponiendo que el tirador esté usando algún tipo de armamento de alta tecnología, puede disparar alrededor de la cobertura del objetivo. En la mayoría de los casos, esto requerirá algo del estilo de munición autodirigida. Si se usa como un disparo magistral, como por ejemplo reflejar un haz láser en un espejo o hacer rebotar un proyectil en la pared, en ese caso este Efecto de Combate puede considerarse como un éxito Crítico excepto con una reducción apropiada del daño."
+    },
+    {
+      "nombre": "Sortear Parada",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Crítico del atacante",
+      "apilable": false,
+      "descripcion": "Con un Crítico el atacante puede ignorar por completo una parada por lo demás exitosa."
+    },
+    {
+      "nombre": "Superar Armadura",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": null,
+      "tirada_especifica": "Crítico del atacante",
+      "apilable": true,
+      "descripcion": "Con un Crítico el atacante encuentra un resquicio en la armadura o protección natural del defensor. Si el defensor lleva equipada armadura encima de su protección natural, el atacante debe decidir cuál de las dos va a superar. Este efecto se puede apilar para superar ambas. A propósitos de este efecto, la protección física obtenida a través de la magia se considera armadura equipada."
+    },
+    {
+      "nombre": "Tiro Apuntado",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas a distancia",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Permite al tirador mover la Localización de Impacto alcanzada por su disparo en un grado, hasta una zona corporal inmediatamente adyacente. La fisiología afecta a dónde se puede redirigir el ataque, y conviene aplicar el sentido común. De esta manera, usar este Efecto de Combate contra un humanoide permitiría que un atacante que ha obtenido un resultado de pierna desplace su ataque para impactar el abdomen en su lugar. Por otro lado, disparar al pecho de un grifo permitiría elegir las patas delanteras, las alas o la cabeza."
+    },
+    {
+      "nombre": "Tumbar Oponente",
+      "ofensivo": true,
+      "defensivo": false,
+      "tipo_arma_especifica": "Armas de asedio, armas a distancia",
+      "tirada_especifica": null,
+      "apilable": false,
+      "descripcion": "Suponiendo que el objetivo sufra al menos una Herida Leve por un arma de asedio o el disparo de un arma de fuego o similar, se verá obligado a hacer una tirada enfrentada de su Aguante contra la tirada de ataque original. Un fallo indica que el objetivo sucumbe al shock y al dolor, queda incapacitado y no puede seguir luchando. La recuperación de la consciencia se puede producir gracias a una tirada exitosa de Primeros Auxilios o al uso de algún potenciador tecnológico o narcótico, si es que existen en la campaña. De lo contrario, la incapacitación temporal dura un período igual a una hora dividida por el Ritmo de Curación del objetivo."
+    }
+  ],
+  "tabla_empalamiento": {
+    "columnas": [
+      "TAM de la Criatura",
+      "Armas Pequeñas",
+      "Armas Medias",
+      "Armas Grandes",
+      "Armas Enormes",
+      "Armas Descomunales"
+    ],
+    "filas": [
+      [
+        "1-10",
+        "Formidable",
+        "Hercúlea",
+        "Incapacitado",
+        "Incapacitado",
+        "Incapacitado"
+      ],
+      [
+        "11-20",
+        "Difícil",
+        "Formidable",
+        "Hercúlea",
+        "Incapacitado",
+        "Incapacitado"
+      ],
+      [
+        "21-30",
+        "Sin efecto",
+        "Difícil",
+        "Formidable",
+        "Hercúlea",
+        "Incapacitado"
+      ],
+      [
+        "31-40",
+        "Sin efecto",
+        "Sin efecto",
+        "Difícil",
+        "Formidable",
+        "Hercúlea"
+      ],
+      [
+        "41-50",
+        "Sin efecto",
+        "Sin efecto",
+        "Sin efecto",
+        "Difícil",
+        "Formidable"
+      ]
+    ],
+    "regla_adicional": "Cada +10 TAM: sigue la progresión de la tabla."
+  }
+}
+

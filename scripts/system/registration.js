@@ -1,6 +1,6 @@
 import { CharacterData } from "../data/character-data.js";
 import { NpcData } from "../data/npc-data.js";
-import { BackgroundData, ArmorData, CombatStyleData, EquipmentData, HitLocationData,
+import { BackgroundData, ArmorData, CombatEffectData, CombatStyleData, EquipmentData, HitLocationData,
   PassionData, SkillData, TraitData, WeaponData } from "../data/item-data.js";
 import { MythrasItem } from "../documents/mythras-item.js";
 import { MythrasActor } from "../documents/mythras-actor.js";
@@ -51,7 +51,8 @@ export function registerSystemInitialization() {
     Object.assign(CONFIG.Item.dataModels, {
       skill: SkillData, combatStyle: CombatStyleData, culture: BackgroundData,
       profession: BackgroundData, equipment: EquipmentData, passion: PassionData,
-      weapon: WeaponData, armor: ArmorData, hitLocation: HitLocationData, trait: TraitData
+      weapon: WeaponData, armor: ArmorData, hitLocation: HitLocationData, trait: TraitData,
+      combatEffect: CombatEffectData
     });
     registerSystemSettings();
     game.settings.registerMenu("mythras-foundry", "partyManager", {
@@ -96,7 +97,7 @@ export function registerSystemInitialization() {
     });
     foundry.documents.collections.Items.registerSheet("mythras-foundry", MythrasItemSheet, {
       types: ["skill", "combatStyle", "culture", "profession", "passion", "equipment",
-        "weapon", "armor", "hitLocation", "trait"],
+        "weapon", "armor", "hitLocation", "trait", "combatEffect"],
       makeDefault: true, label: "MYTHRASF.Sheet.Item"
     });
     await loadTemplates(PARTIALS);

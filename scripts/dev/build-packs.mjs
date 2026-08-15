@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { compilePack } from "@foundryvtt/foundryvtt-cli/index.mjs";
@@ -16,9 +16,43 @@ import { TRAIT_SOURCES } from "../data/traits.js";
 import { CREATURE_SOURCES } from "../data/creatures.js";
 import { SOCIAL_CLASS_TABLE_SOURCES } from "../data/social-classes.js";
 import { COMBAT_STYLE_SOURCES } from "../data/combat-styles.js";
+import { combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
 import { deterministicPackId } from "./pack-ids.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
+
+const combatEffectsDocument = JSON.parse(await readFile(
+  resolve(projectRoot, "data/mythras_efectos_combate.json"), "utf8"
+));
+const COMBAT_EFFECT_SOURCES = combatEffectsDocument.efectos_combate.map((entry) => {
+  const buildKey = combatEffectSlug(entry.nombre);
+  const rule = combatEffectRule({ key: buildKey });
+  const table = entry.nombre === "Empalar" ? combatEffectsDocument.tabla_empalamiento : null;
+  return {
+    buildKey,
+    name: entry.nombre,
+    type: "combatEffect",
+    img: "icons/svg/combat.svg",
+    system: {
+      key: buildKey,
+      source: combatEffectsDocument.fuente,
+      offensive: Boolean(entry.ofensivo),
+      defensive: Boolean(entry.defensivo),
+      weaponRestriction: entry.tipo_arma_especifica ?? "",
+      rollRestriction: entry.tirada_especifica ?? "",
+      stackable: Boolean(entry.apilable),
+      ruleKey: rule.ruleKey,
+      stage: rule.stage,
+      requiresWound: Boolean(rule.requiresWound),
+      endurance: Boolean(rule.endurance),
+      tableColumns: table?.columnas ?? [],
+      tableRows: table?.filas ?? [],
+      tableNote: table?.regla_adicional ?? "",
+      description: entry.descripcion
+    },
+    flags: { "mythras-foundry": { source: "mythras-basic-revised" } }
+  };
+});
 
 async function buildPack(name, sources, idNamespace) {
   const sourceDirectory = resolve(projectRoot, `.build/packs-src/${name}`);
@@ -206,6 +240,7 @@ await buildPack("weapons", WEAPON_SOURCES, "weapon");
 await buildPack("equipment", EQUIPMENT_SOURCES, "equipment");
 await buildPack("armor-pieces", ARMOR_SOURCES, "armor-piece");
 await buildPack("traits", TRAIT_SOURCES, "trait");
+await buildPack("combat-effects", COMBAT_EFFECT_SOURCES, "combat-effect");
 await buildPack("combat-styles", COMBAT_STYLE_SOURCES, "combat-style");
 await buildActorPack("creatures", CREATURE_SOURCES, "creature");
 await buildMacroPack("macros", MACRO_SOURCES, "macro");
