@@ -1061,5 +1061,18 @@
   "MYTHRASF.CombatEffect.Parameters": "Parameters and notes",
   "MYTHRASF.CombatEffect.ResolutionNote": "Applied resolution",
   "MYTHRASF.CombatEffect.Reason": "Reason",
-  "MYTHRASF.CombatEffect.ImpaleDiscarded": "Discarded Impale roll"
+  "MYTHRASF.CombatEffect.ImpaleDiscarded": "Discarded Impale roll",
+  "MYTHRASF.Tracker.Position": "Combat position",
+  "MYTHRASF.Tracker.RoundCycle": "Round {round} · Cycle {cycle}",
+  "MYTHRASF.Tracker.CycleHint": "A cycle traverses initiative without starting a new round while actions remain.",
+  "MYTHRASF.Tracker.ActionPoints": "AP {current}/{maximum}",
+  "MYTHRASF.Tracker.ActionPointsHint": "Current action points and effective maximum",
+  "MYTHRASF.Tracker.InitiativeHint": "Initiative {primary}; tie-break {tieBreak}",
+  "MYTHRASF.Tracker.CloseExchange": "Close exchange and advance",
+  "MYTHRASF.Tracker.MultipleCombats": "{actor} is in another active combat; their AP will not be automated here.",
+  "MYTHRASF.Tracker.Rejected.turn": "Only the active combatant can declare an attack.",
+  "MYTHRASF.Tracker.Rejected.actionPoints": "There are no action points left for this action.",
+  "MYTHRASF.Tracker.Rejected.participation": "Attacker and defender must each identify one participant in the active combat.",
+  "MYTHRASF.Tracker.Rejected.multipleCombats": "The actor is in multiple active combats; their AP cannot be automated.",
+  "MYTHRASF.Tracker.PendingExchange": "The current turn exchange is still pending. Close it from its card before advancing."
 }

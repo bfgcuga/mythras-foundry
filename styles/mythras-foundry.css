@@ -2558,3 +2558,10 @@
 .combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
 .combat-effect-description { white-space: normal; line-height: 1.45; }
+.mythras-tracker-cycle,
+.mythras-tracker-ap {
+  color: var(--mythras-ink);
+  font-size: var(--mythras-font-size-auxiliary);
+  margin-inline-start: 0.45rem;
+  white-space: nowrap;
+}

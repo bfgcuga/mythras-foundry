@@ -1061,5 +1061,18 @@
   "MYTHRASF.CombatEffect.Parameters": "Parámetros y notas",
   "MYTHRASF.CombatEffect.ResolutionNote": "Resolución aplicada",
   "MYTHRASF.CombatEffect.Reason": "Motivo",
-  "MYTHRASF.CombatEffect.ImpaleDiscarded": "Tirada de Empalar descartada"
+  "MYTHRASF.CombatEffect.ImpaleDiscarded": "Tirada de Empalar descartada",
+  "MYTHRASF.Tracker.Position": "Posición en el combate",
+  "MYTHRASF.Tracker.RoundCycle": "Asalto {round} · Ciclo {cycle}",
+  "MYTHRASF.Tracker.CycleHint": "El ciclo recorre la iniciativa sin comenzar un asalto nuevo mientras queden acciones.",
+  "MYTHRASF.Tracker.ActionPoints": "PA {current}/{maximum}",
+  "MYTHRASF.Tracker.ActionPointsHint": "Puntos de acción actuales y máximo efectivo",
+  "MYTHRASF.Tracker.InitiativeHint": "Iniciativa {primary}; desempate {tieBreak}",
+  "MYTHRASF.Tracker.CloseExchange": "Cerrar intercambio y avanzar",
+  "MYTHRASF.Tracker.MultipleCombats": "{actor} participa en otro combate activo; sus PA no se automatizarán aquí.",
+  "MYTHRASF.Tracker.Rejected.turn": "Solo el combatiente activo puede declarar un ataque.",
+  "MYTHRASF.Tracker.Rejected.actionPoints": "No quedan puntos de acción para realizar esta acción.",
+  "MYTHRASF.Tracker.Rejected.participation": "El atacante y el defensor deben identificar un único participante del combate activo.",
+  "MYTHRASF.Tracker.Rejected.multipleCombats": "El actor participa en varios combates activos; sus PA no pueden automatizarse.",
+  "MYTHRASF.Tracker.PendingExchange": "El intercambio del turno sigue pendiente. Ciérralo desde su tarjeta antes de avanzar."
 }

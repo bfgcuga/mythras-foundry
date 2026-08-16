@@ -141,10 +141,19 @@ daño según el tamaño de ambas armas; Evadir decide si existe impacto comparan
 primero el grado y después el dado más alto. La tarjeta conserva una instantánea
 de armadura y PG, pero solo el DJ o el propietario defensor puede confirmar la
 aplicación. Los cambios concurrentes convierten la propuesta en obsoleta y
-obligan a recalcularla. Los puntos de acción permanecen fuera de esta
-transacción hasta su fase de automatización.
+obligan a recalcularla. La transacción enlaza además el combatiente, asalto,
+ciclo y revisión del turno: el ataque y las defensas activas gastan un PA y el
+tracker solo avanza cuando la tarjeta queda cerrada.
 
-La transacción de combate usa el esquema 4 e intercala `awaitingEffects` entre
+`MythrasCombat` extiende el documento nativo de Foundry. `Combat.round`
+representa el asalto y `flags.mythras-foundry.turnEconomy.cycle` los recorridos
+adicionales de iniciativa mientras alguien conserve PA. El máximo efectivo se
+obtiene del resolvedor compartido de condiciones; `Defeated` lo fuerza a cero.
+La iniciativa publicada combina `1d10 + iniciativa` con un d100 secundario en
+la fracción, garantizando un orden total. Esta sustitución deliberada de la
+simultaneidad permite aplicar de forma segura las transacciones secuenciales.
+
+La transacción de combate usa el esquema 5 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la
 confirmación bloquea la suerte de ataque y defensa. `scripts/rules/combat-effects.js`

@@ -8,10 +8,12 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Integración de tiradas con combate
 
-- Integrar los intercambios diferenciales interactivos ya disponibles con
-  puntos de acción. La selección de los 44 efectos de combate, sus resoluciones
-  guiadas y los modificadores compatibles con daño, parada, localización y
-  armadura ya están disponibles.
+- El Combat Tracker ya gestiona asaltos, ciclos, máximos efectivos, gasto de PA
+  en ataques y defensas y desempates de iniciativa. La selección de los 44
+  efectos de combate, sus resoluciones guiadas y los modificadores compatibles
+  con daño, parada, localización y armadura también están disponibles.
+- Ampliar el gasto automático de PA cuando exista un catálogo general de
+  acciones proactivas, reactivas y gratuitas.
 - Automatizar las consecuencias persistentes de los efectos guiados cuando
   existan asaltos, alcance, postura y duración compartidos por el combate.
 

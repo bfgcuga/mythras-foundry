@@ -4,6 +4,7 @@ import { BackgroundData, ArmorData, CombatEffectData, CombatStyleData, Equipment
   PassionData, SkillData, TraitData, WeaponData } from "../data/item-data.js";
 import { MythrasItem } from "../documents/mythras-item.js";
 import { MythrasActor } from "../documents/mythras-actor.js";
+import { MythrasCombat } from "../documents/mythras-combat.js";
 import { CharacterSheet } from "../sheets/character-sheet.js";
 import { NpcSheet } from "../sheets/npc-sheet.js";
 import { MythrasItemSheet } from "../sheets/item-sheet.js";
@@ -35,6 +36,7 @@ export function registerSystemInitialization() {
     CONFIG.Actor.dataModels.character = CharacterData;
     CONFIG.Actor.dataModels.npc = NpcData;
     CONFIG.Actor.documentClass = MythrasActor;
+    CONFIG.Combat.documentClass = MythrasCombat;
     const systemStatuses = [
       { id: INCAPACITATED_STATUS_ID, name: "MYTHRASF.Status.Incapacitated",
         img: "icons/svg/unconscious.svg" },

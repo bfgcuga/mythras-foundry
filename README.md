@@ -1,5 +1,12 @@
 # Mythras Foundry
 
+El Combat Tracker representa cada asalto de Mythras mediante `Combat.round` y
+mantiene ciclos internos mientras queden puntos de acción. Ataques, paradas y
+evasiones consumen un PA; los participantes agotados o derrotados se omiten y
+los PA se restauran al comenzar un asalto y al terminar el combate. Los empates
+de iniciativa usan un d100 secundario porque las consecuencias del sistema se
+aplican secuencialmente, en vez de simular actuaciones simultáneas.
+
 Sistema independiente de Mythras básico revisado para Foundry Virtual Tabletop 13.
 El proyecto no está publicado en el catálogo oficial de Foundry; las versiones
 instalables se distribuyen mediante las releases de GitHub.
