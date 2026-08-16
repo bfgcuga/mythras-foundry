@@ -24,17 +24,17 @@ test("aturdido e inconsciente impiden atacar, pero los demás estados no", () =>
   assert.equal(canActorAttack(new Set([BLEEDING_STATUS_ID])), true);
 });
 
-test("sangrando y ahogándose están registrados como automatización pendiente", () => {
-  const pending = MYTHRAS_STATUS_EFFECTS.filter((status) => status.pendingRoundAutomation)
+test("sangrando y ahogándose exigen resistencia por asalto", () => {
+  const periodic = MYTHRAS_STATUS_EFFECTS.filter((status) => status.roundAutomation === "resistance")
     .map((status) => status.id);
-  assert.deepEqual(pending, [BLEEDING_STATUS_ID, DROWNING_STATUS_ID]);
+  assert.deepEqual(periodic, [BLEEDING_STATUS_ID, DROWNING_STATUS_ID]);
 });
 
-test("sorprendido está registrado sin aplicar todavía modificadores", () => {
+test("sorprendido penaliza iniciativa y bloquea ataque y defensa", () => {
   const surprised = MYTHRAS_STATUS_EFFECTS.find((status) => status.id === SURPRISED_STATUS_ID);
-  assert.equal(surprised.pendingDevelopment, true);
+  assert.equal(surprised.initiativePenalty, 10);
   assert.equal(statusSkillDifficulty(new Set([SURPRISED_STATUS_ID])), "standard");
-  assert.equal(canActorAttack(new Set([SURPRISED_STATUS_ID])), true);
+  assert.equal(canActorAttack(new Set([SURPRISED_STATUS_ID])), false);
 });
 
 test("derribado establece dificultad formidable", () => {

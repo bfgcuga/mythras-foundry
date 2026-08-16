@@ -7,6 +7,15 @@ export const STUNNED_STATUS_ID = "stunned";
 export const BLEEDING_STATUS_ID = "bleeding";
 export const DROWNING_STATUS_ID = "drowning";
 export const SURPRISED_STATUS_ID = "surprised";
+export const SURPRISED_OFFENSIVE_STATUS_ID = "surprisedOffensive";
+export const PRESSED_STATUS_ID = "pressed";
+export const OFF_BALANCE_STATUS_ID = "offBalance";
+export const SUPPRESSED_STATUS_ID = "suppressed";
+export const SERIOUS_WOUND_STATUS_ID = "seriousWound";
+export const STUNNED_LOCATION_STATUS_ID = "stunnedLocation";
+export const EXSANGUINATING_STATUS_ID = "exsanguinating";
+export const SILENCED_STATUS_ID = "silenced";
+export const STUNNED_TORSO_STATUS_ID = "stunnedTorso";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: BLINDED_STATUS_ID, name: "MYTHRASF.Status.Blinded",
@@ -19,11 +28,30 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: STUNNED_STATUS_ID, name: "MYTHRASF.Status.Stunned",
     img: "icons/svg/daze.svg", canAttack: false },
   { id: BLEEDING_STATUS_ID, name: "MYTHRASF.Status.Bleeding",
-    img: "icons/svg/blood.svg", pendingRoundAutomation: true },
+    img: "icons/svg/blood.svg", roundAutomation: "resistance" },
   { id: DROWNING_STATUS_ID, name: "MYTHRASF.Status.Drowning",
-    img: "icons/svg/drowning.svg", pendingRoundAutomation: true },
+    img: "icons/svg/drowning.svg", roundAutomation: "resistance" },
   { id: SURPRISED_STATUS_ID, name: "MYTHRASF.Status.Surprised",
-    img: "icons/svg/mystery-man.svg", pendingDevelopment: true }
+    img: "icons/svg/mystery-man.svg", initiativePenalty: 10, canAttack: false,
+    canDefend: false },
+  { id: SURPRISED_OFFENSIVE_STATUS_ID, name: "MYTHRASF.Status.Surprised",
+    img: "icons/svg/mystery-man.svg", canAttack: false },
+  { id: PRESSED_STATUS_ID, name: "MYTHRASF.Status.Pressed",
+    img: "icons/svg/sword.svg", canAttack: false },
+  { id: OFF_BALANCE_STATUS_ID, name: "MYTHRASF.Status.OffBalance",
+    img: "icons/svg/falling.svg", canAttack: false },
+  { id: SUPPRESSED_STATUS_ID, name: "MYTHRASF.Status.Suppressed",
+    img: "icons/svg/target.svg" },
+  { id: SERIOUS_WOUND_STATUS_ID, name: "MYTHRASF.Status.SeriousWound",
+    img: "icons/svg/blood.svg", canAttack: false },
+  { id: STUNNED_LOCATION_STATUS_ID, name: "MYTHRASF.Status.StunnedLocation",
+    img: "icons/svg/daze.svg" },
+  { id: STUNNED_TORSO_STATUS_ID, name: "MYTHRASF.Status.StunnedTorso",
+    img: "icons/svg/daze.svg", canAttack: false, canTakeProactiveTurn: false },
+  { id: EXSANGUINATING_STATUS_ID, name: "MYTHRASF.Status.Exsanguinating",
+    img: "icons/svg/blood.svg", roundAutomation: "automatic" },
+  { id: SILENCED_STATUS_ID, name: "MYTHRASF.Status.Silenced",
+    img: "icons/svg/silenced.svg" }
 ]);
 
 export function activeStatusRules(statuses = new Set()) {
@@ -39,6 +67,11 @@ export function activeSkillStatusPenalties(statuses = new Set()) {
 export function canActorAttack(statuses = new Set()) {
   return resolveConditions({ descriptors: statusDescriptors(activeStatusRules(statuses)) })
     .capabilities.canAttack;
+}
+
+export function actorCapabilities(statuses = new Set()) {
+  return resolveConditions({ descriptors: statusDescriptors(activeStatusRules(statuses)) })
+    .capabilities;
 }
 
 export function applyStatusAttributes(attributes = {}, statuses = new Set()) {

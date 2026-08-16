@@ -26,6 +26,7 @@ import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "./rules/incapacitated.js";
 import { registerSystemInitialization } from "./system/registration.js";
 import { registerUiHooks } from "./system/ui-hooks.js";
+import { removeRecoveredLocationConditions } from "./rules/timed-condition-runtime.js";
 
 registerSystemInitialization();
 registerUiHooks();
@@ -86,6 +87,7 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
     await actor.update({ "system.resources.actionPoints.value": maximum });
   }
   await syncIncapacitatedStatus(actor);
+  await removeRecoveredLocationConditions(actor, item);
 });
 
 Hooks.on("preCreateItem", (item, data) => {

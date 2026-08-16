@@ -2,6 +2,7 @@ import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
 import { activeStatusRules, STUNNED_STATUS_ID,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "../rules/timed-conditions.js";
 
 export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
   woundLevel = "healthy" } = {}) {
@@ -27,14 +28,25 @@ export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
         const status = mythrasById.get(id);
         const foundryStatus = configuredById.get(id);
         const name = status?.name ?? foundryStatus?.name ?? foundryStatus?.label ?? id;
+        const timed = Array.from(actor.effects ?? []).map((effect) =>
+          effect.getFlag?.(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG))
+          .filter((condition) => condition?.statusId === id);
+        const durationNote = timed.map((condition) => {
+          const duration = condition.unit === "actorTurn"
+            ? game.i18n.format("MYTHRASF.Status.TurnsRemaining", { remaining: condition.remaining })
+            : condition.unit === "round" ? game.i18n.localize("MYTHRASF.Status.UntilRoundEnd")
+              : condition.durationNote ?? game.i18n.localize("MYTHRASF.Status.ManualDuration");
+          const location = condition.locationId ? actor.items.get(condition.locationId)?.name : "";
+          const source = condition.sourceName ? game.i18n.format("MYTHRASF.Status.Source", {
+            source: condition.sourceName }) : "";
+          return [duration, location, source].filter(Boolean).join(" — ");
+        })
+          .join("; ");
         return {
           id,
           label: game.i18n.has(name) ? game.i18n.localize(name) : name,
           locked: false,
-          note: status?.pendingRoundAutomation
-            ? game.i18n.localize("MYTHRASF.Status.RoundAutomationPending")
-            : status?.pendingDevelopment
-              ? game.i18n.localize("MYTHRASF.Status.SurprisedPending") : ""
+          note: durationNote
         };
       })
   ];

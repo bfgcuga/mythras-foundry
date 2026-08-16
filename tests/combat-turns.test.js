@@ -14,21 +14,29 @@ test("avanza dentro del ciclo y omite participantes sin acciones", () => {
     { eligible: true, current: 1 }, { eligible: true, current: 0 },
     { eligible: true, current: 2 }
   ], currentIndex: 0, round: 2, cycle: 1 });
-  assert.deepEqual(result, { transition: "turn", round: 2, cycle: 1, turn: 2 });
+  assert.deepEqual(result, { transition: "turn", round: 2, cycle: 1, turn: 2, skipped: [] });
 });
 
 test("un recorrido completo crea otro ciclo si quedan acciones", () => {
   const result = nextCombatPosition({ turns: [
     { eligible: true, current: 1 }, { eligible: false, current: 3 }
   ], currentIndex: 1, round: 3, cycle: 2 });
-  assert.deepEqual(result, { transition: "cycle", round: 3, cycle: 3, turn: 0 });
+  assert.deepEqual(result, { transition: "cycle", round: 3, cycle: 3, turn: 0, skipped: [] });
 });
 
 test("sin acciones pendientes solicita un asalto nuevo", () => {
   const result = nextCombatPosition({ turns: [
     { eligible: true, current: 0 }, { eligible: false, current: 2 }
   ], currentIndex: 0, round: 4, cycle: 3 });
-  assert.deepEqual(result, { transition: "round", round: 5, cycle: 1, turn: null });
+  assert.deepEqual(result, { transition: "round", round: 5, cycle: 1, turn: null, skipped: [] });
+});
+
+test("omite un turno exclusivamente proactivo pero conserva sus acciones", () => {
+  const result = nextCombatPosition({ turns: [
+    { eligible: true, current: 2, canTakeProactiveTurn: false },
+    { eligible: true, current: 1, canTakeProactiveTurn: true }
+  ], currentIndex: -1, round: 1, cycle: 1 });
+  assert.deepEqual(result, { transition: "turn", round: 1, cycle: 1, turn: 1, skipped: [0] });
 });
 
 test("deduplica actores enlazados y conserva actores sintéticos", () => {

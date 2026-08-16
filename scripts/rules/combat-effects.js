@@ -88,6 +88,7 @@ export function combatEffectEligible(effect, context = {}) {
   if (!effect || !["attacker", "defender"].includes(context.winner)) return false;
   if (context.winner === "attacker" && !effect.offensive) return false;
   if (context.winner === "defender" && !effect.defensive) return false;
+  if (effect.key === "muerte-silenciosa" && !context.surpriseAttack) return false;
   return matchesWeaponRestriction(effect.weaponRestriction, context)
     && matchesRollRestriction(effect.rollRestriction, context);
 }
@@ -113,6 +114,14 @@ export function validateEffectSelections({ slots = 0, selections = [], effects =
 
 export function selectedEffectCount(selections, ruleKey) {
   return selections.filter((entry) => !entry.waived && entry.ruleKey === ruleKey).length;
+}
+
+export function combatEffectSlotsBySide({ winner, differential = 0, surprise = 0 } = {}) {
+  return Object.freeze({
+    attacker: (winner === "attacker" ? Math.max(0, Number(differential) || 0) : 0)
+      + Math.max(0, Number(surprise) || 0),
+    defender: winner === "defender" ? Math.max(0, Number(differential) || 0) : 0
+  });
 }
 
 export function maximizeDamageFormula(formula, count = 0) {

@@ -99,10 +99,15 @@ Los estados manuales adicionales se resuelven en el mismo módulo. Inconsciente
 establece la dificultad Imposible —objetivo cero— y transforma a cero los
 atributos derivados efectivos sin modificar sus valores base. Aturdido e
 Inconsciente impiden iniciar ataques, pero Aturdido no impide las defensas.
-Sangrando y Ahogándose son estados semánticos sin automatización temporal hasta
-que el sistema disponga de asaltos y turnos de combate.
-Sorprendido también se registra como estado semántico manual, sin efectos
-mecánicos hasta que se complete la regla pendiente indicada en el roadmap.
+Los estados temporales administrados son `ActiveEffect` con
+`flags.mythras-foundry.timedCondition`. Los turnos se descuentan únicamente al
+terminar el turno propio; las duraciones de asalto vencen en `mythrasRoundEnd`
+y los plazos en minutos u horas permanecen manuales. Las fuentes son
+independientes, por lo que retirar una no elimina otros bloqueos equivalentes.
+Sangrando y Ahogándose crean una cola de Aguante antes del primer turno del
+asalto; Desangrándose pierde Fatiga automáticamente. Sorprendido bloquea la
+defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
+un hueco ofensivo al primer ataque exitoso.
 
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.
@@ -153,10 +158,12 @@ La iniciativa publicada combina `1d10 + iniciativa` con un d100 secundario en
 la fracción, garantizando un orden total. Esta sustitución deliberada de la
 simultaneidad permite aplicar de forma segura las transacciones secuenciales.
 
-La transacción de combate usa el esquema 5 e intercala `awaitingEffects` entre
+La transacción de combate usa el esquema 6 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la
-confirmación bloquea la suerte de ataque y defensa. `scripts/rules/combat-effects.js`
+confirmación bloquea la suerte de ataque y defensa. Los huecos se conservan por
+lado para admitir simultáneamente el efecto adicional de Sorpresa y una ventaja
+defensiva. `scripts/rules/combat-effects.js`
 contiene únicamente metadatos de ejecución, filtros y ayudantes puros. El texto
 reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera el
 compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item

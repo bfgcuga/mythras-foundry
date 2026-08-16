@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { combatEffectEligible, combatEffectRule, combatEffectSlug, maximizeDamageFormula,
+import { combatEffectEligible, combatEffectRule, combatEffectSlug, combatEffectSlotsBySide,
+  maximizeDamageFormula,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
 
 const source = JSON.parse(readFileSync(
@@ -13,6 +14,20 @@ const effects = source.efectos_combate.map((entry) => ({
   rollRestriction: entry.tirada_especifica ?? "", stackable: entry.apilable,
   ...combatEffectRule({ key: combatEffectSlug(entry.nombre) })
 }));
+
+test("Sorpresa puede conceder efectos ofensivos aunque gane la defensa", () => {
+  assert.deepEqual(combatEffectSlotsBySide({ winner: "defender", differential: 2,
+    surprise: 1 }), { attacker: 1, defender: 2 });
+  assert.deepEqual(combatEffectSlotsBySide({ winner: "attacker", differential: 2,
+    surprise: 1 }), { attacker: 3, defender: 0 });
+});
+
+test("Muerte Silenciosa solo es elegible en el ataque que consume Sorpresa", () => {
+  const effect = { key: "muerte-silenciosa", offensive: true, defensive: false,
+    weaponRestriction: "", rollRestriction: "" };
+  assert.equal(combatEffectEligible(effect, { winner: "attacker", surpriseAttack: false }), false);
+  assert.equal(combatEffectEligible(effect, { winner: "attacker", surpriseAttack: true }), true);
+});
 
 test("el catálogo canónico contiene 44 efectos y la tabla completa de empalamiento", () => {
   assert.equal(effects.length, 44);

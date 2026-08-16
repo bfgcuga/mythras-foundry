@@ -8,9 +8,13 @@ import { effectiveActionPointMaximum } from "../rules/action-points.js";
 import { getActionPointRules } from "../settings.js";
 import { isCombatCoordinator, restoreCombatActors,
   synchronizeCombatantActionPoints } from "../documents/mythras-combat.js";
+import { activateRoundConsequenceCard,
+  registerRoundConsequenceSocket } from "../rules/round-consequences.js";
+import { initializeSurpriseEffect } from "../rules/timed-condition-runtime.js";
 
 function activateChatCards(message, html) {
   activateCombatCard(message, html);
+  activateRoundConsequenceCard(message, html);
   activateSkillRollCard(message, html);
   activateContestCard(message, html);
 }
@@ -33,6 +37,7 @@ export function registerUiHooks() {
   Hooks.once("ready", async () => {
     registerContestSocket();
     registerCombatSocket();
+    registerRoundConsequenceSocket();
     if (isCombatCoordinator()) {
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
     }
@@ -95,7 +100,10 @@ export function registerUiHooks() {
       if (combatant) await synchronizeCombatantActionPoints(combatant);
     }
   };
-  Hooks.on("createActiveEffect", syncEffectActor);
+  Hooks.on("createActiveEffect", async (effect) => {
+    await initializeSurpriseEffect(effect);
+    await syncEffectActor(effect);
+  });
   Hooks.on("updateActiveEffect", syncEffectActor);
   Hooks.on("deleteActiveEffect", syncEffectActor);
 }

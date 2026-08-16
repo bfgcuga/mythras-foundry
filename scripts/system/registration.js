@@ -4,7 +4,7 @@ import { BackgroundData, ArmorData, CombatEffectData, CombatStyleData, Equipment
   PassionData, SkillData, TraitData, WeaponData } from "../data/item-data.js";
 import { MythrasItem } from "../documents/mythras-item.js";
 import { MythrasActor } from "../documents/mythras-actor.js";
-import { MythrasCombat } from "../documents/mythras-combat.js";
+import { isCombatCoordinator, MythrasCombat } from "../documents/mythras-combat.js";
 import { CharacterSheet } from "../sheets/character-sheet.js";
 import { NpcSheet } from "../sheets/npc-sheet.js";
 import { MythrasItemSheet } from "../sheets/item-sheet.js";
@@ -89,7 +89,8 @@ export function registerSystemInitialization() {
         }
       }),
       traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
-        registerRule: registerTraitRule, unregisterRule: unregisterTraitRule }
+        registerRule: registerTraitRule, unregisterRule: unregisterTraitRule },
+      combat: { isCoordinator: isCombatCoordinator }
     };
     foundry.documents.collections.Actors.registerSheet("mythras-foundry", CharacterSheet, {
       types: ["character"], makeDefault: true, label: "MYTHRASF.Sheet.Character"

@@ -6,22 +6,26 @@ export function composedInitiative(primary, tieBreak = 0, collision = 0) {
 }
 
 export function splitComposedInitiative(value) {
-  const primary = Math.floor(Number(value) || 0);
+  const primary = Math.trunc(Number(value) || 0);
   return { primary, tieBreak: Math.round(((Number(value) || 0) - primary) * 1000) };
 }
 
 export function nextCombatPosition({ turns, currentIndex = -1, round = 0, cycle = 1 }) {
   const entries = Array.from(turns ?? []);
-  if (!entries.length) return { transition: "empty", round, cycle, turn: null };
+  if (!entries.length) return { transition: "empty", round, cycle, turn: null, skipped: [] };
+  const skipped = [];
   for (let offset = 1; offset <= entries.length; offset += 1) {
     const index = (Math.max(-1, currentIndex) + offset) % entries.length;
-    if (entries[index].eligible && Number(entries[index].current) > 0) {
+    if (entries[index].eligible && Number(entries[index].current) > 0
+      && entries[index].canTakeProactiveTurn !== false) {
       const wrapped = currentIndex >= 0 && index <= currentIndex;
       return { transition: wrapped ? "cycle" : "turn", round,
-        cycle: wrapped ? cycle + 1 : cycle, turn: index };
+        cycle: wrapped ? cycle + 1 : cycle, turn: index, skipped };
     }
+    if (entries[index].eligible && Number(entries[index].current) > 0
+      && entries[index].canTakeProactiveTurn === false) skipped.push(index);
   }
-  return { transition: "round", round: Math.max(0, round) + 1, cycle: 1, turn: null };
+  return { transition: "round", round: Math.max(0, round) + 1, cycle: 1, turn: null, skipped };
 }
 
 export function uniqueActorEntries(combatants) {

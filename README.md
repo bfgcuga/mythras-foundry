@@ -27,10 +27,10 @@ El sistema incluye actualmente:
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
   Inconsciente reduce habilidades y atributos efectivos a cero, y Aturdido
-  impide atacar. Sangrando y Ahogándose están disponibles como estados, con su
-  automatización por asalto registrada como pendiente;
-  Sorprendido está disponible como estado visual y su mecánica permanece
-  pendiente de desarrollo;
+  impide atacar. Sangrando y Ahogándose abren tiradas de Aguante al comenzar
+  cada asalto, mientras Desangrándose pierde Fatiga automáticamente;
+  Sorprendido modifica iniciativa, defensa, acciones ofensivas y el primer
+  efecto de combate, con vencimiento al final del asalto;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;

@@ -3,6 +3,9 @@ import { composedInitiative, nextCombatPosition, splitComposedInitiative,
   TURN_ECONOMY_SCHEMA_VERSION, uniqueActorEntries } from "../rules/combat-turns.js";
 import { getActionPointRules } from "../settings.js";
 import { resolveActorConditions } from "../rules/actor-conditions.js";
+import { advanceActorTurnConditions, expireRoundConditions,
+  bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
+import { prepareRoundConsequences } from "../rules/round-consequences.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "turnEconomy";
@@ -56,8 +59,12 @@ export class MythrasCombat extends Combat {
   async startCombat() {
     const started = await super.startCombat();
     if (coordinator() !== game.user.id) return started;
+    await bindSurpriseEffects(this);
     await this.restoreActionPoints({ round: Math.max(1, this.round || 1) });
-    await this.selectFirstAvailable();
+    await this.update({ turn: null });
+    Hooks.callAll("mythrasRoundPreparing", this, this.round);
+    const queue = await prepareRoundConsequences(this);
+    if (!queue.some((entry) => entry.status === "pending")) await this.completeRoundPreparation(queue);
     return this;
   }
 
@@ -69,14 +76,24 @@ export class MythrasCombat extends Combat {
     }
     const economy = this.mythrasTurnEconomy;
     if (economy.transitioning) return this;
-    const states = this.turns.map((entry) => combatantActionPointState(entry,
-      effectiveActionPointMaximum(entry.actor, getActionPointRules())));
+    const history = [...(economy.conditionHistory ?? [])];
+    if (this.combatant?.actor) await advanceActorTurnConditions(this.combatant.actor, history);
+    const states = this.turns.map((entry) => ({ ...combatantActionPointState(entry,
+      effectiveActionPointMaximum(entry.actor, getActionPointRules())),
+    canTakeProactiveTurn: resolveActorConditions(entry.actor, {
+      baseAttributes: entry.actor?.system?.baseAttributes ?? entry.actor?.system?.attributes ?? {}
+    }).capabilities.canTakeProactiveTurn }));
     const next = nextCombatPosition({ turns: states, currentIndex: this.turn ?? -1,
       round: this.round ?? 0, cycle: economy.cycle ?? 1 });
+    for (const index of next.skipped ?? []) {
+      if (this.turns[index]?.actor) await advanceActorTurnConditions(this.turns[index].actor, history);
+    }
     if (next.transition === "round") return this.nextRound();
     const flags = { ...economy, schemaVersion: TURN_ECONOMY_SCHEMA_VERSION,
-      cycle: next.cycle, revision: Number(economy.revision ?? 0) + 1, transitioning: false };
+      cycle: next.cycle, revision: Number(economy.revision ?? 0) + 1,
+      conditionHistory: history, transitioning: false };
     await this.update({ turn: next.turn, [`flags.${SCOPE}.${FLAG}`]: flags });
+    await revealSurprisedTurn(this.combatant?.actor);
     if (next.transition === "cycle") Hooks.callAll("mythrasCycleStart", this, next.cycle);
     return this;
   }
@@ -85,10 +102,25 @@ export class MythrasCombat extends Combat {
     if (coordinator() !== game.user.id) return this;
     const round = Math.max(1, Number(this.round ?? 0) + 1);
     Hooks.callAll("mythrasRoundEnd", this, this.round ?? 0);
+    const history = [...(this.mythrasTurnEconomy.conditionHistory ?? [])];
+    await expireRoundConditions(this, history);
     await this.restoreActionPoints({ round });
-    await this.update({ round, turn: null });
+    await this.update({ round, turn: null,
+      [`flags.${SCOPE}.${FLAG}.conditionHistory`]: history });
+    Hooks.callAll("mythrasRoundPreparing", this, round);
+    const queue = await prepareRoundConsequences(this);
+    if (!queue.some((entry) => entry.status === "pending")) await this.completeRoundPreparation(queue);
+    return this;
+  }
+
+  async completeRoundPreparation(queue = []) {
+    const economy = this.mythrasTurnEconomy;
+    if (!economy.roundPreparing && this.turn != null) return this;
+    await this.setFlag(SCOPE, FLAG, { ...economy, roundQueue: queue,
+      roundPreparing: false, revision: Number(economy.revision ?? 0) + 1 });
     await this.selectFirstAvailable();
-    Hooks.callAll("mythrasRoundStart", this, round);
+    await revealSurprisedTurn(this.combatant?.actor);
+    Hooks.callAll("mythrasRoundStart", this, this.round);
     return this;
   }
 
@@ -114,7 +146,10 @@ export class MythrasCombat extends Combat {
     const index = this.turns.findIndex((entry) => {
       const state = combatantActionPointState(entry,
         effectiveActionPointMaximum(entry.actor, getActionPointRules()));
-      return state.eligible && state.current > 0;
+      const canTakeTurn = resolveActorConditions(entry.actor, { baseAttributes:
+        entry.actor?.system?.baseAttributes ?? entry.actor?.system?.attributes ?? {}
+      }).capabilities.canTakeProactiveTurn;
+      return state.eligible && state.current > 0 && canTakeTurn;
     });
     if (index >= 0 && this.turn !== index) await this.update({ turn: index });
   }
@@ -153,7 +188,8 @@ export class MythrasCombat extends Combat {
       used.add(tieBreak); occupied.set(primary, used);
       updates.push({ _id: id, initiative: composedInitiative(primary, tieBreak, collision),
         [`flags.${SCOPE}.initiative`]: { primary, tieBreak,
-          collision, primaryRoll: primaryRoll.toJSON(), tieBreakRoll: tieRoll.toJSON() } });
+          collision, surprisePenaltyApplied: combatant.actor.statuses?.has?.("surprised") ?? false,
+          primaryRoll: primaryRoll.toJSON(), tieBreakRoll: tieRoll.toJSON() } });
     }
     if (updates.length) await this.updateEmbeddedDocuments("Combatant", updates);
     if (updateTurn) await this.selectFirstAvailable();

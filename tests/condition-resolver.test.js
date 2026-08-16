@@ -72,6 +72,14 @@ test("inconsciente anula atributos y junto con aturdido bloquea ataques", () => 
   assert.equal(result.capabilities.canAttack, false);
 });
 
+test("una herida crítica anula PA y ataque aunque el máximo base sea superior a tres", () => {
+  const result = resolveConditions({ baseAttributes: { ...baseAttributes, actionPointsMax: 6 },
+    descriptors: conditionDescriptors({ woundLevel: "major" }) });
+  assert.equal(result.attributes.actionPointsMax, 0);
+  assert.equal(result.capabilities.canAttack, false);
+  assert.equal(result.attributes.initiative, 4);
+});
+
 test("el contexto decide carga y herida grave sin mutar descriptores", () => {
   const descriptors = conditionDescriptors({ woundLevel: "serious",
     loadState: { key: "loaded", difficultySteps: 1, movement: "subtract" } });

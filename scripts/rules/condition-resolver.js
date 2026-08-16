@@ -45,8 +45,14 @@ export function fatigueDescriptor(fatigueKey = "fresh") {
 }
 
 export function woundDescriptors(woundLevel = "healthy") {
-  if (woundLevel === "major") return [descriptor({ id: "wound:major", source: "wound",
-    sourceKey: "major", scope: "condition", operation: "floor", value: "incapacitated" })];
+  if (woundLevel === "major") return [
+    descriptor({ id: "wound:major", source: "wound", sourceKey: "major",
+      scope: "condition", operation: "floor", value: "incapacitated" }),
+    descriptor({ id: "wound:major:actions", source: "wound", sourceKey: "major",
+      scope: "attribute", target: "actionPointsMax", operation: "zero", value: true }),
+    descriptor({ id: "wound:major:attack", source: "wound", sourceKey: "major",
+      scope: "capability", target: "canAttack", operation: "block", value: true })
+  ];
   if (woundLevel === "serious") return [descriptor({ id: "wound:serious", source: "wound",
     sourceKey: "serious", scope: "difficulty", operation: "increase", value: 1,
     contexts: ["situational"] })];
@@ -56,7 +62,12 @@ export function woundDescriptors(woundLevel = "healthy") {
 export function manualIncapacitatedDescriptors(active = false) {
   return active ? [descriptor({ id: "status:incapacitated-manual", source: "status",
     sourceKey: "incapacitatedManual", scope: "condition", operation: "floor",
-    value: "incapacitated" })] : [];
+    value: "incapacitated" }), descriptor({ id: "status:incapacitated-manual:actions",
+    source: "status", sourceKey: "incapacitatedManual", scope: "attribute",
+    target: "actionPointsMax", operation: "zero", value: true }),
+  descriptor({ id: "status:incapacitated-manual:attack", source: "status",
+    sourceKey: "incapacitatedManual", scope: "capability", target: "canAttack",
+    operation: "block", value: true })] : [];
 }
 
 export function encumbranceDescriptors(loadState = {}) {
@@ -88,9 +99,22 @@ export function statusDescriptors(statuses = []) {
     if (status.zeroAttributes) rules.push(descriptor({ id: `status:${status.id}:attributes`,
       source: "status", sourceKey: status.id, name: status.name, scope: "attribute",
       operation: "zero", value: true }));
+    if (status.zeroActionPoints) rules.push(descriptor({ id: `status:${status.id}:actions`,
+      source: "status", sourceKey: status.id, name: status.name, scope: "attribute",
+      target: "actionPointsMax", operation: "zero", value: true }));
+    if (status.initiativePenalty) rules.push(descriptor({ id: `status:${status.id}:initiative`,
+      source: "status", sourceKey: status.id, name: status.name, scope: "attribute",
+      target: "initiative", operation: "subtract", value: status.initiativePenalty }));
     if (status.canAttack === false) rules.push(descriptor({ id: `status:${status.id}:attack`,
       source: "status", sourceKey: status.id, name: status.name, scope: "capability",
       target: "canAttack", operation: "block", value: true }));
+    if (status.canDefend === false) rules.push(descriptor({ id: `status:${status.id}:defend`,
+      source: "status", sourceKey: status.id, name: status.name, scope: "capability",
+      target: "canDefend", operation: "block", value: true }));
+    if (status.canTakeProactiveTurn === false) rules.push(descriptor({
+      id: `status:${status.id}:proactive`, source: "status", sourceKey: status.id,
+      name: status.name, scope: "capability", target: "canTakeProactiveTurn",
+      operation: "block", value: true }));
     if (!rules.length) rules.push(descriptor({ id: `status:${status.id}:informational`,
       source: "status", sourceKey: status.id, name: status.name, scope: "information",
       operation: "none", value: null }));
@@ -162,13 +186,16 @@ export function resolveConditions({ baseAttributes = {}, descriptors = [], conte
         Number(attributes[rule.target] ?? 0) - Math.max(0, Number(rule.value) || 0));
     }
   }
-  if (descriptors.some((rule) => rule.scope === "attribute" && rule.operation === "zero")) {
+  if (descriptors.some((rule) => rule.scope === "attribute" && rule.operation === "zero"
+    && !rule.target)) {
     attributes = Object.fromEntries(Object.entries(attributes).map(([key, value]) => {
       if (key === "damageModifier") return [key, typeof value === "string"
         ? "0" : { sign: 0, terms: [], label: "0" }];
       return [key, typeof value === "number" ? 0 : value];
     }));
   }
+  for (const rule of descriptors.filter((entry) => entry.scope === "attribute"
+    && entry.operation === "zero" && entry.target)) attributes[rule.target] = 0;
 
   return Object.freeze({
     descriptors: Object.freeze([...descriptors]), applied: Object.freeze([...active]),
@@ -180,8 +207,10 @@ export function resolveConditions({ baseAttributes = {}, descriptors = [], conte
       combined: difficultyForBase(descriptors, effectiveCondition, baseDifficulty,
         { physical: true, situational: true })
     }),
-    capabilities: Object.freeze({ canAttack: !descriptors.some((rule) =>
-      rule.scope === "capability" && rule.target === "canAttack" && rule.operation === "block") })
+    capabilities: Object.freeze(Object.fromEntries(["canAttack", "canDefend",
+      "canTakeProactiveTurn"].map((capability) => [capability, !descriptors.some((rule) =>
+      rule.scope === "capability" && rule.target === capability
+      && rule.operation === "block")])))
   });
 }
 
