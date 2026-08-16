@@ -14,6 +14,9 @@ import { getActionPointRules } from "../settings.js";
 import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
+import { consumePassiveBlock, ensureEngagement, passiveBlockFor,
+  relationFor, setRelationPosition, validateReachAttack } from "./engagement-runtime.js";
+import { engagementId, engagementRestriction } from "./engagements.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -158,11 +161,27 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       "MYTHRASF.Tracker.Rejected.participation"));
     turnEconomy.defenderCombatantId = defenderEntry.id;
   }
+  let reachRule = { allowed: true };
+  if (turnEconomy) reachRule = await validateReachAttack(game.combats.get(turnEconomy.combatId),
+    actor, defender, weapon, mode);
+  if (!reachRule.allowed) {
+    const relation = turnEconomy ? await ensureEngagement(game.combats.get(turnEconomy.combatId),
+      actor, defender, weapon, mode) : null;
+    const ownId = turnEconomy?.combatantId;
+    const targetSide = Object.entries(relation?.sides ?? {}).find(([id]) => id !== ownId)?.[1];
+    const attackWeapon = targetSide?.weaponId && await foundry.applications.api.DialogV2.confirm({
+      window: { title: localize("MYTHRASF.Reach.AttackWeapon") },
+      content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize("MYTHRASF.Reach.TooShort"))}</p><p>${escape(targetSide.weaponName)}</p></div>` });
+    if (!attackWeapon) return ui.notifications.warn(localize("MYTHRASF.Reach.TooShort"));
+    setup.targetWeaponId = targetSide.weaponId;
+  }
   if (turnEconomy && !await spendActionPoint(actor)) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
   }
   if (turnEconomy) {
     turnEconomy.attackSpent = true;
+    await consumePassiveBlock(game.combats.get(turnEconomy.combatId), turnEconomy.combatantId,
+      weapon.id, "attack");
   }
   const roll = await new Roll("1d100").evaluate();
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
@@ -176,13 +195,17 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       tokenUuid: actor.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
       modeKey: mode.key, modeName: mode.name, styleId: resolution.style?.id ?? "", styleName,
       difficulty: resolution.difficulty, baseTarget: resolution.target, target: targetValue,
-      damage: mode.damage, damageModifierMode: mode.damageModifierMode, weaponSize: mode.size,
+      damage: reachRule.pommel ? reachRule.damage : mode.damage,
+      damageModifierMode: mode.damageModifierMode,
+      weaponSize: reachRule.pommel ? reachRule.weaponSize : mode.size,
       modeSnapshot: { key: mode.key, weaponType: mode.weaponType, size: mode.size,
         impalingSize: mode.impalingSize, handsRequired: mode.handsRequired, effects: mode.effects },
       rawRoll: roll.total, serializedRoll: roll.toJSON(), luckHistory: [] },
     defender: { actorUuid: defender.uuid, actorId: actorIdentity(defender), actorName: defender.name,
       tokenUuid: setup.targetTokenUuid, defense: null, luckHistory: [], size: defender.system.size,
-      locations: defender.items.filter((item) => item.type === "hitLocation").map((item) => ({
+      targetType: setup.targetWeaponId ? "weapon" : "actor", targetWeaponId: setup.targetWeaponId ?? "",
+      locations: (setup.targetWeaponId ? defender.items.filter((item) => item.id === setup.targetWeaponId)
+        : defender.items.filter((item) => item.type === "hitLocation")).map((item) => ({
         id: item.id, name: item.name, rangeStart: item.system.rangeStart, rangeEnd: item.system.rangeEnd
       })) }, resolution: null, damage: { status: "unavailable" }, turnEconomy,
     surprise: surpriseOpportunity(defender, roll.total, targetValue) };
@@ -196,16 +219,66 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   } finally { pendingAttackActors.delete(actor.uuid); }
 }
 
+export async function createResolvedReactionAttack({ tracker, attackerCombatantId,
+  defenderCombatantId, weaponId, modeKey, attackTarget, attackRoll, evadeTarget, evadeRoll,
+  authorUserId }) {
+  const attackerEntry = tracker?.combatants.get(attackerCombatantId);
+  const defenderEntry = tracker?.combatants.get(defenderCombatantId);
+  const actor = attackerEntry?.actor; const defender = defenderEntry?.actor;
+  const weapon = actor?.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
+  if (!actor || !defender || !weapon || !mode) return null;
+  const defense = { type: "evade", target: evadeTarget, baseTarget: evadeTarget,
+    rawRoll: evadeRoll, abilityName: localize("MYTHRASF.Combat.Evade") };
+  const resolution = resolveCombatExchange({ attack: { target: attackTarget, rawRoll: attackRoll },
+    defense });
+  const sideSlots = combatEffectSlotsBySide({ winner: resolution.winner,
+    differential: resolution.effects, surprise: 0 });
+  const totalSlots = sideSlots.attacker + sideSlots.defender;
+  const economy = tracker.mythrasTurnEconomy;
+  const combat = { schemaVersion: SCHEMA_VERSION, revision: 0,
+    status: totalSlots ? "awaitingEffects" : "resolved", authorUserId,
+    predeclared: false, declarations: { containedBlow: false, extraordinaryDamage: "0" },
+    attacker: { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: actor.name,
+      tokenUuid: attackerEntry.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
+      modeKey: mode.key, modeName: mode.name, styleId: "", styleName: "",
+      difficulty: "standard", baseTarget: attackTarget, target: attackTarget,
+      damage: mode.damage, damageModifierMode: mode.damageModifierMode, weaponSize: mode.size,
+      modeSnapshot: { key: mode.key, weaponType: mode.weaponType, size: mode.size,
+        reach: mode.reach, impalingSize: mode.impalingSize, handsRequired: mode.handsRequired,
+        effects: mode.effects }, rawRoll: attackRoll, serializedRoll: null, luckHistory: [] },
+    defender: { actorUuid: defender.uuid, actorId: actorIdentity(defender), actorName: defender.name,
+      tokenUuid: defenderEntry.token?.uuid ?? "", defense, luckHistory: [], size: defender.system.size,
+      locations: defender.items.filter((item) => item.type === "hitLocation").map((item) => ({
+        id: item.id, name: item.name, rangeStart: item.system.rangeStart,
+        rangeEnd: item.system.rangeEnd })) }, resolution,
+    effects: { winner: resolution.winner, slots: totalSlots, sideSlots, surpriseSlots: 0,
+      pendingSide: sideSlots.attacker ? "attacker" : sideSlots.defender ? "defender" : null,
+      selections: [], confirmed: totalSlots === 0, checks: [] },
+    damage: { status: totalSlots ? "blocked" : combatAttackHits(resolution) ? "ready" : "unavailable" },
+    turnEconomy: { combatId: tracker.id, combatUuid: tracker.uuid,
+      combatantId: defenderCombatantId, defenderCombatantId: attackerCombatantId,
+      round: tracker.round, cycle: economy.cycle ?? 1, turn: tracker.turn,
+      turnRevision: economy.revision ?? 0, attackSpent: true, defenseSpent: true,
+      turnAdvanced: false }, reactionAttack: true };
+  return ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }),
+    content: renderCombatExchange(combat), flags: { [FLAG_SCOPE]: { combat } } });
+}
+
 function effectiveDifficulty(actor, baseDifficulty = "standard") {
   return resolveActorConditions(actor, { baseAttributes: actor.system.baseAttributes ?? actor.system.attributes ?? {},
     baseDifficulty, physical: true, loadState: actorLoadState(actor) }).difficulty;
 }
 
-function parryChoices(actor) {
+function parryChoices(actor, combatData = null) {
   const styles = actor.items.filter((item) => item.type === "combatStyle");
   const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)
       .flatMap((mode) => styles.map((style) => {
+        const tracker = combatData?.turnEconomy ? game.combats.get(combatData.turnEconomy.combatId) : null;
+        const relation = tracker ? relationFor(tracker, combatData.turnEconomy.combatantId,
+          combatData.turnEconomy.defenderCombatantId) : null;
+        const defenderId = combatData?.turnEconomy?.defenderCombatantId;
+        if (engagementRestriction(relation, defenderId, mode.reach).pommel) return null;
         const resolved = resolveWeaponStyle({ weapon: weaponModeView(weapon, mode), styles,
           selectedStyleId: style.id, familiarity: mode.familiarity });
         if (!resolved.style && !resolved.usesBase) return null;
@@ -221,7 +294,7 @@ function parryChoices(actor) {
   return [...new Map(choices.map((choice) => [choice.value, choice])).values()];
 }
 
-async function defenseConfiguration(actor, type) {
+async function defenseConfiguration(actor, type, combatData = null) {
   if (type === "none") return { type: "none" };
   if (type === "evade") {
     const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "evadir");
@@ -231,7 +304,7 @@ async function defenseConfiguration(actor, type) {
     return { type, abilityId: skill.id, abilityName: skill.name, difficulty,
       baseTarget: Number(skill.system.total ?? 0), target: difficultyTarget(skill.system.total, difficulty) };
   }
-  const choices = parryChoices(actor);
+  const choices = parryChoices(actor, combatData);
   if (!choices.length) return ui.notifications.warn(localize("MYTHRASF.Combat.NoParryAvailable"));
   const { DialogV2 } = foundry.applications.api;
   const selected = await DialogV2.wait({ window: { title: localize("MYTHRASF.Combat.ChooseParry") },
@@ -257,7 +330,7 @@ async function respondToAttack(message, combat, type) {
     actor.system.baseAttributes ?? actor.system.attributes ?? {} }).capabilities.canDefend) {
     return ui.notifications.warn(localize("MYTHRASF.Status.CannotDefend"));
   }
-  const defense = await defenseConfiguration(actor, type);
+  const defense = await defenseConfiguration(actor, type, combat);
   if (!defense) return;
   const roll = type === "none" ? null : await new Roll("1d100").evaluate();
   const request = { action: "combatDefense", messageId: message.id, revision: combat.revision,
@@ -305,6 +378,10 @@ async function applyCombatDefense(message, request) {
     }
     combat.turnEconomy.defenseSpent = true;
     combat.turnEconomy.defenseSpentBy = request.userId;
+  }
+  if (request.defense.type === "parry" && combat.turnEconomy) {
+    await consumePassiveBlock(game.combats.get(combat.turnEconomy.combatId),
+      combat.turnEconomy.defenderCombatantId, request.defense.weaponId, "parry");
   }
   combat.defender.defense = request.defense;
   combat.resolution = resolveCombatExchange({ predeclared: combat.predeclared,
@@ -454,6 +531,17 @@ async function applyImmediateEffectConsequences(combat, message) {
     if (effect.key === "muerte-silenciosa") {
       await addManagedStatus(combat, effect, { key: "silenced", statusId: "silenced",
         unit: "round", phase: "endRound" }); effect.status = "resolved";
+    }
+    if (["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect.key)
+      && combat.turnEconomy) {
+      const tracker = game.combats.get(combat.turnEconomy.combatId);
+      const relationId = engagementId(combat.turnEconomy.combatantId,
+        combat.turnEconomy.defenderCombatantId);
+      await setRelationPosition(tracker, relationId,
+        effect.key === "cerrar-distancia" ? "shorter" : effect.key === "abrir-distancia"
+          ? "longer" : "neutral", { reason: `effect:${effect.key}`,
+          status: effect.key === "retirada" ? "disengaged" : "engaged" });
+      effect.status = "resolved";
     }
   }
   const offBalance = selections.filter((effect) => effect.key === "desequilibrar-oponente");
@@ -620,7 +708,7 @@ async function requestCombatDamage(message, combat) {
   const modifier = damageModifierFormula(actor.system.attributes?.damageModifier, mode.damageModifierMode) || "0";
   const extraordinary = combat.declarations?.extraordinaryDamage || "0";
   const maximizeCount = selectedEffectCount(combat.effects?.selections ?? [], "maximizeDamage");
-  const weaponDamage = maximizeDamageFormula(mode.damage || "0", maximizeCount);
+  const weaponDamage = maximizeDamageFormula(combat.attacker.damage || mode.damage || "0", maximizeCount);
   const formula = `max(0, (${weaponDamage}) + (${modifier}) + (${extraordinary}))`;
   let roll;
   try { roll = await new Roll(formula).evaluate(); }
@@ -638,7 +726,8 @@ async function requestCombatDamage(message, combat) {
     if (!choice) return;
     if (choice === "second") [roll, alternateRoll] = [alternateRoll, roll];
   }
-  let chosenLocation = (combat.effects?.selections ?? []).find((entry) =>
+  let chosenLocation = combat.defender.targetType === "weapon" ? combat.defender.targetWeaponId
+    : (combat.effects?.selections ?? []).find((entry) =>
     entry.ruleKey === "chooseLocation")?.parameters?.locationId;
   const locationRoll = chosenLocation ? null : await new Roll("1d20").evaluate();
   let rolledLocationId = "";
@@ -725,15 +814,25 @@ async function refreshDamageProposal(combat, requestedLocationId = null) {
   const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
   const locationId = requestedLocationId ?? combat.damage.locationId;
   const location = defender?.items.get(locationId);
-  if (!defender || !location || location.type !== "hitLocation") {
+  const weaponTarget = combat.defender.targetType === "weapon";
+  if (!defender || !location || (!weaponTarget && location.type !== "hitLocation")
+    || (weaponTarget && location.type !== "weapon")) {
     combat.damage.status = "stale";
     return;
   }
-  const armor = totalArmorPoints(location,
+  const armor = weaponTarget ? Number(location.system.armorPoints ?? 0) : totalArmorPoints(location,
     defender.items.filter((item) => item.type === "armor"));
   const defense = combat.defender.defense;
   let parry = defense?.type === "parry" && ["success", "critical"].includes(combat.resolution.defense.result)
     ? parryReduction(combat.attacker.weaponSize, defense.weaponSize) : { type: "none" };
+  const tracker = combat.turnEconomy ? game.combats.get(combat.turnEconomy.combatId) : null;
+  const passive = !weaponTarget && tracker ? passiveBlockFor(tracker,
+    combat.turnEconomy.defenderCombatantId, location.id) : null;
+  if (passive) {
+    parry = parryReduction(combat.attacker.weaponSize, passive.weaponSize);
+    combat.damage.passiveBlock = { weaponId: passive.weaponId, weaponName: passive.weaponName,
+      weaponSize: passive.weaponSize, locationId: location.id };
+  } else delete combat.damage.passiveBlock;
   if (selectedEffectCount(combat.effects?.selections ?? [], "improveParry")) parry = { type: "full" };
   if (selectedEffectCount(combat.effects?.selections ?? [], "bypassParry")) parry = { type: "none" };
   const effectiveArmor = selectedEffectCount(combat.effects?.selections ?? [], "bypassArmor") ? 0 : armor;
@@ -745,10 +844,10 @@ async function refreshDamageProposal(combat, requestedLocationId = null) {
   if (!selectedEffectCount(combat.effects?.selections ?? [], "bash")) {
     calculation.push = { triggered: false, excess: 0, distance: 0 };
   }
-  const resulting = woundLevel(after, location.system.maxHitPoints);
+  const resulting = weaponTarget ? "healthy" : woundLevel(after, location.system.maxHitPoints);
   const previousChecks = new Map((combat.effects?.checks ?? []).map((check) => [check.id, check]));
   const checks = [];
-  (combat.effects?.selections ?? []).forEach((effect, order) => {
+  (weaponTarget ? [] : combat.effects?.selections ?? []).forEach((effect, order) => {
     if (effect.requiresWound) effect.status = calculation.penetratingDamage > 0
       ? effect.status === "resolved" ? "resolved" : "pending" : "notActivated";
     const checkId = `effect-${effect.side ?? combat.effects.winner}-${effect.slot}`;
@@ -760,7 +859,7 @@ async function refreshDamageProposal(combat, requestedLocationId = null) {
       resolution: previousChecks.get(checkId)?.resolution
     });
   });
-  if (["serious", "major"].includes(resulting)) checks.push({ id: `wound-${location.id}`,
+  if (!weaponTarget && ["serious", "major"].includes(resulting)) checks.push({ id: `wound-${location.id}`,
     source: "wound", order: checks.length, label: resulting,
     actorSide: "defender", abilitySlugs: ["aguante"], opposedSide: "attacker",
     status: previousChecks.get(`wound-${location.id}`)?.status ?? "pending",
@@ -769,7 +868,7 @@ async function refreshDamageProposal(combat, requestedLocationId = null) {
   Object.assign(combat.damage, calculation, { status: "proposed", locationId: location.id,
     locationName: location.name, armorSnapshot: armor, beforeHitPoints: before,
     maxHitPoints: Number(location.system.maxHitPoints ?? 1), afterHitPoints: after,
-    previousWound: woundLevel(before, location.system.maxHitPoints),
+    previousWound: weaponTarget ? "healthy" : woundLevel(before, location.system.maxHitPoints),
     resultingWound: resulting });
 }
 
@@ -980,8 +1079,9 @@ async function applyProposedDamage(message, request) {
   const selectedLocation = defender.items.get(request.locationId);
   const sameProposal = request.locationId === combat.damage.locationId;
   const expectedHitPoints = combat.damage.beforeHitPoints;
-  const currentArmor = selectedLocation ? totalArmorPoints(selectedLocation,
-    defender.items.filter((item) => item.type === "armor")) : null;
+  const currentArmor = selectedLocation ? combat.defender.targetType === "weapon"
+    ? Number(selectedLocation.system.armorPoints ?? 0) : totalArmorPoints(selectedLocation,
+      defender.items.filter((item) => item.type === "armor")) : null;
   if (!selectedLocation || (sameProposal
     && (Number(selectedLocation.system.currentHitPoints) !== Number(expectedHitPoints)
       || Number(currentArmor) !== Number(combat.damage.armorSnapshot)))) {
@@ -1001,7 +1101,7 @@ async function applyProposedDamage(message, request) {
     throw error;
   }
   combat.damage.status = "applied";
-  await applyWoundConsequences(combat, defender, location);
+  if (combat.defender.targetType !== "weapon") await applyWoundConsequences(combat, defender, location);
   combat.damage.appliedBy = user.id;
   combat.damage.appliedAt = Date.now();
   await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
@@ -1092,6 +1192,9 @@ export function renderCombatExchange(combat) {
   if (["rolled", "proposed", "stale", "applying", "applied"].includes(combat.damage?.status)) {
     const damage = combat.damage;
     damageHtml = `<fieldset class="combat-damage-panel"><legend>${escape(localize("MYTHRASF.Chat.Damage"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageRoll"))} (${escape(damage.formula)})</span><strong class="mythras-chat-roll-value">${damage.rawRoll}</strong>${["proposed", "stale"].includes(damage.status) ? luck("damage") : ""}</div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AfterContainedBlow"))}</span><strong>${damage.afterContainedBlow ?? "—"}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span><strong>${escape(localize(`MYTHRASF.Combat.ParryType.${damage.parryType ?? "none"}`))}: ${damage.afterParry ?? "—"}</strong></div><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select data-damage-location ${damage.status === "applied" ? "disabled" : ""}>${locationOptions}</select></label><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Armor"))}</span><strong>${damage.armorPoints ?? "—"}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${damage.penetratingDamage ?? "—"}</strong></div>${damage.push?.triggered ? `<div class="combat-card-warning">${escape(game.i18n.format("MYTHRASF.Combat.PushSummary", { distance: damage.push.distance, excess: damage.push.excess }))}</div>` : ""}${damage.status === "stale" ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Combat.DamageStale"))}</p>` : ""}${damage.status === "applied" ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AppliedHitPoints"))}</span><strong>${damage.beforeHitPoints} → ${damage.afterHitPoints}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(localize(`MYTHRASF.Wound.${damage.resultingWound}`))}</strong></div>${["serious", "major"].includes(damage.resultingWound) ? `<p class="combat-card-warning">${escape(localize(`MYTHRASF.Combat.WoundWarning.${damage.resultingWound}`))}</p>` : ""}` : `<button type="button" data-combat-action="apply-damage" title="${escape(localize("MYTHRASF.Combat.ApplyDamage"))}">${escape(localize("MYTHRASF.Combat.ApplyDamage"))}</button>`}</fieldset>`;
+    if (damage.passiveBlock) damageHtml = damageHtml.replace(
+      `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span>`,
+      `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Status.PassiveBlock"))}</span><strong>${escape(damage.passiveBlock.weaponName)} (${escape(damage.passiveBlock.weaponSize)})</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span>`);
     if (damage.alternateRoll) damageHtml = damageHtml.replace("</fieldset>",
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.ImpaleDiscarded"))}</span><strong class="mythras-chat-roll-value">${damage.alternateRoll.rawRoll}</strong></div></fieldset>`);
   }

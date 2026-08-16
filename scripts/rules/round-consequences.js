@@ -2,6 +2,10 @@ import { classifyContestRoll } from "./contest-rolls.js";
 import { fatigueLossForResult, worsenFatigueLevel, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { timedEffects } from "./timed-condition-runtime.js";
+import { applyTimedCondition } from "./timed-condition-runtime.js";
+import { passiveBlockCapacity, validatePassiveBlock } from "./passive-block.js";
+import { findWeaponMode, weaponModes } from "./weapon-modes.js";
+import { tacticalState } from "./engagement-runtime.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -26,6 +30,25 @@ export function periodicConditionEntries(combat) {
   return entries;
 }
 
+export function passiveBlockEntries(combat) {
+  const entries = [];
+  for (const combatant of combat?.combatants ?? []) {
+    const actor = combatant.actor; if (!actor || combatant.isDefeated) continue;
+    const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+      .flatMap((weapon) => weaponModes(weapon).filter((mode) => passiveBlockCapacity(mode) > 0)
+        .map((mode) => ({ weaponId: weapon.id, weaponName: weapon.name, modeKey: mode.key,
+          modeName: mode.name, weaponSize: mode.size, weaponType: mode.weaponType,
+          capacity: passiveBlockCapacity(mode) })));
+    if (!choices.length) continue;
+    entries.push({ id: `${combatant.id}:passive-block`, combatantId: combatant.id,
+      actorUuid: actor.uuid, key: "passiveBlock", automatic: false, status: "pending",
+      choices, locations: actor.items.filter((item) => item.type === "hitLocation")
+        .sort((a, b) => Number(a.system.rangeStart) - Number(b.system.rangeStart))
+        .map((item) => ({ id: item.id, name: item.name, rangeStart: item.system.rangeStart })) });
+  }
+  return entries;
+}
+
 export async function applyFatigueLoss(actor, loss) {
   const before = actor.system.fatigueLevel ?? "fresh";
   const after = worsenFatigueLevel(before, loss);
@@ -35,8 +58,8 @@ export async function applyFatigueLoss(actor, loss) {
 
 export async function prepareRoundConsequences(combat) {
   const economy = combat.mythrasTurnEconomy;
-  const queue = periodicConditionEntries(combat).map((entry) => ({ ...entry,
-    round: combat.round }));
+  const queue = [...periodicConditionEntries(combat), ...passiveBlockEntries(combat)]
+    .map((entry) => ({ ...entry, round: combat.round }));
   for (const entry of queue.filter((candidate) => candidate.automatic)) {
     const actor = await fromUuid(entry.actorUuid);
     entry.resolution = actor ? await applyFatigueLoss(actor, 1) : { missing: true };
@@ -58,9 +81,14 @@ async function createRoundMessage(combat, queue) {
 export function renderRoundConsequences(state) {
   const rows = state.queue.map((entry) => `<div class="mythras-chat-row"><span>${escape(
     game.i18n.localize(`MYTHRASF.Status.${entry.key === "exsanguinating" ? "Exsanguinating"
-      : entry.key === "bleeding" ? "Bleeding" : "Drowning"}`))}</span><strong>${escape(
+      : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
+        ? "PassiveBlock" : "Drowning"}`))}</span><strong>${escape(
     game.i18n.localize(`MYTHRASF.RoundConsequence.${entry.status}`))}</strong>${entry.status === "pending"
-      ? `<button type="button" data-round-action="roll" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.Roll"))}</button><button type="button" data-round-action="manual" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : entry.resolution ? `<span>${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
+      ? entry.key === "passiveBlock"
+        ? `<button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button>`
+        : `<button type="button" data-round-action="roll" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.Roll"))}</button><button type="button" data-round-action="manual" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : entry.resolution ? entry.key === "passiveBlock"
+          ? `<span>${escape(entry.resolution.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Waived") : entry.resolution.weaponName)}</span>`
+          : `<span>${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
   return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}</section>`;
 }
 
@@ -97,6 +125,90 @@ async function requestResolution(message, state, entryId, manual) {
   else game.socket.emit(SOCKET, request);
 }
 
+async function requestPassiveBlock(message, state, entryId, waive = false) {
+  const entry = state.queue.find((candidate) => candidate.id === entryId);
+  const index = state.queue.findIndex((candidate) => candidate.id === entryId);
+  if (state.queue.slice(0, index).some((candidate) => candidate.status === "pending")) return;
+  const actor = entry ? await fromUuid(entry.actorUuid).catch(() => null) : null;
+  if (!entry || entry.key !== "passiveBlock" || (!game.user.isGM && !actor?.isOwner)) return;
+  let resolution = { waived: true };
+  if (!waive) {
+    const weaponOptions = entry.choices.map((choice) => `<option value="${escape(`${choice.weaponId}:${choice.modeKey}`)}">${escape(choice.weaponName)} (${choice.capacity})</option>`).join("");
+    const locations = entry.locations.map((location) => `<label><input type="checkbox" name="location" value="${escape(location.id)}"> ${escape(location.name)}</label>`).join("");
+    resolution = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Declare") },
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" name="crouched"> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
+      buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.CombatEffect.Confirm"),
+        callback: (event, button) => ({ waived: false, weapon: button.form.elements.weapon.value,
+          locationIds: Array.from(button.form.querySelectorAll("input[name='location']:checked")).map((control) => control.value),
+          crouched: button.form.elements.crouched.checked }) }], rejectClose: false });
+    if (!resolution) return;
+  }
+  const request = { action: "roundPassiveBlock", messageId: message.id, revision: state.revision,
+    entryId, userId: game.user.id, resolution };
+  if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyPassiveBlock(message, request);
+  else game.socket.emit(SOCKET, request);
+}
+
+export async function openPassiveBlockDeclaration(actor) {
+  const combat = game.combat;
+  const combatant = combat?.combatants.find((entry) => entry.actor?.uuid === actor?.uuid);
+  const message = game.messages?.find((candidate) => {
+    const state = candidate.getFlag?.(SCOPE, "roundConsequences");
+    return state?.combatId === combat?.id && Number(state.round) === Number(combat.round)
+      && state.queue.some((entry) => entry.combatantId === combatant?.id
+        && entry.key === "passiveBlock" && entry.status === "pending");
+  });
+  const state = message?.getFlag(SCOPE, "roundConsequences");
+  const entry = state?.queue.find((candidate) => candidate.combatantId === combatant?.id
+    && candidate.key === "passiveBlock" && candidate.status === "pending");
+  if (!message || !entry) return ui.notifications.warn(
+    game.i18n.localize("MYTHRASF.PassiveBlock.NoPendingDeclaration"));
+  return requestPassiveBlock(message, state, entry.id, false);
+}
+
+async function applyPassiveBlock(message, request) {
+  const state = foundry.utils.deepClone(message.getFlag(SCOPE, "roundConsequences"));
+  const entry = state?.queue.find((candidate) => candidate.id === request.entryId);
+  const combat = state ? game.combats.get(state.combatId) : null;
+  const combatant = combat?.combatants.get(entry?.combatantId); const actor = combatant?.actor;
+  const user = game.users.get(request.userId);
+  if (!state || !entry || entry.status !== "pending" || state.revision !== request.revision
+    || !user || (!user.isGM && !actor?.testUserPermission(user, "OWNER"))) return;
+  const index = state.queue.findIndex((candidate) => candidate.id === request.entryId);
+  if (state.queue.slice(0, index).some((candidate) => candidate.status === "pending")) return;
+  let resolution = { ...request.resolution };
+  if (!resolution.waived) {
+    const [weaponId, modeKey] = String(resolution.weapon).split(":");
+    const weapon = actor.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
+    const locations = entry.locations; const valid = validatePassiveBlock({ mode, locations,
+      selectedIds: resolution.locationIds ?? [], crouched: resolution.crouched });
+    if (!weapon?.system.equipped || !valid.valid) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.PassiveBlock.Invalid"));
+    let crouchEffectId = "";
+    if (resolution.crouched) {
+      const [effect] = await applyTimedCondition(actor, { key: "crouchedBehindShield",
+        statusId: "crouchedBehindShield", name: game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"),
+        img: "icons/svg/shield.svg", combat: { uuid: combat.uuid, round: combat.round },
+        duration: { unit: "round", phase: "endRound" } });
+      crouchEffectId = effect?.id ?? "";
+    }
+    resolution = { ...resolution, weaponId, modeKey, weaponName: weapon.name,
+      weaponSize: mode.size, capacity: valid.capacity, crouchEffectId };
+    const tactical = foundry.utils.deepClone(tacticalState(combat));
+    tactical.passiveBlocks[entry.combatantId] = { schemaVersion: 1, status: "active",
+      round: combat.round, combatantId: entry.combatantId, actorUuid: actor.uuid,
+      ...resolution, declaredBy: user.id, declaredAt: Date.now() };
+    tactical.revision += 1; await combat.setFlag(SCOPE, "tacticalState", tactical);
+  }
+  entry.status = "resolved"; entry.resolution = resolution; state.revision += 1;
+  await message.update({ content: renderRoundConsequences(state),
+    [`flags.${SCOPE}.roundConsequences`]: state });
+  if (state.queue.every((candidate) => candidate.status === "resolved")) {
+    await combat.completeRoundPreparation(state.queue);
+  }
+}
+
 async function applyResolution(message, request) {
   const state = foundry.utils.deepClone(message.getFlag(SCOPE, "roundConsequences"));
   const entry = state?.queue.find((candidate) => candidate.id === request.entryId);
@@ -131,7 +243,9 @@ export function activateRoundConsequenceCard(message, html) {
   }
   card.addEventListener("click", (event) => {
     const button = event.target.closest("[data-round-action]"); if (!button) return;
-    requestResolution(message, state, button.dataset.entryId, button.dataset.roundAction === "manual");
+    if (["block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
+      state, button.dataset.entryId, button.dataset.roundAction === "waive");
+    else requestResolution(message, state, button.dataset.entryId, button.dataset.roundAction === "manual");
   });
 }
 
@@ -139,5 +253,9 @@ export function registerRoundConsequenceSocket() {
   game.socket.on(SOCKET, async (request) => {
     if (request?.action !== "roundConsequence" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
     const message = game.messages.get(request.messageId); if (message) await applyResolution(message, request);
+  });
+  game.socket.on(SOCKET, async (request) => {
+    if (request?.action !== "roundPassiveBlock" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
+    const message = game.messages.get(request.messageId); if (message) await applyPassiveBlock(message, request);
   });
 }

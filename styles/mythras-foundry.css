@@ -1596,6 +1596,19 @@
   gap: 0.75rem;
 }
 
+.mythras-foundry .combat-tactical-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mythras-foundry .combat-tactical-actions button {
+  background: transparent;
+  border: 1px solid var(--mythras-border);
+  color: var(--mythras-ink);
+}
+
 .mythras-foundry .tab-panel[data-tab-content="combat"] { container-type: inline-size; }
 .mythras-foundry .penalties-panel { margin: 0; }
 .mythras-foundry .incapacitated-status-panel { display: grid; grid-template-columns: minmax(12rem, 1fr) auto; align-items: center; gap: 0.45rem 1rem; margin-bottom: 0.75rem; padding: 0.55rem 0.65rem; border: 1px solid var(--mythras-border); }

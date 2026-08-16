@@ -11,10 +11,12 @@ import { isCombatCoordinator, restoreCombatActors,
 import { activateRoundConsequenceCard,
   registerRoundConsequenceSocket } from "../rules/round-consequences.js";
 import { initializeSurpriseEffect } from "../rules/timed-condition-runtime.js";
+import { activateReachCard, openTacticalOverview, registerReachSocket } from "../rules/reach-chat.js";
 
 function activateChatCards(message, html) {
   activateCombatCard(message, html);
   activateRoundConsequenceCard(message, html);
+  activateReachCard(message, html);
   activateSkillRollCard(message, html);
   activateContestCard(message, html);
 }
@@ -38,6 +40,7 @@ export function registerUiHooks() {
     registerContestSocket();
     registerCombatSocket();
     registerRoundConsequenceSocket();
+    registerReachSocket();
     if (isCombatCoordinator()) {
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
     }
@@ -59,6 +62,13 @@ export function registerUiHooks() {
         round: combat.round ?? 0, cycle });
       badge.title = game.i18n.localize("MYTHRASF.Tracker.CycleHint");
       header.append(badge);
+      const overview = document.createElement("button");
+      overview.type = "button"; overview.className = "sheet-icon-button mythras-tactical-overview";
+      overview.innerHTML = '<i class="fas fa-people-arrows-left-right" aria-hidden="true"></i>';
+      overview.title = game.i18n.localize("MYTHRASF.Reach.Overview");
+      overview.setAttribute("aria-label", overview.title);
+      overview.addEventListener("click", () => openTacticalOverview());
+      header.append(overview);
     }
     for (const row of root.querySelectorAll("[data-combatant-id]")) {
       const entry = combat.combatants.get(row.dataset.combatantId);
@@ -91,7 +101,10 @@ export function registerUiHooks() {
     }
   });
   Hooks.on("deleteCombat", async (combat) => restoreCombatActors(combat));
-  Hooks.on("combatEnd", async (combat) => restoreCombatActors(combat));
+  Hooks.on("combatEnd", async (combat) => {
+    await restoreCombatActors(combat);
+    if (isCombatCoordinator()) await combat.unsetFlag("mythras-foundry", "tacticalState");
+  });
   const syncEffectActor = async (effect) => {
     const actor = effect.parent;
     if (!isCombatCoordinator() || actor?.documentName !== "Actor") return;

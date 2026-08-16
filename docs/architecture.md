@@ -109,6 +109,13 @@ asalto; Desangrándose pierde Fatiga automáticamente. Sorprendido bloquea la
 defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
 un hueco ofensivo al primer ataque exitoso.
 
+El estado táctico vive en `flags.mythras-foundry.tacticalState` del `Combat`.
+Contiene relaciones versionadas por pareja de combatientes y declaraciones de
+Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o
+`neutral`) y no se deriva de las coordenadas del lienzo. Cambiar Alcance se
+coordina mediante mensajes revisables y comparte coordinador y permisos con los
+intercambios de ataque.
+
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.
 

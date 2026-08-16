@@ -29,6 +29,8 @@ export async function restoreCombatActors(combat) {
 
 function hasPendingExchange(combatant) {
   return game.messages?.some((message) => {
+    const reach = message.getFlag?.(SCOPE, "reachChange");
+    if (reach?.status === "awaitingResponse" && reach.actorCombatantId === combatant?.id) return true;
     const exchange = message.getFlag?.(SCOPE, "combat");
     return exchange?.turnEconomy && !exchange.turnEconomy.turnAdvanced
       && exchange.turnEconomy.combatantId === combatant?.id

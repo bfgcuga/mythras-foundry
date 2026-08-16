@@ -1,0 +1,35 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { engagementId, engagementRestriction, initialReachPosition, reachDifference,
+  shiftedWeaponSize } from "../scripts/rules/engagements.js";
+import { contiguousLocationIds, passiveBlockCapacity,
+  validatePassiveBlock } from "../scripts/rules/passive-block.js";
+
+test("las relaciones usan una identidad estable y el alcance largo con dos grados", () => {
+  assert.equal(engagementId("b", "a"), "a::b");
+  assert.equal(reachDifference("C", "L"), 2);
+  assert.equal(initialReachPosition("C", "L"), "longer");
+  assert.equal(initialReachPosition("M", "L"), "neutral");
+});
+
+test("el alcance impide al arma corta y convierte el arma larga en pomo", () => {
+  const relation = { status: "engaged", position: "longer", sides: {
+    short: { reach: "C" }, long: { reach: "L" } } };
+  assert.equal(engagementRestriction(relation, "short", "C").reason, "tooShort");
+  relation.position = "shorter";
+  const long = engagementRestriction(relation, "long", "L");
+  assert.equal(long.pommel, true);
+  assert.equal(shiftedWeaponSize("E", long.effectiveSizeSteps), "M");
+});
+
+test("el bloqueo pasivo exige capacidad exacta y localizaciones contiguas", () => {
+  const mode = { weaponType: "shield", traitRefs: [{ key: "bloqueo-pasivo",
+    parameters: [{ key: "locations", value: "2" }] }] };
+  const locations = [1, 2, 3, 4].map((rangeStart) => ({ id: String(rangeStart), rangeStart }));
+  assert.equal(passiveBlockCapacity(mode), 2);
+  assert.equal(contiguousLocationIds(locations, ["2", "3"]), true);
+  assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "2"] }).valid, true);
+  assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "3"] }).valid, false);
+  assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "2", "3", "4"],
+    crouched: true }).valid, true);
+});

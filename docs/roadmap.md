@@ -15,7 +15,8 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - Ampliar el gasto automático de PA cuando exista un catálogo general de
   acciones proactivas, reactivas y gratuitas.
 - Automatizar las consecuencias persistentes de los efectos guiados cuando
-  existan asaltos, alcance, postura y duración compartidos por el combate.
+  existan postura y duración compartidas por el combate. Alcance, Cambiar
+  Alcance, Retirada y Bloqueo Pasivo ya están integrados con el tracker.
 
 ### Estados y penalizaciones
 

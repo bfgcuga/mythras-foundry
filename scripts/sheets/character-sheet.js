@@ -505,11 +505,17 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-passion-field]", "change", (event) => this.#updatePassionField(event)],
       ["[data-combat-style]", "change", (event) => this.#updateWeaponCombatChoice(event)],
       ["[data-combat-familiarity]", "change", (event) => this.#updateWeaponCombatChoice(event)],
-      ["[data-action='roll-weapon-attack']", "click", (event) => this.#rollWeaponAttack(event)]
+      ["[data-action='roll-weapon-attack']", "click", (event) => this.#rollWeaponAttack(event)],
+      ["[data-action='change-reach']", "click", () => game.mythrasFoundry?.combat?.changeReach?.(this.actor)],
+      ["[data-action='declare-passive-block']", "click", () => game.mythrasFoundry?.combat?.declarePassiveBlock?.(this.actor)],
+      ["[data-action='tactical-overview']", "click", () => game.mythrasFoundry?.combat?.openTacticalOverview?.()]
     ]);
     this.#showTab(this._activeTab ?? "character");
     this.#activateInventoryDragAndDrop();
     this.#fitCombatEffects();
+    const changeReach = this.element.querySelector("[data-action='change-reach']");
+    if (changeReach) changeReach.disabled = !game.combat?.started
+      || game.combat.combatant?.actor?.uuid !== this.actor.uuid;
 
     if (context.backgroundWizard && !this._backgroundSyncing) {
       const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);

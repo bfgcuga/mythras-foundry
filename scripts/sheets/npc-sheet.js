@@ -250,6 +250,15 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#rollPassion(event)));
     this.element.querySelectorAll("[data-action='roll-attack']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollWeaponAttack(event)));
+    this.element.querySelector("[data-action='change-reach']")?.addEventListener("click", () =>
+      game.mythrasFoundry?.combat?.changeReach?.(this.actor));
+    this.element.querySelector("[data-action='declare-passive-block']")?.addEventListener("click", () =>
+      game.mythrasFoundry?.combat?.declarePassiveBlock?.(this.actor));
+    this.element.querySelector("[data-action='tactical-overview']")?.addEventListener("click", () =>
+      game.mythrasFoundry?.combat?.openTacticalOverview?.());
+    const changeReach = this.element.querySelector("[data-action='change-reach']");
+    if (changeReach) changeReach.disabled = !game.combat?.started
+      || game.combat.combatant?.actor?.uuid !== this.actor.uuid;
     this.element.querySelectorAll("[data-action='toggle-equipped']").forEach((button) =>
       button.addEventListener("click", (event) => this.#toggleEquipped(event)));
     this.element.querySelectorAll("[data-resource-action]").forEach((button) =>

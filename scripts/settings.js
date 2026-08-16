@@ -8,6 +8,7 @@ export const SETTING_KEYS = Object.freeze({
   professionPointMinimum: "professionPointMinimum",
   professionPointMaximum: "professionPointMaximum",
   socialClassMethod: "socialClassMethod",
+  detailedReach: "detailedReach",
   catalogSources: "catalogSources",
   parties: "parties"
 });
@@ -119,6 +120,15 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       }),
       default: SOCIAL_CLASS_METHODS.choose,
       requiresReload: true
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.detailedReach,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.DetailedReach.Name",
+      hint: "MYTHRASF.Settings.DetailedReach.Hint",
+      scope: "world", config: true, type: Boolean, default: true,
+      requiresReload: false
     })
   }),
   Object.freeze({

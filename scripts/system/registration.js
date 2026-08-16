@@ -19,6 +19,8 @@ import { INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
 import { MYTHRAS_STATUS_EFFECTS } from "../rules/statuses.js";
 import { hasTrait, registerTraitRule, resolveTraitRules, traitReferences,
   unregisterTraitRule } from "../rules/traits.js";
+import { openTacticalOverview, requestReachChange } from "../rules/reach-chat.js";
+import { openPassiveBlockDeclaration } from "../rules/round-consequences.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -90,7 +92,8 @@ export function registerSystemInitialization() {
       }),
       traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
         registerRule: registerTraitRule, unregisterRule: unregisterTraitRule },
-      combat: { isCoordinator: isCombatCoordinator }
+      combat: { isCoordinator: isCombatCoordinator, changeReach: requestReachChange,
+        openTacticalOverview, declarePassiveBlock: openPassiveBlockDeclaration }
     };
     foundry.documents.collections.Actors.registerSheet("mythras-foundry", CharacterSheet, {
       types: ["character"], makeDefault: true, label: "MYTHRASF.Sheet.Character"

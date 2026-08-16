@@ -16,6 +16,7 @@ export const STUNNED_LOCATION_STATUS_ID = "stunnedLocation";
 export const EXSANGUINATING_STATUS_ID = "exsanguinating";
 export const SILENCED_STATUS_ID = "silenced";
 export const STUNNED_TORSO_STATUS_ID = "stunnedTorso";
+export const CROUCHED_BEHIND_SHIELD_STATUS_ID = "crouchedBehindShield";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: BLINDED_STATUS_ID, name: "MYTHRASF.Status.Blinded",
@@ -51,7 +52,9 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: EXSANGUINATING_STATUS_ID, name: "MYTHRASF.Status.Exsanguinating",
     img: "icons/svg/blood.svg", roundAutomation: "automatic" },
   { id: SILENCED_STATUS_ID, name: "MYTHRASF.Status.Silenced",
-    img: "icons/svg/silenced.svg" }
+    img: "icons/svg/silenced.svg" },
+  { id: CROUCHED_BEHIND_SHIELD_STATUS_ID, name: "MYTHRASF.Status.CrouchedBehindShield",
+    img: "icons/svg/shield.svg" }
 ]);
 
 export function activeStatusRules(statuses = new Set()) {
