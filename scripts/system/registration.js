@@ -20,7 +20,11 @@ import { MYTHRAS_STATUS_EFFECTS } from "../rules/statuses.js";
 import { hasTrait, registerTraitRule, resolveTraitRules, traitReferences,
   unregisterTraitRule } from "../rules/traits.js";
 import { openTacticalOverview, requestReachChange } from "../rules/reach-chat.js";
+import { openCoverDeclaration } from "../rules/engagement-runtime.js";
 import { openPassiveBlockDeclaration } from "../rules/round-consequences.js";
+import { declareAim, reloadRangedWeapon } from "../rules/ranged-actions.js";
+import { actionAvailability, combatActionState,
+  requestCombatAction } from "../rules/combat-action-runtime.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -93,7 +97,10 @@ export function registerSystemInitialization() {
       traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
         registerRule: registerTraitRule, unregisterRule: unregisterTraitRule },
       combat: { isCoordinator: isCombatCoordinator, changeReach: requestReachChange,
-        openTacticalOverview, declarePassiveBlock: openPassiveBlockDeclaration }
+        openTacticalOverview, declarePassiveBlock: openPassiveBlockDeclaration,
+        declareCover: openCoverDeclaration, aim: declareAim, reload: reloadRangedWeapon,
+        action: requestCombatAction, availableActions: actionAvailability,
+        actionState: combatActionState }
     };
     foundry.documents.collections.Actors.registerSheet("mythras-foundry", CharacterSheet, {
       types: ["character"], makeDefault: true, label: "MYTHRASF.Sheet.Character"

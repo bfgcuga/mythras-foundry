@@ -12,6 +12,9 @@ import { activateRoundConsequenceCard,
   registerRoundConsequenceSocket } from "../rules/round-consequences.js";
 import { initializeSurpriseEffect } from "../rules/timed-condition-runtime.js";
 import { activateReachCard, openTacticalOverview, registerReachSocket } from "../rules/reach-chat.js";
+import { registerTacticalSocket } from "../rules/engagement-runtime.js";
+import { activateCombatActionCard, combatActionState,
+  registerCombatActionSocket } from "../rules/combat-action-runtime.js";
 
 function activateChatCards(message, html) {
   activateCombatCard(message, html);
@@ -19,6 +22,7 @@ function activateChatCards(message, html) {
   activateReachCard(message, html);
   activateSkillRollCard(message, html);
   activateContestCard(message, html);
+  activateCombatActionCard(message, html);
 }
 
 function activateApplicationUi(element) {
@@ -41,6 +45,8 @@ export function registerUiHooks() {
     registerCombatSocket();
     registerRoundConsequenceSocket();
     registerReachSocket();
+    registerTacticalSocket();
+    registerCombatActionSocket();
     if (isCombatCoordinator()) {
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
     }
@@ -84,6 +90,17 @@ export function registerUiHooks() {
       const initiative = entry.getFlag("mythras-foundry", "initiative");
       const value = row.querySelector(".token-initiative, .initiative");
       if (value && initiative) value.title = game.i18n.format("MYTHRASF.Tracker.InitiativeHint", initiative);
+      const actions = combatActionState(combat);
+      const tactical = [];
+      if (actions.delays[entry.id]?.status === "reserved") tactical.push(game.i18n.localize("MYTHRASF.Action.delay"));
+      if (actions.braces[entry.id]?.status === "active") tactical.push(game.i18n.localize("MYTHRASF.Action.brace"));
+      if (actions.movements[entry.id]) tactical.push(game.i18n.localize(`MYTHRASF.Action.Movement.${actions.movements[entry.id].mode}`));
+      if (entry.actor.statuses?.has?.("prone")) tactical.push(game.i18n.localize("MYTHRASF.Status.Prone"));
+      if (tactical.length) {
+        const status = document.createElement("span"); status.className = "mythras-tracker-tactical";
+        status.textContent = tactical.join(" · "); status.title = tactical.join(" · ");
+        row.querySelector(".token-name, .combatant-name")?.append(status);
+      }
     }
   });
   Hooks.on("updateCombatant", async (combatant, changed, options) => {

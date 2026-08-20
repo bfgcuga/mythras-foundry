@@ -46,6 +46,18 @@ test("la elegibilidad respeta lado, crítico y capacidades estructuradas del arm
   assert.equal(combatEffectEligible(effects.find((effect) => effect.key === "desangrar"), context), false);
 });
 
+test("Elegir Localización respeta alcance corto, situación y cobertura completa", () => {
+  const choose = effects.find((effect) => effect.key === "elegir-localizacion");
+  const context = { winner: "attacker", attackResult: "success", defenseResult: "failure",
+    weaponMode: { weaponType: "ranged", size: "G", effects: "" }, rangedBand: "short" };
+  assert.equal(combatEffectEligible(choose, context), false);
+  assert.equal(combatEffectEligible(choose, { ...context, rangedTargetStationary: true }), true);
+  assert.equal(combatEffectEligible(choose, { ...context, rangedTargetStationary: true,
+    completeCover: true }), false);
+  assert.equal(combatEffectEligible(choose, { ...context, rangedBand: "long",
+    attackResult: "critical" }), true);
+});
+
 test("la selección admite renuncias y solo duplica efectos apilables", () => {
   const context = { winner: "attacker", attackResult: "critical", defenseResult: "failure",
     weaponMode: { weaponType: "melee", size: "M", effects: "" } };

@@ -12,11 +12,21 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
   en ataques y defensas y desempates de iniciativa. La selección de los 44
   efectos de combate, sus resoluciones guiadas y los modificadores compatibles
   con daño, parada, localización y armadura también están disponibles.
-- Ampliar el gasto automático de PA cuando exista un catálogo general de
-  acciones proactivas, reactivas y gratuitas.
-- Automatizar las consecuencias persistentes de los efectos guiados cuando
-  existan postura y duración compartidas por el combate. Alcance, Cambiar
-  Alcance, Retirada y Bloqueo Pasivo ya están integrados con el tracker.
+- El combate a distancia ya resuelve distancia declarada, bandas, penalización
+  por TAM y circunstancias, Apuntar, recarga, munición opcional, cobertura
+  localizada y blancos accidentales al disparar a una melé.
+- El catálogo general ya registra acciones proactivas, acciones guiadas,
+  movimiento, postura, Retrasar e interrupciones. Las acciones gratuitas no
+  requieren automatización.
+- Enlazar las oposiciones de Forcejear, Maniobrar y Ponerse en Pie y el ataque
+  de Carga con la transacción diferencial completa; el catálogo ya conserva
+  sus PA, participantes y parámetros, pero esas resoluciones permanecen
+  confirmadas de forma guiada.
+- Completar la automatización interna de magia y monturas cuando existan esos
+  subsistemas; hasta entonces sus acciones conservan una resolución guiada.
+- Ampliar las consecuencias persistentes de los efectos que todavía dependen
+  de geometría o decisiones narrativas. Alcance, Cambiar Alcance, Retirada,
+  Bloqueo Pasivo y las fuentes liberables ya disponen de estructura táctica.
 
 ### Estados y penalizaciones
 

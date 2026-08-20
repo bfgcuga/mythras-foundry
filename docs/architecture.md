@@ -116,6 +116,10 @@ Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o
 coordina mediante mensajes revisables y comparte coordinador y permisos con los
 intercambios de ataque.
 
+El mismo estado táctico conserva perfiles de cobertura física por combatiente:
+fuente, protección y localizaciones cubiertas. Se aplica entre parada y
+armadura; no tiene PG automáticos y su deterioro queda en manos del DJ.
+
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.
 
@@ -165,7 +169,17 @@ La iniciativa publicada combina `1d10 + iniciativa` con un d100 secundario en
 la fracción, garantizando un orden total. Esta sustitución deliberada de la
 simultaneidad permite aplicar de forma segura las transacciones secuenciales.
 
-La transacción de combate usa el esquema 6 e intercala `awaitingEffects` entre
+Las acciones generales se definen en `scripts/rules/combat-actions.js`, que no
+depende de Foundry y calcula disponibilidad, movimiento, cargas, Afianzarse y
+prioridad de interrupción. El controlador persiste su estado en
+`flags.mythras-foundry.combatActions`: las colecciones de acciones, reservas de
+Retrasar, movimiento, Afianzarse, restricciones de Maniobrar y progresos de
+Aprestar comparten una revisión. Las tarjetas usan el mismo coordinador por
+socket que el resto del combate. Las acciones guiadas conservan su coste,
+parámetros, usuario y confirmación sin crear reglas de magia o monturas que el
+sistema todavía no representa.
+
+La transacción de combate usa el esquema 7 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la
 confirmación bloquea la suerte de ataque y defensa. Los huecos se conservan por
@@ -176,6 +190,13 @@ reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera e
 compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item
 Empalar. Los efectos no modelados se conservan como resoluciones guiadas y
 confirmadas, sin inventar geometría, turnos ni estados persistentes.
+
+Los modos `ranged` y `siege` añaden a la transacción una instantánea `ranged`
+con metros declarados, banda, TAM, fuentes de dificultad, potencia efectiva,
+movimiento, preparación y munición consumida. Apuntar vive temporalmente en un
+flag del Actor vinculado a combate, arma y blanco. Los desvíos al disparar a una
+melé usan `awaitingAccidentalTarget` y `awaitingAccidentalDefense`, conservando
+el dado, PA y proyectil originales.
 
 Las comprobaciones secundarias forman una cola persistida: primero se resuelven
 las tiradas de Aguante de efectos, después se confirma su consecuencia y por

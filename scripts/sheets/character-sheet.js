@@ -17,6 +17,7 @@ import { WEAPON_SOURCES } from "../data/weapons.js";
 import { equipmentIcon } from "../data/equipment.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
 import { COMBAT_STYLE_TRAIT_SOURCES } from "../data/traits.js";
+import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 import { traitReference } from "../rules/traits.js";
 import {
   BACKGROUND_BUDGETS,
@@ -439,6 +440,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _onRender(context, options) {
     super._onRender(context, options);
+    decorateCombatActionButtons(this.actor, this.element);
 
     if (!this.isEditable) {
       this.element.querySelectorAll(
@@ -508,6 +510,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='roll-weapon-attack']", "click", (event) => this.#rollWeaponAttack(event)],
       ["[data-action='change-reach']", "click", () => game.mythrasFoundry?.combat?.changeReach?.(this.actor)],
       ["[data-action='declare-passive-block']", "click", () => game.mythrasFoundry?.combat?.declarePassiveBlock?.(this.actor)],
+      ["[data-action='declare-cover']", "click", () => game.mythrasFoundry?.combat?.declareCover?.(this.actor)],
+      ["[data-action='aim-ranged']", "click", () => game.mythrasFoundry?.combat?.aim?.(this.actor)],
+      ["[data-action='reload-ranged']", "click", () => game.mythrasFoundry?.combat?.reload?.(this.actor)],
       ["[data-action='tactical-overview']", "click", () => game.mythrasFoundry?.combat?.openTacticalOverview?.()]
     ]);
     this.#showTab(this._activeTab ?? "character");

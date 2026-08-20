@@ -27,9 +27,24 @@ import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
 import { registerSystemInitialization } from "./system/registration.js";
 import { registerUiHooks } from "./system/ui-hooks.js";
 import { removeRecoveredLocationConditions } from "./rules/timed-condition-runtime.js";
+import { clearAim } from "./rules/ranged-actions.js";
+import { parseRangeProfile } from "./rules/ranged-combat.js";
+import { resolveActorConditions } from "./rules/actor-conditions.js";
 
 registerSystemInitialization();
 registerUiHooks();
+
+Hooks.on("updateToken", (token, changed, options, userId) => {
+  if (userId === game.user.id && (Object.hasOwn(changed, "x") || Object.hasOwn(changed, "y") || Object.hasOwn(changed, "elevation"))
+    && token.actor) clearAim(token.actor);
+});
+
+Hooks.on("createActiveEffect", (effect, options, userId) => {
+  const actor = effect.parent;
+  if (userId === game.user.id && isCombatActor(actor) && !resolveActorConditions(actor, {
+    baseAttributes: actor.system.baseAttributes ?? actor.system.attributes ?? {}
+  }).capabilities.canAttack) clearAim(actor);
+});
 
 Hooks.once("setup", () => {
   // Character documents were first prepared before world settings became
@@ -71,6 +86,9 @@ Hooks.on("preUpdateActor", (actor, changed) => {
 
 Hooks.on("updateItem", async (item, changed, options, userId) => {
   const actor = item.parent;
+  if (userId === game.user.id && item.type === "weapon" && isCombatActor(actor)
+    && (foundry.utils.hasProperty(changed, "system.equipped")
+      || foundry.utils.hasProperty(changed, "system.activeModeKey"))) await clearAim(actor);
   if (userId !== game.user.id || item.type !== "hitLocation" || !isCombatActor(actor)) return;
   const baseAttributes = actor.type === "npc"
     ? calculateNpcAttributes(actor.system)
@@ -500,6 +518,18 @@ async function migrateCombatItems(actor) {
         update["system.modes"] = normalizedModes;
         changed = true;
       }
+      const migrationBaseModes = normalizedModes ?? weaponModes(item);
+      const rangedModes = migrationBaseModes.map((mode) => {
+        if (!["ranged", "siege"].includes(mode.weaponType) || Number(mode.rangeLong) > 0) return mode;
+        const profile = parseRangeProfile(mode.range); if (!profile) return mode;
+        return { ...mode, rangeShort: profile.short, rangeEffective: profile.effective,
+          rangeLong: profile.long, reloadActions: Math.max(0, Number(mode.reload) || 0),
+          ammoTracking: false, ammoCapacity: 1, ammoLoaded: 0, ammoReserve: 0,
+          reloadProgress: 0 };
+      });
+      if (rangedModes.some((mode, index) => mode !== migrationBaseModes[index])) {
+        update["system.modes"] = rangedModes; changed = true;
+      }
       if (appendObsoleteWeaponFieldRemovals(item, update)) changed = true;
       if (changed) updates.push(update);
     }
@@ -547,6 +577,18 @@ async function migrateWorldCombatItem(item) {
   if (hasLegacyHitPoints) update["system.-=hitPoints"] = null;
   const normalizedModes = siegeModeMigration(item);
   if (normalizedModes) update["system.modes"] = normalizedModes;
+  const migrationBaseModes = normalizedModes ?? weaponModes(item);
+  const rangedModes = migrationBaseModes.map((mode) => {
+    if (!["ranged", "siege"].includes(mode.weaponType) || Number(mode.rangeLong) > 0) return mode;
+    const profile = parseRangeProfile(mode.range); if (!profile) return mode;
+    return { ...mode, rangeShort: profile.short, rangeEffective: profile.effective,
+      rangeLong: profile.long, reloadActions: Math.max(0, Number(mode.reload) || 0),
+      ammoTracking: false, ammoCapacity: 1, ammoLoaded: 0, ammoReserve: 0,
+      reloadProgress: 0 };
+  });
+  if (rangedModes.some((mode, index) => mode !== migrationBaseModes[index])) {
+    update["system.modes"] = rangedModes;
+  }
   appendObsoleteWeaponFieldRemovals(item, update);
   if (Object.keys(update).length) await item.update(update);
 }

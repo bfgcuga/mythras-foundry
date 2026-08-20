@@ -89,6 +89,12 @@ export function combatEffectEligible(effect, context = {}) {
   if (context.winner === "attacker" && !effect.offensive) return false;
   if (context.winner === "defender" && !effect.defensive) return false;
   if (effect.key === "muerte-silenciosa" && !context.surpriseAttack) return false;
+  if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
+    normalize(context.weaponMode?.weaponType))) {
+    if (context.completeCover) return false;
+    if (context.attackResult !== "critical" && !(context.rangedBand === "short"
+      && (context.rangedTargetStationary || context.rangedTargetUnaware))) return false;
+  }
   return matchesWeaponRestriction(effect.weaponRestriction, context)
     && matchesRollRestriction(effect.rollRestriction, context);
 }

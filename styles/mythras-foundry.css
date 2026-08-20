@@ -2572,9 +2572,13 @@
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
 .combat-effect-description { white-space: normal; line-height: 1.45; }
 .mythras-tracker-cycle,
-.mythras-tracker-ap {
+.mythras-tracker-ap,
+.mythras-tracker-tactical {
   color: var(--mythras-ink);
   font-size: var(--mythras-font-size-auxiliary);
   margin-inline-start: 0.45rem;
   white-space: nowrap;
 }
+.mythras-tracker-tactical { display: block; white-space: normal; }
+.mythras-foundry .combat-action-panel { grid-column: 1 / -1; }
+.mythras-foundry .combat-action-panel .combat-tactical-actions { flex-wrap: wrap; }

@@ -24,6 +24,15 @@ export function legacyWeaponMode(weapon) {
     handsRequired: Number(system.effectiveHandsRequired ?? system.handsRequired ?? 1),
     range: system.range ?? "",
     reload: system.reload ?? "",
+    rangeShort: Number(system.rangeShort ?? 0),
+    rangeEffective: Number(system.rangeEffective ?? 0),
+    rangeLong: Number(system.rangeLong ?? 0),
+    reloadActions: Number(system.reloadActions ?? system.reload ?? 0),
+    ammoTracking: Boolean(system.ammoTracking),
+    ammoCapacity: Number(system.ammoCapacity ?? 1),
+    ammoLoaded: Number(system.ammoLoaded ?? 0),
+    ammoReserve: Number(system.ammoReserve ?? 0),
+    reloadProgress: Number(system.reloadProgress ?? 0),
     preferredCombatStyleId: system.preferredCombatStyleId ?? "",
     familiarity: system.familiarity ?? "similar"
   };

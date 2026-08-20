@@ -1,6 +1,7 @@
 import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
 import { WEAPON_TRAIT_SOURCES } from "./traits.js";
 import { parseLegacyTraitText } from "../rules/traits.js";
+import { parseRangeProfile } from "../rules/ranged-combat.js";
 
 const WEAPON_IMAGE_NAMES = Object.freeze({
   "bola-cadena": "bola_y_cadena",
@@ -33,7 +34,12 @@ const mode = ({ key, name = "", type = "melee", damage = "", damageModifier = "f
   key, name, profileKey: "", weaponType: type, damage, damageModifierMode: damageModifier,
   size, impalingSize, powerModifier, reach, effects, traits, traitRefs: [],
   grip: hands === 2 ? "2 manos" : hands === 1 ? "1 mano" : "",
-  handsRequired: hands, range, reload, crewMinimum: crew[0], crewMaximum: crew[1],
+  handsRequired: hands, range, reload,
+  ...(["ranged", "siege"].includes(type) && parseRangeProfile(range) ? {
+    rangeShort: parseRangeProfile(range).short, rangeEffective: parseRangeProfile(range).effective,
+    rangeLong: parseRangeProfile(range).long, reloadActions: Math.max(0, Number(reload) || 0),
+    ammoTracking: false, ammoCapacity: 1, ammoLoaded: 0, ammoReserve: 0, reloadProgress: 0
+  } : {}), crewMinimum: crew[0], crewMaximum: crew[1],
   preferredCombatStyleId: "", familiarity: "similar"
 });
 

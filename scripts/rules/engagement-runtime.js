@@ -5,12 +5,13 @@ import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "tacticalState";
+const SOCKET = "system.mythras-foundry";
 export const TACTICAL_STATE_SCHEMA_VERSION = 1;
 
 export function detailedReachEnabled() { return Boolean(getSystemSetting(SETTING_KEYS.detailedReach)); }
 export function tacticalState(combat) {
   return combat?.getFlag?.(SCOPE, FLAG) ?? { schemaVersion: TACTICAL_STATE_SCHEMA_VERSION,
-    revision: 0, relations: {}, passiveBlocks: {} };
+    revision: 0, relations: {}, passiveBlocks: {}, covers: {} };
 }
 export function combatantForActor(combat, actor, tokenUuid = "") {
   return combat?.combatants?.find((entry) => entry.token?.uuid === tokenUuid
@@ -92,4 +93,62 @@ export function passiveBlockFor(combat, combatantId, locationId) {
   const block = tacticalState(combat).passiveBlocks?.[combatantId];
   return block?.status === "active" && Number(block.round) === Number(combat.round)
     && block.locationIds?.includes(locationId) ? block : null;
+}
+
+export function coverFor(combat, combatantId, locationId) {
+  const cover = tacticalState(combat).covers?.[combatantId];
+  return cover?.status === "active" && cover.locationIds?.includes(locationId) ? cover : null;
+}
+
+export async function openCoverDeclaration(actor) {
+  const combat = game.combat ?? game.combats?.active;
+  const combatant = combatantForActor(combat, actor, actor?.token?.uuid);
+  if (!combat?.started || !combatant || (!game.user.isGM && !actor?.isOwner)) {
+    return ui.notifications.warn(game.i18n.localize("MYTHRASF.Ranged.CoverCombatOnly"));
+  }
+  const locations = actor.items.filter((item) => item.type === "hitLocation")
+    .sort((a, b) => Number(a.system.rangeStart) - Number(b.system.rangeStart));
+  const current = tacticalState(combat).covers?.[combatant.id];
+  const result = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("MYTHRASF.Ranged.DeclareCover") },
+    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${game.i18n.localize("MYTHRASF.Ranged.Cover")}</legend><label><span>${game.i18n.localize("MYTHRASF.Ranged.CoverSource")}</span><input name="source" value="${foundry.utils.escapeHTML(current?.source ?? "")}" required></label><label><span>${game.i18n.localize("MYTHRASF.Ranged.CoverProtection")}</span><input type="number" min="0" name="protection" value="${Number(current?.protection ?? 0)}"></label>${locations.map((location) => `<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="location" value="${location.id}" ${current?.locationIds?.includes(location.id) ? "checked" : ""}>${foundry.utils.escapeHTML(location.name)}</label>`).join("")}<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="complete" ${current?.complete ? "checked" : ""}>${game.i18n.localize("MYTHRASF.Ranged.CompleteCover")}</label></fieldset></div>`,
+    buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.CombatEffect.Confirm"),
+      callback: (event, button) => ({ source: button.form.elements.source.value.trim(),
+        protection: Number(button.form.elements.protection.value), complete: button.form.elements.complete.checked,
+        locationIds: Array.from(button.form.querySelectorAll("[name='location']:checked"), (entry) => entry.value) }) },
+    { action: "remove", label: game.i18n.localize("MYTHRASF.Delete") },
+    { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false
+  });
+  if (!result) return;
+  const request = { action: "tacticalCover", combatId: combat.id, combatantId: combatant.id,
+    revision: Number(tacticalState(combat).revision ?? 0), userId: game.user.id, result };
+  const activeGm = game.users.some((user) => user.active && user.isGM);
+  if (game.user.isGM || (!activeGm && combat.isOwner)) await applyCoverDeclaration(request);
+  else game.socket.emit(SOCKET, request);
+}
+
+async function applyCoverDeclaration(request) {
+  const combat = game.combats.get(request.combatId); const state = tacticalState(combat);
+  const combatant = combat?.combatants.get(request.combatantId); const user = game.users.get(request.userId);
+  if (!combat || Number(state.revision ?? 0) !== Number(request.revision) || !combatant?.actor
+    || !user || (!user.isGM && !combatant.actor.testUserPermission(user, "OWNER"))) return;
+  const next = foundry.utils.deepClone(state); next.covers ??= {};
+  const current = next.covers[combatant.id];
+  if (request.result === "remove") delete next.covers[combatant.id];
+  else next.covers[combatant.id] = { schemaVersion: 1, status: "active", ...request.result,
+    actorUuid: combatant.actor.uuid, combatantId: combatant.id, userId: request.userId,
+    revision: Number(current?.revision ?? 0) + 1, updatedAt: Date.now() };
+  next.revision = Number(next.revision ?? 0) + 1; await combat.setFlag(SCOPE, FLAG, next);
+}
+
+export function registerTacticalSocket() {
+  game.socket.on(SOCKET, async (request) => {
+    const primary = game.users.filter((user) => user.active && user.isGM)
+      .sort((a, b) => a.id.localeCompare(b.id))[0];
+    const combat = request?.combatId ? game.combats.get(request.combatId) : null;
+    if (request?.action === "tacticalCover" && (primary?.id === game.user.id
+      || (!primary && request.userId === game.user.id && combat?.isOwner))) {
+      await applyCoverDeclaration(request);
+    }
+  });
 }

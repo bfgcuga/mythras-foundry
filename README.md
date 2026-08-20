@@ -37,6 +37,15 @@ El sistema incluye actualmente:
 - Bloqueo Pasivo declarado durante la preparación del asalto, con selección de
   localizaciones contiguas, opción de agacharse tras el escudo y cancelación al
   atacar o parar con el arma;
+- combate a distancia con distancia manual, bandas y penalización por TAM y
+  circunstancias; Apuntar, Recargar, munición numérica opcional, cobertura
+  localizada y desvíos al disparar a una melé comparten la transacción de chat;
+- catálogo contextual de acciones proactivas compartido por personajes y PNJ:
+  Afianzarse, Aprestar Arma, Forcejear, Maniobrar, Mover, Ponerse en Pie,
+  Retrasar, Titubear y Cargar se registran en el combate y gastan PA una sola
+  vez. El movimiento es una declaración táctica, Retrasar abre ventanas de
+  interrupción ordenadas por iniciativa y las acciones de magia y montura se
+  conservan como confirmaciones guiadas;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;

@@ -20,6 +20,7 @@ import { encumbranceState, skillUsesStrengthOrDexterity, totalCarriedEncumbrance
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
+import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -229,6 +230,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _onRender(context, options) {
     super._onRender(context, options);
+    decorateCombatActionButtons(this.actor, this.element);
     this.element.querySelectorAll("[data-tab]").forEach((button) =>
       button.addEventListener("click", (event) => this.#activateTab(event)));
     this.#showTab(this._activeTab ?? "general");
@@ -254,6 +256,12 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       game.mythrasFoundry?.combat?.changeReach?.(this.actor));
     this.element.querySelector("[data-action='declare-passive-block']")?.addEventListener("click", () =>
       game.mythrasFoundry?.combat?.declarePassiveBlock?.(this.actor));
+    this.element.querySelector("[data-action='declare-cover']")?.addEventListener("click", () =>
+      game.mythrasFoundry?.combat?.declareCover?.(this.actor));
+    this.element.querySelector("[data-action='aim-ranged']")?.addEventListener("click", () =>
+      game.mythrasFoundry?.combat?.aim?.(this.actor));
+    this.element.querySelector("[data-action='reload-ranged']")?.addEventListener("click", () =>
+      game.mythrasFoundry?.combat?.reload?.(this.actor));
     this.element.querySelector("[data-action='tactical-overview']")?.addEventListener("click", () =>
       game.mythrasFoundry?.combat?.openTacticalOverview?.());
     const changeReach = this.element.querySelector("[data-action='change-reach']");

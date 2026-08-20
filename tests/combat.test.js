@@ -198,6 +198,19 @@ test("no defenderse es un fallo automatico sin dado ni reduccion compartida", ()
   assert.equal(result.effects, 1);
 });
 
+test("la cobertura es una defensa pasiva y se aplica antes de la armadura", () => {
+  const exchange = resolveCombatExchange({ predeclared: true,
+    attack: { target: 130, rawRoll: 50 }, defense: { type: "cover" } });
+  assert.equal(exchange.sharedPenalty, 0);
+  assert.equal(exchange.defense.type, "cover");
+  assert.equal(exchange.defense.automaticFailure, true);
+  const damage = resolveDamage({ rolledDamage: 11, parry: { type: "half" },
+    coverPoints: 2, armorPoints: 1 });
+  assert.equal(damage.afterParry, 6);
+  assert.equal(damage.afterCover, 4);
+  assert.equal(damage.penetratingDamage, 3);
+});
+
 test("una defensa puede obtener efectos contra un ataque fallido", () => {
   const result = resolveCombatExchange({ attack: { target: 55, rawRoll: 80 },
     defense: { type: "parry", target: 70, rawRoll: 40 } });

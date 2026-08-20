@@ -6,6 +6,7 @@ import { resolveActorConditions } from "../rules/actor-conditions.js";
 import { advanceActorTurnConditions, expireRoundConditions,
   bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
 import { prepareRoundConsequences } from "../rules/round-consequences.js";
+import { combatActionState, expireCombatActionTurn } from "../rules/combat-action-runtime.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "turnEconomy";
@@ -28,6 +29,9 @@ export async function restoreCombatActors(combat) {
 }
 
 function hasPendingExchange(combatant) {
+  const tracker = combatant?.parent;
+  if (tracker && Object.values(combatActionState(tracker).actions).some((action) =>
+    action.combatantId === combatant.id && !["resolved", "cancelled"].includes(action.status))) return true;
   return game.messages?.some((message) => {
     const reach = message.getFlag?.(SCOPE, "reachChange");
     if (reach?.status === "awaitingResponse" && reach.actorCombatantId === combatant?.id) return true;
@@ -95,6 +99,7 @@ export class MythrasCombat extends Combat {
       cycle: next.cycle, revision: Number(economy.revision ?? 0) + 1,
       conditionHistory: history, transitioning: false };
     await this.update({ turn: next.turn, [`flags.${SCOPE}.${FLAG}`]: flags });
+    if (this.combatant?.id) await expireCombatActionTurn(this, this.combatant.id);
     await revealSurprisedTurn(this.combatant?.actor);
     if (next.transition === "cycle") Hooks.callAll("mythrasCycleStart", this, next.cycle);
     return this;

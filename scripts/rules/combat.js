@@ -52,21 +52,23 @@ export function combatAttackHits(exchange) {
 }
 
 export function resolveDamage({ rolledDamage = 0, containedBlow = false,
-  parry = { type: "none" }, armorPoints = 0, targetSize = 0 } = {}) {
+  parry = { type: "none" }, coverPoints = 0, armorPoints = 0, targetSize = 0 } = {}) {
   const rolled = Math.max(0, Number(rolledDamage) || 0);
   const afterContainedBlow = containedBlow ? Math.ceil(rolled / 2) : rolled;
   const beforeMitigation = afterContainedBlow;
   const afterParry = parry.type === "full" ? 0 : parry.type === "half"
     ? Math.ceil(afterContainedBlow / 2) : afterContainedBlow;
+  const cover = Math.max(0, Number(coverPoints) || 0);
+  const afterCover = Math.max(0, afterParry - cover);
   const armor = Math.max(0, Number(armorPoints) || 0);
-  const penetratingDamage = Math.max(0, afterParry - armor);
+  const penetratingDamage = Math.max(0, afterCover - armor);
   const size = Math.max(0, Number(targetSize) || 0);
   const push = beforeMitigation > size ? {
     triggered: true, excess: beforeMitigation - size,
     distance: Math.ceil((beforeMitigation - size) / 5)
   } : { triggered: false, excess: 0, distance: 0 };
   return { rolledDamage: rolled, containedBlow: Boolean(containedBlow), afterContainedBlow,
-    beforeMitigation, parryType: parry.type, afterParry, armorPoints: armor,
+    beforeMitigation, parryType: parry.type, afterParry, coverPoints: cover, afterCover, armorPoints: armor,
     penetratingDamage, push };
 }
 
@@ -164,7 +166,7 @@ export function damageModifierFormula(modifier, mode = "full") {
 export function resolveCombatExchange({ attack, defense = null, predeclared = false } = {}) {
   const attackTargetBeforeExchange = Math.max(0, Number(attack?.target) || 0);
   const defenseTargetBeforeExchange = Math.max(0, Number(defense?.target) || 0);
-  const automaticFailure = !defense || defense.type === "none";
+  const automaticFailure = !defense || ["none", "cover"].includes(defense.type);
   const sharedPenalty = predeclared && !automaticFailure
     ? Math.max(0, attackTargetBeforeExchange - 100, defenseTargetBeforeExchange - 100)
     : 0;
@@ -185,7 +187,7 @@ export function resolveCombatExchange({ attack, defense = null, predeclared = fa
     attack: { ...attack, targetBeforeExchange: attackTargetBeforeExchange,
       target: attackTarget, result: attackResult },
     defense: automaticFailure
-      ? { ...(defense ?? {}), type: "none", targetBeforeExchange: null,
+      ? { ...(defense ?? {}), type: defense?.type ?? "none", targetBeforeExchange: null,
         target: null, rawRoll: null, result: "failure", automaticFailure: true }
       : { ...defense, targetBeforeExchange: defenseTargetBeforeExchange,
         target: defenseTarget, result: defenseResult, automaticFailure: false },
