@@ -18,6 +18,8 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - El catálogo general ya registra acciones proactivas, acciones guiadas,
   movimiento, postura, Retrasar e interrupciones. Las acciones gratuitas no
   requieren automatización.
+- Las hojas ya muestran siempre el catálogo de acciones con disponibilidad y
+  motivo, reúnen Fatiga en Estado y ofrecen silueta y Trasfondo al personaje.
 - Enlazar las oposiciones de Forcejear, Maniobrar y Ponerse en Pie y el ataque
   de Carga con la transacción diferencial completa; el catálogo ya conserva
   sus PA, participantes y parámetros, pero esas resoluciones permanecen

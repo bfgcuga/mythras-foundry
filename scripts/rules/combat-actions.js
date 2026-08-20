@@ -3,6 +3,7 @@ export const COMBAT_ACTION_SCHEMA_VERSION = 1;
 export const COMBAT_ACTIONS = Object.freeze({
   attack: { type: "proactive", cost: 1, observable: true },
   changeReach: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
+  passiveBlock: { type: "setup", cost: 0, observable: false, requiresCombat: true },
   aim: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   reload: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   seekCover: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
@@ -59,9 +60,9 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     let allowed = definition.type !== "proactive" || (inCombat && isActive
       && actionPoints >= definition.cost && canTakeProactiveTurn);
     if (definition.requiresCombat && !inCombat) allowed = false;
-    if (key === "attack") allowed &&= canAttack;
+    if (key === "attack") allowed &&= canAttack && hasPreparedWeapon;
     if (["aim", "reload"].includes(key)) allowed &&= hasRangedWeapon;
-    if (["brace", "readyWeapon"].includes(key)) allowed &&= hasPreparedWeapon;
+    if (["brace", "readyWeapon", "passiveBlock"].includes(key)) allowed &&= hasPreparedWeapon;
     if (key === "struggle") allowed &&= hasRestraint;
     if (key === "move") allowed &&= !engaged;
     if (key === "stand") allowed &&= prone;
@@ -72,6 +73,32 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     available[key] = allowed;
   }
   return Object.freeze(available);
+}
+
+export function combatActionPresentation(context = {}) {
+  const available = availableCombatActions(context);
+  return Object.freeze(Object.fromEntries(Object.entries(COMBAT_ACTIONS).map(([key, definition]) => {
+    let reason = "";
+    if (!available[key]) {
+      if ((definition.requiresCombat || definition.type === "proactive") && !context.inCombat) {
+        reason = "combatRequired";
+      }
+      else if (definition.type === "proactive" && !context.isActive) reason = "activeTurnRequired";
+      else if (Number(context.actionPoints ?? 0) < definition.cost) reason = "actionPoints";
+      else if (!context.canTakeProactiveTurn) reason = "proactiveBlocked";
+      else if (key === "attack" && !context.canAttack) reason = "attackBlocked";
+      else if (key === "attack" && !context.hasPreparedWeapon) reason = "preparedWeapon";
+      else if (["aim", "reload"].includes(key) && !context.hasRangedWeapon) reason = "rangedWeapon";
+      else if (["brace", "readyWeapon", "passiveBlock"].includes(key) && !context.hasPreparedWeapon) reason = "preparedWeapon";
+      else if (key === "struggle" && !context.hasRestraint) reason = "restraint";
+      else if (key === "move" && context.engaged) reason = "engaged";
+      else if (key === "stand" && !context.prone) reason = "notProne";
+      else if (key === "charge" && !context.canCharge) reason = "chargeMovement";
+      else if (key === "delay" && context.hasDelay) reason = "delayReserved";
+      else reason = "unavailable";
+    }
+    return [key, Object.freeze({ key, available: Boolean(available[key]), cost: definition.cost, reason })];
+  })));
 }
 
 export function movementDeclaration({ mode, round, cycle = 1, targetTokenUuid = "",

@@ -46,6 +46,11 @@ El sistema incluye actualmente:
   vez. El movimiento es una declaración táctica, Retrasar abre ventanas de
   interrupción ordenadas por iniciativa y las acciones de magia y montura se
   conservan como confirmaciones guiadas;
+- el cuadro de acciones de Combate permanece siempre visible y muestra el coste
+  y la causa localizada cuando una acción no puede utilizarse;
+- Estado reúne estados activos, penalizaciones y Fatiga. La hoja de personaje
+  añade Trasfondo narrativo y una silueta humana interactiva vinculada por datos
+  canónicos a sus localizaciones de golpe;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;

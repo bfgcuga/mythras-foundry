@@ -1,5 +1,5 @@
 import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
-import { combineDifficulties, fatigueLevel } from "../rules/fatigue.js";
+import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { difficultyTarget, resolveWeaponStyle } from "../rules/combat.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
@@ -140,6 +140,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         fatigueKey: currentFatigue.key,
         wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
         woundKey: currentWound,
+        encumbrance: `${carriedEncumbrance}/${this.actor.system.strength}`,
+        encumbranceTitle: game.i18n.localize(`MYTHRASF.Encumbrance.Detail.${loadState.key}`),
         woundPenalty: game.i18n.localize(
           `MYTHRASF.Header.WoundPenalty.${woundPenaltyKey(currentWound)}`),
         fatiguePenalty: currentFatigue.skillDifficulty === "standard"
@@ -183,12 +185,19 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         equippedArmorId: equippedArmor.find((piece) =>
           (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
         showDisabledControl: item.system.woundLevel === "serious",
-        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled)
+        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
+        amputated: Boolean(item.system.amputated)
       })),
-      fatigueChoices: ["fresh", "winded", "tired", "wearied", "exhausted", "debilitated",
-        "incapacitated", "semiConscious", "comatose", "dead"].map((value) => ({
-        value, label: game.i18n.localize(`MYTHRASF.Fatigue.Level.${value}`)
-      }))
+      fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
+        selected: level.key === this.actor.system.fatigueLevel,
+        levelLabel: game.i18n.localize(`MYTHRASF.Fatigue.Level.${level.key}`),
+        skillLabel: level.key === "fresh" ? game.i18n.localize("MYTHRASF.Fatigue.NoPenalty")
+          : game.i18n.localize(`MYTHRASF.Difficulty.${level.skillDifficulty}`),
+        movementLabel: game.i18n.localize(`MYTHRASF.Fatigue.MovementValue.${level.movement}`),
+        initiativeLabel: level.skillDifficulty === "impossible" ? game.i18n.localize("MYTHRASF.Fatigue.NoActivity") : level.initiativePenalty ? `-${level.initiativePenalty}` : "—",
+        actionPointLabel: level.skillDifficulty === "impossible" ? game.i18n.localize("MYTHRASF.Fatigue.NoActivity") : level.actionPointPenalty ? `-${level.actionPointPenalty}` : "—",
+        recoveryLabel: game.i18n.localize(`MYTHRASF.Fatigue.RecoveryValue.${level.recovery}`)
+      })),
     }, { inplace: false });
   }
 
@@ -252,6 +261,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#rollPassion(event)));
     this.element.querySelectorAll("[data-action='roll-attack']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollWeaponAttack(event)));
+    this.element.querySelector("[data-action='choose-weapon-attack']")
+      ?.addEventListener("click", () => this.#chooseWeaponAttack());
     this.element.querySelector("[data-action='change-reach']")?.addEventListener("click", () =>
       game.mythrasFoundry?.combat?.changeReach?.(this.actor));
     this.element.querySelector("[data-action='declare-passive-block']")?.addEventListener("click", () =>
@@ -271,7 +282,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#toggleEquipped(event)));
     this.element.querySelectorAll("[data-resource-action]").forEach((button) =>
       button.addEventListener("click", (event) => this.#adjustResource(event)));
-    this.element.querySelectorAll("input[name], textarea[name], select[name]").forEach((field) =>
+    this.element.querySelectorAll("input[name]:not([data-fatigue-level]), textarea[name], select[name]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateActorField(event)));
     this.element.querySelectorAll("[data-manual-value]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateManualValue(event)));
@@ -281,6 +292,11 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event)));
     this.element.querySelectorAll("[data-location-disabled]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateLocationDisabled(event)));
+    this.element.querySelectorAll("[data-location-amputated]").forEach((field) =>
+      field.addEventListener("change", (event) => this.#updateLocationAmputated(event)));
+    this.element.querySelectorAll("[data-fatigue-level]").forEach((field) =>
+      field.addEventListener("change", (event) => this.actor.update({
+        "system.fatigueLevel": event.currentTarget.value })));
     this.element.querySelectorAll("[data-location-armor]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateLocationArmor(event)));
     this.element.querySelectorAll("[data-status-toggle]").forEach((field) =>
@@ -447,6 +463,19 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.actor.items.get(itemId)?.rollPassion();
   }
 
+  async #chooseWeaponAttack() {
+    const rows = Array.from(this.element.querySelectorAll("[data-action='roll-attack']"))
+      .filter((button) => !button.disabled).map((button, index) => ({ button, index,
+        label: button.closest("[data-item-id]")?.querySelector("[data-action='edit-item']")?.textContent?.trim() }));
+    if (!rows.length) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.Action.Unavailable.preparedWeapon"));
+    const selected = await DialogV2.wait({ window: { title: game.i18n.localize("MYTHRASF.Combat.Attack") },
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${game.i18n.localize("MYTHRASF.Weapon.Name")}</span><select name="attack">${rows.map((row) => `<option value="${row.index}">${foundry.utils.escapeHTML(row.label ?? "")}</option>`).join("")}</select></label></div>`,
+      buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.Combat.Attack"), callback: (event, button) => Number(button.form.elements.attack.value) },
+      { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false });
+    rows.find((row) => row.index === selected)?.button.click();
+  }
+
   async #rollWeaponAttack(event) {
     event.preventDefault();
     if (!canActorAttack(this.actor.statuses)) {
@@ -600,6 +629,15 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
     await location.update({ "system.disabled": event.currentTarget.checked });
+  }
+
+  async #updateLocationAmputated(event) {
+    if (!this.isEditable) return;
+    const location = this.actor.items.get(
+      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (location?.type === "hitLocation") {
+      await location.update({ "system.amputated": event.currentTarget.checked });
+    }
   }
 
   async #updateLocationArmor(event) {

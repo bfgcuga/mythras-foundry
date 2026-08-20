@@ -44,16 +44,14 @@
       </label>
     </div>
     <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
-      <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>
-      <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output></label>
       <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly penalized-value">{{headerStatus.actionPoints.base}}{{#if headerStatus.actionPoints.penalized}} <span class="penalized-value-modifier">({{headerStatus.actionPoints.effective}})</span>{{/if}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>
       <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
       <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
       <label title="{{headerStatus.encumbranceTitle}}"><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
-      <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.woundPenalty}}</output></label>
-      <label class="header-penalty"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.fatiguePenalty}}</output></label>
-      <label class="header-penalty" title="{{headerStatus.encumbrancePenaltyTitle}}"><span>{{localize "MYTHRASF.Header.Penalty"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrancePenalty}}</output></label>
+      <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output></label>
     </section>
+    <section class="body-silhouette" data-body-silhouette aria-label="{{localize 'MYTHRASF.Silhouette.Label'}}"></section>
     <label class="header-experience-rolls">
       <span><i class="fas fa-dice" aria-hidden="true"></i>{{localize "MYTHRASF.Header.ExperienceRolls"}}</span>
       <input type="number" min="0" step="1" class="sheet-field-editable"
@@ -65,11 +63,12 @@
       <button type="button" class="active" data-tab="character">
         {{localize "MYTHRASF.Tab.Character"}}
       </button>
+      <button type="button" data-tab="narrative">{{localize "MYTHRASF.Tab.Narrative"}}</button>
       <button type="button" data-tab="combat">
         {{localize "MYTHRASF.Tab.Combat"}}
       </button>
       <button type="button" data-tab="penalties">
-        {{localize "MYTHRASF.Tab.Penalties"}}
+        {{localize "MYTHRASF.Tab.Status"}}
       </button>
       <button type="button" data-tab="inventory">
         {{localize "MYTHRASF.Tab.Inventory"}}
@@ -271,6 +270,9 @@
           </fieldset>
           </div>
         </section>
+      </section>
+      <section class="tab-panel" data-tab-content="narrative">
+        {{> "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs"}}
       </section>
 
       <section class="tab-panel" data-tab-content="skills">

@@ -10,6 +10,12 @@
   --mythras-paper-overlay: linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18));
   --mythras-paper-texture: url("../../../ui/parchment.jpg");
   --mythras-panel: rgba(255, 249, 226, 0.42);
+  --mythras-header-accent: #ed6a2c;
+  --mythras-wound-healthy: #285f32;
+  --mythras-wound-minor: #88bd78;
+  --mythras-wound-serious: #e0b93f;
+  --mythras-wound-major: #a51f1f;
+  --mythras-wound-amputated: #111;
 }
 
 .mythras-foundry {
@@ -313,9 +319,34 @@
 }
 
 .mythras-foundry .character-sheet-content .sheet-header {
-  grid-template-columns: 128px minmax(20rem, 1fr) minmax(20rem, 0.72fr) 5.25rem;
+  grid-template-columns: 128px minmax(18rem, 1fr) minmax(14rem, 0.65fr) 7rem 5.25rem;
   min-height: 128px;
   gap: 0.6rem;
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header,
+.mythras-foundry .npc-sheet-content > .sheet-header {
+  padding: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--mythras-header-accent) 58%, var(--mythras-accent));
+  border-radius: 0.35rem;
+  background-color: var(--mythras-header-accent);
+  background-image: linear-gradient(rgb(255 255 255 / 10%), rgb(48 46 42 / 5%));
+  box-shadow: 0 2px 5px rgb(48 46 42 / 18%);
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header .header-status,
+.mythras-foundry .character-sheet-content > .sheet-header .header-experience-rolls,
+.mythras-foundry .npc-sheet-content > .sheet-header .header-status {
+  border-color: rgb(48 46 42 / 48%);
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header input,
+.mythras-foundry .character-sheet-content > .sheet-header select,
+.mythras-foundry .character-sheet-content > .sheet-header output,
+.mythras-foundry .npc-sheet-content > .sheet-header input,
+.mythras-foundry .npc-sheet-content > .sheet-header select,
+.mythras-foundry .npc-sheet-content > .sheet-header output {
+  border-color: rgb(48 46 42 / 58%);
 }
 
 .mythras-foundry .item-sheet-content .sheet-header img {
@@ -366,7 +397,7 @@
 
 .mythras-foundry .header-status {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-self: stretch;
   gap: 0.2rem 0.35rem;
   padding-left: 0.5rem;
@@ -1608,6 +1639,28 @@
   border: 1px solid var(--mythras-border);
   color: var(--mythras-ink);
 }
+.mythras-foundry .combat-tactical-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+.mythras-foundry .combat-tactical-actions [data-action-presentation] { display: inline-flex; }
+
+.mythras-foundry .body-silhouette { align-self: stretch; min-width: 0; }
+.mythras-foundry .body-silhouette svg { display: block; width: 100%; height: 128px; }
+.mythras-foundry .body-silhouette .body-part { cursor: pointer; outline: none; transition: filter 120ms ease; }
+.mythras-foundry .body-silhouette .body-part:focus-visible { filter: drop-shadow(0 0 3px var(--mythras-accent)); }
+.mythras-foundry .body-silhouette .body-location--healthy { fill: var(--mythras-wound-healthy) !important; fill-opacity: 0.28; }
+.mythras-foundry .body-silhouette .body-location--minor { fill: var(--mythras-wound-minor) !important; }
+.mythras-foundry .body-silhouette .body-location--serious { fill: var(--mythras-wound-serious) !important; }
+.mythras-foundry .body-silhouette .body-location--major { fill: var(--mythras-wound-major) !important; }
+.mythras-foundry .body-silhouette .body-location--amputated { fill: var(--mythras-wound-amputated) !important; }
+.mythras-foundry .body-silhouette .body-location--unbound { fill: transparent !important; cursor: help; }
+
+.mythras-foundry .narrative-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.mythras-foundry .narrative-section { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0.55rem; }
+.mythras-foundry .narrative-section label { display: grid; gap: 0.2rem; font-weight: 700; }
+.mythras-foundry .narrative-section textarea { min-height: 6rem; resize: vertical; font-weight: 400; background: transparent; }
+.mythras-foundry .narrative-wide { grid-column: 1 / -1; }
 
 .mythras-foundry .tab-panel[data-tab-content="combat"] { container-type: inline-size; }
 .mythras-foundry .penalties-panel { margin: 0; }
@@ -2266,10 +2319,10 @@
 .mythras-foundry .equipment-state-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
 .mythras-foundry .armor-toggle { font-size: 1rem; }
 
-.mythras-foundry .wound-healthy { color: #285f32; }
-.mythras-foundry .wound-minor { color: #285f32; background-color: #dff3df !important; }
-.mythras-foundry .wound-serious { color: #5f4a00; background-color: #ffe58a !important; }
-.mythras-foundry .wound-major { color: #fff; background-color: #a51f1f !important; }
+.mythras-foundry .wound-healthy { color: var(--mythras-wound-healthy); }
+.mythras-foundry .wound-minor { color: var(--mythras-wound-healthy); background-color: color-mix(in srgb, var(--mythras-wound-minor) 35%, transparent) !important; }
+.mythras-foundry .wound-serious { color: #5f4a00; background-color: color-mix(in srgb, var(--mythras-wound-serious) 55%, transparent) !important; }
+.mythras-foundry .wound-major { color: #fff; background-color: var(--mythras-wound-major) !important; }
 .mythras-foundry .combat-wound-legend [class^="wound-"] { padding: 0.08rem 0.3rem; border-radius: 0.25rem; }
 
 .mythras-combat-card { display: grid; gap: 0.35rem; }
@@ -2302,6 +2355,7 @@
   align-items: stretch;
   gap: 0.75rem;
 }
+.mythras-foundry .npc-header-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .mythras-foundry .npc-sheet-header .portrait-frame,
 .mythras-foundry .npc-sheet-header .portrait-view { width: 7rem; height: 7rem; }
 .mythras-foundry .npc-identity-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.55rem; }

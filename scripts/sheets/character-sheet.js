@@ -18,6 +18,7 @@ import { equipmentIcon } from "../data/equipment.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
 import { COMBAT_STYLE_TRAIT_SOURCES } from "../data/traits.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
+import { renderBodySilhouette } from "../ui/body-silhouette.js";
 import { traitReference } from "../rules/traits.js";
 import {
   BACKGROUND_BUDGETS,
@@ -351,7 +352,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         equippedArmorId: equippedArmor.find((piece) =>
           (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
         showDisabledControl: item.system.woundLevel === "serious",
-        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled)
+        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
+        amputated: Boolean(item.system.amputated)
       })),
       combatStyles: combatStyles.map((style) => ({
         item: style,
@@ -441,6 +443,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onRender(context, options) {
     super._onRender(context, options);
     decorateCombatActionButtons(this.actor, this.element);
+    renderBodySilhouette(this.actor, this.element);
 
     if (!this.isEditable) {
       this.element.querySelectorAll(
@@ -495,6 +498,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-incapacitated-manual]", "change", (event) => this.#toggleManualIncapacitated(event)],
       ["[data-status-toggle]", "change", (event) => this.#toggleStatus(event)],
       ["[data-location-disabled]", "change", (event) => this.#updateLocationDisabled(event)],
+      ["[data-location-amputated]", "change", (event) => this.#updateLocationAmputated(event)],
       ["[data-location-armor]", "change", (event) => this.#updateLocationArmor(event)],
       ["[data-action='roll-skill']", "click", (event) => this.#rollSkill(event)],
       ["[data-action='improve-skill']", "click", (event) => this.#improveSkill(event)],
@@ -508,6 +512,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-combat-style]", "change", (event) => this.#updateWeaponCombatChoice(event)],
       ["[data-combat-familiarity]", "change", (event) => this.#updateWeaponCombatChoice(event)],
       ["[data-action='roll-weapon-attack']", "click", (event) => this.#rollWeaponAttack(event)],
+      ["[data-action='choose-weapon-attack']", "click", () => this.#chooseWeaponAttack()],
       ["[data-action='change-reach']", "click", () => game.mythrasFoundry?.combat?.changeReach?.(this.actor)],
       ["[data-action='declare-passive-block']", "click", () => game.mythrasFoundry?.combat?.declarePassiveBlock?.(this.actor)],
       ["[data-action='declare-cover']", "click", () => game.mythrasFoundry?.combat?.declareCover?.(this.actor)],
@@ -698,6 +703,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await location.update({ "system.disabled": event.currentTarget.checked });
   }
 
+  async #updateLocationAmputated(event) {
+    if (!this.isEditable) return;
+    const location = this.actor.items.get(
+      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (location?.type === "hitLocation") {
+      await location.update({ "system.amputated": event.currentTarget.checked });
+    }
+  }
+
   #conditionLevel(fatigueKey = this.actor.system.fatigueLevel) {
     return this.#conditionResolution({ fatigueKey }).condition;
   }
@@ -839,6 +853,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       mode.familiarity = event.currentTarget.value;
     }
     await weapon.update({ "system.modes": modes });
+  }
+
+  async #chooseWeaponAttack() {
+    const rows = Array.from(this.element.querySelectorAll("[data-action='roll-weapon-attack']"))
+      .filter((button) => !button.disabled).map((button, index) => ({ button, index,
+        label: button.closest("[data-item-id]")?.querySelector("[data-action='edit-item']")?.textContent?.trim() }));
+    if (!rows.length) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.Action.Unavailable.preparedWeapon"));
+    const selected = await DialogV2.wait({ window: { title: game.i18n.localize("MYTHRASF.Combat.Attack") },
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${game.i18n.localize("MYTHRASF.Weapon.Name")}</span><select name="attack">${rows.map((row) => `<option value="${row.index}">${foundry.utils.escapeHTML(row.label ?? "")}</option>`).join("")}</select></label></div>`,
+      buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.Combat.Attack"),
+        callback: (event, button) => Number(button.form.elements.attack.value) },
+      { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false });
+    rows.find((row) => row.index === selected)?.button.click();
   }
 
   async #rollWeaponAttack(event) {

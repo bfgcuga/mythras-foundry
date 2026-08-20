@@ -1,9 +1,15 @@
 <div class="combat-paper-layout">
   <fieldset class="combat-paper-panel combat-action-panel"><legend>{{localize "MYTHRASF.Action.Actions"}}</legend><div class="combat-tactical-actions">
+    <span data-action-presentation><button type="button" data-action="choose-weapon-attack" data-combat-action-key="attack"><i class="fas fa-crosshairs" aria-hidden="true"></i> {{localize "MYTHRASF.Combat.Attack"}}</button></span>
     <button type="button" data-combat-action-key="charge" title="{{localize 'MYTHRASF.Action.charge'}}"><i class="fas fa-horse-head" aria-hidden="true"></i> {{localize "MYTHRASF.Action.charge"}}</button>
     <button type="button" data-combat-action-key="brace" title="{{localize 'MYTHRASF.Action.brace'}}"><i class="fas fa-anchor" aria-hidden="true"></i> {{localize "MYTHRASF.Action.brace"}}</button><button type="button" data-combat-action-key="readyWeapon" title="{{localize 'MYTHRASF.Action.readyWeapon'}}"><i class="fas fa-hand" aria-hidden="true"></i> {{localize "MYTHRASF.Action.readyWeapon"}}</button><button type="button" data-combat-action-key="struggle" title="{{localize 'MYTHRASF.Action.struggle'}}"><i class="fas fa-link-slash" aria-hidden="true"></i> {{localize "MYTHRASF.Action.struggle"}}</button><button type="button" data-combat-action-key="maneuver" title="{{localize 'MYTHRASF.Action.maneuver'}}"><i class="fas fa-people-arrows" aria-hidden="true"></i> {{localize "MYTHRASF.Action.maneuver"}}</button><button type="button" data-combat-action-key="move" title="{{localize 'MYTHRASF.Action.move'}}"><i class="fas fa-person-running" aria-hidden="true"></i> {{localize "MYTHRASF.Action.move"}}</button><button type="button" data-combat-action-key="stand" title="{{localize 'MYTHRASF.Action.stand'}}"><i class="fas fa-person-arrow-up-from-line" aria-hidden="true"></i> {{localize "MYTHRASF.Action.stand"}}</button><button type="button" data-combat-action-key="delay" title="{{localize 'MYTHRASF.Action.delay'}}"><i class="fas fa-hourglass-half" aria-hidden="true"></i> {{localize "MYTHRASF.Action.delay"}}</button><button type="button" data-combat-action-key="hesitate" title="{{localize 'MYTHRASF.Action.hesitate'}}"><i class="fas fa-pause" aria-hidden="true"></i> {{localize "MYTHRASF.Action.hesitate"}}</button><button type="button" data-combat-action-key="mount" title="{{localize 'MYTHRASF.Action.mount'}}"><i class="fas fa-horse" aria-hidden="true"></i> {{localize "MYTHRASF.Action.mount"}}</button><button type="button" data-combat-action-key="retainMagic" title="{{localize 'MYTHRASF.Action.retainMagic'}}"><i class="fas fa-hand-sparkles" aria-hidden="true"></i> {{localize "MYTHRASF.Action.retainMagic"}}</button><button type="button" data-combat-action-key="useMagic" title="{{localize 'MYTHRASF.Action.useMagic'}}"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> {{localize "MYTHRASF.Action.useMagic"}}</button>
+    <span data-action-presentation><button type="button" data-action="change-reach" data-combat-action-key="changeReach"><i class="fas fa-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Change"}}</button></span>
+    <span data-action-presentation><button type="button" data-action="declare-passive-block" data-combat-action-key="passiveBlock"><i class="fas fa-shield-halved" aria-hidden="true"></i> {{localize "MYTHRASF.PassiveBlock.Declare"}}</button></span>
+    <span data-action-presentation><button type="button" data-action="aim-ranged" data-combat-action-key="aim"><i class="fas fa-crosshairs" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Aim"}}</button></span>
+    <span data-action-presentation><button type="button" data-action="declare-cover" data-combat-action-key="seekCover"><i class="fas fa-person-shelter" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.DeclareCover"}}</button></span>
+    <span data-action-presentation><button type="button" data-action="reload-ranged" data-combat-action-key="reload"><i class="fas fa-rotate" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Reload"}}</button></span>
+    <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button>
   </div></fieldset>
-  <div class="combat-tactical-actions"><button type="button" data-action="change-reach" title="{{localize 'MYTHRASF.Reach.Change'}}"><i class="fas fa-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Change"}}</button><button type="button" data-action="declare-passive-block" title="{{localize 'MYTHRASF.PassiveBlock.Declare'}}"><i class="fas fa-shield-halved" aria-hidden="true"></i> {{localize "MYTHRASF.PassiveBlock.Declare"}}</button><button type="button" data-action="tactical-overview" title="{{localize 'MYTHRASF.Reach.Overview'}}"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button></div>
   <fieldset class="combat-paper-panel combat-paper-locations">
     <legend>{{localize "MYTHRASF.HitLocations"}}</legend>
     {{#if editable}}<button type="button" class="combat-panel-add sheet-add-button" data-action="create-item"
@@ -27,6 +33,7 @@
               <span>{{localize "MYTHRASF.HitLocation.Disabled"}}</span>
             </label>{{else if row.disabled}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Disabled"}}</span>{{/if}}
           {{else if row.disabled}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Disabled"}}</span>{{/if}}
+          <label class="location-disabled-state {{#if row.amputated}}active{{/if}}"><input type="checkbox" class="sheet-state-box" data-location-amputated {{checked row.amputated}} {{#unless @root.editable}}disabled{{/unless}} aria-label="{{localize 'MYTHRASF.HitLocation.Amputated'}}"><span>{{localize "MYTHRASF.HitLocation.Amputated"}}</span></label>
         </div>
         <output class="location-max">{{row.item.system.maxHitPoints}}</output>
         <output class="location-current wound-{{row.item.system.woundLevel}}">{{row.item.system.currentHitPoints}}</output>
@@ -96,7 +103,6 @@
 
   <fieldset class="combat-paper-panel combat-paper-ranged-weapons">
     <legend>{{localize "MYTHRASF.Combat.RangedWeapons"}}</legend>
-    <div class="combat-tactical-actions"><button type="button" data-action="aim-ranged" title="{{localize "MYTHRASF.Ranged.Aim"}}"><i class="fas fa-crosshairs" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Aim"}}</button><button type="button" data-action="reload-ranged" title="{{localize "MYTHRASF.Ranged.Reload"}}"><i class="fas fa-rotate" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Reload"}}</button><button type="button" data-action="declare-cover" title="{{localize "MYTHRASF.Ranged.DeclareCover"}}"><i class="fas fa-person-shelter" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.DeclareCover"}}</button></div>
     <div class="combat-weapon-head combat-weapon-ranged">
       <span>{{localize "MYTHRASF.Weapon.Name"}}</span><span>{{localize "MYTHRASF.Weapon.Damage"}}</span>
       <span>{{localize "MYTHRASF.Weapon.Size"}}</span><span>{{localize "MYTHRASF.Weapon.DamageModifier.Label"}}</span>
@@ -129,14 +135,4 @@
     {{else}}<p class="empty">{{localize "MYTHRASF.Empty.RangedWeapons"}}</p>{{/each}}
   </fieldset>
 
-  <fieldset class="combat-paper-panel combat-paper-fatigue">
-    <legend>{{localize "MYTHRASF.Fatigue.Label"}}</legend>
-    <div class="combat-fatigue-head"><span>{{localize "MYTHRASF.Fatigue.State"}}</span><span>{{localize "MYTHRASF.Fatigue.SkillModifier"}}</span><span>{{localize "MYTHRASF.Fatigue.Movement"}}</span><span>{{localize "MYTHRASF.Fatigue.Initiative"}}</span><span>{{localize "MYTHRASF.Fatigue.ActionPoints"}}</span><span>{{localize "MYTHRASF.Fatigue.Recovery"}}</span></div>
-    {{#each fatigueRows as |row|}}<label class="combat-fatigue-line">
-      <span><input type="radio" class="sheet-state-box" name="fatigue-level" value="{{row.key}}"
-        data-fatigue-level {{checked row.selected}} aria-label="{{row.levelLabel}}"> {{row.levelLabel}}</span>
-      <span>{{row.skillLabel}}</span><span>{{row.movementLabel}}{{#if row.movementPenalty}} -{{row.movementPenalty}} m{{/if}}</span>
-      <span>{{row.initiativeLabel}}</span><span>{{row.actionPointLabel}}</span><span>{{row.recoveryLabel}}</span>
-    </label>{{/each}}
-  </fieldset>
 </div>

@@ -1,0 +1,32 @@
+Objetivo: mostrar en la hoja de personaje de Foundry una silueta corporal SVG que refleje visualmente el estado de cada localización de golpe.
+
+El SVG contiene estas partes del cuerpo como elementos independientes mediante su atributo id:
+- head
+- chest
+- abdomen
+- left-arm
+- right-arm
+- left-leg
+- right-leg
+
+Cada elemento puede recibir clases CSS o estilos dinámicos desde la hoja para cambiar su color según el estado de la localización.
+
+Comportamiento previsto:
+- Estado normal: color neutro de la silueta.
+- Herida leve: usar el mismo color que ya esté definido en el resto del sistema para heridas leves.
+- Herida grave: usar el mismo color que ya esté definido en el resto del sistema para heridas graves.
+- Herida crítica: usar el mismo color que ya esté definido en el resto del sistema para heridas críticas.
+- Miembro amputado: negro.
+- No mostrar líneas internas entre localizaciones; solo el contorno exterior de la silueta.
+
+Interacción:
+- Cada parte del SVG debe poder actuar como zona interactiva.
+- Al mantener el cursor sobre una localización durante más de 1 segundo, mostrar un tooltip.
+- El tooltip puede incluir, como mínimo:
+  - nombre de la localización
+  - vida actual / vida máxima
+  - armadura
+  - estado de salud o tipo de herida
+  - otros estados relevantes si existen
+
+La hoja debe obtener estos valores directamente de los datos del Actor y actualizar automáticamente el color y el tooltip de cada elemento SVG.

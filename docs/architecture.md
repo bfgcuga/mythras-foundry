@@ -179,6 +179,17 @@ socket que el resto del combate. Las acciones guiadas conservan su coste,
 parámetros, usuario y confirmación sin crear reglas de magia o monturas que el
 sistema todavía no representa.
 
+`actionAvailability` continúa siendo la API booleana compatible. Las hojas usan
+`actionPresentation`, que añade coste y causa estable de indisponibilidad sin
+eliminar acciones del DOM. Los controladores especializados de alcance,
+bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
+
+La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
+`assets/Silueta`. Vincula regiones mediante rangos, categoría y clase de PG
+humanos, nunca mediante nombres traducidos. `hitLocation.system.amputated` es
+independiente de inutilización y herida. Los textos de Trasfondo residen en
+`CharacterData.system.narrative`.
+
 La transacción de combate usa el esquema 7 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la

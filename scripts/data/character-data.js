@@ -104,6 +104,11 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         culture: backgroundSelectionField(),
         profession: backgroundSelectionField()
       }),
+      narrative: new SchemaField(Object.fromEntries([
+        "history", "description", "personality", "motivation", "goals", "beliefs",
+        "siblings", "parents", "partner", "children", "extendedFamily", "allies",
+        "contacts", "rivals", "enemies", "secrets", "notes"
+      ].map((key) => [key, textField()]))),
       currency: new SchemaField({
         copper: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
         silver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),

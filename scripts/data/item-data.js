@@ -329,6 +329,7 @@ export class HitLocationData extends foundry.abstract.TypeDataModel {
       armorCostPercentage: nonNegativeNumber(10),
       armorFactorsVersion: nonNegativeNumber(0, true),
       disabled: new BooleanField({ required: true, nullable: false, initial: false }),
+      amputated: new BooleanField({ required: true, nullable: false, initial: false }),
       description: descriptionField()
     };
   }

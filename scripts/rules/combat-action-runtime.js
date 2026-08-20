@@ -2,9 +2,9 @@ import { currentActionPoints } from "./action-points.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
-import { availableCombatActions, COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
+import { COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
   chargeEligibility, chargeModifiers, movementDeclaration,
-  normalizeCombatActionState } from "./combat-actions.js";
+  normalizeCombatActionState, combatActionPresentation } from "./combat-actions.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "combatActions";
@@ -36,6 +36,11 @@ function restraintEffects(actor) {
 }
 
 export function actionAvailability(actor) {
+  return Object.freeze(Object.fromEntries(Object.entries(actionPresentation(actor))
+    .map(([key, value]) => [key, value.available])));
+}
+
+export function actionPresentation(actor) {
   const combat = game.combat ?? game.combats?.active;
   const combatant = combatantForActor(combat, actor, actor?.token?.uuid);
   const state = combatActionState(combat);
@@ -43,7 +48,7 @@ export function actionAvailability(actor) {
     actor?.system?.baseAttributes ?? actor?.system?.attributes ?? {} });
   const modes = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped)
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)) ?? [];
-  return availableCombatActions({ inCombat: Boolean(combat?.started && combatant),
+  return combatActionPresentation({ inCombat: Boolean(combat?.started && combatant),
     isActive: combat?.combatant?.id === combatant?.id, actionPoints: currentActionPoints(actor),
     canTakeProactiveTurn: conditions.capabilities.canTakeProactiveTurn,
     canAttack: conditions.capabilities.canAttack,
@@ -56,12 +61,19 @@ export function actionAvailability(actor) {
 }
 
 export function decorateCombatActionButtons(actor, root) {
-  const availability = actionAvailability(actor);
+  const presentation = actionPresentation(actor);
   root?.querySelectorAll?.("[data-combat-action-key]").forEach((button) => {
     const key = button.dataset.combatActionKey;
-    button.hidden = !availability[key];
-    button.disabled = !availability[key];
-    button.onclick = () => requestCombatAction(actor, key);
+    const state = presentation[key] ?? { available: false, cost: 1, reason: "unavailable" };
+    button.hidden = false;
+    button.disabled = !state.available;
+    button.setAttribute("aria-disabled", String(!state.available));
+    const reason = state.reason ? localize(`MYTHRASF.Action.Unavailable.${state.reason}`) : "";
+    const cost = localize("MYTHRASF.Action.Cost").replace("{cost}", state.cost);
+    button.title = reason ? `${cost} · ${reason}` : cost;
+    const wrapper = button.closest("[data-action-presentation]");
+    if (wrapper) wrapper.dataset.mythrasTooltip = button.title;
+    if (!button.dataset.action) button.onclick = () => requestCombatAction(actor, key);
   });
 }
 

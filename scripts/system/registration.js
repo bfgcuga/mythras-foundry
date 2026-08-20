@@ -23,16 +23,18 @@ import { openTacticalOverview, requestReachChange } from "../rules/reach-chat.js
 import { openCoverDeclaration } from "../rules/engagement-runtime.js";
 import { openPassiveBlockDeclaration } from "../rules/round-consequences.js";
 import { declareAim, reloadRangedWeapon } from "../rules/ranged-actions.js";
-import { actionAvailability, combatActionState,
+import { actionAvailability, actionPresentation, combatActionState,
   requestCombatAction } from "../rules/combat-action-runtime.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
   "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
   "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs",
+  "systems/mythras-foundry/templates/actor/parts/fatigue-table.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs",
   "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs",
+  "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
 ];
 
@@ -100,6 +102,7 @@ export function registerSystemInitialization() {
         openTacticalOverview, declarePassiveBlock: openPassiveBlockDeclaration,
         declareCover: openCoverDeclaration, aim: declareAim, reload: reloadRangedWeapon,
         action: requestCombatAction, availableActions: actionAvailability,
+        actionPresentation,
         actionState: combatActionState }
     };
     foundry.documents.collections.Actors.registerSheet("mythras-foundry", CharacterSheet, {
