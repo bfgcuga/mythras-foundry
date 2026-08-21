@@ -1,8 +1,9 @@
-import { openContestResponseDialog } from "../apps/skill-roll-dialog.js";
+import { openContestResponseDialog, SPECIAL_ABILITY_ID } from "../apps/skill-roll-dialog.js";
 import { invertD100, resolveSkillRollTargets } from "./skill-roll.js";
 import { classifyContestRoll, resolveConfiguredContest, resolveContest } from "./contest-rolls.js";
-import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { appendSerializedRolls } from "./dice-animation.js";
 import { recordAbilityFumble } from "./skills.js";
+import { actorDisplayName, actorSpeaker } from "./document-names.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -23,13 +24,6 @@ function participantId(actorId) {
 
 function actorIdentity(actor) {
   return actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
-}
-
-function actorDisplayName(actor) {
-  if (!actor?.isToken) return actor?.name ?? "";
-  const token = Array.from(canvas?.tokens?.placeables ?? []).find((candidate) =>
-    candidate.actor === actor || candidate.actor?.uuid === actor?.uuid);
-  return actor.token?.name ?? token?.document?.name ?? token?.name ?? actor.name ?? "";
 }
 
 function participantDisplayName(participant) {
@@ -60,6 +54,8 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     rawRoll: initiatorRoll?.total ?? null, pending: !initiatorRoll,
     serializedRoll: initiatorRoll?.toJSON?.() ?? null,
     config: { difficulty: configured.difficulty,
+      specialName: item.type === "special" ? item.name : null,
+      specialTarget: item.type === "special" ? Number(item.system.total ?? 0) : null,
       limitedAbility: configured.limitedSkill ? `${configured.limitedSkill.actor.uuid}|${configured.limitedSkill.id}` : null,
       reinforcedAbility: configured.reinforcedSkill ? `${configured.reinforcedSkill.actor.uuid}|${configured.reinforcedSkill.id}` : null }
   };
@@ -106,7 +102,7 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     contest.resolution = resolveConfiguredContest(contest); contest.status = "resolved";
   }
   const messageData = {
-    speaker: ChatMessage.getSpeaker({ actor: item.actor }),
+    speaker: actorSpeaker(item.actor),
     content: renderContestCard(contest),
     flags: { [FLAG_SCOPE]: { contest } },
     rolls: initiatorRoll ? [initiatorRoll] : []
@@ -273,8 +269,12 @@ async function applyContestResponseUnlocked(message, request) {
   const user = game.users.get(request.userId);
   const invalid = validateContestResponse(contest, request, { actor, user });
   if (invalid) return ui.notifications.warn(game.i18n.localize(`MYTHRASF.Contest.Rejected.${invalid}`));
-  const ability = actor.items.get(request.config.abilityId);
-  if (!ability || !["skill", "combatStyle", "passion"].includes(ability.type)) return;
+  const ability = request.config.abilityId === SPECIAL_ABILITY_ID
+    ? { id: SPECIAL_ABILITY_ID,
+      name: request.config.specialName || localize("MYTHRASF.SpecialRoll.DefaultName"),
+      type: "special", actor, system: { total: Math.max(0, Number(request.config.specialTarget) || 0) } }
+    : actor.items.get(request.config.abilityId);
+  if (!ability || !["skill", "combatStyle", "passion", "special"].includes(ability.type)) return;
   const affecting = (reference) => {
     const [actorId, itemId] = String(reference ?? "").split("|");
     const item = (globalThis.fromUuidSync?.(actorId) ?? game.actors.get(actorId))?.items.get(itemId);
@@ -303,7 +303,9 @@ async function applyContestResponseUnlocked(message, request) {
     contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
     contest.status = "resolved";
   }
-  await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
+  await message.update({ content: renderContestCard(contest),
+    rolls: appendSerializedRolls(message, request.serializedRoll),
+    [`flags.${FLAG_SCOPE}.contest`]: contest });
 }
 
 export function activateContestCard(message, html) {
@@ -339,10 +341,12 @@ async function respond(message, contest, id) {
   const side = contest.sides?.[contestSideForParticipant(contest, id)];
   const config = side?.mode === "elimination"
     ? { abilityId: participant.abilityId, difficulty: participant.config?.difficulty ?? "standard",
+      specialName: participant.config?.specialName, specialTarget: participant.config?.specialTarget,
       limitedAbility: null, reinforcedAbility: null }
-    : await openContestResponseDialog(actor, participant.abilityId, participant.config?.difficulty);
+    : await openContestResponseDialog(actor, participant.abilityId, participant.config?.difficulty,
+      { specialName: participant.abilityName, specialTarget: participant.target });
   if (!config) return;
-  const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+  const roll = await new Roll("1d100").evaluate();
   const request = { action: "contestResponse", messageId: message.id, revision: contest.revision,
     participantId: id, userId: game.user.id, config, rawRoll: roll.total, serializedRoll: roll.toJSON() };
   if (preferredContestCoordinator(game.users, contest.authorUserId) === game.user.id) await applyContestResponse(message, request);
@@ -367,8 +371,8 @@ async function spendContestLuckUnlocked(message, contest, id) {
   const ownRoll = context.ownRoll;
   const { DialogV2 } = foundry.applications.api;
   const spenderControl = spenders.length === 1
-    ? `<div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(spenders[0].name)} (${Number(spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorId" value="${escape(actorIdentity(spenders[0]))}"></div>`
-    : `<label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorId">${spenders.map((actor) => `<option value="${escape(actorIdentity(actor))}">${escape(actor.name)} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label>`;
+    ? `<div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(actorDisplayName(spenders[0]))} (${Number(spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorId" value="${escape(actorIdentity(spenders[0]))}"></div>`
+    : `<label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorId">${spenders.map((actor) => `<option value="${escape(actorIdentity(actor))}">${escape(actorDisplayName(actor))} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label>`;
   const choice = await DialogV2.wait({ window: { title: localize("MYTHRASF.Luck.Title") },
     content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${escape(localize(ownRoll ? "MYTHRASF.Luck.Confirm" : "MYTHRASF.Luck.ForceRerollConfirm"))}</p>${spenderControl}</div>`,
     buttons: [{ action: "reroll", label: localize(ownRoll ? "MYTHRASF.Luck.Reroll" : "MYTHRASF.Luck.ForceReroll"), icon: "fas fa-dice-d20", callback: (event, button) => ({ mode: "reroll", luckActorId: button.form.elements.luckActorId.value }) },
@@ -379,8 +383,7 @@ async function spendContestLuckUnlocked(message, contest, id) {
   const luckActor = contestActor(luckParticipant) ?? game.actors.get(choice.luckActorId);
   const points = Number(luckActor?.system.resources?.luckPoints?.value ?? 0);
   if (!luckActor || !spenders.some((actor) => actorIdentity(actor) === choice.luckActorId) || points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-  const roll = choice.mode === "reroll" ? await evaluateAnimatedRoll("1d100",
-    { speaker: ChatMessage.getSpeaker({ actor: luckActor }) }) : null;
+  const roll = choice.mode === "reroll" ? await new Roll("1d100").evaluate() : null;
   const request = { action: "contestLuck", messageId: message.id, revision: contest.revision,
     participantId: id, userId: game.user.id, luckActorId: actorIdentity(luckActor),
     rawRoll: roll?.total ?? invertD100(currentRoll),
@@ -421,7 +424,9 @@ async function applyContestLuck(message, request) {
     contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
     contest.status = "resolved";
   }
-  await message.update({ content: renderContestCard(contest), [`flags.${FLAG_SCOPE}.contest`]: contest });
+  await message.update({ content: renderContestCard(contest),
+    rolls: appendSerializedRolls(message, request.serializedRoll),
+    [`flags.${FLAG_SCOPE}.contest`]: contest });
 }
 
 function eligibleLuckSpenders(user, contest, { requirePoints = true } = {}) {

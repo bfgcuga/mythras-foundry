@@ -78,6 +78,7 @@
 
       <div class="npc-skills-layout">
         <fieldset class="npc-list-panel npc-skills-panel"><legend>{{localize "MYTHRASF.Skills"}}</legend>
+          <button type="button" class="npc-special-roll" data-action="roll-special" title="{{localize "MYTHRASF.SpecialRoll.Title"}}">{{localize "MYTHRASF.SpecialRoll.Title"}}</button>
           {{#if editable}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="skill" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
           <div class="npc-skill-grid-headers" aria-hidden="true">
             <div class="npc-skill-header {{#unless isTemplate}}resolved{{/unless}}"><span></span><span>{{localize "MYTHRASF.Skill.Name"}}</span><span>%</span>{{#if isTemplate}}<span>{{localize "MYTHRASF.Npc.Formula"}}</span>{{/if}}<span></span></div>

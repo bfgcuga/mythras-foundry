@@ -22,6 +22,7 @@ import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalt
 import { askWoundRollImpact } from "../ui/wound-roll-dialog.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
+import { rollSpecial } from "../rules/special-roll.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -258,6 +259,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#deleteItem(event)));
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollSkill(event)));
+    this.element.querySelector("[data-action='roll-special']")
+      ?.addEventListener("click", () => rollSpecial(this.actor));
     this.element.querySelectorAll("[data-action='roll-passion']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollPassion(event)));
     this.element.querySelectorAll("[data-action='roll-attack']").forEach((button) =>

@@ -68,8 +68,10 @@ export function fumbledSkillUpdatesAtZero(experienceRolls, items = []) {
 }
 
 export async function recordAbilityFumble(item, result) {
-  if (result !== "fumble" || !["skill", "combatStyle"].includes(item?.type)
-    || item.system?.fumbled) return false;
-  await item.update({ "system.fumbled": true });
+  if (result !== "fumble" || !["skill", "combatStyle"].includes(item?.type)) return false;
+  const sourceItem = item.actor?.type === "character"
+    ? game.actors?.get(item.actor.token?.actorId ?? item.actor.id)?.items.get(item.id) ?? item : item;
+  if (sourceItem.system?.fumbled) return false;
+  await sourceItem.update({ "system.fumbled": true });
   return true;
 }

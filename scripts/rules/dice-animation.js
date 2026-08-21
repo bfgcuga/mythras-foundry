@@ -24,3 +24,8 @@ export async function evaluateAnimatedRoll(formula) {
   }
   return roll;
 }
+
+export function appendSerializedRolls(message, ...serializedRolls) {
+  const additions = serializedRolls.filter(Boolean).map((data) => Roll.fromData(data));
+  return [...Array.from(message?.rolls ?? []), ...additions];
+}

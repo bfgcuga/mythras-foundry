@@ -51,8 +51,7 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   assert.match(dialog, /canvas\?\.tokens\?\.placeables/);
   assert.doesNotMatch(dialog, /const seen = new Set\(\)/);
   assert.match(dialog, /actorId: actorIdentity\(actor\), actorUuid: actorReference\(actor\), actorName: actorLabel\(actor\)/);
-  assert.match(dialog, /if \(!actor\?\.isToken\) return actor\?\.name/);
-  assert.match(dialog, /actor\.token\?\.name \?\? token\?\.document\?\.name \?\? token\?\.name/);
+  assert.match(dialog, /actorDisplayName\(actor\)/);
   assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
   assert.match(dialog, /skill-roll-adjustment-fields/);
   assert.match(dialog, /<div class="skill-roll-participants" hidden>/);
@@ -65,7 +64,7 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
 test("opposed responses open adjustments while elimination accepts the first configured roller", () => {
   const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
   const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
-  assert.match(script, /openContestResponseDialog\(actor, participant\.abilityId, participant\.config\?\.difficulty\)/);
+  assert.match(script, /openContestResponseDialog\(actor, participant\.abilityId, participant\.config\?\.difficulty,/);
   assert.match(script, /side\?\.mode === "elimination"/);
   assert.match(script, /side\.representativeId = participant\.id/);
   assert.match(script, /contestResponseQueues/);
@@ -73,6 +72,9 @@ test("opposed responses open adjustments while elimination accepts the first con
   assert.match(dialog, /name="difficulty"/);
   assert.match(dialog, /adjustment\("limited", "Limited"\)/);
   assert.match(dialog, /adjustment\("reinforced", "Reinforced"\)/);
+  assert.match(dialog, /SPECIAL_ABILITY_ID = "__special__"/);
+  assert.match(dialog, /data-special-roll-fields/);
+  assert.match(script, /abilityId === SPECIAL_ABILITY_ID/);
 });
 
 test("configured contest cards separate sides and name multi-member team winners", () => {

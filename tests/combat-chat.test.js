@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { preferredCombatCoordinator, validateCombatResponse } from "../scripts/rules/combat-chat.js";
 
 test("el primer DJ activo coordina y el autor es el respaldo", () => {
@@ -7,6 +8,13 @@ test("el primer DJ activo coordina y el autor es el respaldo", () => {
     { id: "author", active: true, isGM: false }];
   assert.equal(preferredCombatCoordinator(users, "author"), "a");
   assert.equal(preferredCombatCoordinator(users.filter((user) => !user.isGM), "author"), "author");
+});
+
+test("paradas y daño se incorporan como Roll al mensaje interactivo", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(source, /appendSerializedRolls\(message, request\.defense\.serializedRoll\)/);
+  assert.match(source, /request\.alternateRoll\?\.serializedRoll, request\.serializedLocationRoll/);
+  assert.match(source, /rolls: appendSerializedRolls\(message, request\.serializedRoll\)/);
 });
 
 test("la respuesta de combate rechaza estado, revision, propiedad y tipo invalidos", () => {

@@ -156,6 +156,13 @@ participantes que pertenecen al grupo activo.
 `scripts/rules/skills.js` centraliza además el registro persistente de pifias:
 toda pifia de una habilidad o estilo de combate marca `system.fumbled`, incluidas
 las respuestas interactivas y las repeticiones por Suerte.
+`scripts/rules/document-names.js` es la fuente común de nombres operativos: los
+personajes usan el nombre actual del Actor del directorio y los PNJ sintéticos el
+nombre individual de su TokenDocument. Las tiradas especiales se coordinan desde
+`scripts/rules/special-roll.js` y reutilizan los mismos diálogos y resoluciones.
+Cuando una tarjeta interactiva recibe una respuesta, sus `rolls` se amplían con
+objetos Roll reconstruidos; así Foundry y Dice So Nice procesan también paradas,
+tiradas de equipo, respuestas enfrentadas y daño.
 
 Los ataques interactivos se persisten como transacciones versionadas en
 `flags.mythras-foundry.combat`. `scripts/rules/combat.js` resuelve de forma pura

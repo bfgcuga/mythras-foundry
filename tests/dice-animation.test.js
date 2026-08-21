@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { evaluateAnimatedRoll } from "../scripts/rules/dice-animation.js";
+import { appendSerializedRolls, evaluateAnimatedRoll } from "../scripts/rules/dice-animation.js";
 
 test("evaluateAnimatedRoll evaluates a Foundry Roll without requiring Dice So Nice", async () => {
   globalThis.Roll = class {
@@ -35,4 +35,11 @@ test("evaluateAnimatedRoll broadcasts Dice So Nice with the active roll visibili
 
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0], [roll, game.user, true, ["gm"], false]);
+});
+
+test("interactive card updates append real Foundry rolls", () => {
+  globalThis.Roll = { fromData: (data) => ({ ...data, restored: true }) };
+  const existing = { total: 12 };
+  assert.deepEqual(appendSerializedRolls({ rolls: [existing] }, { total: 34 }),
+    [existing, { total: 34, restored: true }]);
 });

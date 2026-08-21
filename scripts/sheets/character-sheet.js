@@ -74,6 +74,7 @@ import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { evaluateAnimatedRoll } from "../rules/dice-animation.js";
+import { rollSpecial } from "../rules/special-roll.js";
 import { INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
 import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
@@ -502,6 +503,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-location-disabled]", "change", (event) => this.#updateLocationDisabled(event)],
       ["[data-location-armor]", "change", (event) => this.#updateLocationArmor(event)],
       ["[data-action='roll-skill']", "click", (event) => this.#rollSkill(event)],
+      ["[data-action='roll-special']", "click", () => rollSpecial(this.actor)],
       ["[data-action='improve-skill']", "click", (event) => this.#improveSkill(event)],
       ["[data-action='roll-passion']", "click", (event) => this.#rollPassion(event)],
       ["[data-passion-adjust]", "click", (event) => this.#adjustPassion(event)],

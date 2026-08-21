@@ -138,3 +138,14 @@ test("una pifia marca automáticamente la habilidad o estilo que ha tirado", asy
   assert.equal(await recordAbilityFumble(skill, "failure"), false);
   assert.equal(await recordAbilityFumble({ ...skill, type: "passion" }, "fumble"), false);
 });
+
+test("una pifia de personaje actualiza la habilidad del Actor fuente", async () => {
+  const updates = [];
+  const sourceItem = { id: "skill", type: "skill", system: { fumbled: false },
+    update: async (change) => updates.push(change) };
+  globalThis.game = { actors: new Map([["source", { items: new Map([["skill", sourceItem]]) }]]) };
+  const tokenItem = { ...sourceItem, actor: { id: "synthetic", type: "character",
+    token: { actorId: "source" } }, update: async () => assert.fail("must update source item") };
+  assert.equal(await recordAbilityFumble(tokenItem, "fumble"), true);
+  assert.deepEqual(updates, [{ "system.fumbled": true }]);
+});

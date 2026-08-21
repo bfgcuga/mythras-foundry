@@ -4,6 +4,7 @@ import { woundLevel } from "../rules/hit-locations.js";
 import { openSkillRollDialog } from "../apps/skill-roll-dialog.js";
 import { createContestMessage } from "../rules/contest-chat.js";
 import { recordAbilityFumble } from "../rules/skills.js";
+import { actorDisplayName, actorSpeaker } from "../rules/document-names.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
@@ -68,11 +69,11 @@ export class MythrasItem extends Item {
     const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
     const adjustment = [["Limited", limitedSkill], ["Reinforced", reinforcedSkill]]
       .filter((entry) => entry[1])
-      .map(([key, skill]) => `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${key}`)}</span><strong>${foundry.utils.escapeHTML(skill.name)} (${foundry.utils.escapeHTML(skill.actor?.name ?? "")}, ${Number(skill.system.total ?? 0)}%)</strong></div>`)
+      .map(([key, skill]) => `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${key}`)}</span><strong>${foundry.utils.escapeHTML(skill.name)} (${foundry.utils.escapeHTML(actorDisplayName(skill.actor))}, ${Number(skill.system.total ?? 0)}%)</strong></div>`)
       .join("");
 
     const messageData = {
-      speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+      speaker: actorSpeaker(this.actor),
       rolls: [roll],
       content: `
         <section class="mythras-chat-card">
@@ -81,7 +82,7 @@ export class MythrasItem extends Item {
             <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.Difficulty")}</span><strong>${game.i18n.localize(`MYTHRASF.Difficulty.${targets.difficulty}`)}</strong></div>
             <div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.BaseTarget")}</span><strong>${targets.baseTarget}%</strong></div>
             ${adjustment}
-            ${targets.target !== targets.baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="penalized-value-modifier">${targets.target}%</strong></div>` : ""}
+            ${targets.target !== targets.baseTarget ? `<div class="mythras-chat-row"><span>${game.i18n.localize("MYTHRASF.Chat.EffectiveTarget")}</span><strong class="skill-roll-modifier-effect--${targets.target > targets.baseTarget ? "bonus" : "penalty"}">${targets.target}%</strong></div>` : ""}
             ${renderRollLine(roll.total)}
           </div>
           ${renderRollResult(result, ranges)}
@@ -115,7 +116,7 @@ export class MythrasItem extends Item {
     const result = classifyRoll(roll.total, target, criticalTarget);
     const ranges = rollThresholdRanges(target, criticalTarget);
     const messageData = {
-      speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+      speaker: actorSpeaker(this.actor),
       rolls: [roll],
       content: `<section class="mythras-chat-card">
         <div class="mythras-chat-title">${foundry.utils.escapeHTML(this.name)}</div>

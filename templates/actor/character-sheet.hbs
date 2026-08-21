@@ -274,11 +274,9 @@
       <section class="tab-panel" data-tab-content="skills">
         <div class="section-heading">
           <h2>{{localize "MYTHRASF.Tab.Skills"}}</h2>
-          {{#if editable}}
-            <button type="button" data-action="create-item" data-type="skill">
-              {{localize "MYTHRASF.Add"}}
-            </button>
-          {{/if}}
+          <div class="section-heading-actions"><button type="button" data-action="roll-special" title="{{localize "MYTHRASF.SpecialRoll.Title"}}">{{localize "MYTHRASF.SpecialRoll.Title"}}</button>
+            {{#if editable}}<button type="button" data-action="create-item" data-type="skill">{{localize "MYTHRASF.Add"}}</button>{{/if}}
+          </div>
         </div>
 
         {{#each skillGroups as |group|}}
