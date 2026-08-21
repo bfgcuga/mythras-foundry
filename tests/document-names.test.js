@@ -18,4 +18,6 @@ test("unlinked NPCs use each TokenDocument name", () => {
     token: { name: "Hombre lagarto 1" } };
   assert.equal(actorDisplayName(actor), "Hombre lagarto 1");
   assert.equal(tokenDisplayName({ actor, document: { name: "Hombre lagarto 2" } }), "Hombre lagarto 2");
+  assert.equal(tokenDisplayName({ actor, document: { _source: { name: "Hombre lagarto 3" },
+    name: "Hombre lagarto" } }), "Hombre lagarto 3");
 });

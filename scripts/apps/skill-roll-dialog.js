@@ -1,6 +1,6 @@
 import { resolveSkillRollTargets } from "../rules/skill-roll.js";
 import { combineDifficulties } from "../rules/fatigue.js";
-import { actorDisplayName } from "../rules/document-names.js";
+import { actorDisplayName, tokenDisplayName } from "../rules/document-names.js";
 
 const DIFFICULTIES = ["automatic", "veryEasy", "easy", "standard", "hard",
   "formidable", "herculean", "impossible"];
@@ -28,6 +28,11 @@ function actorIdentity(actor) {
 }
 
 function actorLabel(actor) {
+  if (actor?.type !== "character") {
+    const token = Array.from(canvas?.tokens?.placeables ?? []).find((candidate) =>
+      candidate.actor === actor || candidate.actor?.uuid === actor?.uuid);
+    if (token) return tokenDisplayName(token);
+  }
   return actorDisplayName(actor);
 }
 

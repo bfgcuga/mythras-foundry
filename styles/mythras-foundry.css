@@ -589,6 +589,7 @@
   gap: 1rem;
 }
 .mythras-foundry .section-heading-actions { display: flex; align-items: center; gap: 0.4rem; }
+.mythras-foundry .paper-skill-actions { display: flex; justify-content: flex-end; margin-bottom: 0.35rem; }
 .mythras-foundry .npc-special-roll { margin-bottom: 0.45rem; }
 
 .mythras-foundry.party-manager .window-content { background: var(--mythras-paper); }

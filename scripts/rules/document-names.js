@@ -12,7 +12,8 @@ export function actorDisplayName(actor) {
 export function tokenDisplayName(token) {
   if (!token) return "";
   if (token.actor?.type === "character") return actorDisplayName(token.actor);
-  return token.document?.name ?? token.name ?? actorDisplayName(token.actor);
+  return token.document?._source?.name ?? token._source?.name
+    ?? token.document?.name ?? token.name ?? actorDisplayName(token.actor);
 }
 
 export function actorSpeaker(actor) {
