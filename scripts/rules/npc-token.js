@@ -1,10 +1,12 @@
 import { materializeNpc, NpcGenerationError, shouldGenerateNpcToken } from "./npc-generation.js";
 
+import { evaluateAnimatedRoll } from "./dice-animation.js";
+
 export async function evaluateNpcFormula(formula) {
   if (typeof Roll.validate === "function" && !Roll.validate(formula)) {
     throw new Error(game.i18n.localize("MYTHRASF.Npc.InvalidFormula"));
   }
-  const roll = await new Roll(formula).evaluate();
+  const roll = await evaluateAnimatedRoll(formula);
   return roll.total;
 }
 

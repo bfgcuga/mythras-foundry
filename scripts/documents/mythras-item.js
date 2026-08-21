@@ -67,7 +67,7 @@ export class MythrasItem extends Item {
     const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
     const adjustment = [["Limited", limitedSkill], ["Reinforced", reinforcedSkill]]
       .filter((entry) => entry[1])
-      .map(([key, skill]) => `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${key}`)}</span><strong>${foundry.utils.escapeHTML(skill.name)} (${Number(skill.system.total ?? 0)}%)</strong></div>`)
+      .map(([key, skill]) => `<div class="mythras-chat-row"><span>${game.i18n.localize(`MYTHRASF.SkillRoll.${key}`)}</span><strong>${foundry.utils.escapeHTML(skill.name)} (${foundry.utils.escapeHTML(skill.actor?.name ?? "")}, ${Number(skill.system.total ?? 0)}%)</strong></div>`)
       .join("");
 
     const messageData = {

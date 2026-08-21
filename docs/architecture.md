@@ -127,6 +127,12 @@ Las tiradas de habilidad se resuelven en `scripts/rules/skill-roll.js`; el
 diálogo de ajustes, el documento de Item y la interacción de suerte de la tarjeta
 consumen esos mismos objetivos y umbrales para no duplicar reglas.
 
+Toda tirada visible se evalúa con `Roll` de Foundry. Las que crean un mensaje
+nuevo incluyen el objeto en `ChatMessage.rolls`; las que actualizan una tarjeta
+existente o no generan mensaje usan `scripts/rules/dice-animation.js`. Este
+puente conserva el modo de tirada y emite la animación sincronizada cuando Dice
+So Nice está activo, sin convertir el módulo en una dependencia obligatoria.
+
 Las tiradas interactivas se modelan en `scripts/rules/contest-rolls.js`. Este
 módulo puro conserva el dado bruto separado de su clasificación, aplica la
 reducción común por objetivos superiores a 100 y separa el tipo de resolución
@@ -136,7 +142,11 @@ miembro, representante designado o tiradas individuales de todos sus miembros
 sin convertir esas reglas en tipos de tirada.
 `scripts/rules/contest-chat.js` persiste
 el estado versionado en `flags.mythras-foundry.contest`, valida revisión y
-propiedad, y elige al DJ activo o al autor como coordinador de respaldo. Las
+propiedad, y elige al DJ activo o al autor como coordinador de respaldo. Cada
+participante conserva el UUID de su instancia de Actor para distinguir tokens
+sintéticos procedentes del mismo PNJ. En eliminatorias todos los miembros quedan
+pendientes y una cola serializada convierte la primera respuesta válida en el
+dado común; las posteriores se rechazan por revisión obsoleta. Las
 tarjetas antiguas y las tiradas simples no requieren migración.
 Las tiradas simples y cada participante interactivo pueden gastar suerte
 repetidas veces sobre su último dado mientras dispongan de puntos. El historial

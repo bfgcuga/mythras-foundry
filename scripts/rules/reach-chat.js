@@ -1,4 +1,5 @@
 import { classifyContestRoll } from "./contest-rolls.js";
+import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { opposedEffectWinner } from "./combat-effects.js";
 import { currentActionPoints } from "./action-points.js";
 import { engagementId } from "./engagements.js";
@@ -54,7 +55,10 @@ export async function requestReachChange(actor) {
     targetUuid: target.actor.uuid, targetName: target.name, intent: result.intent,
     weaponId, modeKey, evade: { target: Number(skill.system.total ?? 0), rawRoll: roll.total,
       result: classifyContestRoll(roll.total, Number(skill.system.total ?? 0)) }, authorUserId: game.user.id };
-  return ChatMessage.create({ content: render(state), flags: { [SCOPE]: { reachChange: state } } });
+  const messageData = { speaker: ChatMessage.getSpeaker({ actor }), content: render(state),
+    rolls: [roll], flags: { [SCOPE]: { reachChange: state } } };
+  ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
+  return ChatMessage.create(messageData);
   } finally { pendingActors.delete(actor.uuid); }
 }
 
@@ -65,7 +69,7 @@ async function respond(message, state, type) {
   if (type !== "none") {
     if (type === "evade") {
       const skill = evade(actor); if (!skill) return;
-      const roll = await new Roll("1d100").evaluate(); response = { type, target: Number(skill.system.total ?? 0),
+      const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) }); response = { type, target: Number(skill.system.total ?? 0),
         rawRoll: roll.total, result: classifyContestRoll(roll.total, Number(skill.system.total ?? 0)) };
     } else {
       const selected = longestPreparedWeapon(actor); if (!selected) return;
@@ -73,7 +77,8 @@ async function respond(message, state, type) {
       const resolved = resolveWeaponStyle({ weapon: { id: selected.weapon.id, name: selected.weapon.name,
         system: selected.mode }, styles, selectedStyleId: selected.mode.preferredCombatStyleId,
       familiarity: selected.mode.familiarity });
-      const targetValue = difficultyTarget(resolved.target, resolved.difficulty); const roll = await new Roll("1d100").evaluate();
+      const targetValue = difficultyTarget(resolved.target, resolved.difficulty);
+      const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
       response = { type, weaponId: selected.weapon.id, modeKey: selected.mode.key,
         target: targetValue, rawRoll: roll.total, result: classifyContestRoll(roll.total, targetValue) };
       await consumePassiveBlock(combat, target.id, selected.weapon.id, "reactionAttack");

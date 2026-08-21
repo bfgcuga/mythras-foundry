@@ -21,6 +21,7 @@ import { ammunitionState, applyLongRangeDamage, canFireAmmunition, consumeAmmuni
   isAccidentalMeleeHit, parseRangeProfile, rangedAttackProfile, reducePowerCategory
 } from "./ranged-combat.js";
 import { clearAim, readyAim } from "./ranged-actions.js";
+import { evaluateAnimatedRoll } from "./dice-animation.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -450,7 +451,8 @@ async function respondToAttack(message, combat, type) {
   const defense = await defenseConfiguration(actor, type, combat);
   if (!defense) return;
   if (["parry", "evade"].includes(type)) await clearAim(actor);
-  const roll = ["none", "cover"].includes(type) ? null : await new Roll("1d100").evaluate();
+  const roll = ["none", "cover"].includes(type) ? null : await evaluateAnimatedRoll("1d100",
+    { speaker: ChatMessage.getSpeaker({ actor }) });
   const request = { action: "combatDefense", messageId: message.id, revision: combat.revision,
     userId: game.user.id, defense: { ...defense, rawRoll: roll?.total ?? null,
       serializedRoll: roll?.toJSON?.() ?? null } };
@@ -797,7 +799,8 @@ async function spendCombatLuck(message, current, side) {
       { action: "invert", label: localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left" },
       { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
   if (!choice) return;
-  const rawRoll = choice === "reroll" ? (await new Roll("1d100").evaluate()).total : invertD100(currentRoll);
+  const rawRoll = choice === "reroll" ? (await evaluateAnimatedRoll("1d100",
+    { speaker: ChatMessage.getSpeaker({ actor }) })).total : invertD100(currentRoll);
   await actor.update({ "system.resources.luckPoints.value": Number(actor.system.resources.luckPoints.value) - 1 });
   const request = { action: "combatLuck", messageId: message.id, revision: current.revision,
     userId: game.user.id, side, rawRoll, luckAlreadySpent: true };
@@ -873,11 +876,11 @@ async function requestCombatDamage(message, combat) {
   const weaponDamage = maximizeDamageFormula(combat.attacker.damage || mode.damage || "0", maximizeCount);
   const formula = `max(0, (${weaponDamage}) + (${modifier}) + (${extraordinary}))`;
   let roll;
-  try { roll = await new Roll(formula).evaluate(); }
+  try { roll = await evaluateAnimatedRoll(formula, { speaker: ChatMessage.getSpeaker({ actor }) }); }
   catch { return ui.notifications.warn(localize("MYTHRASF.Combat.InvalidDamageFormula")); }
   let alternateRoll = null;
   if (selectedEffectCount(combat.effects?.selections ?? [], "impale")) {
-    alternateRoll = await new Roll(formula).evaluate();
+    alternateRoll = await evaluateAnimatedRoll(formula, { speaker: ChatMessage.getSpeaker({ actor }) });
     const choice = await foundry.applications.api.DialogV2.wait({
       window: { title: localize("MYTHRASF.CombatEffect.ImpaleChoice") },
       content: `<div class="mythras-foundry mythras-dialog"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.FirstRoll"))}</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.SecondRoll"))}</span><strong class="mythras-chat-roll-value">${alternateRoll.total}</strong></div></div>`,
@@ -891,7 +894,8 @@ async function requestCombatDamage(message, combat) {
   let chosenLocation = combat.defender.targetType === "weapon" ? combat.defender.targetWeaponId
     : (combat.effects?.selections ?? []).find((entry) =>
     entry.ruleKey === "chooseLocation")?.parameters?.locationId;
-  const locationRoll = chosenLocation ? null : await new Roll("1d20").evaluate();
+  const locationRoll = chosenLocation ? null : await evaluateAnimatedRoll("1d20",
+    { speaker: ChatMessage.getSpeaker({ actor }) });
   let rolledLocationId = "";
   if (locationRoll && selectedEffectCount(combat.effects?.selections ?? [], "aimedShot")) {
     const locations = combat.defender.locations ?? [];
@@ -944,7 +948,8 @@ async function requestDamageLuck(message, combat) {
     || Number(actor.system.resources?.luckPoints?.value ?? 0) < 1
     || !["proposed", "stale"].includes(combat.damage?.status)) return;
   let roll;
-  try { roll = await new Roll(combat.damage.formula).evaluate(); }
+  try { roll = await evaluateAnimatedRoll(combat.damage.formula,
+    { speaker: ChatMessage.getSpeaker({ actor }) }); }
   catch { return ui.notifications.warn(localize("MYTHRASF.Combat.InvalidDamageFormula")); }
   await actor.update({ "system.resources.luckPoints.value": Number(actor.system.resources.luckPoints.value) - 1 });
   const request = { action: "combatDamageLuck", messageId: message.id, revision: combat.revision,
@@ -1085,7 +1090,7 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
     const skill = defender.items.find((item) => item.type === "skill"
       && (check.abilitySlugs ?? ["aguante"]).includes(item.system.slug));
     if (!skill) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
-    const roll = await new Roll("1d100").evaluate();
+    const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor: defender }) });
     const target = Number(skill.system.total ?? 0);
     resolution = { manual: false, abilityId: skill.id, abilityName: skill.name,
       target, rawRoll: roll.total, serializedRoll: roll.toJSON(),
@@ -1185,7 +1190,8 @@ async function applyCheckConsequence(combat, check, actor) {
   effect.status = "resolved";
   if (resisted) return;
   if (effect.key === "cegar-oponente") {
-    const duration = await new Roll("1d3").evaluate();
+    const duration = await evaluateAnimatedRoll("1d3",
+      { speaker: ChatMessage.getSpeaker({ actor }) });
     await addManagedStatus(combat, effect, { key: "blinded", statusId: "blinded",
       turns: duration.total });
   }
@@ -1292,7 +1298,8 @@ async function applyWoundConsequences(combat, defender, location) {
     key: "manualWoundOutcome", status: "pending", locationId: location.id,
     requiresConfirmation: true }];
   if (wound === "serious") {
-    const duration = await new Roll("1d3").evaluate();
+    const duration = await evaluateAnimatedRoll("1d3",
+      { speaker: ChatMessage.getSpeaker({ actor: defender }) });
     await addManagedStatus(combat, pseudoEffect, { key: "seriousWound",
       statusId: "seriousWound", turns: duration.total, locationId: location.id });
     if (failed && extremity) {

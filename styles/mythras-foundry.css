@@ -152,6 +152,9 @@
 .skill-roll-dialog .skill-roll-adjustment-toggle { grid-template-columns: 1rem 1fr; }
 .skill-roll-dialog .skill-roll-adjustment-fields { display: grid; gap: 0.4rem; }
 .skill-roll-dialog .skill-roll-adjustment:not(:has(.skill-roll-adjustment-toggle input:checked)) .skill-roll-adjustment-fields { display: none; }
+.wound-roll-impact { display: grid; gap: 0.55rem; }
+.wound-roll-impact > p { margin: 0 0 0.2rem; }
+.wound-roll-impact .wound-roll-impact-option { display: grid; grid-template-columns: 1rem minmax(0, 1fr); align-items: start; gap: 0.5rem; }
 .skill-roll-empty { margin: 0; font-size: var(--mythras-font-size-auxiliary); }
 .skill-roll-modifier > span { color: var(--mythras-ink) !important; }
 .skill-roll-modifier-effect--penalty { color: #a1241b !important; }
@@ -2668,6 +2671,8 @@
 .mythras-foundry .skill-roll-side > label { display: grid; grid-template-columns: minmax(9rem, 0.8fr) minmax(9rem, 1fr); align-items: center; gap: 0.4rem; }
 .mythras-foundry .skill-roll-participant { display: grid; grid-template-columns: minmax(7rem, 1fr) auto auto minmax(8rem, 1fr) minmax(7rem, 0.7fr); align-items: center; gap: 0.4rem; padding-block: 0.2rem; border-bottom: 1px solid color-mix(in srgb, var(--mythras-border) 55%, transparent); }
 .mythras-foundry .skill-roll-participant > label { display: flex; align-items: center; gap: 0.35rem; }
+.mythras-foundry .skill-roll-participant--initiator { opacity: 0.88; }
+.mythras-foundry .skill-roll-participant-fixed { font-size: var(--mythras-font-size-auxiliary); }
 .chat-message .mythras-contest-card .contest-participants { display: grid; gap: 0.25rem; margin-block: 0.45rem; }
 .chat-message .mythras-contest-card .contest-participant > span:first-child { display: grid; min-width: 0; }
 .chat-message .mythras-contest-card .contest-participant small { color: color-mix(in srgb, var(--mythras-ink) 72%, transparent); overflow-wrap: anywhere; }
@@ -2675,6 +2680,7 @@
 .chat-message .mythras-contest-card .contest-side-title { margin-bottom: 0.25rem; font-weight: 700; text-align: center; }
 .chat-message .mythras-contest-card .contest-participant { display: grid; grid-template-columns: minmax(0, 1fr) auto 1.65rem; align-items: start; gap: 0.4rem; }
 .chat-message .mythras-contest-card .contest-participant-identity { display: grid; min-width: 0; }
+.chat-message .mythras-contest-card .contest-team-captain { margin-left: 0.3rem; color: #806314; }
 .chat-message .mythras-contest-card .contest-participant-identity .mythras-chat-luck-spent { margin-top: 0.15rem; line-height: 1.15; overflow-wrap: anywhere; }
 .chat-message .mythras-contest-card .contest-participant-values { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.45rem; min-width: 0; }
 .chat-message .mythras-contest-card .contest-participant-target { padding-top: 0.22rem; white-space: nowrap; }

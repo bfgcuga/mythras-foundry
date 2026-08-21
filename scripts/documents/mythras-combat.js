@@ -7,6 +7,7 @@ import { advanceActorTurnConditions, expireRoundConditions,
   bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
 import { prepareRoundConsequences } from "../rules/round-consequences.js";
 import { combatActionState, expireCombatActionTurn } from "../rules/combat-action-runtime.js";
+import { evaluateAnimatedRoll } from "../rules/dice-animation.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "turnEconomy";
@@ -184,7 +185,8 @@ export class MythrasCombat extends Combat {
       const base = combatant.actor.system.baseAttributes ?? combatant.actor.system.attributes ?? {};
       const bonus = maximum === 0 ? 0 : Number(resolveActorConditions(combatant.actor,
         { baseAttributes: base }).attributes.initiative ?? 0);
-      const primaryRoll = await new Roll(`1d10 + ${bonus}`).evaluate();
+      const primaryRoll = await evaluateAnimatedRoll(`1d10 + ${bonus}`,
+        { speaker: ChatMessage.getSpeaker({ actor: combatant.actor }) });
       const primary = Number(primaryRoll.total);
       const used = occupied.get(primary) ?? new Set();
       let tieRoll; let attempts = 0;

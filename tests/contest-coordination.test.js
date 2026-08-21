@@ -49,7 +49,8 @@ test("Luck spenders only need to be active-party participants", () => {
 test("contest setup is limited to scene tokens and rivals choose their ability later", () => {
   const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
   assert.match(dialog, /canvas\?\.tokens\?\.placeables/);
-  assert.match(dialog, /if \(mode === "individual"\) return \{ actorId: actor\.id, actorName: actor\.name,/);
+  assert.doesNotMatch(dialog, /const seen = new Set\(\)/);
+  assert.match(dialog, /actorId: actorIdentity\(actor\), actorUuid: actorReference\(actor\), actorName: actorLabel\(actor\)/);
   assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
   assert.match(dialog, /skill-roll-adjustment-fields/);
   assert.match(dialog, /<div class="skill-roll-participants" hidden>/);
@@ -59,11 +60,13 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   assert.match(dialog, /abilityName: side === "opponent" \? null : ability\.name/);
 });
 
-test("every opposed response opens the complete roll adjustment dialog", () => {
+test("opposed responses open adjustments while elimination accepts the first configured roller", () => {
   const script = fs.readFileSync(new URL("../scripts/rules/contest-chat.js", import.meta.url), "utf8");
   const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
   assert.match(script, /openContestResponseDialog\(actor, participant\.abilityId, participant\.config\?\.difficulty\)/);
-  assert.doesNotMatch(script, /configuredSide && configuredSide\.mode !== "individual"/);
+  assert.match(script, /side\?\.mode === "elimination"/);
+  assert.match(script, /side\.representativeId = participant\.id/);
+  assert.match(script, /contestResponseQueues/);
   assert.match(dialog, /name="abilityId"/);
   assert.match(dialog, /name="difficulty"/);
   assert.match(dialog, /adjustment\("limited", "Limited"\)/);
@@ -76,6 +79,7 @@ test("configured contest cards separate sides and name multi-member team winners
   assert.match(script, /side\.mode === "team" && side\.representativeRule !== "individual" && side\.participantIds\.length > 1/);
   assert.match(script, /MYTHRASF\.Contest\.Team\.\$\{sideName\}/);
   assert.match(script, /contestRollHolder\(contest, request\.participantId\)/);
+  assert.match(script, /contest-team-captain/);
 });
 
 test("resolution and participation are configured as independent axes", () => {

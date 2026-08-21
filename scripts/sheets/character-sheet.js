@@ -73,6 +73,7 @@ import { worstWoundLevel,
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
+import { evaluateAnimatedRoll } from "../rules/dice-animation.js";
 import { INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
 import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
@@ -968,7 +969,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const update = { "system.generationMethod": method };
 
     for (const [key, formula] of Object.entries(formulas)) {
-      const roll = await new Roll(formula).evaluate();
+      const roll = await evaluateAnimatedRoll(formula,
+        { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
       update[`system.${key}`] = roll.total;
     }
 
@@ -1698,7 +1700,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #rollStartingMoney(draft) {
-    const roll = await new Roll("4d6").evaluate();
+    const roll = await evaluateAnimatedRoll("4d6",
+      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
     draft.startingMoneyDice = Number(roll.total);
     draft.startingMoney = calculateStartingMoney(
       draft.cultureKey, draft.socialClassKey, draft.startingMoneyDice
@@ -1706,7 +1709,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #assignRandomSocialClass(draft) {
-    const roll = await new Roll("1d100").evaluate();
+    const roll = await evaluateAnimatedRoll("1d100",
+      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
     const socialClass = resolveSocialClass(draft.cultureKey, roll.total);
     draft.socialClassRoll = Number(roll.total);
     draft.socialClassKey = socialClass?.key ?? "";
@@ -1755,7 +1759,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const category = getAgeCategory(draft.ageCategory);
     if (!category) return;
-    const roll = await new Roll(category.ageFormula).evaluate();
+    const roll = await evaluateAnimatedRoll(category.ageFormula,
+      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
     draft.age = Number(roll.total);
     await this.#saveBackgroundDraft(draft);
   }
@@ -2016,7 +2021,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #rollStartingValue(formula) {
     if (!formula || formula === "0") return 0;
     if (/^\d+$/.test(formula)) return Number(formula);
-    return Number((await new Roll(formula).evaluate()).total ?? 0);
+    return Number((await evaluateAnimatedRoll(formula,
+      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) })).total ?? 0);
   }
 
   async #chooseStartingEquipment(draft) {

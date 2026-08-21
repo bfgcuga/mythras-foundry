@@ -13,9 +13,26 @@ function escape(value) {
 }
 
 function sceneActors() {
-  const seen = new Set();
   return Array.from(canvas?.tokens?.placeables ?? []).map((token) => token.actor)
-    .filter((actor) => actor && !seen.has(actor.id) && seen.add(actor.id));
+    .filter(Boolean);
+}
+
+function actorReference(actor) {
+  return actor?.uuid ?? actor?.id ?? "";
+}
+
+function actorIdentity(actor) {
+  return actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
+}
+
+function actorLabel(actor) {
+  return Array.from(canvas?.tokens?.placeables ?? []).find((token) => token.actor === actor)?.name
+    ?? actor?.name ?? "";
+}
+
+function actorByReference(actors, reference) {
+  return actors.find((actor) => actorReference(actor) === reference)
+    ?? globalThis.fromUuidSync?.(reference) ?? game.actors.get(reference) ?? null;
 }
 
 export async function openSkillRollDialog(item, { imposedDifficulty = "standard",
@@ -23,23 +40,30 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   const { DialogV2 } = foundry.applications.api;
   const actors = sceneActors();
   const actorOptions = actors.map((actor) =>
-    `<option value="${escape(actor.id)}">${escape(actor.name)}</option>`).join("");
+    `<option value="${escape(actorReference(actor))}" ${actorReference(actor) === actorReference(item.actor) ? "selected" : ""}>${escape(actorLabel(actor))}</option>`).join("");
   const skillOptions = actors.flatMap((actor) => actor.items
     .filter((candidate) => ABILITY_TYPES.includes(candidate.type))
-    .map((skill) => `<option value="${escape(actor.id)}:${escape(skill.id)}" data-target="${Number(skill.system.total ?? 0)}">${escape(actor.name)} — ${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`))
+    .map((skill) => `<option value="${escape(actorReference(actor))}|${escape(skill.id)}" data-actor-id="${escape(actorReference(actor))}" data-target="${Number(skill.system.total ?? 0)}" ${actorReference(actor) === actorReference(item.actor) && skill.id === item.id ? "selected" : ""}>${escape(actorLabel(actor))} — ${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`))
     .join("");
-  const targetedActorIds = new Set(Array.from(game.user?.targets ?? []).map((token) => token.actor?.id).filter(Boolean));
+  const targetedActorIds = new Set(Array.from(game.user?.targets ?? [])
+    .map((token) => actorReference(token.actor)).filter(Boolean));
   const participantDifficultyOptions = DIFFICULTIES.map((key) => `<option value="${key}" ${key === defaultDifficulty ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
-  const participantRows = actors.filter((actor) => actor.id !== item.actor?.id).map((actor) => {
+  const initiatorRow = `<div class="skill-roll-participant skill-roll-participant--initiator" data-actor-id="${escape(actorReference(item.actor))}">
+    <span class="skill-roll-participant-name">${escape(actorLabel(item.actor))}</span>
+    <span class="skill-roll-participant-fixed">${escape(game.i18n.localize("MYTHRASF.Contest.InitiatorIncluded"))}</span>
+    <span></span><output class="sheet-field-readonly">${escape(item.name)} (${Number(item.system.total ?? 0)}%)</output><span></span>
+  </div>`;
+  const participantRows = actors.filter((actor) => actorReference(actor) !== actorReference(item.actor)).map((actor) => {
+    const reference = actorReference(actor);
     const abilities = actor.items.filter((candidate) => ABILITY_TYPES.includes(candidate.type));
     const options = abilities.map((ability) => `<option value="${escape(ability.id)}" data-target="${Number(ability.system.total ?? 0)}" ${ability.type === item.type && ability.name === item.name ? "selected" : ""}>${escape(ability.name)} (${Number(ability.system.total ?? 0)}%)</option>`).join("");
-    const checked = targetedActorIds.has(actor.id) ? "checked" : "";
-    return `<div class="skill-roll-participant" data-actor-id="${escape(actor.id)}">
-      <span class="skill-roll-participant-name">${escape(actor.name)}</span>
-      <label><input type="checkbox" class="sheet-state-box" name="initiatorParticipant" value="${escape(actor.id)}"><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.initiator"))}</span></label>
-      <label><input type="checkbox" class="sheet-state-box" name="opponentParticipant" value="${escape(actor.id)}" ${checked}><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.opponent"))}</span></label>
-      <select class="skill-roll-participant-configuration" name="participantAbility-${escape(actor.id)}" aria-label="${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}">${options}</select>
-      <select class="skill-roll-participant-configuration" name="participantDifficulty-${escape(actor.id)}" aria-label="${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}">${participantDifficultyOptions}</select>
+    const checked = targetedActorIds.has(reference) ? "checked" : "";
+    return `<div class="skill-roll-participant" data-actor-id="${escape(reference)}">
+      <span class="skill-roll-participant-name">${escape(actorLabel(actor))}</span>
+      <label><input type="checkbox" class="sheet-state-box" name="initiatorParticipant" value="${escape(reference)}" data-actor-identity="${escape(actorIdentity(actor))}"><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.initiator"))}</span></label>
+      <label><input type="checkbox" class="sheet-state-box" name="opponentParticipant" value="${escape(reference)}" data-actor-identity="${escape(actorIdentity(actor))}" ${checked}><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.opponent"))}</span></label>
+      <select class="skill-roll-participant-configuration" name="participantAbility-${escape(reference)}" aria-label="${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}">${options}</select>
+      <select class="skill-roll-participant-configuration" name="participantDifficulty-${escape(reference)}" aria-label="${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}">${participantDifficultyOptions}</select>
     </div>`;
   }).join("");
   const resolutionOptions = RESOLUTION_MODES.map((mode) => `<option value="${mode}">${escape(game.i18n.localize(`MYTHRASF.Contest.ResolutionMode.${mode}`))}</option>`).join("");
@@ -82,7 +106,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
             <label data-designated hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.Representative"))}</span><select name="opponentDesignatedActorId">${actorOptions}</select></label>
             <label data-party-loader hidden><span>${escape(game.i18n.localize("MYTHRASF.Contest.LoadGroup"))}</span><select name="opponentPartyId">${partyOptions}</select></label>
           </fieldset>
-          <div class="skill-roll-participants" hidden>${participantRows}</div>
+          <div class="skill-roll-participants" hidden>${initiatorRow}${participantRows}</div>
         </div>
       </fieldset>
       ${adjustmentPanel("limited")}
@@ -101,9 +125,9 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
         const form = button.form.elements;
         const adjustment = (type) => {
           if (!form[`${type}Enabled`].checked) return null;
-          const [actorId, skillId] = String(form[`${type}Skill`].value).split(":");
+          const [actorId, skillId] = String(form[`${type}Skill`].value).split("|");
           if (actorId !== form[`${type}ActorId`].value || !skillId) return false;
-          return game.actors.get(actorId)?.items.get(skillId) ?? false;
+          return actorByReference(actors, actorId)?.items.get(skillId) ?? false;
         };
         const limitedSkill = adjustment("limited");
         const reinforcedSkill = adjustment("reinforced");
@@ -116,18 +140,18 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           const mode = form[`${side}Mode`].value;
           const controls = Array.from(button.form.querySelectorAll(`input[name='${side}Participant']:checked`));
           const participants = controls.map((control) => {
-            const actor = game.actors.get(control.value);
+            const actor = actorByReference(actors, control.value);
             if (!actor) return null;
-            if (mode === "individual") return { actorId: actor.id, actorName: actor.name,
+            if (mode === "individual") return { actorId: actorIdentity(actor), actorUuid: actorReference(actor), actorName: actorLabel(actor),
               abilityId: null, abilityName: null, difficulty: null, target: null, side };
-            const ability = actor.items.get(form[`participantAbility-${actor.id}`]?.value);
-            const participantDifficulty = form[`participantDifficulty-${actor.id}`]?.value ?? "standard";
-            return ability ? { actorId: actor.id, actorName: actor.name, abilityId: ability.id,
+            const ability = actor.items.get(form[`participantAbility-${control.value}`]?.value);
+            const participantDifficulty = form[`participantDifficulty-${control.value}`]?.value ?? "standard";
+            return ability ? { actorId: actorIdentity(actor), actorUuid: actorReference(actor), actorName: actorLabel(actor), abilityId: ability.id,
               abilityName: side === "opponent" ? null : ability.name, difficulty: participantDifficulty, side,
               target: resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: participantDifficulty }).target } : null;
           }).filter(Boolean);
           return { mode, representativeRule: form[`${side}TeamRule`].value,
-            designatedActorId: form[`${side}DesignatedActorId`].value || participants[0]?.actorId || null,
+            designatedActorId: form[`${side}DesignatedActorId`].value || participants[0]?.actorUuid || null,
             participants, valid: participants.length === controls.length };
         };
         const initiatorSide = sideConfig("initiator");
@@ -189,7 +213,9 @@ export function activateSkillRollDialog(element) {
     if (/^(initiator|opponent)PartyId$/.test(event.target.name)) {
       const side = event.target.name.startsWith("initiator") ? "initiator" : "opponent";
       const members = new Set(String(event.target.selectedOptions[0]?.dataset.members ?? "").split(",").filter(Boolean));
-      if (members.size) dialog.querySelectorAll(`input[name='${side}Participant']`).forEach((control) => { control.checked = members.has(control.value); });
+      if (members.size) dialog.querySelectorAll(`input[name='${side}Participant']`).forEach((control) => {
+        control.checked = members.has(control.dataset.actorIdentity);
+      });
       refreshContestFields(dialog);
     }
     if (["initiatorParticipant", "opponentParticipant"].includes(event.target.name) && event.target.checked) {
@@ -221,7 +247,7 @@ function refreshContestFields(dialog) {
     panel?.querySelectorAll("[data-team-rule]").forEach((node) => { node.hidden = mode !== "team"; });
     const rule = dialog.querySelector(`select[name='${side}TeamRule']`)?.value;
     const designated = panel?.querySelector("[data-designated]");
-    if (designated) designated.hidden = !group || (mode !== "elimination" && rule !== "designated");
+    if (designated) designated.hidden = mode !== "team" || rule !== "designated";
     dialog.querySelectorAll(`input[name='${side}Participant']`).forEach((control) => {
       control.closest("label").hidden = (side === "initiator" && !group) || (side === "opponent" && resolution === "difficulty");
     });
@@ -238,9 +264,9 @@ export async function openContestResponseDialog(actor, defaultAbilityId, default
   const abilities = actor.items.filter((item) => ABILITY_TYPES.includes(item.type));
   const options = abilities.map((item) => `<option value="${escape(item.id)}" ${item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`).join("");
   const actors = sceneActors();
-  const actorOptions = actors.map((candidate) => `<option value="${escape(candidate.id)}">${escape(candidate.name)}</option>`).join("");
+  const actorOptions = actors.map((candidate) => `<option value="${escape(actorReference(candidate))}" ${actorReference(candidate) === actorReference(actor) ? "selected" : ""}>${escape(actorLabel(candidate))}</option>`).join("");
   const affectingOptions = actors.flatMap((candidate) => candidate.items.filter((item) => ABILITY_TYPES.includes(item.type))
-    .map((item) => `<option value="${escape(candidate.id)}:${escape(item.id)}" data-actor-id="${escape(candidate.id)}">${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`)).join("");
+    .map((item) => `<option value="${escape(actorReference(candidate))}|${escape(item.id)}" data-actor-id="${escape(actorReference(candidate))}" ${actorReference(candidate) === actorReference(actor) && item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`)).join("");
   const adjustment = (name, key) => `<fieldset class="skill-roll-adjustment" data-adjustment="${name}"><legend>${escape(game.i18n.localize(`MYTHRASF.SkillRoll.${key}`))}</legend><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ApplyAdjustment"))}</span><input type="checkbox" class="sheet-state-box" name="${name}Enabled"></label><div class="skill-roll-adjustment-fields"><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectedBy"))}</span><select name="${name}ActorId">${actorOptions}</select></label><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectingSkill"))}</span><select name="${name}Ability">${affectingOptions}</select></label></div></fieldset>`;
   return DialogV2.wait({
     window: { title: game.i18n.format("MYTHRASF.Contest.ResponseTitle", { actor: actor.name }) },
@@ -277,7 +303,7 @@ export function activateContestResponseDialog(element) {
 function responseAdjustment(form, type) {
   if (!form[`${type}Enabled`].checked) return null;
   const value = form[`${type}Ability`].value;
-  return value.startsWith(`${form[`${type}ActorId`].value}:`) ? value : null;
+  return value.startsWith(`${form[`${type}ActorId`].value}|`) ? value : null;
 }
 
 function syncAdjustmentSkill(dialog, type, suffix = "Skill") {
@@ -285,7 +311,7 @@ function syncAdjustmentSkill(dialog, type, suffix = "Skill") {
   const select = dialog.querySelector(`select[name='${type}${suffix}']`);
   if (!select) return;
   Array.from(select.options).forEach((option) => {
-    const optionActorId = option.dataset.actorId ?? String(option.value).split(":")[0];
+    const optionActorId = option.dataset.actorId ?? String(option.value).split("|")[0];
     option.hidden = option.disabled = optionActorId !== actorId;
   });
   if (select.selectedOptions[0]?.disabled) select.value = Array.from(select.options).find((option) => !option.disabled)?.value ?? "";

@@ -1,4 +1,5 @@
 import { classifyContestRoll } from "./contest-rolls.js";
+import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { fatigueLossForResult, worsenFatigueLevel, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { timedEffects } from "./timed-condition-runtime.js";
@@ -109,10 +110,12 @@ async function requestResolution(message, state, entryId, manual) {
   } else {
     const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
     if (!skill) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SourceMissing"));
-    const roll = await new Roll("1d100").evaluate();
+    const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
     const result = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
-    const lossRoll = result === "failure" ? await new Roll("1d2").evaluate()
-      : result === "fumble" ? await new Roll("1d3").evaluate() : null;
+    const lossRoll = result === "failure" ? await evaluateAnimatedRoll("1d2",
+      { speaker: ChatMessage.getSpeaker({ actor }) })
+      : result === "fumble" ? await evaluateAnimatedRoll("1d3",
+        { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
     resolution = { manual: false, target: Number(skill.system.total ?? 0), rawRoll: roll.total,
       serializedRoll: roll.toJSON(), result,
       loss: fatigueLossForResult(result, lossRoll?.total ?? 1),

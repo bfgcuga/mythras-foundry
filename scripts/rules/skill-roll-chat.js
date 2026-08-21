@@ -1,5 +1,8 @@
 import { classifyRoll, renderRollLine, renderRollResult, rollThresholdRanges } from "../documents/mythras-item.js";
 import { invertD100 } from "./skill-roll.js";
+import { evaluateAnimatedRoll } from "./dice-animation.js";
+
+const pendingLuckMessages = new Set();
 
 export async function activateSkillRollCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
@@ -9,7 +12,13 @@ export async function activateSkillRollCard(message, html) {
   const actor = data?.actorUuid ? await fromUuid(data.actorUuid) : null;
   button.hidden = !canUseSimpleRollLuck(actor);
   button.dataset.listenerAttached = "true";
-  button.addEventListener("click", () => spendLuck(message));
+  button.addEventListener("click", async () => {
+    if (pendingLuckMessages.has(message.id)) return;
+    pendingLuckMessages.add(message.id);
+    button.disabled = true;
+    try { await spendLuck(message); }
+    finally { pendingLuckMessages.delete(message.id); button.disabled = false; }
+  });
 }
 
 async function spendLuck(message) {
@@ -31,7 +40,8 @@ async function spendLuck(message) {
   if (!choice) return;
   const previous = [...(data.rolls ?? [])];
   const current = previous.at(-1);
-  const roll = choice === "reroll" ? await new Roll("1d100").evaluate() : null;
+  const roll = choice === "reroll" ? await evaluateAnimatedRoll("1d100",
+    { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
   const value = choice === "reroll" ? roll.total : invertD100(current);
   const result = classifyRoll(value, data.target, data.criticalTarget);
   const card = document.createElement("div");
