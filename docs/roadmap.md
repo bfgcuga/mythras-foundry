@@ -32,6 +32,7 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Estados y penalizaciones
 
+
 - Ampliar el motor temporal ya disponible cuando se incorporen acciones
   generales, alcance y tiempo mundial. Las duraciones por turno y asalto,
   Sangrando, Desangrándose, Ahogándose, Sorpresa y las consecuencias temporales

@@ -17,6 +17,22 @@ export function humanArmorFactors(location) {
     && system.hpClass === candidate.hpClass) ?? null;
 }
 
+export function woundLocationKind(location) {
+  const human = humanArmorFactors(location);
+  if (human) {
+    const leg = human.nameKey.endsWith("Leg");
+    const arm = human.nameKey.endsWith("Arm");
+    return Object.freeze({ extremity: arm || leg, arm, leg,
+      vital: ["abdomen", "chest", "head"].includes(human.nameKey) });
+  }
+  const system = location?.system ?? location ?? {};
+  const description = `${system.category ?? ""} ${system.hpClass ?? ""}`.toLowerCase();
+  const arm = /arm|brazo/.test(description);
+  const leg = /leg|pierna/.test(description);
+  const extremity = arm || leg || /limb|extremidad/.test(description);
+  return Object.freeze({ extremity, arm, leg, vital: !extremity });
+}
+
 export function calculateLocationHitPoints(constitution, size, hpClass = "standard") {
   const band = Math.max(1, Math.ceil((Number(constitution) + Number(size)) / 5));
   const offsets = { arm: -1, standard: 0, abdomen: 1, chest: 2 };

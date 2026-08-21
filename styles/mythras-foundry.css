@@ -10,7 +10,7 @@
   --mythras-paper-overlay: linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18));
   --mythras-paper-texture: url("../../../ui/parchment.jpg");
   --mythras-panel: rgba(255, 249, 226, 0.42);
-  --mythras-header-accent: #ed6a2c;
+  --mythras-header-accent: #ffc901;
   --mythras-wound-healthy: #285f32;
   --mythras-wound-minor: #88bd78;
   --mythras-wound-serious: #e0b93f;

@@ -10,7 +10,7 @@ import { armorFitsWearer, armorInitiativePenalty, totalArmorPoints,
   wornArmorPoints } from "../rules/armor.js";
 import { npcWeaponDurability, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
-import { hasSeriousWound, worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
 import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
@@ -19,6 +19,7 @@ import { encumbranceState, skillUsesStrengthOrDexterity, totalCarriedEncumbrance
 } from "../rules/encumbrance.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
+import { askWoundRollImpact } from "../ui/wound-roll-dialog.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 
@@ -292,8 +293,6 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event)));
     this.element.querySelectorAll("[data-location-disabled]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateLocationDisabled(event)));
-    this.element.querySelectorAll("[data-location-amputated]").forEach((field) =>
-      field.addEventListener("change", (event) => this.#updateLocationAmputated(event)));
     this.element.querySelectorAll("[data-fatigue-level]").forEach((field) =>
       field.addEventListener("change", (event) => this.actor.update({
         "system.fatigueLevel": event.currentTarget.value })));
@@ -445,15 +444,18 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       type: "penalty"
     });
     difficulty = this.#conditionResolution({ physical }).difficulty;
-    const beforeWoundPenalty = difficulty;
-    difficulty = await this.#applySeriousWoundPenalty(difficulty);
-    if (difficulty !== beforeWoundPenalty) {
+    difficulty = await this.#applySeriousWoundPenalty(difficulty, physical);
+    if (this._lastWoundRollImpact?.seriousPenalty) {
       modifiers.push({
         source: game.i18n.localize("MYTHRASF.Wound.serious"),
         effect: game.i18n.localize("MYTHRASF.SkillRoll.OneDifficultyStep"),
         type: "penalty"
       });
     }
+    if (this._lastWoundRollImpact?.unusableMember) modifiers.push({
+      source: game.i18n.localize("MYTHRASF.Wound.UnusableMember"),
+      effect: game.i18n.localize("MYTHRASF.Fatigue.NoActivity"), type: "penalty"
+    });
     await item?.rollSkill({ difficulty, modifiers });
   }
 
@@ -502,8 +504,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       target: targets.length === 1 ? targets[0] : null });
   }
 
-  async #applySeriousWoundPenalty(difficulty) {
-    return this.#resolveSituationalDifficulty(difficulty);
+  async #applySeriousWoundPenalty(difficulty, physical = false) {
+    return this.#resolveSituationalDifficulty(difficulty, physical);
   }
 
   #conditionResolution({ baseDifficulty = "standard", physical = false,
@@ -519,17 +521,11 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #resolveSituationalDifficulty(baseDifficulty, physical = false) {
-    const locations = this.actor.items.filter((item) => item.type === "hitLocation");
-    let situational = false;
-    if (hasSeriousWound(locations)) {
-      situational = await DialogV2.confirm({
-        window: { title: game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyTitle") },
-        content: `<div class="mythras-foundry mythras-dialog"><p>${game.i18n.localize("MYTHRASF.Wound.ApplyPenaltyPrompt")}</p></div>`,
-        yes: { label: game.i18n.localize("MYTHRASF.Wound.ApplyPenalty") },
-        no: { label: game.i18n.localize("MYTHRASF.Wound.IgnorePenalty") }
-      });
-    }
-    return this.#conditionResolution({ baseDifficulty, physical, situational }).difficulty;
+    const impact = await askWoundRollImpact(this.actor, { physical });
+    this._lastWoundRollImpact = impact;
+    if (impact.unusableMember) return "impossible";
+    return this.#conditionResolution({ baseDifficulty, physical,
+      situational: impact.seriousPenalty }).difficulty;
   }
 
   async #toggleStatus(event) {
@@ -629,15 +625,6 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
     await location.update({ "system.disabled": event.currentTarget.checked });
-  }
-
-  async #updateLocationAmputated(event) {
-    if (!this.isEditable) return;
-    const location = this.actor.items.get(
-      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
-    if (location?.type === "hitLocation") {
-      await location.update({ "system.amputated": event.currentTarget.checked });
-    }
   }
 
   async #updateLocationArmor(event) {

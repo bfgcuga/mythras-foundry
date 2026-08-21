@@ -33,7 +33,7 @@
               <span>{{localize "MYTHRASF.HitLocation.Disabled"}}</span>
             </label>{{else if row.disabled}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Disabled"}}</span>{{/if}}
           {{else if row.disabled}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Disabled"}}</span>{{/if}}
-          <label class="location-disabled-state {{#if row.amputated}}active{{/if}}"><input type="checkbox" class="sheet-state-box" data-location-amputated {{checked row.amputated}} {{#unless @root.editable}}disabled{{/unless}} aria-label="{{localize 'MYTHRASF.HitLocation.Amputated'}}"><span>{{localize "MYTHRASF.HitLocation.Amputated"}}</span></label>
+          {{#if row.amputated}}<span class="location-disabled-state active">{{localize "MYTHRASF.HitLocation.Amputated"}}</span>{{/if}}
         </div>
         <output class="location-max">{{row.item.system.maxHitPoints}}</output>
         <output class="location-current wound-{{row.item.system.woundLevel}}">{{row.item.system.currentHitPoints}}</output>

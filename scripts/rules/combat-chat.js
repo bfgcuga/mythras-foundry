@@ -3,7 +3,7 @@ import { combatAttackHits, damageModifierFormula, difficultyTarget, evasionWinne
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "./weapon-modes.js";
 import { resolveActorConditions, actorLoadState } from "./actor-conditions.js";
 import { invertD100 } from "./skill-roll.js";
-import { findHitLocation, woundLevel } from "./hit-locations.js";
+import { findHitLocation, woundLevel, woundLocationKind } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
@@ -1284,11 +1284,7 @@ async function applyWoundConsequences(combat, defender, location) {
   if (!['serious', 'major'].includes(wound)) return;
   const pseudoEffect = { side: "attacker", target: "opponent", slot: -1,
     key: `wound-${wound}` };
-  const category = location.system.category ?? location.system.hpClass;
-  const extremity = ["arm", "leg", "rightArm", "leftArm", "rightLeg", "leftLeg"]
-    .some((value) => String(category).includes(value) || String(location.system.hpClass).includes(value));
-  const leg = String(category).toLowerCase().includes("leg")
-    || String(location.system.hpClass).toLowerCase().includes("leg");
+  const { extremity, leg } = woundLocationKind(location);
   const check = (combat.effects?.checks ?? []).find((entry) => entry.source === "wound"
     && entry.id === `wound-${location.id}`);
   const failed = check?.resolution?.manual ? null : check?.resolution?.winner !== "left";

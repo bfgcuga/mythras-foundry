@@ -51,6 +51,9 @@ El sistema incluye actualmente:
 - Estado reúne estados activos, penalizaciones y Fatiga. La hoja de personaje
   añade Trasfondo narrativo y una silueta humana interactiva vinculada por datos
   canónicos a sus localizaciones de golpe;
+- antes de cada tirada física, personaje y PNJ permiten decidir si una Herida
+  Grave aumenta su dificultad y si una localización inutilizada o amputada hace
+  imposible esa acción concreta;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat;

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { woundRollRisks } from "../scripts/ui/wound-roll-dialog.js";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -35,7 +36,20 @@ test("Trasfondo, amputación y silueta canónica quedan modelados", async () => 
     "beliefs", "siblings", "parents", "partner", "children", "extendedFamily", "allies",
     "contacts", "rivals", "enemies", "secrets", "notes"]) assert.match(model, new RegExp(`"${field}"`));
   assert.match(itemModel, /amputated: new BooleanField/);
+  const itemSheet = await read("templates/item/item-sheet.hbs");
+  assert.match(itemSheet, /name="system\.amputated"/);
+  assert.doesNotMatch(sheet, /data-location-amputated/);
   assert.match(sheet, /data-body-silhouette/);
   assert.match(silhouette, /assets\/Silueta\/Silueta\.svg/);
   assert.match(silhouette, /humanArmorFactors/);
+});
+
+test("las consecuencias narrativas distinguen herida grave y miembro inutilizable", () => {
+  const locations = [{ id: "arm", type: "hitLocation", name: "Brazo",
+    system: { currentHitPoints: 0, maxHitPoints: 5, disabled: false, amputated: false } },
+  { id: "leg", type: "hitLocation", name: "Pierna",
+    system: { currentHitPoints: 5, maxHitPoints: 5, disabled: false, amputated: true } }];
+  const risks = woundRollRisks({ items: locations, effects: [] });
+  assert.deepEqual(risks.serious.map((item) => item.id), ["arm"]);
+  assert.deepEqual(risks.unusable.map((item) => item.id), ["leg"]);
 });

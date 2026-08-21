@@ -20,9 +20,23 @@ import {
   humanHitLocationData,
   hasSeriousWound,
   woundLevel,
+  woundLocationKind,
   woundPenaltyKey,
   worstWoundLevel
 } from "../scripts/rules/hit-locations.js";
+
+test("las consecuencias de heridas reconocen brazos y piernas por anatomía canónica", () => {
+  const locations = humanHitLocationData({ constitution: 10, size: 10 });
+  const rightLeg = locations.find((location) => location.system.rangeStart === 1);
+  const rightArm = locations.find((location) => location.system.rangeStart === 13);
+  const chest = locations.find((location) => location.system.rangeStart === 10);
+  assert.deepEqual(woundLocationKind(rightLeg), {
+    extremity: true, arm: false, leg: true, vital: false });
+  assert.deepEqual(woundLocationKind(rightArm), {
+    extremity: true, arm: true, leg: false, vital: false });
+  assert.deepEqual(woundLocationKind(chest), {
+    extremity: false, arm: false, leg: false, vital: true });
+});
 
 function style(id, total, keys) {
   return { id, system: { total, weaponProfiles: keys.map((key) => ({ key, name: key })) } };

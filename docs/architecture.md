@@ -190,6 +190,18 @@ humanos, nunca mediante nombres traducidos. `hitLocation.system.amputated` es
 independiente de inutilización y herida. Los textos de Trasfondo residen en
 `CharacterData.system.narrative`.
 
+Las consecuencias de Herida Grave y Crítica clasifican la zona mediante
+`woundLocationKind`: para anatomía humana usa los rangos canónicos y para otras
+anatomías recurre a categoría y clase de PG estructuradas. La amputación es una
+decisión permanente editada exclusivamente desde la hoja de la localización;
+las listas de combate solo la muestran cuando está activa.
+
+La dependencia narrativa entre una tirada física y una localización no se
+deduce automáticamente. Antes de cada tirada física, la hoja consulta por
+separado si usa una zona con Herida Grave —un grado adicional— y si depende de
+una zona inutilizada o amputada —tirada imposible—. Las tiradas no físicas no
+abren esta consulta.
+
 La transacción de combate usa el esquema 7 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la

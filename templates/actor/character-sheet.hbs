@@ -63,7 +63,6 @@
       <button type="button" class="active" data-tab="character">
         {{localize "MYTHRASF.Tab.Character"}}
       </button>
-      <button type="button" data-tab="narrative">{{localize "MYTHRASF.Tab.Narrative"}}</button>
       <button type="button" data-tab="combat">
         {{localize "MYTHRASF.Tab.Combat"}}
       </button>
@@ -73,6 +72,7 @@
       <button type="button" data-tab="inventory">
         {{localize "MYTHRASF.Tab.Inventory"}}
       </button>
+      <button type="button" data-tab="narrative">{{localize "MYTHRASF.Tab.Narrative"}}</button>
       {{#if editable}}
         <button type="button" class="sheet-train-skill" data-action="train-skill">
           <i class="fas fa-graduation-cap" aria-hidden="true"></i>
@@ -271,10 +271,6 @@
           </div>
         </section>
       </section>
-      <section class="tab-panel" data-tab-content="narrative">
-        {{> "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs"}}
-      </section>
-
       <section class="tab-panel" data-tab-content="skills">
         <div class="section-heading">
           <h2>{{localize "MYTHRASF.Tab.Skills"}}</h2>
@@ -373,6 +369,9 @@
           {{> "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs" items=section.rows}}
         </fieldset>
         {{/each}}
+      </section>
+      <section class="tab-panel" data-tab-content="narrative">
+        {{> "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs"}}
       </section>
     </main>
 </div>
