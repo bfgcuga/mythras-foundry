@@ -190,6 +190,11 @@ humanos, nunca mediante nombres traducidos. `hitLocation.system.amputated` es
 independiente de inutilización y herida. Los textos de Trasfondo residen en
 `CharacterData.system.narrative`.
 
+Las navegaciones de pestañas de Actor y de Item comparten el mismo patrón
+visual: pestañas inactivas oscurecidas, borde superior redondeado y pestaña
+activa fundida con la superficie de papel. Los botones auxiliares que viven en
+la misma barra no se tratan como pestañas.
+
 Las consecuencias de Herida Grave y Crítica clasifican la zona mediante
 `woundLocationKind`: para anatomía humana usa los rangos canónicos y para otras
 anatomías recurre a categoría y clase de PG estructuradas. La amputación es una

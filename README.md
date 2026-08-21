@@ -48,6 +48,8 @@ El sistema incluye actualmente:
   conservan como confirmaciones guiadas;
 - el cuadro de acciones de Combate permanece siempre visible y muestra el coste
   y la causa localizada cuando una acción no puede utilizarse;
+- el cuadro de acciones encabeza la pestaña Combate tanto en personajes como en PNJ;
+  todas las hojas usan pestañas elevadas con una superficie activa de papel;
 - Estado reúne estados activos, penalizaciones y Fatiga. La hoja de personaje
   añade Trasfondo narrativo y una silueta humana interactiva vinculada por datos
   canónicos a sus localizaciones de golpe;

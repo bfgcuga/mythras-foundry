@@ -10,7 +10,9 @@
   --mythras-paper-overlay: linear-gradient(rgba(255, 250, 232, 0.18), rgba(255, 250, 232, 0.18));
   --mythras-paper-texture: url("../../../ui/parchment.jpg");
   --mythras-panel: rgba(255, 249, 226, 0.42);
-  --mythras-header-accent: #ffc901;
+  --mythras-header-accent: #8a3f32;
+  --mythras-header-ink: #fff3d4;
+  --mythras-tab-inactive: color-mix(in srgb, var(--mythras-paper) 76%, var(--mythras-accent));
   --mythras-wound-healthy: #285f32;
   --mythras-wound-minor: #88bd78;
   --mythras-wound-serious: #e0b93f;
@@ -347,6 +349,16 @@
 .mythras-foundry .npc-sheet-content > .sheet-header select,
 .mythras-foundry .npc-sheet-content > .sheet-header output {
   border-color: rgb(48 46 42 / 58%);
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header :is(label, span, output, input, select, i),
+.mythras-foundry .npc-sheet-content > .sheet-header :is(label, span, output, input, select, i) {
+  color: var(--mythras-header-ink);
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header .penalized-value-modifier,
+.mythras-foundry .npc-sheet-content > .sheet-header .penalized-value-modifier {
+  color: #ffd27a;
 }
 
 .mythras-foundry .item-sheet-content .sheet-header img {
@@ -2131,6 +2143,35 @@
 
 .mythras-foundry .armor-sheet-tabs button.active {
   border-bottom: 2px solid var(--mythras-accent);
+  font-weight: 700;
+}
+
+.mythras-foundry :is(.sheet-tabs, .weapon-sheet-tabs, .combat-style-sheet-tabs, .armor-sheet-tabs) {
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-height: 2.25rem;
+  padding: 0 0.25rem;
+  border-bottom: 1px solid var(--mythras-border);
+}
+
+.mythras-foundry :is(.sheet-tabs, .weapon-sheet-tabs, .combat-style-sheet-tabs, .armor-sheet-tabs) button:is([data-tab], [data-weapon-tab], [data-combat-style-tab], [data-armor-tab]) {
+  align-self: flex-end;
+  min-height: 2rem;
+  margin: 0 0 -1px;
+  padding: 0.35rem 0.75rem 0.4rem;
+  border: 1px solid var(--mythras-border);
+  border-radius: 0.45rem 0.45rem 0 0;
+  background: var(--mythras-tab-inactive);
+  box-shadow: inset 0 -2px 3px rgb(48 46 42 / 10%);
+}
+
+.mythras-foundry :is(.sheet-tabs, .weapon-sheet-tabs, .combat-style-sheet-tabs, .armor-sheet-tabs) button:is([data-tab], [data-weapon-tab], [data-combat-style-tab], [data-armor-tab]).active {
+  position: relative;
+  z-index: 1;
+  color: var(--mythras-ink);
+  border-bottom-color: var(--mythras-paper);
+  background: var(--mythras-paper);
+  box-shadow: none;
   font-weight: 700;
 }
 

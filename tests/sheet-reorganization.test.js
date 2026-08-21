@@ -15,6 +15,18 @@ test("las acciones tácticas permanecen reunidas y visibles en ambas hojas", asy
     assert.match(source, /data-action="declare-passive-block"/);
   }
   assert.doesNotMatch(characterCombat, /combat-paper-ranged-weapons[\s\S]*?<div class="combat-tactical-actions">/);
+  const npcCombat = npc.slice(npc.indexOf('data-tab-content="combat"'));
+  assert.ok(npcCombat.indexOf("combat-action-panel") < npcCombat.indexOf("npc-locations-panel"));
+});
+
+test("todas las navegaciones usan pestañas elevadas con superficie activa", async () => {
+  const css = await read("styles/mythras-foundry.css");
+  for (const selector of ["data-tab", "data-weapon-tab", "data-combat-style-tab", "data-armor-tab"]) {
+    assert.match(css, new RegExp(selector));
+  }
+  assert.match(css, /border-radius: 0\.45rem 0\.45rem 0 0/);
+  assert.match(css, /background: var\(--mythras-tab-inactive\)/);
+  assert.match(css, /background: var\(--mythras-paper\)/);
 });
 
 test("Estado contiene Fatiga y Combate ya no la duplica", async () => {
