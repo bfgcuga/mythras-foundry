@@ -19,3 +19,12 @@ export function tokenDisplayName(token) {
 export function actorSpeaker(actor) {
   return { ...ChatMessage.getSpeaker({ actor }), alias: actorDisplayName(actor) };
 }
+
+export async function updateActorFromSheet(actor, changes) {
+  const updatesName = Object.prototype.hasOwnProperty.call(changes ?? {}, "name");
+  await actor.update(changes);
+  const token = actor.isToken && !actor.token?.isLinked ? actor.token : null;
+  if (updatesName && token && token.name !== actor.name) {
+    await token.update({ name: actor.name });
+  }
+}

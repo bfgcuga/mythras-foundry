@@ -23,6 +23,7 @@ import { askWoundRollImpact } from "../ui/wound-roll-dialog.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 import { rollSpecial } from "../rules/special-roll.js";
+import { updateActorFromSheet } from "../rules/document-names.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -37,7 +38,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     form: {
       handler: NpcSheet._onSubmitForm,
       closeOnSubmit: false,
-      submitOnChange: false
+      submitOnChange: true
     }
   };
 
@@ -49,7 +50,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   };
 
   static async _onSubmitForm(event, form, formData) {
-    await this.actor.update(formData.object);
+    await updateActorFromSheet(this.actor, formData.object);
   }
 
   async _prepareContext(options) {

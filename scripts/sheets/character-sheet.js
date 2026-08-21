@@ -82,6 +82,7 @@ import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
 import { bindSheetEvents } from "../ui/sheet-events.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
+import { updateActorFromSheet } from "../rules/document-names.js";
 import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
 import {
@@ -148,7 +149,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   };
 
   static async _onSubmitForm(event, form, formData) {
-    await this.actor.update(formData.object);
+    await updateActorFromSheet(this.actor, formData.object);
   }
 
   async _prepareContext(options) {

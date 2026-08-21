@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { preferredContestCoordinator, validateContestResponse } from "../scripts/rules/contest-chat.js";
+import { sceneRollParticipants } from "../scripts/apps/skill-roll-dialog.js";
 
 const contest = () => ({ status: "pending", revision: 2, participants: [{ id: "p1", pending: true }] });
 
@@ -50,7 +51,8 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   const dialog = fs.readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
   assert.match(dialog, /canvas\?\.tokens\?\.placeables/);
   assert.doesNotMatch(dialog, /const seen = new Set\(\)/);
-  assert.match(dialog, /actorId: actorIdentity\(actor\), actorUuid: actorReference\(actor\), actorName: actorLabel\(actor\)/);
+  assert.match(dialog, /actorUuid: actorReference\(actor\), tokenUuid: control\.value/);
+  assert.match(dialog, /actorName: actorLabel\(actor, token\)/);
   assert.match(dialog, /actorDisplayName\(actor\)/);
   assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
   assert.match(dialog, /skill-roll-adjustment-fields/);
@@ -59,6 +61,20 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   assert.match(dialog, /ability\.type === item\.type && ability\.name === item\.name \? "selected"/);
   assert.match(dialog, /node\.hidden = !initiatorGroup/);
   assert.match(dialog, /abilityName: side === "opponent" \? null : ability\.name/);
+});
+
+test("contest setup preserves each token instance even when actors share an identity", () => {
+  const sharedActor = { id: "npc", uuid: "Actor.npc", type: "npc" };
+  const tokens = [
+    { id: "one", document: { uuid: "Scene.scene.Token.one" }, actor: sharedActor },
+    { id: "two", document: { uuid: "Scene.scene.Token.two" }, actor: sharedActor }
+  ];
+  const participants = sceneRollParticipants(tokens);
+  assert.deepEqual(participants.map((entry) => entry.reference), [
+    "Scene.scene.Token.one", "Scene.scene.Token.two"
+  ]);
+  assert.equal(participants[0].token, tokens[0]);
+  assert.equal(participants[1].token, tokens[1]);
 });
 
 test("opposed responses open adjustments while elimination accepts the first configured roller", () => {

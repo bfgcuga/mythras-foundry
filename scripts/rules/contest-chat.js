@@ -3,7 +3,7 @@ import { invertD100, resolveSkillRollTargets } from "./skill-roll.js";
 import { classifyContestRoll, resolveConfiguredContest, resolveContest } from "./contest-rolls.js";
 import { appendSerializedRolls } from "./dice-animation.js";
 import { recordAbilityFumble } from "./skills.js";
-import { actorDisplayName, actorSpeaker } from "./document-names.js";
+import { actorDisplayName, actorSpeaker, tokenDisplayName } from "./document-names.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -27,13 +27,15 @@ function actorIdentity(actor) {
 }
 
 function participantDisplayName(participant) {
-  return actorDisplayName(contestActor(participant)) || participant?.actorName || "";
+  return participant?.actorName || actorDisplayName(contestActor(participant)) || "";
 }
 
 function contestActor(participant) {
   if (!participant) return null;
+  const tokenDocument = participant.tokenUuid && globalThis.fromUuidSync?.(participant.tokenUuid);
+  if (tokenDocument?.actor) return tokenDocument.actor;
   const byUuid = participant.actorUuid && globalThis.fromUuidSync?.(participant.actorUuid);
-  if (byUuid) return byUuid;
+  if (byUuid) return byUuid.actor ?? byUuid;
   const tokenActor = Array.from(canvas?.tokens?.placeables ?? []).map((token) => token.actor)
     .find((actor) => actorIdentity(actor) === participant.actorId || actor?.id === participant.actorId);
   return tokenActor ?? game.actors.get(participant.actorId) ?? null;
@@ -49,7 +51,8 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
   const setup = configured.contest;
   const initiator = {
     id: participantId(item.actor.id), actorId: actorIdentity(item.actor), actorUuid: item.actor.uuid,
-    actorName: actorDisplayName(item.actor),
+    actorName: item.actor.type === "character" ? actorDisplayName(item.actor)
+      : tokenDisplayName(item.actor.token) || actorDisplayName(item.actor),
     abilityId: item.id, abilityName: item.name, target: configured.targets.target,
     rawRoll: initiatorRoll?.total ?? null, pending: !initiatorRoll,
     serializedRoll: initiatorRoll?.toJSON?.() ?? null,
@@ -59,7 +62,10 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
       limitedAbility: configured.limitedSkill ? `${configured.limitedSkill.actor.uuid}|${configured.limitedSkill.id}` : null,
       reinforcedAbility: configured.reinforcedSkill ? `${configured.reinforcedSkill.actor.uuid}|${configured.reinforcedSkill.id}` : null }
   };
-  const participants = [initiator, ...setup.participants.filter((entry) => entry.actorUuid !== item.actor.uuid).map((entry) => ({
+  const initiatorTokenUuid = item.actor.token?.uuid ?? null;
+  initiator.tokenUuid = initiatorTokenUuid;
+  const participants = [initiator, ...setup.participants.filter((entry) => initiatorTokenUuid
+    ? entry.tokenUuid !== initiatorTokenUuid : entry.actorUuid !== item.actor.uuid).map((entry) => ({
     id: participantId(entry.actorId), ...entry,
     rawRoll: null, pending: true, config: { difficulty: entry.difficulty }
   }))];
@@ -67,7 +73,7 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     const source = setup.sides[name];
     const members = participants.filter((entry) => entry.id === initiator.id
       ? name === "initiator" : entry.side === name);
-    const designated = members.find((entry) => entry.actorUuid === source.designatedActorId) ?? members[0] ?? null;
+    const designated = members.find((entry) => (entry.tokenUuid ?? entry.actorUuid) === source.designatedActorId) ?? members[0] ?? null;
     const representative = source.mode === "individual" || source.representativeRule === "individual"
       || source.mode === "elimination" ? null : source.representativeRule === "designated"
       ? designated : members.reduce((chosen, entry) => !chosen ? entry
@@ -277,7 +283,8 @@ async function applyContestResponseUnlocked(message, request) {
   if (!ability || !["skill", "combatStyle", "passion", "special"].includes(ability.type)) return;
   const affecting = (reference) => {
     const [actorId, itemId] = String(reference ?? "").split("|");
-    const item = (globalThis.fromUuidSync?.(actorId) ?? game.actors.get(actorId))?.items.get(itemId);
+    const document = globalThis.fromUuidSync?.(actorId) ?? game.actors.get(actorId);
+    const item = (document?.actor ?? document)?.items.get(itemId);
     return item && ["skill", "combatStyle", "passion"].includes(item.type) ? item : null;
   };
   const limited = affecting(request.config.limitedAbility);

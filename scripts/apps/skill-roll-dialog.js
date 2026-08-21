@@ -14,9 +14,12 @@ function escape(value) {
   return foundry.utils.escapeHTML(String(value ?? ""));
 }
 
-function sceneActors() {
-  return Array.from(canvas?.tokens?.placeables ?? []).map((token) => token.actor)
-    .filter(Boolean);
+export function sceneRollParticipants(tokens = canvas?.tokens?.placeables ?? []) {
+  return Array.from(tokens).filter((token) => token.actor).map((token) => ({
+    token,
+    actor: token.actor,
+    reference: token.document?.uuid ?? token.uuid ?? token.document?.id ?? token.id ?? ""
+  }));
 }
 
 function actorReference(actor) {
@@ -27,46 +30,46 @@ function actorIdentity(actor) {
   return actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
 }
 
-function actorLabel(actor) {
-  if (actor?.type !== "character") {
-    const token = Array.from(canvas?.tokens?.placeables ?? []).find((candidate) =>
-      candidate.actor === actor || candidate.actor?.uuid === actor?.uuid);
-    if (token) return tokenDisplayName(token);
-  }
+function actorLabel(actor, token = null) {
+  if (actor?.type !== "character" && token) return tokenDisplayName(token);
   return actorDisplayName(actor);
 }
 
-function actorByReference(actors, reference) {
-  return actors.find((actor) => actorReference(actor) === reference)
-    ?? globalThis.fromUuidSync?.(reference) ?? game.actors.get(reference) ?? null;
+function actorByReference(participants, reference) {
+  const participant = participants.find((entry) => entry.reference === reference);
+  if (participant) return participant.actor;
+  const document = globalThis.fromUuidSync?.(reference);
+  return document?.actor ?? document ?? game.actors.get(reference) ?? null;
 }
 
 export async function openSkillRollDialog(item, { imposedDifficulty = "standard",
   defaultDifficulty = "standard", modifiers = [] } = {}) {
   const { DialogV2 } = foundry.applications.api;
-  const actors = sceneActors();
-  const actorOptions = actors.map((actor) =>
-    `<option value="${escape(actorReference(actor))}" ${actorReference(actor) === actorReference(item.actor) ? "selected" : ""}>${escape(actorLabel(actor))}</option>`).join("");
-  const skillOptions = actors.flatMap((actor) => actor.items
+  const sceneParticipants = sceneRollParticipants();
+  const initiatorParticipant = sceneParticipants.find((entry) => entry.actor === item.actor)
+    ?? sceneParticipants.find((entry) => entry.actor?.uuid === item.actor?.uuid);
+  const initiatorReference = initiatorParticipant?.reference ?? actorReference(item.actor);
+  const actorOptions = sceneParticipants.map(({ actor, token, reference }) =>
+    `<option value="${escape(reference)}" ${reference === initiatorReference ? "selected" : ""}>${escape(actorLabel(actor, token))}</option>`).join("");
+  const skillOptions = sceneParticipants.flatMap(({ actor, token, reference }) => actor.items
     .filter((candidate) => ABILITY_TYPES.includes(candidate.type))
-    .map((skill) => `<option value="${escape(actorReference(actor))}|${escape(skill.id)}" data-actor-id="${escape(actorReference(actor))}" data-target="${Number(skill.system.total ?? 0)}" ${actorReference(actor) === actorReference(item.actor) && skill.id === item.id ? "selected" : ""}>${escape(actorLabel(actor))} — ${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`))
+    .map((skill) => `<option value="${escape(reference)}|${escape(skill.id)}" data-actor-id="${escape(reference)}" data-target="${Number(skill.system.total ?? 0)}" ${reference === initiatorReference && skill.id === item.id ? "selected" : ""}>${escape(actorLabel(actor, token))} — ${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`))
     .join("");
   const targetedActorIds = new Set(Array.from(game.user?.targets ?? [])
-    .map((token) => actorReference(token.actor)).filter(Boolean));
+    .map((token) => token.document?.uuid ?? token.uuid ?? token.document?.id ?? token.id).filter(Boolean));
   const participantDifficultyOptions = DIFFICULTIES.map((key) => `<option value="${key}" ${key === defaultDifficulty ? "selected" : ""}>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${key}`))}</option>`).join("");
-  const initiatorRow = `<div class="skill-roll-participant skill-roll-participant--initiator" data-actor-id="${escape(actorReference(item.actor))}">
-    <span class="skill-roll-participant-name">${escape(actorLabel(item.actor))}</span>
+  const initiatorRow = `<div class="skill-roll-participant skill-roll-participant--initiator" data-actor-id="${escape(initiatorReference)}">
+    <span class="skill-roll-participant-name">${escape(actorLabel(item.actor, initiatorParticipant?.token))}</span>
     <span class="skill-roll-participant-fixed">${escape(game.i18n.localize("MYTHRASF.Contest.InitiatorIncluded"))}</span>
     <span></span><output class="sheet-field-readonly">${escape(item.name)} (${Number(item.system.total ?? 0)}%)</output><span></span>
   </div>`;
-  const participantRows = actors.filter((actor) => actorReference(actor) !== actorReference(item.actor)).map((actor) => {
-    const reference = actorReference(actor);
+  const participantRows = sceneParticipants.filter((entry) => entry.reference !== initiatorReference).map(({ actor, token, reference }) => {
     const abilities = actor.items.filter((candidate) => ABILITY_TYPES.includes(candidate.type));
     const options = [...abilities.map((ability) => `<option value="${escape(ability.id)}" data-target="${Number(ability.system.total ?? 0)}" ${ability.type === item.type && ability.name === item.name ? "selected" : ""}>${escape(ability.name)} (${Number(ability.system.total ?? 0)}%)</option>`),
       `<option value="${SPECIAL_ABILITY_ID}">${escape(game.i18n.localize("MYTHRASF.SpecialRoll.Title"))}</option>`].join("");
     const checked = targetedActorIds.has(reference) ? "checked" : "";
     return `<div class="skill-roll-participant" data-actor-id="${escape(reference)}">
-      <span class="skill-roll-participant-name">${escape(actorLabel(actor))}</span>
+      <span class="skill-roll-participant-name">${escape(actorLabel(actor, token))}</span>
       <label><input type="checkbox" class="sheet-state-box" name="initiatorParticipant" value="${escape(reference)}" data-actor-identity="${escape(actorIdentity(actor))}"><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.initiator"))}</span></label>
       <label><input type="checkbox" class="sheet-state-box" name="opponentParticipant" value="${escape(reference)}" data-actor-identity="${escape(actorIdentity(actor))}" ${checked}><span>${escape(game.i18n.localize("MYTHRASF.Contest.Side.opponent"))}</span></label>
       <select class="skill-roll-participant-configuration" name="participantAbility-${escape(reference)}" aria-label="${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}">${options}</select>
@@ -136,7 +139,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           if (!form[`${type}Enabled`].checked) return null;
           const [actorId, skillId] = String(form[`${type}Skill`].value).split("|");
           if (actorId !== form[`${type}ActorId`].value || !skillId) return false;
-          return actorByReference(actors, actorId)?.items.get(skillId) ?? false;
+          return actorByReference(sceneParticipants, actorId)?.items.get(skillId) ?? false;
         };
         const limitedSkill = adjustment("limited");
         const reinforcedSkill = adjustment("reinforced");
@@ -148,10 +151,12 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
         const sideConfig = (side) => {
           const mode = form[`${side}Mode`].value;
           const controls = Array.from(button.form.querySelectorAll(`input[name='${side}Participant']:checked`));
-          const participants = controls.map((control) => {
-            const actor = actorByReference(actors, control.value);
+          const selectedParticipants = controls.map((control) => {
+            const actor = actorByReference(sceneParticipants, control.value);
             if (!actor) return null;
-            if (mode === "individual") return { actorId: actorIdentity(actor), actorUuid: actorReference(actor), actorName: actorLabel(actor),
+            const token = sceneParticipants.find((entry) => entry.reference === control.value)?.token ?? null;
+            if (mode === "individual") return { actorId: actorIdentity(actor), actorUuid: actorReference(actor), tokenUuid: control.value,
+              actorName: actorLabel(actor, token),
               abilityId: null, abilityName: null, difficulty: null, target: null, side };
             const abilityId = form[`participantAbility-${control.value}`]?.value;
             const ability = abilityId === SPECIAL_ABILITY_ID ? { id: SPECIAL_ABILITY_ID, type: "special",
@@ -160,13 +165,14 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
               system: { total: Math.max(0, Number(form[`participantSpecialTarget-${control.value}`]?.value) || 0) } }
               : actor.items.get(abilityId);
             const participantDifficulty = form[`participantDifficulty-${control.value}`]?.value ?? "standard";
-            return ability ? { actorId: actorIdentity(actor), actorUuid: actorReference(actor), actorName: actorLabel(actor), abilityId: ability.id,
+            return ability ? { actorId: actorIdentity(actor), actorUuid: actorReference(actor), tokenUuid: control.value,
+              actorName: actorLabel(actor, token), abilityId: ability.id,
               abilityName: side === "opponent" ? null : ability.name, difficulty: participantDifficulty, side,
               target: resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: participantDifficulty }).target } : null;
           }).filter(Boolean);
           return { mode, representativeRule: form[`${side}TeamRule`].value,
-            designatedActorId: form[`${side}DesignatedActorId`].value || participants[0]?.actorUuid || null,
-            participants, valid: participants.length === controls.length };
+            designatedActorId: form[`${side}DesignatedActorId`].value || selectedParticipants[0]?.tokenUuid || selectedParticipants[0]?.actorUuid || null,
+            participants: selectedParticipants, valid: selectedParticipants.length === controls.length };
         };
         const initiatorSide = sideConfig("initiator");
         const opponentSide = resolutionMode === "difficulty"
@@ -284,14 +290,18 @@ export async function openContestResponseDialog(actor, defaultAbilityId, default
   const abilities = actor.items.filter((item) => ABILITY_TYPES.includes(item.type));
   const options = [...abilities.map((item) => `<option value="${escape(item.id)}" ${item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`),
     `<option value="${SPECIAL_ABILITY_ID}" ${defaultAbilityId === SPECIAL_ABILITY_ID ? "selected" : ""}>${escape(game.i18n.localize("MYTHRASF.SpecialRoll.Title"))}</option>`].join("");
-  const actors = sceneActors();
-  const actorOptions = actors.map((candidate) => `<option value="${escape(actorReference(candidate))}" ${actorReference(candidate) === actorReference(actor) ? "selected" : ""}>${escape(actorLabel(candidate))}</option>`).join("");
-  const affectingOptions = actors.flatMap((candidate) => candidate.items.filter((item) => ABILITY_TYPES.includes(item.type))
-    .map((item) => `<option value="${escape(actorReference(candidate))}|${escape(item.id)}" data-actor-id="${escape(actorReference(candidate))}" ${actorReference(candidate) === actorReference(actor) && item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`)).join("");
+  const sceneParticipants = sceneRollParticipants();
+  const respondingParticipant = sceneParticipants.find((entry) => entry.actor === actor)
+    ?? sceneParticipants.find((entry) => entry.actor?.uuid === actor?.uuid);
+  const respondingReference = respondingParticipant?.reference ?? actorReference(actor);
+  const responseActorName = actorLabel(actor, respondingParticipant?.token);
+  const actorOptions = sceneParticipants.map(({ actor: candidate, token, reference }) => `<option value="${escape(reference)}" ${reference === respondingReference ? "selected" : ""}>${escape(actorLabel(candidate, token))}</option>`).join("");
+  const affectingOptions = sceneParticipants.flatMap(({ actor: candidate, reference }) => candidate.items.filter((item) => ABILITY_TYPES.includes(item.type))
+    .map((item) => `<option value="${escape(reference)}|${escape(item.id)}" data-actor-id="${escape(reference)}" ${reference === respondingReference && item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`)).join("");
   const adjustment = (name, key) => `<fieldset class="skill-roll-adjustment" data-adjustment="${name}"><legend>${escape(game.i18n.localize(`MYTHRASF.SkillRoll.${key}`))}</legend><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ApplyAdjustment"))}</span><input type="checkbox" class="sheet-state-box" name="${name}Enabled"></label><div class="skill-roll-adjustment-fields"><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectedBy"))}</span><select name="${name}ActorId">${actorOptions}</select></label><label><span>${escape(game.i18n.localize("MYTHRASF.SkillRoll.AffectingSkill"))}</span><select name="${name}Ability">${affectingOptions}</select></label></div></fieldset>`;
   return DialogV2.wait({
-    window: { title: game.i18n.format("MYTHRASF.Contest.ResponseTitle", { actor: actorLabel(actor) }) },
-    content: `<div class="mythras-foundry mythras-dialog contest-response-dialog"><fieldset><legend>${escape(actorLabel(actor))}</legend>
+    window: { title: game.i18n.format("MYTHRASF.Contest.ResponseTitle", { actor: responseActorName }) },
+    content: `<div class="mythras-foundry mythras-dialog contest-response-dialog"><fieldset><legend>${escape(responseActorName)}</legend>
       <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.Ability"))}</span><select name="abilityId">${options}</select></label>
       <div class="special-roll-fields" data-special-roll-fields hidden>
         <label><span>${escape(game.i18n.localize("MYTHRASF.SpecialRoll.Name"))}</span><input type="text" name="specialName" value="${escape(specialName || game.i18n.localize("MYTHRASF.SpecialRoll.DefaultName"))}"></label>
