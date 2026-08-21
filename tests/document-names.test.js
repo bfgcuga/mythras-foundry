@@ -24,15 +24,28 @@ test("unlinked NPCs use each TokenDocument name", () => {
     name: "Hombre lagarto" } }), "Hombre lagarto 3");
 });
 
+test("an instance name edited in the synthetic Actor overrides the stale Token name", () => {
+  globalThis.game = { actors: new Map([["npc-source", { name: "Hombre lagarto" }]]) };
+  const actor = { id: "npc", type: "npc", name: "Hombre lagarto 2", isToken: true,
+    token: { actorId: "npc-source", name: "Hombre lagarto" } };
+  const token = { actor, document: { _source: { name: "Hombre lagarto" } } };
+  assert.equal(actorDisplayName(actor), "Hombre lagarto 2");
+  assert.equal(tokenDisplayName(token), "Hombre lagarto 2");
+});
+
 test("renaming an unlinked token Actor from its sheet also renames that Token", async () => {
   const tokenUpdates = [];
-  const token = { name: "Hombre lagarto", isLinked: false,
-    update: async (changes) => { tokenUpdates.push(changes); Object.assign(token, changes); } };
+  const token = { name: "Hombre lagarto", _source: { name: "Hombre lagarto" }, isLinked: false,
+    update: async (changes) => { tokenUpdates.push(changes); Object.assign(token._source, changes); } };
   const actor = { name: "Hombre lagarto", isToken: true, token,
-    update: async (changes) => { Object.assign(actor, changes); } };
+    update: async (changes) => {
+      Object.assign(actor, changes);
+      token.name = changes.name;
+    } };
   await updateActorFromSheet(actor, { name: "Hombre lagarto 2", "system.notes": "" });
   assert.equal(actor.name, "Hombre lagarto 2");
   assert.equal(token.name, "Hombre lagarto 2");
+  assert.equal(token._source.name, "Hombre lagarto 2");
   assert.deepEqual(tokenUpdates, [{ name: "Hombre lagarto 2" }]);
 });
 
