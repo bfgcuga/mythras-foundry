@@ -195,6 +195,11 @@ visual: pestañas inactivas oscurecidas, borde superior redondeado y pestaña
 activa fundida con la superficie de papel. Los botones auxiliares que viven en
 la misma barra no se tratan como pestañas.
 
+Los encabezados de Actor son una superficie cromática independiente: usan
+`--mythras-header-ink`, `--mythras-header-line` y
+`--mythras-header-control` para campos, separadores y botones. No deben heredar
+el contraste de componentes equivalentes situados sobre el papel.
+
 Las consecuencias de Herida Grave y Crítica clasifican la zona mediante
 `woundLocationKind`: para anatomía humana usa los rangos canónicos y para otras
 anatomías recurre a categoría y clase de PG estructuradas. La amputación es una

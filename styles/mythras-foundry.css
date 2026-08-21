@@ -12,6 +12,9 @@
   --mythras-panel: rgba(255, 249, 226, 0.42);
   --mythras-header-accent: #8a3f32;
   --mythras-header-ink: #fff3d4;
+  --mythras-header-line: rgb(255 243 212 / 62%);
+  --mythras-header-control: #613129;
+  --mythras-header-control-hover: #4f2822;
   --mythras-tab-inactive: color-mix(in srgb, var(--mythras-paper) 76%, var(--mythras-accent));
   --mythras-wound-healthy: #285f32;
   --mythras-wound-minor: #88bd78;
@@ -329,7 +332,7 @@
 .mythras-foundry .character-sheet-content > .sheet-header,
 .mythras-foundry .npc-sheet-content > .sheet-header {
   padding: 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--mythras-header-accent) 58%, var(--mythras-accent));
+  border: 1px solid var(--mythras-header-line);
   border-radius: 0.35rem;
   background-color: var(--mythras-header-accent);
   background-image: linear-gradient(rgb(255 255 255 / 10%), rgb(48 46 42 / 5%));
@@ -339,7 +342,7 @@
 .mythras-foundry .character-sheet-content > .sheet-header .header-status,
 .mythras-foundry .character-sheet-content > .sheet-header .header-experience-rolls,
 .mythras-foundry .npc-sheet-content > .sheet-header .header-status {
-  border-color: rgb(48 46 42 / 48%);
+  border-color: var(--mythras-header-line);
 }
 
 .mythras-foundry .character-sheet-content > .sheet-header input,
@@ -348,17 +351,49 @@
 .mythras-foundry .npc-sheet-content > .sheet-header input,
 .mythras-foundry .npc-sheet-content > .sheet-header select,
 .mythras-foundry .npc-sheet-content > .sheet-header output {
-  border-color: rgb(48 46 42 / 58%);
+  border-color: var(--mythras-header-line);
+  color: var(--mythras-header-ink) !important;
+  caret-color: var(--mythras-header-ink);
 }
 
 .mythras-foundry .character-sheet-content > .sheet-header :is(label, span, output, input, select, i),
 .mythras-foundry .npc-sheet-content > .sheet-header :is(label, span, output, input, select, i) {
-  color: var(--mythras-header-ink);
+  color: var(--mythras-header-ink) !important;
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header .identity-fields :is(input, output),
+.mythras-foundry .npc-sheet-content > .sheet-header .identity-fields :is(input, select),
+.mythras-foundry .character-sheet-content > .sheet-header .header-status output,
+.mythras-foundry .npc-sheet-content > .sheet-header .header-status output,
+.mythras-foundry .character-sheet-content > .sheet-header .header-experience-rolls input {
+  border-color: var(--mythras-header-line);
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header .portrait-view,
+.mythras-foundry .npc-sheet-content > .sheet-header .portrait-view {
+  border-color: var(--mythras-header-line);
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header .portrait-edit,
+.mythras-foundry .npc-sheet-content > .sheet-header .portrait-edit {
+  border-color: var(--mythras-header-line);
+  background: var(--mythras-header-control);
+  color: var(--mythras-header-ink) !important;
+}
+
+.mythras-foundry .character-sheet-content > .sheet-header .body-silhouette {
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--mythras-header-line);
 }
 
 .mythras-foundry .character-sheet-content > .sheet-header .penalized-value-modifier,
 .mythras-foundry .npc-sheet-content > .sheet-header .penalized-value-modifier {
-  color: #ffd27a;
+  color: #ffd27a !important;
+}
+
+.mythras-foundry .npc-sheet-content > .sheet-header select option {
+  background: var(--mythras-paper);
+  color: var(--mythras-ink);
 }
 
 .mythras-foundry .item-sheet-content .sheet-header img {
@@ -2409,7 +2444,7 @@
   align-content: stretch;
   padding: 0 0 0 0.75rem;
   border: 0;
-  border-left: 1px solid var(--mythras-border);
+  border-left: 1px solid var(--mythras-header-line);
   background: transparent;
 }
 .mythras-foundry .npc-header-resource-control {
@@ -2425,12 +2460,16 @@
   min-height: 1.35rem;
   padding: 0;
   place-items: center;
-  border: 1px solid var(--mythras-border);
+  border: 1px solid var(--mythras-header-line);
   border-radius: 0.25rem;
-  background: #eadbb8;
+  background: var(--mythras-header-control);
+  color: var(--mythras-header-ink) !important;
   font-size: 0.68rem;
 }
-.mythras-foundry .npc-header-resource-control button:hover { box-shadow: 0 0 0 1px var(--mythras-accent); }
+.mythras-foundry .npc-header-resource-control button:hover {
+  background: var(--mythras-header-control-hover);
+  box-shadow: 0 0 0 1px var(--mythras-header-ink);
+}
 .mythras-foundry .sheet-tabs .npc-regenerate { margin-left: auto; }
 .mythras-foundry .npc-general-grid,
 .mythras-foundry .npc-ability-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.65rem; }

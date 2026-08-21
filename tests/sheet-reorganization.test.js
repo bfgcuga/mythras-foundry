@@ -29,6 +29,15 @@ test("todas las navegaciones usan pestañas elevadas con superficie activa", asy
   assert.match(css, /background: var\(--mythras-paper\)/);
 });
 
+test("los encabezados oscuros conservan contraste propio en campos, líneas y botones", async () => {
+  const css = await read("styles/mythras-foundry.css");
+  assert.match(css, /--mythras-header-line:/);
+  assert.match(css, /--mythras-header-control:/);
+  assert.match(css, /> \.sheet-header :is\(label, span, output, input, select, i\)[\s\S]*?color: var\(--mythras-header-ink\) !important/);
+  assert.match(css, /> \.sheet-header \.body-silhouette[\s\S]*?border-left: 1px solid var\(--mythras-header-line\)/);
+  assert.match(css, /\.npc-header-resource-control button[\s\S]*?background: var\(--mythras-header-control\)/);
+});
+
 test("Estado contiene Fatiga y Combate ya no la duplica", async () => {
   const [penalties, combat, character, npc] = await Promise.all([
     read("templates/actor/parts/penalties-tab.hbs"),

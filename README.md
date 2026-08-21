@@ -50,6 +50,8 @@ El sistema incluye actualmente:
   y la causa localizada cuando una acción no puede utilizarse;
 - el cuadro de acciones encabeza la pestaña Combate tanto en personajes como en PNJ;
   todas las hojas usan pestañas elevadas con una superficie activa de papel;
+- los encabezados de Actor usan texto, separadores y controles claros propios
+  sobre la superficie roja, sin heredar el contraste de la superficie de papel;
 - Estado reúne estados activos, penalizaciones y Fatiga. La hoja de personaje
   añade Trasfondo narrativo y una silueta humana interactiva vinculada por datos
   canónicos a sus localizaciones de golpe;
