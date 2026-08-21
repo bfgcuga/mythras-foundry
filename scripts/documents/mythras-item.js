@@ -3,6 +3,7 @@ import { calculatePassionValues } from "../rules/passions.js";
 import { woundLevel } from "../rules/hit-locations.js";
 import { openSkillRollDialog } from "../apps/skill-roll-dialog.js";
 import { createContestMessage } from "../rules/contest-chat.js";
+import { recordAbilityFumble } from "../rules/skills.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
@@ -94,9 +95,7 @@ export class MythrasItem extends Item {
     ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
     await ChatMessage.create(messageData);
 
-    if (result === "fumble" && !this.system.fumbled) {
-      await this.update({ "system.fumbled": true });
-    }
+    await recordAbilityFumble(this, result);
   }
 
   async rollPassion() {

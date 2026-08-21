@@ -26,8 +26,10 @@ function actorIdentity(actor) {
 }
 
 function actorLabel(actor) {
-  return Array.from(canvas?.tokens?.placeables ?? []).find((token) => token.actor === actor)?.name
-    ?? actor?.name ?? "";
+  if (!actor?.isToken) return actor?.name ?? "";
+  const token = Array.from(canvas?.tokens?.placeables ?? []).find((candidate) =>
+    candidate.actor === actor || candidate.actor?.uuid === actor?.uuid);
+  return actor.token?.name ?? token?.document?.name ?? token?.name ?? actor.name ?? "";
 }
 
 function actorByReference(actors, reference) {

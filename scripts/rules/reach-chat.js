@@ -9,6 +9,7 @@ import { combatantForActor, ensureEngagement, longestPreparedWeapon,
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
 import { difficultyTarget, resolveWeaponStyle } from "./combat.js";
 import { createResolvedReactionAttack } from "./combat-chat.js";
+import { recordAbilityFumble } from "./skills.js";
 
 const SCOPE = "mythras-foundry"; const SOCKET = "system.mythras-foundry";
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
@@ -49,12 +50,14 @@ export async function requestReachChange(actor) {
   const weapon = actor.items.get(weaponId); const mode = findWeaponMode(weapon, modeKey);
   const relation = await ensureEngagement(combat, actor, target.actor, weapon, mode);
   const skill = evade(actor); const roll = await new Roll("1d100").evaluate();
+  const evadeResult = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
+  await recordAbilityFumble(skill, evadeResult);
   const state = { schemaVersion: 1, revision: 0, status: "awaitingResponse", combatId: combat.id,
     relationId: relation?.id ?? engagementId(active.id, target.id), actorCombatantId: active.id,
     targetCombatantId: target.id, actorUuid: actor.uuid, actorName: actor.name,
     targetUuid: target.actor.uuid, targetName: target.name, intent: result.intent,
     weaponId, modeKey, evade: { target: Number(skill.system.total ?? 0), rawRoll: roll.total,
-      result: classifyContestRoll(roll.total, Number(skill.system.total ?? 0)) }, authorUserId: game.user.id };
+      result: evadeResult }, authorUserId: game.user.id };
   const messageData = { speaker: ChatMessage.getSpeaker({ actor }), content: render(state),
     rolls: [roll], flags: { [SCOPE]: { reachChange: state } } };
   ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
@@ -69,8 +72,10 @@ async function respond(message, state, type) {
   if (type !== "none") {
     if (type === "evade") {
       const skill = evade(actor); if (!skill) return;
-      const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) }); response = { type, target: Number(skill.system.total ?? 0),
-        rawRoll: roll.total, result: classifyContestRoll(roll.total, Number(skill.system.total ?? 0)) };
+      const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+      const result = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
+      await recordAbilityFumble(skill, result);
+      response = { type, target: Number(skill.system.total ?? 0), rawRoll: roll.total, result };
     } else {
       const selected = longestPreparedWeapon(actor); if (!selected) return;
       const styles = actor.items.filter((item) => item.type === "combatStyle");
@@ -79,8 +84,10 @@ async function respond(message, state, type) {
       familiarity: selected.mode.familiarity });
       const targetValue = difficultyTarget(resolved.target, resolved.difficulty);
       const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+      const result = classifyContestRoll(roll.total, targetValue);
+      await recordAbilityFumble(resolved.style, result);
       response = { type, weaponId: selected.weapon.id, modeKey: selected.mode.key,
-        target: targetValue, rawRoll: roll.total, result: classifyContestRoll(roll.total, targetValue) };
+        target: targetValue, rawRoll: roll.total, result };
       await consumePassiveBlock(combat, target.id, selected.weapon.id, "reactionAttack");
     }
   }

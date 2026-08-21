@@ -51,6 +51,8 @@ test("contest setup is limited to scene tokens and rivals choose their ability l
   assert.match(dialog, /canvas\?\.tokens\?\.placeables/);
   assert.doesNotMatch(dialog, /const seen = new Set\(\)/);
   assert.match(dialog, /actorId: actorIdentity\(actor\), actorUuid: actorReference\(actor\), actorName: actorLabel\(actor\)/);
+  assert.match(dialog, /if \(!actor\?\.isToken\) return actor\?\.name/);
+  assert.match(dialog, /actor\.token\?\.name \?\? token\?\.document\?\.name \?\? token\?\.name/);
   assert.match(dialog, /abilityId: null, abilityName: null, difficulty: null, target: null/);
   assert.match(dialog, /skill-roll-adjustment-fields/);
   assert.match(dialog, /<div class="skill-roll-participants" hidden>/);
@@ -79,7 +81,9 @@ test("configured contest cards separate sides and name multi-member team winners
   assert.match(script, /side\.mode === "team" && side\.representativeRule !== "individual" && side\.participantIds\.length > 1/);
   assert.match(script, /MYTHRASF\.Contest\.Team\.\$\{sideName\}/);
   assert.match(script, /contestRollHolder\(contest, request\.participantId\)/);
-  assert.match(script, /contest-team-captain/);
+  assert.match(script, /contest-team-representative/);
+  assert.match(script, /MYTHRASF\.Contest\.RepresentativeSuffix/);
+  assert.doesNotMatch(script, /fa-star|contest-team-captain/);
 });
 
 test("resolution and participation are configured as independent axes", () => {

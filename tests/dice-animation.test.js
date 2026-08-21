@@ -31,10 +31,8 @@ test("evaluateAnimatedRoll broadcasts Dice So Nice with the active roll visibili
     applyRollMode: (data) => { data.whisper = ["gm"]; data.blind = false; },
     getSpeaker: () => ({ alias: "Default" })
   };
-  const speaker = { actor: "actor-id" };
-
-  const roll = await evaluateAnimatedRoll("1d100", { speaker });
+  const roll = await evaluateAnimatedRoll("1d100");
 
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0], [roll, game.user, true, ["gm"], false, null, speaker]);
+  assert.deepEqual(calls[0], [roll, game.user, true, ["gm"], false]);
 });

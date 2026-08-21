@@ -1,5 +1,6 @@
 import { classifyContestRoll } from "./contest-rolls.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { recordAbilityFumble } from "./skills.js";
 import { fatigueLossForResult, worsenFatigueLevel, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { timedEffects } from "./timed-condition-runtime.js";
@@ -112,6 +113,7 @@ async function requestResolution(message, state, entryId, manual) {
     if (!skill) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SourceMissing"));
     const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
     const result = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
+    await recordAbilityFumble(skill, result);
     const lossRoll = result === "failure" ? await evaluateAnimatedRoll("1d2",
       { speaker: ChatMessage.getSpeaker({ actor }) })
       : result === "fumble" ? await evaluateAnimatedRoll("1d3",

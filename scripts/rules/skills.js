@@ -66,3 +66,10 @@ export function fumbledSkillUpdatesAtZero(experienceRolls, items = []) {
     .filter((item) => ["skill", "combatStyle"].includes(item.type) && item.system?.fumbled)
     .map((item) => ({ _id: item.id, "system.fumbled": false }));
 }
+
+export async function recordAbilityFumble(item, result) {
+  if (result !== "fumble" || !["skill", "combatStyle"].includes(item?.type)
+    || item.system?.fumbled) return false;
+  await item.update({ "system.fumbled": true });
+  return true;
+}

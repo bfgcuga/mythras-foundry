@@ -1,7 +1,8 @@
 import { openContestResponseDialog } from "../apps/skill-roll-dialog.js";
 import { invertD100, resolveSkillRollTargets } from "./skill-roll.js";
-import { resolveConfiguredContest, resolveContest } from "./contest-rolls.js";
+import { classifyContestRoll, resolveConfiguredContest, resolveContest } from "./contest-rolls.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { recordAbilityFumble } from "./skills.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -24,6 +25,17 @@ function actorIdentity(actor) {
   return actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
 }
 
+function actorDisplayName(actor) {
+  if (!actor?.isToken) return actor?.name ?? "";
+  const token = Array.from(canvas?.tokens?.placeables ?? []).find((candidate) =>
+    candidate.actor === actor || candidate.actor?.uuid === actor?.uuid);
+  return actor.token?.name ?? token?.document?.name ?? token?.name ?? actor.name ?? "";
+}
+
+function participantDisplayName(participant) {
+  return actorDisplayName(contestActor(participant)) || participant?.actorName || "";
+}
+
 function contestActor(participant) {
   if (!participant) return null;
   const byUuid = participant.actorUuid && globalThis.fromUuidSync?.(participant.actorUuid);
@@ -33,10 +45,17 @@ function contestActor(participant) {
   return tokenActor ?? game.actors.get(participant.actorId) ?? null;
 }
 
+function effectiveParticipantResult(contest, participant, rawRoll = participant?.rawRoll) {
+  const penalty = Math.max(0, ...contest.participants.map((entry) => Number(entry.target) || 0)) - 100;
+  const target = Math.max(0, Number(participant?.target ?? 0) - Math.max(0, penalty));
+  return rawRoll == null ? null : classifyContestRoll(rawRoll, target);
+}
+
 export async function createContestMessage(item, configured, initiatorRoll = null) {
   const setup = configured.contest;
   const initiator = {
-    id: participantId(item.actor.id), actorId: actorIdentity(item.actor), actorUuid: item.actor.uuid, actorName: item.actor.name,
+    id: participantId(item.actor.id), actorId: actorIdentity(item.actor), actorUuid: item.actor.uuid,
+    actorName: actorDisplayName(item.actor),
     abilityId: item.id, abilityName: item.name, target: configured.targets.target,
     rawRoll: initiatorRoll?.total ?? null, pending: !initiatorRoll,
     serializedRoll: initiatorRoll?.toJSON?.() ?? null,
@@ -107,9 +126,9 @@ export function renderContestCard(contest) {
     const roll = shownRoll == null ? localize("MYTHRASF.Contest.Pending") : shownRoll;
     const ability = participant.abilityName ?? localize("MYTHRASF.Contest.ChosenOnResponse");
     const side = contest.sides?.[contestSideForParticipant(contest, participant.id)];
-    const isCaptain = side?.mode === "team" && side.representativeId === participant.id;
-    const captain = isCaptain
-      ? `<i class="fas fa-star contest-team-captain" aria-label="${escape(localize("MYTHRASF.Contest.Captain"))}" title="${escape(localize("MYTHRASF.Contest.Captain"))}"></i>` : "";
+    const isRepresentative = side?.mode === "team" && side.representativeId === participant.id;
+    const representative = isRepresentative
+      ? `<span class="contest-team-representative">${escape(localize("MYTHRASF.Contest.RepresentativeSuffix"))}</span>` : "";
     const target = final.target == null ? "—" : `${final.target}%`;
     const result = resolved && final.result ? `<span class="contest-participant-result mythras-chat-result--${final.result}">${escape(localize(`MYTHRASF.RollResult.${final.result}`))}</span>` : "";
     const button = participant.pending && contest.status === "pending"
@@ -127,7 +146,7 @@ export function renderContestCard(contest) {
     }).join("");
     const attempts = `${oldAttempts}<div class="contest-roll-attempt contest-roll-attempt--current"><strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}</div>`;
     const html = `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
-      <span class="contest-participant-identity"><strong>${escape(participant.actorName)}${captain}</strong><small>${escape(ability)}</small>${luckNotes}</span>
+      <span class="contest-participant-identity"><strong>${escape(participantDisplayName(participant))}${representative}</strong><small>${escape(ability)}</small>${luckNotes}</span>
       <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}</span><span class="contest-roll-attempts">${attempts}</span></span>
       <span class="contest-participant-actions">${button}${luck}</span>
     </div>`;
@@ -166,13 +185,13 @@ function renderResolution(contest, resolved) {
     const opponent = contest.participants.find((participant) => participant.id === entry.antagonistId);
     const winner = contest.participants.find((participant) => participant.id === entry.winnerId);
     const text = winner
-      ? game.i18n.format("MYTHRASF.Contest.WinnerValue", { actor: winner.actorName })
+      ? game.i18n.format("MYTHRASF.Contest.WinnerValue", { actor: participantDisplayName(winner) })
       : localize(`MYTHRASF.Contest.Resolution.${entry.reason}`);
-    return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(opponent?.actorName)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(text)}</strong></div>`;
+    return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(participantDisplayName(opponent))}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(text)}</strong></div>`;
   }).join("");
   if (contest.type === "differential") return resolved.comparisons.map((entry) => {
     const opponent = contest.participants.find((participant) => participant.id === entry.antagonistId);
-    return `<div class="mythras-chat-total"><span>${escape(opponent?.actorName)}</span><strong>${entry.advantage > 0 ? "+" : ""}${entry.advantage}</strong></div>`;
+    return `<div class="mythras-chat-total"><span>${escape(participantDisplayName(opponent))}</span><strong>${entry.advantage > 0 ? "+" : ""}${entry.advantage}</strong></div>`;
   }).join("");
   if (contest.type === "elimination") return `<div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Continue"))}</span><strong>${escape(namesFor(contest, resolved.continuingIds))}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Eliminated"))}</span><strong>${escape(namesFor(contest, resolved.eliminatedIds))}</strong></div>`;
   return `<div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.Result"))}</span><strong>${escape(localize(`MYTHRASF.RollResult.${resolved.result}`))}</strong></div>`;
@@ -191,25 +210,26 @@ function renderConfiguredResolution(contest, resolved) {
   const comparisons = resolved.comparisons.map((entry) => {
     const protagonist = contest.participants.find((participant) => participant.id === entry.protagonistId);
     const antagonist = contest.participants.find((participant) => participant.id === entry.antagonistId);
-    if (contest.resolutionMode === "differential") return `<div class="mythras-chat-total"><span>${escape(`${protagonist?.actorName} / ${antagonist?.actorName}`)}</span><strong>${entry.advantage > 0 ? "+" : ""}${entry.advantage}</strong></div>`;
+    if (contest.resolutionMode === "differential") return `<div class="mythras-chat-total"><span>${escape(`${participantDisplayName(protagonist)} / ${participantDisplayName(antagonist)}`)}</span><strong>${entry.advantage > 0 ? "+" : ""}${entry.advantage}</strong></div>`;
     const winner = contest.participants.find((participant) => participant.id === entry.winnerId);
     const outcome = winner ? game.i18n.format("MYTHRASF.Contest.WinnerValue", { actor: configuredWinnerName(contest, winner) })
       : localize(`MYTHRASF.Contest.Resolution.${entry.reason}`);
-    return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(`${protagonist?.actorName} / ${antagonist?.actorName}`)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(outcome)}</strong></div>`;
+    return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(`${participantDisplayName(protagonist)} / ${participantDisplayName(antagonist)}`)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(outcome)}</strong></div>`;
   }).join("");
   return summaries + comparisons;
 }
 
 function configuredWinnerName(contest, winner) {
   const sideEntry = Object.entries(contest.sides ?? {}).find(([, side]) => side.participantIds.includes(winner.id));
-  if (!sideEntry) return winner.actorName;
+  if (!sideEntry) return participantDisplayName(winner);
   const [sideName, side] = sideEntry;
   return side.mode === "team" && side.representativeRule !== "individual" && side.participantIds.length > 1
-    ? localize(`MYTHRASF.Contest.Team.${sideName}`) : winner.actorName;
+    ? localize(`MYTHRASF.Contest.Team.${sideName}`) : participantDisplayName(winner);
 }
 
 function namesFor(contest, ids) {
-  return ids.map((id) => contest.participants.find((entry) => entry.id === id)?.actorName).filter(Boolean).join(", ") || "—";
+  return ids.map((id) => participantDisplayName(
+    contest.participants.find((entry) => entry.id === id))).filter(Boolean).join(", ") || "—";
 }
 
 export function preferredContestCoordinator(users, authorUserId) {
@@ -277,6 +297,7 @@ async function applyContestResponseUnlocked(message, request) {
       if (member) member.pending = false;
     });
   }
+  await recordAbilityFumble(ability, effectiveParticipantResult(contest, participant));
   contest.revision += 1;
   if (contest.participants.every((entry) => !entry.pending)) {
     contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
@@ -392,6 +413,9 @@ async function applyContestLuck(message, request) {
     value: contestRollForParticipant(contest, request.participantId), spenderId: luckActor.id, spenderName: luckActor.name
   }];
   rollHolder.rawRoll = Number(request.rawRoll); rollHolder.serializedRoll = request.serializedRoll;
+  const rollActor = contestActor(rollHolder);
+  await recordAbilityFumble(rollActor?.items.get(rollHolder.abilityId),
+    effectiveParticipantResult(contest, rollHolder));
   contest.revision += 1;
   if (contest.participants.every((entry) => !entry.pending)) {
     contest.resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);

@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   calculateSkillValues,
   fumbledSkillUpdatesAtZero,
+  recordAbilityFumble,
   NEW_SKILL_EXPERIENCE_COST,
   resolveExperienceImprovement,
   skillAcquisition
@@ -126,4 +127,14 @@ test("al llegar a cero se limpian las pifias de habilidades y estilos", () => {
     { _id: "style", "system.fumbled": false }
   ]);
   assert.deepEqual(fumbledSkillUpdatesAtZero(1, items), []);
+});
+
+test("una pifia marca automáticamente la habilidad o estilo que ha tirado", async () => {
+  const updates = [];
+  const skill = { type: "skill", system: { fumbled: false },
+    update: async (change) => updates.push(change) };
+  assert.equal(await recordAbilityFumble(skill, "fumble"), true);
+  assert.deepEqual(updates, [{ "system.fumbled": true }]);
+  assert.equal(await recordAbilityFumble(skill, "failure"), false);
+  assert.equal(await recordAbilityFumble({ ...skill, type: "passion" }, "fumble"), false);
 });

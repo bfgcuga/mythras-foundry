@@ -2680,7 +2680,7 @@
 .chat-message .mythras-contest-card .contest-side-title { margin-bottom: 0.25rem; font-weight: 700; text-align: center; }
 .chat-message .mythras-contest-card .contest-participant { display: grid; grid-template-columns: minmax(0, 1fr) auto 1.65rem; align-items: start; gap: 0.4rem; }
 .chat-message .mythras-contest-card .contest-participant-identity { display: grid; min-width: 0; }
-.chat-message .mythras-contest-card .contest-team-captain { margin-left: 0.3rem; color: #806314; }
+.chat-message .mythras-contest-card .contest-team-representative { margin-left: 0.3rem; font-weight: normal; }
 .chat-message .mythras-contest-card .contest-participant-identity .mythras-chat-luck-spent { margin-top: 0.15rem; line-height: 1.15; overflow-wrap: anywhere; }
 .chat-message .mythras-contest-card .contest-participant-values { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.45rem; min-width: 0; }
 .chat-message .mythras-contest-card .contest-participant-target { padding-top: 0.22rem; white-space: nowrap; }

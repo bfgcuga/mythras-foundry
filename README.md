@@ -60,7 +60,9 @@ El sistema incluye actualmente:
   imposible esa acción concreta;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
-  o invertir los dados, con resultados presentados en tarjetas de chat;
+  o invertir los dados, con resultados presentados en tarjetas de chat; una
+  pifia marca automáticamente la habilidad o estilo empleado para su futura
+  mejora de experiencia;
 - tiradas contra dificultad, enfrentadas y diferenciales con modalidad
   individual, de equipo o eliminatoria configurable de forma independiente para
   cada lado; los equipos admiten portavoz, miembro mayor o menor y tiradas

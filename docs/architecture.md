@@ -153,6 +153,9 @@ repetidas veces sobre su último dado mientras dispongan de puntos. El historial
 permanece en la tarjeta; en las tiradas enfrentadas cada cambio vuelve a resolver
 la comparación completa. En ambos casos sólo pueden gastar suerte los personajes
 participantes que pertenecen al grupo activo.
+`scripts/rules/skills.js` centraliza además el registro persistente de pifias:
+toda pifia de una habilidad o estilo de combate marca `system.fumbled`, incluidas
+las respuestas interactivas y las repeticiones por Suerte.
 
 Los ataques interactivos se persisten como transacciones versionadas en
 `flags.mythras-foundry.combat`. `scripts/rules/combat.js` resuelve de forma pura

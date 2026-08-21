@@ -4,7 +4,7 @@
  * create a ChatMessage); rolls included in a newly-created message should rely
  * on that message's `rolls` collection instead.
  */
-export async function evaluateAnimatedRoll(formula, { speaker = null } = {}) {
+export async function evaluateAnimatedRoll(formula) {
   const roll = await new Roll(formula).evaluate();
   const dice3d = game.dice3d;
   if (typeof dice3d?.showForRoll !== "function") return roll;
@@ -17,9 +17,7 @@ export async function evaluateAnimatedRoll(formula, { speaker = null } = {}) {
       game.user,
       true,
       visibility.whisper ?? null,
-      Boolean(visibility.blind),
-      null,
-      speaker ?? ChatMessage.getSpeaker?.()
+      Boolean(visibility.blind)
     );
   } catch (error) {
     console.warn("Mythras Foundry | Dice So Nice animation failed", error);

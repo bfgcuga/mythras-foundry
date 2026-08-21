@@ -1,6 +1,7 @@
 import { classifyRoll, renderRollLine, renderRollResult, rollThresholdRanges } from "../documents/mythras-item.js";
 import { invertD100 } from "./skill-roll.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { recordAbilityFumble } from "./skills.js";
 
 const pendingLuckMessages = new Set();
 
@@ -44,6 +45,7 @@ async function spendLuck(message) {
     { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
   const value = choice === "reroll" ? roll.total : invertD100(current);
   const result = classifyRoll(value, data.target, data.criticalTarget);
+  await recordAbilityFumble(actor?.items.get(data.itemId), result);
   const card = document.createElement("div");
   card.innerHTML = message.content;
   const label = card.querySelector(".mythras-chat-roll-line")?.dataset.rollLabel ?? "MYTHRASF.Chat.SkillRoll";

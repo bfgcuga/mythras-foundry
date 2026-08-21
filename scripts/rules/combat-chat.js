@@ -22,6 +22,7 @@ import { ammunitionState, applyLongRangeDamage, canFireAmmunition, consumeAmmuni
 } from "./ranged-combat.js";
 import { clearAim, readyAim } from "./ranged-actions.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { recordAbilityFumble } from "./skills.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -117,6 +118,16 @@ function effectContext(combat, side = combat.effects?.pendingSide ?? combat.reso
 async function combatActor(uuid, actorUuid) {
   const token = uuid ? await fromUuid(uuid) : null;
   return token?.actor ?? (actorUuid ? await fromUuid(actorUuid) : null);
+}
+
+async function recordCombatResolutionFumbles(combat) {
+  if (!combat?.resolution) return;
+  const attacker = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  await recordAbilityFumble(attacker?.items.get(combat.attacker.styleId),
+    combat.resolution.attack?.result);
+  await recordAbilityFumble(defender?.items.get(combat.defender.defense?.abilityId
+    ?? combat.defender.defense?.styleId), combat.resolution.defense?.result);
 }
 
 function visibleTargets(actor) {
@@ -286,6 +297,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   }
   const roll = await new Roll("1d100").evaluate();
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
+  await recordAbilityFumble(resolution.style, classifyContestRoll(roll.total, targetValue));
   const styleName = resolution.untrained ? localize("MYTHRASF.Combat.Untrained")
     : resolution.usesBase ? localize("MYTHRASF.Combat.BaseStyle") : resolution.style?.name ?? "";
   if (ranged) {
@@ -550,6 +562,7 @@ async function applyCombatDefense(message, request) {
   }
   combat.resolution = resolveCombatExchange({ predeclared: combat.predeclared,
     attack: { target: combat.attacker.target, rawRoll: combat.attacker.rawRoll }, defense: request.defense });
+  await recordCombatResolutionFumbles(combat);
   const surpriseSlots = await consumeSurpriseBonus(actor, combat);
   const sideSlots = combatEffectSlotsBySide({ winner: combat.resolution.winner,
     differential: combat.resolution.effects, surprise: surpriseSlots });
@@ -828,6 +841,10 @@ async function applyCombatLuck(message, request) {
   entry.luckHistory = [...(entry.luckHistory ?? []), currentRoll];
   if (request.side === "attacker") entry.rawRoll = Number(request.rawRoll);
   else entry.defense.rawRoll = Number(request.rawRoll);
+  const ability = request.side === "attacker" ? actor.items.get(entry.styleId)
+    : actor.items.get(entry.defense.abilityId ?? entry.defense.styleId);
+  const target = request.side === "attacker" ? entry.target : entry.defense.target;
+  await recordAbilityFumble(ability, classifyContestRoll(request.rawRoll, target));
   if (request.side === "attacker" && combat.surprise && !combat.surprise.consumed) {
     const result = classifyContestRoll(entry.rawRoll, entry.target);
     combat.surprise.eligible = ["success", "critical"].includes(result);
@@ -840,6 +857,7 @@ async function applyCombatLuck(message, request) {
     attack: { target: combat.attacker.target, rawRoll: combat.attacker.rawRoll }, defense: combat.defender.defense });
   else if (!combat.predeclared) combat.attackClassification = resolveCombatExchange({
     attack: { target: combat.attacker.target, rawRoll: combat.attacker.rawRoll }, defense: { type: "none" } }).attack;
+  await recordCombatResolutionFumbles(combat);
   if (combat.status === "awaitingEffects") {
     const surpriseSlots = Number(combat.effects?.surpriseSlots ?? 0);
     const sideSlots = combatEffectSlotsBySide({ winner: combat.resolution.winner,
@@ -1092,6 +1110,7 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
     if (!skill) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
     const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor: defender }) });
     const target = Number(skill.system.total ?? 0);
+    await recordAbilityFumble(skill, classifyContestRoll(roll.total, target));
     resolution = { manual: false, abilityId: skill.id, abilityName: skill.name,
       target, rawRoll: roll.total, serializedRoll: roll.toJSON(),
       result: classifyContestRoll(roll.total, target) };
