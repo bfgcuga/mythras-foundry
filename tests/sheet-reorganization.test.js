@@ -16,7 +16,7 @@ test("las acciones tácticas permanecen reunidas y visibles en ambas hojas", asy
   }
   assert.doesNotMatch(characterCombat, /combat-paper-ranged-weapons[\s\S]*?<div class="combat-tactical-actions">/);
   const npcCombat = npc.slice(npc.indexOf('data-tab-content="combat"'));
-  assert.ok(npcCombat.indexOf("combat-action-panel") < npcCombat.indexOf("npc-locations-panel"));
+  assert.ok(npcCombat.indexOf("combat-action-panel") < npcCombat.indexOf("hit-location-table.hbs"));
 });
 
 test("todas las navegaciones usan pestañas elevadas con superficie activa", async () => {

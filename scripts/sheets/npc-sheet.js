@@ -6,8 +6,7 @@ import { assessWeaponEquip } from "../rules/equipment.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
-import { armorFitsWearer, armorInitiativePenalty, totalArmorPoints,
-  wornArmorPoints } from "../rules/armor.js";
+import { armorFitsWearer, armorInitiativePenalty } from "../rules/armor.js";
 import { npcWeaponDurability, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
 import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
@@ -22,6 +21,7 @@ import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalt
 import { askWoundRollImpact } from "../ui/wound-roll-dialog.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
+import { prepareHitLocationTable } from "../ui/hit-location-table.js";
 import { rollSpecial } from "../rules/special-roll.js";
 import { updateActorFromSheet } from "../rules/document-names.js";
 
@@ -60,14 +60,12 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const combatStyles = items.filter((item) => item.type === "combatStyle");
     const hitLocations = items.filter((item) => item.type === "hitLocation")
       .sort((left, right) => left.system.rangeStart - right.system.rangeStart);
-    const combatant = game.combat?.combatants.find((entry) => entry.actor?.uuid === this.actor.uuid);
-    const passiveBlock = combatant
-      ? game.combat.getFlag("mythras-foundry", "tacticalState")?.passiveBlocks?.[combatant.id] : null;
-    const passiveBlockLocationIds = new Set(passiveBlock?.status === "active"
-      && Number(passiveBlock.round) === Number(game.combat?.round) ? passiveBlock.locationIds : []);
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
     const equippedArmor = armor.filter((item) => item.system.equipped);
+    const hitLocationTable = prepareHitLocationTable({ actor: this.actor, armor,
+      combat: game.combat ?? game.combats?.active,
+      armorPointLabel: game.i18n.localize("MYTHRASF.HitLocation.Armor") });
     const inventory = items.filter((item) => ["equipment", "weapon", "armor"].includes(item.type));
     const carriedEncumbrance = totalCarriedEncumbrance(inventory);
     const loadState = encumbranceState(carriedEncumbrance, this.actor.system.strength);
@@ -180,25 +178,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       penalties,
       activeStatusControls,
       hasActiveStatusControls: activeStatusControls.length > 0,
-      hitLocations: hitLocations.map((item) => ({
-        item,
-        woundKey: item.system.woundLevel,
-        woundLabel: game.i18n.localize(`MYTHRASF.Wound.${item.system.woundLevel}`),
-        naturalArmor: Number(item.system.armorPoints ?? 0),
-        wornArmor: wornArmorPoints(item, equippedArmor),
-        totalArmor: totalArmorPoints(item, equippedArmor),
-        armorOptions: armor.filter((piece) =>
-          (piece.system.coveredLocationIds ?? []).includes(item.id))
-          .map((piece) => ({ value: piece.id,
-            label: `${piece.name} (${Number(piece.system.armorPoints ?? 0)} PA)` })),
-        equippedArmorId: equippedArmor.find((piece) =>
-          (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
-        showDisabledControl: item.system.woundLevel === "serious",
-        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
-        amputated: Boolean(item.system.amputated),
-        passiveBlocked: passiveBlockLocationIds.has(item.id)
-      })),
-      hasNaturalArmor: hitLocations.some((item) => Number(item.system.armorPoints ?? 0) > 0),
+      hitLocationTable,
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
         selected: level.key === this.actor.system.fatigueLevel,
         levelLabel: game.i18n.localize(`MYTHRASF.Fatigue.Level.${level.key}`),

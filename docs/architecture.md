@@ -217,6 +217,13 @@ humanos, nunca mediante nombres traducidos. `hitLocation.system.amputated` es
 independiente de inutilización y herida. Los textos de Trasfondo residen en
 `CharacterData.system.narrative`.
 
+La tabla operativa de localizaciones de personaje y PNJ tiene una única fuente
+de presentación. `scripts/ui/hit-location-table.js` prepara filas, armadura y
+Bloqueo Pasivo, y ambas hojas renderizan
+`templates/actor/parts/hit-location-table.hbs`. Las diferencias de edición de
+una plantilla de PNJ se expresan únicamente mediante parámetros del parcial; no
+se mantienen copias de columnas o filas en las plantillas de Actor.
+
 Las navegaciones de pestañas de Actor y de Item comparten el mismo patrón
 visual: pestañas inactivas oscurecidas, borde superior redondeado y pestaña
 activa fundida con la superficie de papel. Los botones auxiliares que viven en

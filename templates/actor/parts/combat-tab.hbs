@@ -10,47 +10,8 @@
     <span data-action-presentation><button type="button" data-action="reload-ranged" data-combat-action-key="reload"><i class="fas fa-rotate" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Reload"}}</button></span>
     <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button>
   </div></fieldset>
-  <fieldset class="combat-paper-panel combat-paper-locations">
-    <legend>{{localize "MYTHRASF.HitLocations"}}</legend>
-    {{#if editable}}<button type="button" class="combat-panel-add sheet-add-button" data-action="create-item"
-      data-type="hitLocation" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
-    <div class="combat-location-head {{#unless hasNaturalArmor}}without-natural-armor{{/unless}}">
-      <span>d20</span><span>{{localize "MYTHRASF.HitLocation.Location"}}</span>
-      <span>{{localize "MYTHRASF.HitLocation.Disabled"}}</span>
-      <span>{{localize "MYTHRASF.HitLocation.Amputated"}}</span>
-      <span>{{localize "MYTHRASF.HitLocation.MaxShort"}}</span>
-      <span>{{localize "MYTHRASF.HitLocation.CurrentShort"}}</span>
-      {{#if hasNaturalArmor}}<span>{{localize "MYTHRASF.Armor.Natural"}}</span>{{/if}}
-      <span>{{localize "MYTHRASF.Armor.Piece.Label"}}</span>
-      <span>{{localize "MYTHRASF.HitLocation.Armor"}}</span>
-      <span>{{localize "MYTHRASF.Status.PassiveBlock"}}</span><span></span>
-    </div>
-    {{#each combatHitLocations as |row|}}
-      <div class="combat-location-line {{#unless ../hasNaturalArmor}}without-natural-armor{{/unless}}" data-item-id="{{row.item.id}}">
-        <span>{{row.item.system.rangeStart}}–{{row.item.system.rangeEnd}}</span>
-        <div class="combat-location-name"><button type="button" data-action="edit-item">{{row.item.name}}</button></div>
-        <label class="location-state-cell"><input type="checkbox" class="sheet-state-box" data-location-disabled {{checked row.disabled}} {{#unless row.showDisabledControl}}disabled{{/unless}} aria-label="{{localize "MYTHRASF.HitLocation.Disabled"}}"></label>
-        <span class="location-state-cell">{{#if row.amputated}}<i class="fas fa-check" aria-label="{{localize "MYTHRASF.HitLocation.Amputated"}}"></i>{{/if}}</span>
-        <output class="location-max">{{row.item.system.maxHitPoints}}</output>
-        <div class="location-current-control"><output class="location-current wound-{{row.item.system.woundLevel}}">{{row.item.system.currentHitPoints}}</output>{{#if @root.editable}}<span class="location-hp-buttons"><button type="button" class="sheet-icon-button" data-location-hp-delta="1" title="{{localize 'MYTHRASF.HitLocation.IncreaseHp'}}" aria-label="{{localize 'MYTHRASF.HitLocation.IncreaseHp'}}"><i class="fas fa-chevron-up"></i></button><button type="button" class="sheet-icon-button" data-location-hp-delta="-1" title="{{localize 'MYTHRASF.HitLocation.DecreaseHp'}}" aria-label="{{localize 'MYTHRASF.HitLocation.DecreaseHp'}}"><i class="fas fa-chevron-down"></i></button></span>{{/if}}</div>
-        {{#if ../hasNaturalArmor}}<span class="natural-armor-cell">{{#if row.naturalArmor}}<output class="location-armor natural-armor" title="{{localize 'MYTHRASF.Armor.Natural'}}">{{row.naturalArmor}}</output>{{/if}}</span>{{/if}}
-        <select data-location-armor aria-label="{{localize "MYTHRASF.Armor.Piece.SelectForLocation"}}" {{#unless @root.editable}}disabled{{/unless}}>
-          <option value="">{{localize "MYTHRASF.Armor.Piece.None"}}</option>
-          {{selectOptions row.armorOptions selected=row.equippedArmorId labelAttr="label" valueAttr="value"}}
-        </select>
-        <output class="location-armor" title="{{localize "MYTHRASF.Armor.Natural"}}: {{row.naturalArmor}} + {{localize "MYTHRASF.Combat.WornArmor"}}: {{row.wornArmor}}">{{row.totalArmor}}</output>
-        <span class="location-state-cell">{{#if row.passiveBlocked}}<i class="fas fa-check" aria-label="{{localize 'MYTHRASF.Status.PassiveBlock'}}"></i>{{/if}}</span>
-        {{#if ../editMode}}<button type="button" class="sheet-icon-button" data-action="delete-item"
-          aria-label="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{else}}<span></span>{{/if}}
-      </div>
-    {{else}}<p class="empty">{{localize "MYTHRASF.Empty.HitLocations"}}</p>{{/each}}
-    <div class="combat-wound-legend">
-      <span>{{localize "MYTHRASF.HitLocation.Wound"}}:</span>
-      <span class="wound-minor">{{localize "MYTHRASF.Wound.minor"}}</span>
-      <span class="wound-serious">{{localize "MYTHRASF.Wound.serious"}}</span>
-      <span class="wound-major">{{localize "MYTHRASF.Wound.major"}}</span>
-    </div>
-  </fieldset>
+  {{> "systems/mythras-foundry/templates/actor/parts/hit-location-table.hbs"
+    table=hitLocationTable editable=editable canDelete=editMode templateMode=false npcLayout=false}}
 
   <fieldset class="combat-paper-panel combat-paper-styles">
     <legend>{{localize "MYTHRASF.Skill.GroupCombat"}} ({{localize "MYTHRASF.Combat.BaseFormula"}})</legend>

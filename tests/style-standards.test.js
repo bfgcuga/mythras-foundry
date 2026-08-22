@@ -151,7 +151,8 @@ test("la ficha de arma envía una sola moneda y combate muestra los PG actuales"
     armorStart);
   assert.equal((weaponSection.match(/name="system\.currency"/g) ?? []).length, 1);
   assert.doesNotMatch(weaponSection, /name="system\.(parentContainerId|location|quantityFormula)"/);
-  assert.match(combatTemplate, /row\.item\.system\.currentHitPoints/);
+  const locationTemplate = readFileSync(new URL("../templates/actor/parts/hit-location-table.hbs", import.meta.url), "utf8");
+  assert.match(locationTemplate, /row\.item\.system\.currentHitPoints/);
 });
 
 test("las acciones de modo y rasgo son distintas y la durabilidad natural se explica", () => {

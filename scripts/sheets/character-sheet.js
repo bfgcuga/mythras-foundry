@@ -64,8 +64,7 @@ import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
 import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
-  armorInitiativePenalty, totalArmorPoints,
-  wornArmorPoints } from "../rules/armor.js";
+  armorInitiativePenalty } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
   FATIGUE_LEVELS, worsenDifficulty } from "../rules/fatigue.js";
 import { worstWoundLevel,
@@ -80,6 +79,7 @@ import { INCAPACITATED_FLAG_SCOPE,
 import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
+import { prepareHitLocationTable } from "../ui/hit-location-table.js";
 import { bindSheetEvents } from "../ui/sheet-events.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { updateActorFromSheet } from "../rules/document-names.js";
@@ -161,11 +161,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const combatStyles = items.filter((item) => item.type === "combatStyle");
     const hitLocations = items.filter((item) => item.type === "hitLocation")
       .sort((left, right) => left.system.rangeStart - right.system.rangeStart);
-    const combatant = game.combat?.combatants.find((entry) => entry.actor?.uuid === this.actor.uuid);
-    const passiveBlock = combatant
-      ? game.combat.getFlag("mythras-foundry", "tacticalState")?.passiveBlocks?.[combatant.id] : null;
-    const passiveBlockLocationIds = new Set(passiveBlock?.status === "active"
-      && Number(passiveBlock.round) === Number(game.combat?.round) ? passiveBlock.locationIds : []);
     const equipment = items.filter((item) => item.type === "equipment");
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
@@ -189,6 +184,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rows: prepareInventoryRows(section.items)
     }));
     const equippedArmor = armor.filter((item) => item.system.equipped);
+    const hitLocationTable = prepareHitLocationTable({ actor: this.actor, armor,
+      combat: game.combat ?? game.combats?.active,
+      armorPointLabel: game.i18n.localize("MYTHRASF.HitLocation.Armor") });
     const carriedEncumbrance = totalCarriedEncumbrance(allInventoryItems);
     const loadState = encumbranceState(carriedEncumbrance, this.actor.system.strength);
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
@@ -350,23 +348,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         handsRequired: weaponHandsRequired(item) })),
       armor,
       hitLocations,
-      combatHitLocations: hitLocations.map((item) => ({
-        item,
-        naturalArmor: Number(item.system.armorPoints ?? 0),
-        wornArmor: wornArmorPoints(item, equippedArmor),
-        totalArmor: totalArmorPoints(item, equippedArmor),
-        armorOptions: armor.filter((piece) =>
-          (piece.system.coveredLocationIds ?? []).includes(item.id))
-          .map((piece) => ({ value: piece.id,
-            label: `${piece.name} (${Number(piece.system.armorPoints ?? 0)} PA)` })),
-        equippedArmorId: equippedArmor.find((piece) =>
-          (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
-        showDisabledControl: item.system.woundLevel === "serious",
-        disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
-        amputated: Boolean(item.system.amputated),
-        passiveBlocked: passiveBlockLocationIds.has(item.id)
-      })),
-      hasNaturalArmor: hitLocations.some((item) => Number(item.system.armorPoints ?? 0) > 0),
+      hitLocationTable,
       combatStyles: combatStyles.map((style) => ({
         item: style,
         weapons: (style.system.weaponProfiles ?? [])
