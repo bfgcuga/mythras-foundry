@@ -15,6 +15,7 @@ import { activateReachCard, openTacticalOverview, registerReachSocket } from "..
 import { registerTacticalSocket } from "../rules/engagement-runtime.js";
 import { activateCombatActionCard, combatActionState,
   registerCombatActionSocket } from "../rules/combat-action-runtime.js";
+import { actorDisplayName, tokenDisplayName } from "../rules/document-names.js";
 
 function activateChatCards(message, html) {
   activateCombatCard(message, html);
@@ -79,6 +80,13 @@ export function registerUiHooks() {
     for (const row of root.querySelectorAll("[data-combatant-id]")) {
       const entry = combat.combatants.get(row.dataset.combatantId);
       if (!entry?.actor || row.querySelector(".mythras-tracker-ap")) continue;
+      const name = entry.actor.type === "character" ? actorDisplayName(entry.actor)
+        : tokenDisplayName(entry.token) || actorDisplayName(entry.actor);
+      const nameContainer = row.querySelector(".token-name, .combatant-name");
+      const nameElement = nameContainer?.querySelector?.("h4, .name, strong") ?? nameContainer;
+      const textNode = Array.from(nameElement?.childNodes ?? []).find((node) =>
+        node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+      if (textNode && name) textNode.textContent = name;
       const current = Number(entry.actor.system.resources?.actionPoints?.value ?? 0);
       const maximum = entry.isDefeated ? 0
         : effectiveActionPointMaximum(entry.actor, getActionPointRules());
@@ -86,7 +94,7 @@ export function registerUiHooks() {
       badge.className = "mythras-tracker-ap";
       badge.textContent = game.i18n.format("MYTHRASF.Tracker.ActionPoints", { current, maximum });
       badge.title = game.i18n.localize("MYTHRASF.Tracker.ActionPointsHint");
-      row.querySelector(".token-name, .combatant-name")?.append(badge);
+      nameContainer?.append(badge);
       const initiative = entry.getFlag("mythras-foundry", "initiative");
       const value = row.querySelector(".token-initiative, .initiative");
       if (value && initiative) value.title = game.i18n.format("MYTHRASF.Tracker.InitiativeHint", initiative);
@@ -96,6 +104,13 @@ export function registerUiHooks() {
       if (actions.braces[entry.id]?.status === "active") tactical.push(game.i18n.localize("MYTHRASF.Action.brace"));
       if (actions.movements[entry.id]) tactical.push(game.i18n.localize(`MYTHRASF.Action.Movement.${actions.movements[entry.id].mode}`));
       if (entry.actor.statuses?.has?.("prone")) tactical.push(game.i18n.localize("MYTHRASF.Status.Prone"));
+      const block = combat.getFlag("mythras-foundry", "tacticalState")
+        ?.passiveBlocks?.[entry.id];
+      if (block?.status === "active" && Number(block.round) === Number(combat.round)) {
+        const locations = (block.locationIds ?? []).map((id) => entry.actor.items.get(id)?.name)
+          .filter(Boolean).join(", ");
+        tactical.push(`${game.i18n.localize("MYTHRASF.Status.PassiveBlock")}: ${locations}`);
+      }
       if (tactical.length) {
         const status = document.createElement("span"); status.className = "mythras-tracker-tactical";
         status.textContent = tactical.join(" · "); status.title = tactical.join(" · ");
@@ -108,6 +123,10 @@ export function registerUiHooks() {
     if (Object.hasOwn(changed, "initiative") && !options.mythrasTieBreak) {
       await combatant.parent?.ensureInitiativeTieBreaks?.();
     }
+  });
+  Hooks.on("updateCombat", (combat, changed) => {
+    if (!foundry.utils.hasProperty(changed, "flags.mythras-foundry.tacticalState")) return;
+    for (const combatant of combat.combatants) combatant.actor?.sheet?.render?.();
   });
   Hooks.on("updateActor", async (actor, changed) => {
     if (!isCombatCoordinator() || !foundry.utils.hasProperty(changed,

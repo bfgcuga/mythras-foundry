@@ -93,4 +93,12 @@
   {{else}}
     <p class="empty">{{localize "MYTHRASF.Empty.Skills"}}</p>
   {{/each}}
+  {{#if showSpecialRoll}}
+    <div class="paper-skill-actions">
+      <button type="button" data-action="roll-special"
+        title="{{localize "MYTHRASF.SpecialRoll.Title"}}">
+        {{localize "MYTHRASF.SpecialRoll.Title"}}
+      </button>
+    </div>
+  {{/if}}
 </fieldset>

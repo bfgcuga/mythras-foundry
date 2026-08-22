@@ -35,8 +35,10 @@ El sistema incluye actualmente:
   combatientes, acción interactiva Cambiar Alcance y vista global desde el
   Combat Tracker;
 - Bloqueo Pasivo declarado durante la preparación del asalto, con selección de
-  localizaciones contiguas, opción de agacharse tras el escudo y cancelación al
-  atacar o parar con el arma;
+  localizaciones conectadas por la anatomía, estado declarado o pasado visible
+  por combatiente, opción de agacharse tras el escudo y cancelación al atacar o
+  parar con el arma; las tablas de localizaciones de personaje y PNJ muestran
+  además qué zonas conserva protegidas;
 - combate a distancia con distancia manual, bandas y penalización por TAM y
   circunstancias; Apuntar, Recargar, munición numérica opcional, cobertura
   localizada y desvíos al disparar a una melé comparten la transacción de chat;
@@ -78,7 +80,9 @@ El sistema incluye actualmente:
   del daño, el ganador selecciona o renuncia a sus efectos de combate; la
   tarjeta filtra los 44 efectos por lado, tirada y arma, automatiza los
   modificadores compatibles y ordena las tiradas de Aguante de efectos antes
-  que las derivadas de heridas;
+  que las derivadas de heridas; el daño muestra por separado la fórmula del
+  arma, el bonificador, los resultados evaluados, el total y el d20 de
+  localización;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
   y conflictos de equipación;
 - inventario jerárquico por persona y propiedades, contenedores, monedas,

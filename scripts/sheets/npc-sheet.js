@@ -60,6 +60,11 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const combatStyles = items.filter((item) => item.type === "combatStyle");
     const hitLocations = items.filter((item) => item.type === "hitLocation")
       .sort((left, right) => left.system.rangeStart - right.system.rangeStart);
+    const combatant = game.combat?.combatants.find((entry) => entry.actor?.uuid === this.actor.uuid);
+    const passiveBlock = combatant
+      ? game.combat.getFlag("mythras-foundry", "tacticalState")?.passiveBlocks?.[combatant.id] : null;
+    const passiveBlockLocationIds = new Set(passiveBlock?.status === "active"
+      && Number(passiveBlock.round) === Number(game.combat?.round) ? passiveBlock.locationIds : []);
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
     const equippedArmor = armor.filter((item) => item.system.equipped);
@@ -184,13 +189,16 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         totalArmor: totalArmorPoints(item, equippedArmor),
         armorOptions: armor.filter((piece) =>
           (piece.system.coveredLocationIds ?? []).includes(item.id))
-          .map((piece) => ({ value: piece.id, label: piece.name })),
+          .map((piece) => ({ value: piece.id,
+            label: `${piece.name} (${Number(piece.system.armorPoints ?? 0)} PA)` })),
         equippedArmorId: equippedArmor.find((piece) =>
           (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
         showDisabledControl: item.system.woundLevel === "serious",
         disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
-        amputated: Boolean(item.system.amputated)
+        amputated: Boolean(item.system.amputated),
+        passiveBlocked: passiveBlockLocationIds.has(item.id)
       })),
+      hasNaturalArmor: hitLocations.some((item) => Number(item.system.armorPoints ?? 0) > 0),
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
         selected: level.key === this.actor.system.fatigueLevel,
         levelLabel: game.i18n.localize(`MYTHRASF.Fatigue.Level.${level.key}`),
@@ -297,6 +305,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       field.addEventListener("change", (event) => this.#updateWeaponCombatChoice(event)));
     this.element.querySelectorAll("[data-location-disabled]").forEach((field) =>
       field.addEventListener("change", (event) => this.#updateLocationDisabled(event)));
+    this.element.querySelectorAll("[data-location-hp-delta]").forEach((button) =>
+      button.addEventListener("click", (event) => this.#adjustLocationHitPoints(event)));
     this.element.querySelectorAll("[data-fatigue-level]").forEach((field) =>
       field.addEventListener("change", (event) => this.actor.update({
         "system.fatigueLevel": event.currentTarget.value })));
@@ -629,6 +639,16 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
     await location.update({ "system.disabled": event.currentTarget.checked });
+  }
+
+  async #adjustLocationHitPoints(event) {
+    if (!this.isEditable) return;
+    const location = this.actor.items.get(
+      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (location?.type !== "hitLocation") return;
+    const value = Number(location.system.currentHitPoints ?? 0)
+      + Number(event.currentTarget.dataset.locationHpDelta ?? 0);
+    await location.update({ "system.currentHitPoints": value });
   }
 
   async #updateLocationArmor(event) {

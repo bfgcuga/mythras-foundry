@@ -116,6 +116,13 @@ Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o
 coordina mediante mensajes revisables y comparte coordinador y permisos con los
 intercambios de ataque.
 
+La contigüidad del Bloqueo Pasivo humano es anatómica, no el orden de los rangos
+del d20: el pecho conecta cabeza, abdomen y brazos, y el abdomen conecta las
+piernas. Las anatomías personalizadas sin categorías humanas conservan como
+alternativa el orden de sus rangos. La cola de preparación muestra todos los
+combatientes elegibles y diferencia de forma explícita por declarar, declarado
+y pasado.
+
 El mismo estado táctico conserva perfiles de cobertura física por combatiente:
 fuente, protección y localizaciones cubiertas. Se aplica entre parada y
 armadura; no tiene PG automáticos y su deterioro queda en manos del DJ.

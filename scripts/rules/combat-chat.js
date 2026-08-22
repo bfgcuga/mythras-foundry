@@ -601,13 +601,13 @@ async function chooseCombatEffects(message, combat) {
   const catalog = (await combatEffectDocuments()).map(effectView);
   const eligible = eligibleCombatEffects(catalog, effectContext(combat, side));
   const options = [`<option value="__waive__">${escape(localize("MYTHRASF.CombatEffect.Waive"))}</option>`,
-    ...eligible.map((effect) => `<option value="${escape(effect.key)}">${escape(effect.name)}</option>`)]
+    ...eligible.map((effect) => `<option value="${escape(effect.key)}" ${effect.ruleKey === "chooseLocation" ? "data-location-choice" : ""}>${escape(effect.name)}</option>`)]
     .join("");
   const locationOptions = (combat.defender.locations ?? []).map((location) =>
     `<option value="${escape(location.id)}">${escape(location.name)}</option>`).join("");
   const slots = combat.effects.sideSlots?.[side] ?? combat.effects.slots;
   const rows = Array.from({ length: slots }, (_, index) =>
-    `<fieldset><legend>${escape(game.i18n.format("MYTHRASF.CombatEffect.Slot", { slot: index + 1 }))}</legend><select name="effect-${index}">${options}</select><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location-${index}">${locationOptions}</select></label><label><span>${escape(localize("MYTHRASF.CombatEffect.Parameters"))}</span><textarea name="note-${index}"></textarea></label></fieldset>`).join("");
+    `<fieldset><legend>${escape(game.i18n.format("MYTHRASF.CombatEffect.Slot", { slot: index + 1 }))}</legend><select name="effect-${index}">${options}</select><label class="combat-effect-location"><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location-${index}"><option value=""></option>${locationOptions}</select></label><label><span>${escape(localize("MYTHRASF.CombatEffect.Parameters"))}</span><textarea name="note-${index}"></textarea></label></fieldset>`).join("");
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.CombatEffect.Select") },
     content: `<div class="mythras-foundry mythras-dialog combat-effect-dialog">${rows}</div>`,
@@ -944,7 +944,9 @@ async function requestCombatDamage(message, combat) {
     if (!chosenLocation) return;
   }
   const request = { action: "combatDamage", messageId: message.id, revision: combat.revision,
-    userId: game.user.id, formula, rawRoll: roll.total, serializedRoll: roll.toJSON(),
+    userId: game.user.id, formula, weaponFormula: weaponDamage, modifierFormula: modifier,
+    extraordinaryFormula: extraordinary, resultExpression: roll.result,
+    rawRoll: roll.total, serializedRoll: roll.toJSON(),
     alternateRoll: alternateRoll ? { rawRoll: alternateRoll.total,
       serializedRoll: alternateRoll.toJSON() } : null,
     locationRoll: locationRoll?.total ?? null, serializedLocationRoll: locationRoll?.toJSON?.() ?? null, rolledLocationId,
@@ -963,7 +965,10 @@ async function applyCombatDamage(message, request) {
     entry.id === request.locationId) : findHitLocation((combat.defender.locations ?? []).map((entry) => ({
     id: entry.id, name: entry.name, system: { rangeStart: entry.rangeStart, rangeEnd: entry.rangeEnd }
   })), request.locationRoll);
-  combat.damage = { status: "rolled", formula: request.formula, rawRoll: Number(request.rawRoll),
+  combat.damage = { status: "rolled", formula: request.formula,
+    weaponFormula: request.weaponFormula, modifierFormula: request.modifierFormula,
+    extraordinaryFormula: request.extraordinaryFormula, resultExpression: request.resultExpression,
+    rawRoll: Number(request.rawRoll),
     serializedRoll: request.serializedRoll, alternateRoll: request.alternateRoll,
     luckHistory: [], locationRoll: request.locationRoll == null ? null : Number(request.locationRoll),
     rolledLocationId: request.rolledLocationId ?? "",
@@ -986,7 +991,8 @@ async function requestDamageLuck(message, combat) {
   catch { return ui.notifications.warn(localize("MYTHRASF.Combat.InvalidDamageFormula")); }
   await actor.update({ "system.resources.luckPoints.value": Number(actor.system.resources.luckPoints.value) - 1 });
   const request = { action: "combatDamageLuck", messageId: message.id, revision: combat.revision,
-    userId: game.user.id, rawRoll: roll.total, serializedRoll: roll.toJSON() };
+    userId: game.user.id, rawRoll: roll.total, resultExpression: roll.result,
+    serializedRoll: roll.toJSON() };
   if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) await applyDamageLuck(message, request);
   else game.socket.emit(SOCKET, request);
 }
@@ -1000,6 +1006,7 @@ async function applyDamageLuck(message, request) {
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
   combat.damage.luckHistory = [...(combat.damage.luckHistory ?? []), combat.damage.rawRoll];
   combat.damage.rawRoll = Number(request.rawRoll);
+  combat.damage.resultExpression = request.resultExpression;
   combat.damage.serializedRoll = request.serializedRoll;
   combat.effects.checks = [];
   for (const effect of combat.effects.selections ?? []) {
@@ -1401,7 +1408,9 @@ export function renderCombatExchange(combat) {
   if (combat.damage?.status === "ready" && !guidedBeforeDamage) damageHtml = `<button type="button" data-combat-action="roll-damage" title="${escape(localize("MYTHRASF.Combat.RollDamage"))}">${escape(localize("MYTHRASF.Combat.RollDamage"))}</button>`;
   if (["rolled", "proposed", "stale", "applying", "applied"].includes(combat.damage?.status)) {
     const damage = combat.damage;
-    damageHtml = `<fieldset class="combat-damage-panel"><legend>${escape(localize("MYTHRASF.Chat.Damage"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageRoll"))} (${escape(damage.formula)})</span><strong class="mythras-chat-roll-value">${damage.rawRoll}</strong>${["proposed", "stale"].includes(damage.status) ? luck("damage") : ""}</div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AfterContainedBlow"))}</span><strong>${damage.afterContainedBlow ?? "—"}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span><strong>${escape(localize(`MYTHRASF.Combat.ParryType.${damage.parryType ?? "none"}`))}: ${damage.afterParry ?? "—"}</strong></div><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select data-damage-location ${damage.status === "applied" ? "disabled" : ""}>${locationOptions}</select></label><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Armor"))}</span><strong>${damage.armorPoints ?? "—"}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${damage.penetratingDamage ?? "—"}</strong></div>${damage.push?.triggered ? `<div class="combat-card-warning">${escape(game.i18n.format("MYTHRASF.Combat.PushSummary", { distance: damage.push.distance, excess: damage.push.excess }))}</div>` : ""}${damage.status === "stale" ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Combat.DamageStale"))}</p>` : ""}${damage.status === "applied" ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AppliedHitPoints"))}</span><strong>${damage.beforeHitPoints} → ${damage.afterHitPoints}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(localize(`MYTHRASF.Wound.${damage.resultingWound}`))}</strong></div>${["serious", "major"].includes(damage.resultingWound) ? `<p class="combat-card-warning">${escape(localize(`MYTHRASF.Combat.WoundWarning.${damage.resultingWound}`))}</p>` : ""}` : `<button type="button" data-combat-action="apply-damage" title="${escape(localize("MYTHRASF.Combat.ApplyDamage"))}">${escape(localize("MYTHRASF.Combat.ApplyDamage"))}</button>`}</fieldset>`;
+    const extraordinary = damage.extraordinaryFormula && damage.extraordinaryFormula !== "0"
+      ? ` + ${escape(localize("MYTHRASF.Combat.DamageExtraordinary"))} (${escape(damage.extraordinaryFormula)})` : "";
+    damageHtml = `<fieldset class="combat-damage-panel"><legend>${escape(localize("MYTHRASF.Chat.Damage"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageBreakdown"))}</span><strong>${escape(localize("MYTHRASF.Combat.DamageWeapon"))} (${escape(damage.weaponFormula ?? "0")}) + ${escape(localize("MYTHRASF.Combat.DamageBonus"))} (${escape(damage.modifierFormula ?? "0")})${extraordinary} = ${escape(damage.resultExpression ?? damage.rawRoll)}</strong>${["proposed", "stale"].includes(damage.status) ? luck("damage") : ""}</div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.Damage"))}</span><strong>${damage.rawRoll}</strong></div>${damage.locationRoll != null ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${damage.locationRoll}</strong></div>` : ""}<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AfterContainedBlow"))}</span><strong>${damage.afterContainedBlow ?? "—"}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span><strong>${escape(localize(`MYTHRASF.Combat.ParryType.${damage.parryType ?? "none"}`))}: ${damage.afterParry ?? "—"}</strong></div><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select data-damage-location ${damage.status === "applied" ? "disabled" : ""}>${locationOptions}</select></label><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Armor"))}</span><strong>${damage.armorPoints ?? "—"}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${damage.penetratingDamage ?? "—"}</strong></div>${damage.push?.triggered ? `<div class="combat-card-warning">${escape(game.i18n.format("MYTHRASF.Combat.PushSummary", { distance: damage.push.distance, excess: damage.push.excess }))}</div>` : ""}${damage.status === "stale" ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Combat.DamageStale"))}</p>` : ""}${damage.status === "applied" ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AppliedHitPoints"))}</span><strong>${damage.beforeHitPoints} → ${damage.afterHitPoints}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(localize(`MYTHRASF.Wound.${damage.resultingWound}`))}</strong></div>${["serious", "major"].includes(damage.resultingWound) ? `<p class="combat-card-warning">${escape(localize(`MYTHRASF.Combat.WoundWarning.${damage.resultingWound}`))}</p>` : ""}` : `<button type="button" data-combat-action="apply-damage" title="${escape(localize("MYTHRASF.Combat.ApplyDamage"))}">${escape(localize("MYTHRASF.Combat.ApplyDamage"))}</button>`}</fieldset>`;
     if (damage.passiveBlock) damageHtml = damageHtml.replace(
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span>`,
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Status.PassiveBlock"))}</span><strong>${escape(damage.passiveBlock.weaponName)} (${escape(damage.passiveBlock.weaponSize)})</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span>`);

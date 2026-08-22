@@ -8,6 +8,7 @@ import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { passiveBlockCapacity, validatePassiveBlock } from "./passive-block.js";
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
 import { tacticalState } from "./engagement-runtime.js";
+import { actorDisplayName } from "./document-names.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -43,10 +44,12 @@ export function passiveBlockEntries(combat) {
           capacity: passiveBlockCapacity(mode) })));
     if (!choices.length) continue;
     entries.push({ id: `${combatant.id}:passive-block`, combatantId: combatant.id,
-      actorUuid: actor.uuid, key: "passiveBlock", automatic: false, status: "pending",
+      actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "passiveBlock",
+      automatic: false, status: "pending",
       choices, locations: actor.items.filter((item) => item.type === "hitLocation")
         .sort((a, b) => Number(a.system.rangeStart) - Number(b.system.rangeStart))
-        .map((item) => ({ id: item.id, name: item.name, rangeStart: item.system.rangeStart })) });
+        .map((item) => ({ id: item.id, name: item.name, rangeStart: item.system.rangeStart,
+          category: item.system.category, hpClass: item.system.hpClass })) });
   }
   return entries;
 }
@@ -81,7 +84,7 @@ async function createRoundMessage(combat, queue) {
 }
 
 export function renderRoundConsequences(state) {
-  const rows = state.queue.map((entry) => `<div class="mythras-chat-row"><span>${escape(
+  const rows = state.queue.filter((entry) => entry.key !== "passiveBlock").map((entry) => `<div class="mythras-chat-row"><span>${escape(
     game.i18n.localize(`MYTHRASF.Status.${entry.key === "exsanguinating" ? "Exsanguinating"
       : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
         ? "PassiveBlock" : "Drowning"}`))}</span><strong>${escape(
@@ -91,7 +94,20 @@ export function renderRoundConsequences(state) {
         : `<button type="button" data-round-action="roll" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.Roll"))}</button><button type="button" data-round-action="manual" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : entry.resolution ? entry.key === "passiveBlock"
           ? `<span>${escape(entry.resolution.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Waived") : entry.resolution.weaponName)}</span>`
           : `<span>${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
-  return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}</section>`;
+  const blocks = state.queue.filter((entry) => entry.key === "passiveBlock").map((entry) => {
+    const status = entry.status === "pending" ? game.i18n.localize("MYTHRASF.PassiveBlock.Pending")
+      : entry.resolution?.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Passed")
+        : game.i18n.localize("MYTHRASF.PassiveBlock.Declared");
+    const locationNames = (entry.resolution?.locationIds ?? []).map((id) =>
+      entry.locations.find((location) => location.id === id)?.name).filter(Boolean);
+    const detail = entry.resolution && !entry.resolution.waived
+      ? ` — ${entry.resolution.weaponName}: ${locationNames.join(", ")}` : "";
+    const actions = entry.status === "pending"
+      ? `<button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button>` : "";
+    return `<div class="mythras-chat-row"><span>${escape(entry.actorName)}</span><strong>${escape(status + detail)}</strong>${actions}</div>`;
+  }).join("");
+  const blockPanel = blocks ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Status.PassiveBlock"))}</legend>${blocks}</fieldset>` : "";
+  return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}${blockPanel}</section>`;
 }
 
 async function requestResolution(message, state, entryId, manual) {
@@ -132,8 +148,6 @@ async function requestResolution(message, state, entryId, manual) {
 
 async function requestPassiveBlock(message, state, entryId, waive = false) {
   const entry = state.queue.find((candidate) => candidate.id === entryId);
-  const index = state.queue.findIndex((candidate) => candidate.id === entryId);
-  if (state.queue.slice(0, index).some((candidate) => candidate.status === "pending")) return;
   const actor = entry ? await fromUuid(entry.actorUuid).catch(() => null) : null;
   if (!entry || entry.key !== "passiveBlock" || (!game.user.isGM && !actor?.isOwner)) return;
   let resolution = { waived: true };
@@ -180,8 +194,6 @@ async function applyPassiveBlock(message, request) {
   const user = game.users.get(request.userId);
   if (!state || !entry || entry.status !== "pending" || state.revision !== request.revision
     || !user || (!user.isGM && !actor?.testUserPermission(user, "OWNER"))) return;
-  const index = state.queue.findIndex((candidate) => candidate.id === request.entryId);
-  if (state.queue.slice(0, index).some((candidate) => candidate.status === "pending")) return;
   let resolution = { ...request.resolution };
   if (!resolution.waived) {
     const [weaponId, modeKey] = String(resolution.weapon).split(":");

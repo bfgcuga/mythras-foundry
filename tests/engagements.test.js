@@ -33,3 +33,15 @@ test("el bloqueo pasivo exige capacidad exacta y localizaciones contiguas", () =
   assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "2", "3", "4"],
     crouched: true }).valid, true);
 });
+
+test("las localizaciones humanas forman una red anatómica y no el orden del d20", () => {
+  const locations = [
+    { id: "leg", rangeStart: 1, category: "leg" },
+    { id: "abdomen", rangeStart: 7, category: "abdomen" },
+    { id: "chest", rangeStart: 10, category: "chest" },
+    { id: "arm", rangeStart: 13, category: "arm" },
+    { id: "head", rangeStart: 20, category: "head" }
+  ];
+  assert.equal(contiguousLocationIds(locations, ["chest", "abdomen", "arm", "head"]), true);
+  assert.equal(contiguousLocationIds(locations, ["leg", "head"]), false);
+});

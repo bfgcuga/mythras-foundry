@@ -207,13 +207,11 @@
           </div>
         {{/if}}
 
-        <div class="paper-skill-actions"><button type="button" data-action="roll-special"
-          title="{{localize "MYTHRASF.SpecialRoll.Title"}}">{{localize "MYTHRASF.SpecialRoll.Title"}}</button></div>
         <section class="paper-skill-columns {{#if editMode}}skills-editing{{/if}}">
           <div class="paper-skill-column paper-skill-column-basic">
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
               group=basicSkillGroup editable=editable skillsEditing=editMode
-              canImproveSkills=canImproveSkills}}
+              canImproveSkills=canImproveSkills showSpecialRoll=true}}
             {{> "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
               group=combatSkillGroup editable=editable skillsEditing=editMode
               canImproveSkills=canImproveSkills}}
