@@ -1804,6 +1804,15 @@
   text-align: center;
 }
 
+.mythras-foundry .combat-location-head > span:nth-child(2),
+.mythras-foundry .combat-location-name {
+  text-align: left;
+}
+
+.mythras-foundry .combat-location-line > span:first-child {
+  text-align: center;
+}
+
 .mythras-foundry .combat-fatigue-head,
 .mythras-foundry .combat-fatigue-line {
   display: grid;

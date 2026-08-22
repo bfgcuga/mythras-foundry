@@ -20,6 +20,12 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
   assert.match(registration, /templates\/actor\/parts\/hit-location-table\.hbs/);
 });
 
+test("d20 y Localización alinean igual sus cabeceras y datos", async () => {
+  const styles = await readFile(new URL("../styles/mythras-foundry.css", import.meta.url), "utf8");
+  assert.match(styles, /combat-location-head > span:nth-child\(2\)[\s\S]*?text-align: left/);
+  assert.match(styles, /combat-location-line > span:first-child[\s\S]*?text-align: center/);
+});
+
 test("el preparador común resuelve estados, armadura y bloqueo pasivo", () => {
   const location = { id: "chest", type: "hitLocation", name: "Pecho", system: {
     rangeStart: 10, rangeEnd: 12, armorPoints: 1, woundLevel: "major",

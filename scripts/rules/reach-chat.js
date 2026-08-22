@@ -10,11 +10,17 @@ import { findWeaponMode, weaponModes } from "./weapon-modes.js";
 import { difficultyTarget, resolveWeaponStyle } from "./combat.js";
 import { createResolvedReactionAttack } from "./combat-chat.js";
 import { recordAbilityFumble } from "./skills.js";
+import { actorDisplayName, tokenDisplayName } from "./document-names.js";
 
 const SCOPE = "mythras-foundry"; const SOCKET = "system.mythras-foundry";
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const coordinator = () => game.mythrasFoundry?.combat?.isCoordinator?.();
 const pendingActors = new Set();
+function combatantDisplayName(combatant) {
+  if (!combatant?.actor) return combatant?.name ?? "";
+  return combatant.actor.type === "character" ? actorDisplayName(combatant.actor)
+    : tokenDisplayName(combatant.token) || actorDisplayName(combatant.actor) || combatant.name || "";
+}
 async function spend(actor) { const value = currentActionPoints(actor); if (value < 1) return false;
   await actor.update({ "system.resources.actionPoints.value": value - 1 }); return true; }
 
@@ -41,7 +47,7 @@ export async function requestReachChange(actor) {
     game.i18n.localize("MYTHRASF.Combat.SourceMissing"));
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Reach.Change") },
-    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</span><select name="target">${opponents.map((entry) => `<option value="${entry.id}">${escape(entry.name)}</option>`).join("")}</select></label><label><span>${escape(game.i18n.localize("MYTHRASF.Reach.IntentLabel"))}</span><select name="intent"><option value="shorter">${escape(game.i18n.localize("MYTHRASF.Reach.Intent.shorter"))}</option><option value="longer">${escape(game.i18n.localize("MYTHRASF.Reach.Intent.longer"))}</option><option value="disengage">${escape(game.i18n.localize("MYTHRASF.Reach.Intent.disengage"))}</option></select></label><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weapons.map(({ weapon, mode }) => `<option value="${escape(`${weapon.id}:${mode.key}`)}">${escape(weapon.name)} (${escape(mode.reach)})</option>`).join("")}</select></label></div>`,
+    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</span><select name="target">${opponents.map((entry) => `<option value="${entry.id}">${escape(combatantDisplayName(entry))}</option>`).join("")}</select></label><label><span>${escape(game.i18n.localize("MYTHRASF.Reach.IntentLabel"))}</span><select name="intent"><option value="shorter">${escape(game.i18n.localize("MYTHRASF.Reach.Intent.shorter"))}</option><option value="longer">${escape(game.i18n.localize("MYTHRASF.Reach.Intent.longer"))}</option><option value="disengage">${escape(game.i18n.localize("MYTHRASF.Reach.Intent.disengage"))}</option></select></label><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weapons.map(({ weapon, mode }) => `<option value="${escape(`${weapon.id}:${mode.key}`)}">${escape(weapon.name)} (${escape(mode.reach)})</option>`).join("")}</select></label></div>`,
     buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.Reach.Change"),
       callback: (event, button) => ({ targetId: button.form.elements.target.value,
         intent: button.form.elements.intent.value, weapon: button.form.elements.weapon.value }) }], rejectClose: false });
@@ -54,8 +60,8 @@ export async function requestReachChange(actor) {
   await recordAbilityFumble(skill, evadeResult);
   const state = { schemaVersion: 1, revision: 0, status: "awaitingResponse", combatId: combat.id,
     relationId: relation?.id ?? engagementId(active.id, target.id), actorCombatantId: active.id,
-    targetCombatantId: target.id, actorUuid: actor.uuid, actorName: actor.name,
-    targetUuid: target.actor.uuid, targetName: target.name, intent: result.intent,
+    targetCombatantId: target.id, actorUuid: actor.uuid, actorName: combatantDisplayName(active),
+    targetUuid: target.actor.uuid, targetName: combatantDisplayName(target), intent: result.intent,
     weaponId, modeKey, evade: { target: Number(skill.system.total ?? 0), rawRoll: roll.total,
       result: evadeResult }, authorUserId: game.user.id };
   const messageData = { speaker: ChatMessage.getSpeaker({ actor }), content: render(state),
@@ -145,14 +151,16 @@ export function renderTacticalOverview(combat) {
       return !weapon || !weapon.system.equipped
         || !weaponModes(weapon).some((mode) => mode.key === side.modeKey);
     });
-    return `<tr><td>${escape(sides[0]?.actorName)}</td><td>${escape(sides[1]?.actorName)}</td><td>${escape(incomplete ? game.i18n.localize("MYTHRASF.Reach.Incomplete") : relation.status)}</td><td>${escape(sides.map((side) => `${side.weaponName} (${side.reach})`).join(" / "))}</td><td>${escape(relation.position)}</td></tr>`;
+    const names = sides.map((side) => combatantDisplayName(
+      combat.combatants.get(side.combatantId)) || side.actorName);
+    return `<tr><td>${escape(names[0])}</td><td>${escape(names[1])}</td><td>${escape(incomplete ? game.i18n.localize("MYTHRASF.Reach.Incomplete") : relation.status)}</td><td>${escape(sides.map((side) => `${side.weaponName} (${side.reach})`).join(" / "))}</td><td>${escape(relation.position)}</td></tr>`;
   }).join("");
   const blocks = Object.values(state.passiveBlocks ?? {}).map((block) => `<tr><td>${escape(
-    combat.combatants.get(block.combatantId)?.name)}</td><td>${escape(block.weaponName)}</td><td>${escape(
+    combatantDisplayName(combat.combatants.get(block.combatantId)))}</td><td>${escape(block.weaponName)}</td><td>${escape(
     block.locationIds?.map((id) => combat.combatants.get(block.combatantId)?.actor?.items.get(id)?.name)
       .filter(Boolean).join(", "))}</td><td>${escape(block.status)}</td></tr>`).join("");
   const covers = Object.values(state.covers ?? {}).map((cover) => `<tr><td>${escape(
-    combat.combatants.get(cover.combatantId)?.name)}</td><td>${escape(cover.source)}</td><td>${escape(
+    combatantDisplayName(combat.combatants.get(cover.combatantId)))}</td><td>${escape(cover.source)}</td><td>${escape(
     cover.locationIds?.map((id) => combat.combatants.get(cover.combatantId)?.actor?.items.get(id)?.name)
       .filter(Boolean).join(", "))}</td><td>${Number(cover.protection ?? 0)}</td></tr>`).join("");
   return `<div class="mythras-foundry mythras-dialog"><table><thead><tr><th>A</th><th>B</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Engagement"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Reach"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Position"))}</th></tr></thead><tbody>${rows}</tbody></table><table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th></tr></thead><tbody>${blocks}</tbody></table><table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverSource"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverProtection"))}</th></tr></thead><tbody>${covers}</tbody></table></div>`;
@@ -160,8 +168,8 @@ export function renderTacticalOverview(combat) {
 export async function openTacticalOverview() { const combat = game.combat; if (!combat) return;
   const relations = Object.values(tacticalState(combat).relations ?? {});
   const combatantOptions = combat.combatants.filter((entry) => entry.actor).map((entry) =>
-    `<option value="${escape(entry.id)}">${escape(entry.name)}</option>`).join("");
-  const edit = game.user.isGM && relations.length ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Reach.GmCorrection"))}</legend><select name="relation">${relations.map((entry) => `<option value="${escape(entry.id)}">${escape(Object.values(entry.sides).map((side) => side.actorName).join(" / "))}</option>`).join("")}</select><select name="position"><option value="longer">longer</option><option value="shorter">shorter</option><option value="neutral">neutral</option></select><select name="status"><option value="engaged">engaged</option><option value="disengaged">disengaged</option></select></fieldset>` : "";
+    `<option value="${escape(entry.id)}">${escape(combatantDisplayName(entry))}</option>`).join("");
+  const edit = game.user.isGM && relations.length ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Reach.GmCorrection"))}</legend><select name="relation">${relations.map((entry) => `<option value="${escape(entry.id)}">${escape(Object.values(entry.sides).map((side) => combatantDisplayName(combat.combatants.get(side.combatantId)) || side.actorName).join(" / "))}</option>`).join("")}</select><select name="position"><option value="longer">longer</option><option value="shorter">shorter</option><option value="neutral">neutral</option></select><select name="status"><option value="engaged">engaged</option><option value="disengaged">disengaged</option></select></fieldset>` : "";
   const create = game.user.isGM ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Reach.CreateRelation"))}</legend><select name="newLeft">${combatantOptions}</select><select name="newRight">${combatantOptions}</select></fieldset>` : "";
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Reach.Overview") },

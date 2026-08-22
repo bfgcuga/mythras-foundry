@@ -248,8 +248,9 @@ abren esta consulta.
 
 La transacción de combate usa el esquema 7 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
-el propietario del ganador o el DJ selecciona efectos válidos o renuncias y la
-confirmación bloquea la suerte de ataque y defensa. Los huecos se conservan por
+el propietario del ganador o el DJ selecciona efectos válidos o renuncias; esa
+selección bloquea la suerte de ataque y defensa. Cuando no existen huecos, la
+confirmación automática conserva la suerte hasta tirar el daño. Los huecos se conservan por
 lado para admitir simultáneamente el efecto adicional de Sorpresa y una ventaja
 defensiva. `scripts/rules/combat-effects.js`
 contiene únicamente metadatos de ejecución, filtros y ayudantes puros. El texto

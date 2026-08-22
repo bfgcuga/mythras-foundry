@@ -814,6 +814,7 @@
   "MYTHRASF.Combat.DamageBreakdown": "Damage",
   "MYTHRASF.Combat.DamageWeapon": "weapon",
   "MYTHRASF.Combat.DamageBonus": "bonus",
+  "MYTHRASF.Combat.DamageDice": "Roll",
   "MYTHRASF.Combat.DamageExtraordinary": "extraordinary damage",
   "MYTHRASF.Combat.LocationRoll": "Hit-location roll",
   "MYTHRASF.Combat.AfterContainedBlow": "After held blow",
