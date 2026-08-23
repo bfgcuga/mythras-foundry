@@ -206,8 +206,14 @@ defenderse. Si la defensa estaba predeclarada, ataque y defensa comparten la
 reducción por el mayor porcentaje superior a 100; una defensa tardía conserva
 la clasificación ya obtenida por el ataque. `scripts/rules/combat-chat.js`
 coordina por socket la respuesta de Parar, Evadir o no defenderse, valida
-revisión y propiedad y permite modificar ambos dados mediante suerte. El daño,
-la localización y la armadura continúan en la misma transacción. Parar reduce el
+revisión y propiedad y permite modificar ambos dados mediante suerte.
+Antes de consumir PA, puntería o munición, el ataque resuelve el blanco y sus
+modificadores contextuales y reutiliza el diálogo de ajuste porcentual sin la
+configuración de concurso. La dificultad elegida se combina con la dificultad
+impuesta después de aplicar habilidades limitadas o reforzadas; la transacción
+conserva la base, esos ajustes y el objetivo efectivo como una sola fuente para
+la clasificación, la tarjeta y las repeticiones por suerte.
+El daño, la localización y la armadura continúan en la misma transacción. Parar reduce el
 daño según el tamaño de ambas armas; Evadir decide si existe impacto comparando
 primero el grado y después el dado más alto. La tarjeta conserva una instantánea
 de armadura y PG, pero solo el DJ o el propietario defensor puede confirmar la

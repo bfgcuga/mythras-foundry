@@ -43,7 +43,8 @@ function actorByReference(participants, reference) {
 }
 
 export async function openSkillRollDialog(item, { imposedDifficulty = "standard",
-  defaultDifficulty = "standard", modifiers = [] } = {}) {
+  defaultDifficulty = "standard", modifiers = [], includeContest = true,
+  title = null } = {}) {
   const { DialogV2 } = foundry.applications.api;
   const sceneParticipants = sceneRollParticipants();
   const initiatorParticipant = sceneParticipants.find((entry) => entry.actor === item.actor)
@@ -100,10 +101,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   const initialTargets = resolveSkillRollTargets({
     baseTarget: item.system.total, difficulty: defaultDifficulty, imposedDifficulty
   });
-  const result = await DialogV2.wait({
-    window: { title: game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
-    content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog" data-imposed-difficulty="${imposedDifficulty}" data-base-target="${Number(item.system.total ?? 0)}">
-      <fieldset class="skill-roll-contest"><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Title"))}</legend>
+  const contestPanel = includeContest ? `<fieldset class="skill-roll-contest"><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Title"))}</legend>
         <label><span>${escape(game.i18n.localize("MYTHRASF.Contest.ResolutionLabel"))}</span><select name="resolutionMode">${resolutionOptions}</select></label>
         <div data-contest-settings>
           <fieldset class="skill-roll-side" data-contest-side="initiator"><legend>${escape(game.i18n.localize("MYTHRASF.Contest.Side.initiator"))}</legend>
@@ -120,7 +118,11 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           </fieldset>
           <div class="skill-roll-participants" hidden>${initiatorRow}${participantRows}</div>
         </div>
-      </fieldset>
+      </fieldset>` : "";
+  const result = await DialogV2.wait({
+    window: { title: title ?? game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
+    content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog" data-imposed-difficulty="${imposedDifficulty}" data-base-target="${Number(item.system.total ?? 0)}">
+      ${contestPanel}
       ${adjustmentPanel("limited")}
       ${adjustmentPanel("reinforced")}
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>${modifierRows}</fieldset>
@@ -147,6 +149,8 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           ui.notifications.warn(game.i18n.localize("MYTHRASF.SkillRoll.SupportMismatch"));
           return null;
         }
+        if (!includeContest) return { difficulty: form.difficulty.value, limitedSkill,
+          reinforcedSkill, contest: null };
         const resolutionMode = form.resolutionMode.value;
         const sideConfig = (side) => {
           const mode = form[`${side}Mode`].value;
@@ -199,6 +203,12 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
     reinforced: Boolean(result.reinforcedSkill),
     reinforcedTarget: result.reinforcedSkill?.system.total
   }) };
+}
+
+export function openAttackRollDialog(ability, options = {}) {
+  return openSkillRollDialog(ability, { includeContest: false,
+    title: game.i18n.format("MYTHRASF.Combat.AttackWith", { weapon: ability.name }),
+    ...options });
 }
 
 export function activateSkillRollDialog(element) {

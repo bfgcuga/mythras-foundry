@@ -77,6 +77,16 @@ test("el diálogo de tirada separa origen, efecto y dificultad final", () => {
   assert.match(standards, /penalizaciones se muestran en rojo y los bonificadores en verde/);
 });
 
+test("el ataque reutiliza los ajustes porcentuales sin configurar un concurso", () => {
+  assert.match(rollDialog, /export function openAttackRollDialog/);
+  assert.match(rollDialog, /includeContest: false/);
+  assert.match(rollDialog, /if \(!includeContest\) return \{ difficulty:/);
+  assert.match(chatScript, /await openAttackRollDialog/);
+  assert.match(chatScript, /configured\.targets\.adjustedTarget/);
+  assert.match(chatScript, /if \(!configured\) return null;[\s\S]*spendActionPoint/);
+  assert.match(chatScript, /rollConfiguration/);
+});
+
 test("la superficie compartida queda registrada como estándar visual", () => {
   assert.match(standards, /Superficie estándar de papel/);
   assert.match(standards, /Toda hoja de documento/);

@@ -77,7 +77,9 @@ El sistema incluye actualmente:
   individuales, mientras que en una eliminatoria el primer miembro que responde
   aporta el dado común. Las instancias de un mismo PNJ se tratan por separado;
 - armas con varios modos, estilos de combate, familiaridad y rasgos
-  reutilizables; los ataques crean intercambios diferenciales interactivos con
+  reutilizables; antes de tirar, los ataques muestran la dificultad elegida y
+  la impuesta por estados y situación, permiten aplicar habilidades limitadas o
+  reforzadas y previsualizan el objetivo efectivo. Después crean intercambios diferenciales interactivos con
   Parar, Evadir o renunciar a la defensa, respetando el momento de declaración
   para la regla compartida de porcentajes superiores al 100 %; los impactos
   resuelven tamaño de parada, golpe contenido, daño, localización y armadura y

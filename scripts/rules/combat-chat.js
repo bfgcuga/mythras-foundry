@@ -26,10 +26,11 @@ import { recordAbilityFumble } from "./skills.js";
 import { actorDisplayName, actorSpeaker, tokenDisplayName } from "./document-names.js";
 import { evaluatedDamageExpression } from "./combat-damage-display.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
+import { openAttackRollDialog } from "../apps/skill-roll-dialog.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const localize = (key) => game.i18n.localize(key);
 const actorIdentity = (actor) => actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
@@ -290,6 +291,49 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     if (!attackWeapon) return ui.notifications.warn(localize("MYTHRASF.Reach.TooShort"));
     setup.targetWeaponId = targetSide.weaponId;
   }
+  const rollModifiers = [];
+  if (resolution.difficulty !== "standard") rollModifiers.push({
+    source: localize("MYTHRASF.SkillRoll.ActorConditions"),
+    effect: localize(`MYTHRASF.Difficulty.${resolution.difficulty}`), type: "penalty"
+  });
+  if (resolution.familiarity && resolution.familiarity !== "similar") rollModifiers.push({
+    source: localize("MYTHRASF.Combat.Familiarity"),
+    effect: localize(`MYTHRASF.Familiarity.${resolution.familiarity}`), type: "penalty"
+  });
+  if (ranged) {
+    rollModifiers.push({ source: localize("MYTHRASF.Ranged.Distance"),
+      effect: `${ranged.distance} m — ${localize(`MYTHRASF.Difficulty.${ranged.difficulty}`)}`,
+      type: ranged.steps < 0 ? "bonus" : "penalty" });
+    if (ranged.aim) rollModifiers.push({ source: localize("MYTHRASF.Ranged.Aim"),
+      effect: localize("MYTHRASF.SkillRoll.OneDifficultyStep"), type: "bonus" });
+  }
+  const rollAbility = { id: resolution.style?.id ?? "__combat_base__", actor,
+    name: resolution.style?.name ?? (resolution.untrained
+      ? localize("MYTHRASF.Combat.Untrained") : localize("MYTHRASF.Combat.BaseStyle")),
+    system: { total: Number(resolution.target) || 0 } };
+  const configured = await openAttackRollDialog(rollAbility, {
+    imposedDifficulty: resolution.difficulty, modifiers: rollModifiers,
+    title: game.i18n.format("MYTHRASF.Combat.AttackWith", { weapon: weapon.name })
+  });
+  if (!configured) return null;
+  if (configured.targets.difficulty === "automatic") {
+    ui.notifications.info(localize("MYTHRASF.RollResult.automatic")); return null;
+  }
+  if (configured.targets.difficulty === "impossible") {
+    ui.notifications.warn(localize("MYTHRASF.RollResult.impossible")); return null;
+  }
+  resolution.target = configured.targets.adjustedTarget;
+  resolution.difficulty = configured.targets.difficulty;
+  resolution.rollConfiguration = {
+    baseTarget: configured.targets.baseTarget,
+    adjustedTarget: configured.targets.adjustedTarget,
+    limited: configured.limitedSkill ? { actorName: actorDisplayName(configured.limitedSkill.actor),
+      abilityId: configured.limitedSkill.id, abilityName: configured.limitedSkill.name,
+      target: Number(configured.limitedSkill.system.total ?? 0) } : null,
+    reinforced: configured.reinforcedSkill ? { actorName: actorDisplayName(configured.reinforcedSkill.actor),
+      abilityId: configured.reinforcedSkill.id, abilityName: configured.reinforcedSkill.name,
+      target: Number(configured.reinforcedSkill.system.total ?? 0) } : null
+  };
   if (turnEconomy && !await spendActionPoint(actor)) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
   }
@@ -327,7 +371,10 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     attacker: { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: actorDisplayName(actor),
       tokenUuid: actor.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
       modeKey: mode.key, modeName: mode.name, styleId: resolution.style?.id ?? "", styleName,
-      difficulty: resolution.difficulty, baseTarget: resolution.target, target: targetValue,
+      difficulty: resolution.difficulty,
+      baseTarget: resolution.rollConfiguration?.baseTarget ?? resolution.target,
+      target: targetValue,
+      rollConfiguration: resolution.rollConfiguration,
       damage: reachRule.pommel ? reachRule.damage : mode.damage,
       damageModifierMode: mode.damageModifierMode,
       weaponSize: reachRule.pommel ? reachRule.weaponSize : ranged?.effectivePower ?? mode.size,
@@ -1441,8 +1488,17 @@ export function renderCombatExchange(combat) {
   const close = combat.turnEconomy && !combat.turnEconomy.turnAdvanced
     ? `<button type="button" data-combat-action="close-exchange" data-gm-only title="${escape(localize("MYTHRASF.Tracker.CloseExchange"))}">${escape(localize("MYTHRASF.Tracker.CloseExchange"))}</button>` : "";
   const rangedHtml = combat.ranged ? `<fieldset><legend>${escape(localize("MYTHRASF.Ranged.Attack"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Distance"))}</span><strong>${combat.ranged.distance} m</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.BandLabel"))}</span><strong>${escape(localize(`MYTHRASF.Ranged.Band.${combat.ranged.band}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Difficulty"))}</span><strong>${escape(localize(`MYTHRASF.Difficulty.${combat.ranged.difficulty}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Power"))}</span><strong>${escape(combat.ranged.power)} → ${escape(combat.ranged.effectivePower)}</strong></div>${combat.ranged.ammunition?.tracking ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Ammunition"))}</span><strong>${combat.ranged.ammunition.loaded}/${combat.ranged.ammunition.reserve}</strong></div>` : ""}${combat.ranged.accidentalEligible ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Ranged.AccidentalPending"))}</p>` : ""}</fieldset>` : "";
+  const rollConfiguration = combat.attacker.rollConfiguration;
+  const adjustmentHtml = rollConfiguration ? `<fieldset><legend>${escape(localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>
+    <div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Difficulty"))}</span><strong>${escape(localize(`MYTHRASF.Difficulty.${combat.attacker.difficulty}`))}</strong></div>
+    <div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.BaseTarget"))}</span><strong>${rollConfiguration.baseTarget}%</strong></div>
+    ${["limited", "reinforced"].filter((key) => rollConfiguration[key]).map((key) => {
+      const value = rollConfiguration[key];
+      return `<div class="mythras-chat-row"><span>${escape(localize(`MYTHRASF.SkillRoll.${key === "limited" ? "Limited" : "Reinforced"}`))}</span><strong>${escape(value.abilityName)} (${escape(value.actorName)}, ${value.target}%)</strong></div>`;
+    }).join("")}
+    ${combat.attacker.target !== rollConfiguration.baseTarget ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.EffectiveTarget"))}</span><strong>${combat.attacker.target}%</strong></div>` : ""}</fieldset>` : "";
   const accidental = combat.status === "awaitingAccidentalTarget" ? `<button type="button" data-combat-action="accidental-target" data-gm-only title="${escape(localize("MYTHRASF.Ranged.ChooseAccidentalTarget"))}">${escape(localize("MYTHRASF.Ranged.ChooseAccidentalTarget"))}</button>` : "";
-  return `<section class="mythras-combat-card mythras-chat-card" data-combat-revision="${combat.revision}"><div class="mythras-chat-title">${escape(localize("MYTHRASF.Combat.ExchangeTitle"))}</div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.StatusLabel"))}</span><strong>${escape(localize(`MYTHRASF.Combat.Status.${combat.status}`))}</strong></div>${tracker}<div class="mythras-chat-details"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.Attacker"))}</span><strong>${escape(combatEntryDisplayName(combat.attacker))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.Defender"))}</span><strong>${escape(combatEntryDisplayName(combat.defender))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.WeaponAndStyle"))}</span><strong>${escape(`${combat.attacker.weaponName} — ${combat.attacker.styleName}`)}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DeclarationMoment"))}</span><strong>${escape(localize(`MYTHRASF.Combat.Declaration.${combat.predeclared ? "before" : "after"}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ContainedBlow"))}</span><strong>${escape(localize(combat.declarations?.containedBlow ? "MYTHRASF.Yes" : "MYTHRASF.No"))}</strong></div></div>${rangedHtml}<div class="combat-exchange-side"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.AttackRoll"))} (${attack?.target ?? combat.attacker.target}%)</span><strong><span class="mythras-chat-roll-value">${combat.attacker.rawRoll}</span> ${escape(resultLabel(attack?.result))}</strong>${rollLuckAllowed ? luck("attacker") : ""}</div></div><div class="combat-exchange-side"><div class="mythras-chat-row"><span>${escape(defenseName)}${defense?.target != null ? ` (${defense.target}%)` : ""}</span><strong>${defense?.rawRoll == null ? "—" : `<span class="mythras-chat-roll-value">${defense.rawRoll}</span> ${escape(resultLabel(defense.result))}`}</strong>${defense?.rawRoll != null && rollLuckAllowed ? luck("defender") : ""}</div></div>${penalty}${outcome}${effectsHtml}${damageHtml}${checksHtml}${consequencesHtml}${defenseActions}${accidental}<div data-combat-gm-actions>${combat.status === "awaitingDefense" ? `<button type="button" data-combat-action="cancel" title="${escape(localize("MYTHRASF.Contest.Cancel"))}">${escape(localize("MYTHRASF.Contest.Cancel"))}</button>` : ""}${close}</div></section>`;
+  return `<section class="mythras-combat-card mythras-chat-card" data-combat-revision="${combat.revision}"><div class="mythras-chat-title">${escape(localize("MYTHRASF.Combat.ExchangeTitle"))}</div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.StatusLabel"))}</span><strong>${escape(localize(`MYTHRASF.Combat.Status.${combat.status}`))}</strong></div>${tracker}<div class="mythras-chat-details"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.Attacker"))}</span><strong>${escape(combatEntryDisplayName(combat.attacker))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.Defender"))}</span><strong>${escape(combatEntryDisplayName(combat.defender))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.WeaponAndStyle"))}</span><strong>${escape(`${combat.attacker.weaponName} — ${combat.attacker.styleName}`)}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DeclarationMoment"))}</span><strong>${escape(localize(`MYTHRASF.Combat.Declaration.${combat.predeclared ? "before" : "after"}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ContainedBlow"))}</span><strong>${escape(localize(combat.declarations?.containedBlow ? "MYTHRASF.Yes" : "MYTHRASF.No"))}</strong></div></div>${rangedHtml}${adjustmentHtml}<div class="combat-exchange-side"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.AttackRoll"))} (${attack?.target ?? combat.attacker.target}%)</span><strong><span class="mythras-chat-roll-value">${combat.attacker.rawRoll}</span> ${escape(resultLabel(attack?.result))}</strong>${rollLuckAllowed ? luck("attacker") : ""}</div></div><div class="combat-exchange-side"><div class="mythras-chat-row"><span>${escape(defenseName)}${defense?.target != null ? ` (${defense.target}%)` : ""}</span><strong>${defense?.rawRoll == null ? "—" : `<span class="mythras-chat-roll-value">${defense.rawRoll}</span> ${escape(resultLabel(defense.result))}`}</strong>${defense?.rawRoll != null && rollLuckAllowed ? luck("defender") : ""}</div></div>${penalty}${outcome}${effectsHtml}${damageHtml}${checksHtml}${consequencesHtml}${defenseActions}${accidental}<div data-combat-gm-actions>${combat.status === "awaitingDefense" ? `<button type="button" data-combat-action="cancel" title="${escape(localize("MYTHRASF.Contest.Cancel"))}">${escape(localize("MYTHRASF.Contest.Cancel"))}</button>` : ""}${close}</div></section>`;
 }
 
 export function activateCombatCard(message, html) {

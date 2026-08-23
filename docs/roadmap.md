@@ -15,6 +15,10 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - El combate a distancia ya resuelve distancia declarada, bandas, penalización
   por TAM y circunstancias, Apuntar, recarga, munición opcional, cobertura
   localizada y blancos accidentales al disparar a una melé.
+- Los ataques de personaje y PNJ ya reutilizan el ajuste de tiradas generales
+  para dificultad, habilidades limitadas o reforzadas y previsualización del
+  objetivo, después de reunir los modificadores tácticos y antes de consumir
+  recursos.
 - El catálogo general ya registra acciones proactivas, acciones guiadas,
   movimiento, postura, Retrasar e interrupciones. Las acciones gratuitas no
   requieren automatización.
