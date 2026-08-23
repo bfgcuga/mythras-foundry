@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { engagementId, engagementRestriction, initialReachPosition, reachDifference,
-  shiftedWeaponSize } from "../scripts/rules/engagements.js";
+  relationSituationReach, shiftedWeaponSize } from "../scripts/rules/engagements.js";
 import { contiguousLocationIds, passiveBlockCapacity,
   validatePassiveBlock } from "../scripts/rules/passive-block.js";
 
@@ -10,6 +10,15 @@ test("las relaciones usan una identidad estable y el alcance largo con dos grado
   assert.equal(reachDifference("C", "L"), 2);
   assert.equal(initialReachPosition("C", "L"), "longer");
   assert.equal(initialReachPosition("M", "L"), "neutral");
+});
+
+test("la situación muestra el alcance favorecido de las armas relacionadas", () => {
+  const relation = { position: "longer", sides: { a: { reach: "C" }, b: { reach: "L" } } };
+  assert.equal(relationSituationReach(relation), "L");
+  relation.position = "shorter";
+  assert.equal(relationSituationReach(relation), "C");
+  relation.position = "neutral";
+  assert.equal(relationSituationReach(relation), "—");
 });
 
 test("el alcance impide al arma corta y convierte el arma larga en pomo", () => {

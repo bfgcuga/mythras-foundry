@@ -33,7 +33,9 @@ El sistema incluye actualmente:
   efecto de combate, con vencimiento al final del asalto;
 - alcance detallado opcional mediante relaciones tácticas por pareja de
   combatientes, acción interactiva Cambiar Alcance y vista global desde el
-  Combat Tracker;
+  Combat Tracker; el DJ puede crear, corregir o eliminar relaciones y elegir
+  entre las armas cuerpo a cuerpo empuñadas por cada participante; la vista
+  incluye una referencia desplegable de categorías y efectos del alcance;
 - Bloqueo Pasivo declarado durante la preparación del asalto, con selección de
   localizaciones conectadas por la anatomía, estado declarado o pasado visible
   por combatiente, opción de agacharse tras el escudo y cancelación al atacar o

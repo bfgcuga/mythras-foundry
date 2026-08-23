@@ -2742,6 +2742,68 @@
 .combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
 .combat-effect-description { white-space: normal; line-height: 1.45; }
+.mythras-foundry .mythras-dialog:has(> table) table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--mythras-font-size-table);
+}
+.mythras-foundry .mythras-dialog:has(> table) th,
+.mythras-foundry .mythras-dialog:has(> table) td {
+  padding: 0.35rem;
+  border: 1px solid var(--mythras-border);
+  background: transparent;
+  color: var(--mythras-ink);
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mythras-foundry .mythras-dialog:has(> table) table + table { margin-top: 0.6rem; }
+.mythras-foundry .tactical-control-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 0.4rem;
+}
+.mythras-foundry .tactical-control-row + .tactical-control-row { margin-top: 0.4rem; }
+.mythras-foundry .tactical-control-row select,
+.mythras-foundry .tactical-control-row output { min-width: 0; text-align: center; }
+.mythras-foundry .tactical-reach-reference {
+  margin-top: 0.65rem;
+  border: 1px solid var(--mythras-border);
+  background: transparent;
+}
+.mythras-foundry .tactical-reach-reference > summary {
+  padding: 0.4rem 0.55rem;
+  color: var(--mythras-ink);
+  font-size: var(--mythras-font-size-section);
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+.mythras-foundry .tactical-reach-reference > table { margin: 0; }
+.mythras-foundry .tactical-reach-reference > table th:first-child,
+.mythras-foundry .tactical-reach-reference > table td:first-child { width: 3.5rem; }
+.mythras-foundry .tactical-reach-reference > table th:nth-child(2),
+.mythras-foundry .tactical-reach-reference > table td:nth-child(2) { width: 6rem; }
+.mythras-foundry .tactical-reach-rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.55rem;
+}
+.mythras-foundry .tactical-reach-rules section {
+  padding: 0.45rem;
+  border: 1px solid var(--mythras-border);
+  background: transparent;
+  text-align: center;
+}
+.mythras-foundry .tactical-reach-rules h4 { margin: 0 0 0.3rem; font-size: var(--mythras-font-size-section); }
+.mythras-foundry .tactical-reach-rules p { margin: 0; font-size: var(--mythras-font-size-table); line-height: 1.35; }
+@media (max-width: 700px) {
+  .mythras-foundry .tactical-reach-rules { grid-template-columns: 1fr; }
+}
 .mythras-tracker-cycle,
 .mythras-tracker-ap,
 .mythras-tracker-tactical {

@@ -114,7 +114,9 @@ Contiene relaciones versionadas por pareja de combatientes y declaraciones de
 Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o
 `neutral`) y no se deriva de las coordenadas del lienzo. Cambiar Alcance se
 coordina mediante mensajes revisables y comparte coordinador y permisos con los
-intercambios de ataque.
+intercambios de ataque. Cada lado de una relación conserva explícitamente el
+arma y modo empuñados; el DJ puede sustituirlos o eliminar la relación desde la
+vista táctica sin alterar los Items de los actores.
 
 La contigüidad del Bloqueo Pasivo humano es anatómica, no el orden de los rangos
 del d20: el pecho conecta cabeza, abdomen y brazos, y el abdomen conecta las

@@ -17,13 +17,13 @@ export function combatantForActor(combat, actor, tokenUuid = "") {
   return combat?.combatants?.find((entry) => entry.token?.uuid === tokenUuid
     || entry.actor?.uuid === actor?.uuid) ?? null;
 }
-function meleeModes(actor) {
+export function preparedMeleeWeapons(actor) {
   return actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped)
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType))
       .map((mode) => ({ weapon, mode }))) ?? [];
 }
 export function longestPreparedWeapon(actor) {
-  return meleeModes(actor).sort((a, b) => reachIndex(b.mode.reach) - reachIndex(a.mode.reach))[0] ?? null;
+  return preparedMeleeWeapons(actor).sort((a, b) => reachIndex(b.mode.reach) - reachIndex(a.mode.reach))[0] ?? null;
 }
 function side(combatant, weapon, mode) {
   return { combatantId: combatant.id, actorUuid: combatant.actor?.uuid ?? "",
@@ -68,6 +68,7 @@ export async function setRelationWeapons(combat, relationId, selections, userId 
   const state = foundry.utils.deepClone(tacticalState(combat)); const relation = state.relations?.[relationId];
   if (!relation) return null;
   for (const [combatantId, selection] of Object.entries(selections ?? {})) {
+    if (!relation.sides?.[combatantId]) continue;
     const combatant = combat.combatants.get(combatantId);
     const weapon = combatant?.actor?.items.get(selection.weaponId);
     const mode = weapon ? findWeaponMode(weapon, selection.modeKey) : null;
@@ -77,6 +78,12 @@ export async function setRelationWeapons(combat, relationId, selections, userId 
   relation.userId = userId; relation.reason = "gmWeaponCorrection";
   relation.updatedAt = Date.now(); relation.revision = Number(relation.revision ?? 0) + 1;
   state.revision += 1; await combat.setFlag(SCOPE, FLAG, state); return relation;
+}
+export async function removeRelation(combat, relationId) {
+  const state = foundry.utils.deepClone(tacticalState(combat));
+  if (!state.relations?.[relationId]) return false;
+  delete state.relations[relationId]; state.revision += 1;
+  await combat.setFlag(SCOPE, FLAG, state); return true;
 }
 export async function consumePassiveBlock(combat, combatantId, weaponId, reason) {
   if (!combat) return;

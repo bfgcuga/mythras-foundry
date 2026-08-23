@@ -14,6 +14,12 @@ export function initialReachPosition(leftReach, rightReach) {
   if (a < 0 || b < 0 || Math.abs(a - b) < 2) return "neutral";
   return "longer";
 }
+export function relationSituationReach(relation) {
+  const reaches = Object.values(relation?.sides ?? {}).map((side) => side.reach)
+    .filter((reach) => reachIndex(reach) >= 0).sort((a, b) => reachIndex(a) - reachIndex(b));
+  if (!reaches.length || relation?.position === "neutral") return "—";
+  return relation.position === "longer" ? reaches.at(-1) : reaches[0];
+}
 export function engagementRestriction(relation, actorId, weaponReach) {
   if (!relation || relation.status !== "engaged" || relation.position === "neutral") return { allowed: true };
   const own = relation.sides?.[actorId];
