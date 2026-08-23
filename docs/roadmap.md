@@ -29,6 +29,9 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - Ampliar las consecuencias persistentes de los efectos que todavía dependen
   de geometría o decisiones narrativas. Alcance, Cambiar Alcance, Retirada,
   Bloqueo Pasivo y las fuentes liberables ya disponen de estructura táctica.
+- Revisar el Bloqueo Pasivo con armas naturales: concretar qué anatomías y
+  ataques naturales pueden emplearlo y cómo deben identificarse, sin heredar
+  automáticamente la regla de combate con dos armas manufacturadas.
 
 ### Estados y penalizaciones
 

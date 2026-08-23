@@ -2777,7 +2777,11 @@
 }
 .mythras-foundry .tactical-control-row + .tactical-control-row { margin-top: 0.4rem; }
 .mythras-foundry .tactical-control-row select,
+.mythras-foundry .tactical-control-row input,
 .mythras-foundry .tactical-control-row output { min-width: 0; text-align: center; }
+.mythras-foundry .tactical-cover-correction select[multiple] {
+  min-height: 4.6rem;
+}
 .mythras-paper-sheet:has(.tactical-overview-menu) .window-content > form {
   display: flex;
   min-height: 0;

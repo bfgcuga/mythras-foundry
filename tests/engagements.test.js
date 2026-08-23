@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { engagementId, engagementRestriction, initialReachPosition, reachDifference,
   relationSituationReach, shiftedWeaponSize } from "../scripts/rules/engagements.js";
-import { contiguousLocationIds, passiveBlockCapacity,
+import { contiguousLocationIds, isNaturalWeaponMode, passiveBlockCapacity,
   validatePassiveBlock } from "../scripts/rules/passive-block.js";
 
 test("las relaciones usan una identidad estable y el alcance largo con dos grados", () => {
@@ -41,6 +41,24 @@ test("el bloqueo pasivo exige capacidad exacta y localizaciones contiguas", () =
   assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "3"] }).valid, false);
   assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "2", "3", "4"],
     crouched: true }).valid, true);
+});
+
+test("la comprobación de contigüidad puede desactivarse", () => {
+  const mode = { weaponType: "shield", traitRefs: [{ key: "bloqueo-pasivo",
+    parameters: [{ key: "locations", value: "2" }] }] };
+  const locations = [1, 2, 3].map((rangeStart) => ({ id: String(rangeStart), rangeStart }));
+  assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "3"] }).valid, false);
+  assert.equal(validatePassiveBlock({ mode, locations, selectedIds: ["1", "3"],
+    checkContiguity: false }).valid, true);
+});
+
+test("un arma manufacturada puede bloquear una localización al luchar con dos armas", () => {
+  const sword = { weaponType: "melee", handsRequired: 1, grip: "1 mano", traitRefs: [] };
+  const claw = { weaponType: "melee", handsRequired: 0, grip: "Natural", traitRefs: [] };
+  assert.equal(passiveBlockCapacity(sword), 0);
+  assert.equal(passiveBlockCapacity(sword, { dualWield: true }), 1);
+  assert.equal(isNaturalWeaponMode(claw), true);
+  assert.equal(passiveBlockCapacity(claw, { dualWield: true }), 0);
 });
 
 test("las localizaciones humanas forman una red anatómica y no el orden del d20", () => {

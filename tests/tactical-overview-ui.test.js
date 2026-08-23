@@ -8,8 +8,10 @@ const css = fs.readFileSync(new URL("../styles/mythras-foundry.css", import.meta
 test("el menú táctico filtra armas y mantiene sus acciones dentro de la ventana", () => {
   assert.match(source, /function weaponOptions\(combat, combatantId/);
   assert.match(source, /combat\.combatants\.get\(combatantId\)/);
+  assert.match(source, /Object\.entries\(tacticalState\(combat\)\.relations/);
+  assert.match(source, /<option value="\$\{escape\(relationId\)\}"/);
   assert.doesNotMatch(source, /<optgroup label=/);
-  for (const action of ["correct", "remove", "create", "deactivate-block"]) {
+  for (const action of ["correct", "remove", "create", "deactivate-block", "apply-cover", "remove-cover"]) {
     assert.match(source, new RegExp(`<button[^>]*type="button"[^>]*data-tactical-action="${action}"`));
   }
   assert.match(source, /dialog\.element\.getBoundingClientRect\(\)/);

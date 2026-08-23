@@ -5,8 +5,9 @@ import { fatigueLossForResult, worsenFatigueLevel, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { timedEffects } from "./timed-condition-runtime.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
-import { passiveBlockCapacity, validatePassiveBlock } from "./passive-block.js";
-import { findWeaponMode, weaponModes } from "./weapon-modes.js";
+import { isNaturalWeaponMode, passiveBlockCapacity, validatePassiveBlock } from "./passive-block.js";
+import { getSystemSetting, SETTING_KEYS } from "../settings.js";
+import { findWeaponMode } from "./weapon-modes.js";
 import { tacticalState } from "./engagement-runtime.js";
 import { actorDisplayName } from "./document-names.js";
 
@@ -37,11 +38,15 @@ export function passiveBlockEntries(combat) {
   const entries = [];
   for (const combatant of combat?.combatants ?? []) {
     const actor = combatant.actor; if (!actor || combatant.isDefeated) continue;
-    const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
-      .flatMap((weapon) => weaponModes(weapon).filter((mode) => passiveBlockCapacity(mode) > 0)
-        .map((mode) => ({ weaponId: weapon.id, weaponName: weapon.name, modeKey: mode.key,
+    const prepared = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+      .map((weapon) => ({ weapon, mode: findWeaponMode(weapon) }))
+      .filter(({ mode }) => Boolean(mode));
+    const dualWield = prepared.filter(({ mode }) => !isNaturalWeaponMode(mode)
+      && ["melee", "shield"].includes(mode.weaponType) && Number(mode.handsRequired) === 1).length >= 2;
+    const choices = prepared.filter(({ mode }) => passiveBlockCapacity(mode, { dualWield }) > 0)
+        .map(({ weapon, mode }) => ({ weaponId: weapon.id, weaponName: weapon.name, modeKey: mode.key,
           modeName: mode.name, weaponSize: mode.size, weaponType: mode.weaponType,
-          capacity: passiveBlockCapacity(mode) })));
+          capacity: passiveBlockCapacity(mode, { dualWield }) }));
     if (!choices.length) continue;
     entries.push({ id: `${combatant.id}:passive-block`, combatantId: combatant.id,
       actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "passiveBlock",
@@ -198,9 +203,14 @@ async function applyPassiveBlock(message, request) {
   if (!resolution.waived) {
     const [weaponId, modeKey] = String(resolution.weapon).split(":");
     const weapon = actor.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
+    resolution.crouched = Boolean(resolution.crouched && mode?.weaponType === "shield");
+    const choice = entry.choices?.find((candidate) => candidate.weaponId === weaponId
+      && candidate.modeKey === modeKey);
     const locations = entry.locations; const valid = validatePassiveBlock({ mode, locations,
-      selectedIds: resolution.locationIds ?? [], crouched: resolution.crouched });
-    if (!weapon?.system.equipped || !valid.valid) return ui.notifications.warn(
+      selectedIds: resolution.locationIds ?? [], crouched: resolution.crouched,
+      baseCapacity: choice?.capacity ?? 0,
+      checkContiguity: Boolean(getSystemSetting(SETTING_KEYS.passiveBlockContiguity)) });
+    if (!weapon?.system.equipped || !choice || !valid.valid) return ui.notifications.warn(
       game.i18n.localize("MYTHRASF.PassiveBlock.Invalid"));
     let crouchEffectId = "";
     if (resolution.crouched) {

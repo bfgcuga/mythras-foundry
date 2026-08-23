@@ -1,8 +1,17 @@
 export const PASSIVE_BLOCK_SCHEMA_VERSION = 1;
 
-export function passiveBlockCapacity(mode) {
+export function isNaturalWeaponMode(mode) {
+  return Number(mode?.handsRequired) === 0
+    || String(mode?.grip ?? "").trim().toLocaleLowerCase("es") === "natural";
+}
+
+export function passiveBlockCapacity(mode, { dualWield = false } = {}) {
   const trait = Array.from(mode?.traitRefs ?? []).find((entry) => entry.key === "bloqueo-pasivo");
-  return Math.max(0, Number(trait?.parameters?.find((entry) => entry.key === "locations")?.value ?? 0));
+  const traitCapacity = Math.max(0, Number(
+    trait?.parameters?.find((entry) => entry.key === "locations")?.value ?? 0));
+  if (traitCapacity > 0) return traitCapacity;
+  return dualWield && !isNaturalWeaponMode(mode) && ["melee", "shield"].includes(mode?.weaponType)
+    ? 1 : 0;
 }
 export function contiguousLocationIds(locations, selectedIds) {
   const ordered = Array.from(locations ?? []).sort((a, b) => Number(a.rangeStart) - Number(b.rangeStart));
@@ -31,12 +40,13 @@ export function contiguousLocationIds(locations, selectedIds) {
   }
   return reached.size === selected.length;
 }
-export function validatePassiveBlock({ mode, locations, selectedIds, crouched = false }) {
-  const base = passiveBlockCapacity(mode);
+export function validatePassiveBlock({ mode, locations, selectedIds, crouched = false,
+  baseCapacity = null, checkContiguity = true }) {
+  const base = baseCapacity === null ? passiveBlockCapacity(mode) : Math.max(0, Number(baseCapacity));
   const capacity = base * (crouched && mode?.weaponType === "shield" ? 2 : 1);
   return { valid: base > 0 && selectedIds.length === capacity
     && new Set(selectedIds).size === selectedIds.length
-    && contiguousLocationIds(locations, selectedIds), base, capacity };
+    && (!checkContiguity || contiguousLocationIds(locations, selectedIds)), base, capacity };
 }
 export function activePassiveBlock(block, { round, weaponExists = true, locationsExist = true } = {}) {
   return Boolean(block && block.status === "active" && Number(block.round) === Number(round)

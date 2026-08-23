@@ -119,6 +119,32 @@ export function coverFor(combat, combatantId, locationId) {
   return cover?.status === "active" && cover.locationIds?.includes(locationId) ? cover : null;
 }
 
+export async function setCoverCorrection(combat, combatantId, correction, userId = game.user.id) {
+  const combatant = combat?.combatants.get(combatantId); const actor = combatant?.actor;
+  if (!actor) return null;
+  const validLocations = new Set(actor.items.filter((item) => item.type === "hitLocation")
+    .map((item) => item.id));
+  const state = foundry.utils.deepClone(tacticalState(combat)); state.covers ??= {};
+  const current = state.covers[combatantId];
+  state.covers[combatantId] = { schemaVersion: 1,
+    status: correction?.status === "cancelled" ? "cancelled" : "active",
+    source: String(correction?.source ?? "").trim(),
+    protection: Math.max(0, Number(correction?.protection ?? 0) || 0),
+    complete: Boolean(correction?.complete),
+    locationIds: [...new Set(correction?.locationIds ?? [])].filter((id) => validLocations.has(id)),
+    actorUuid: actor.uuid, combatantId, userId, reason: "gmCorrection",
+    revision: Number(current?.revision ?? 0) + 1, updatedAt: Date.now() };
+  state.revision = Number(state.revision ?? 0) + 1;
+  await combat.setFlag(SCOPE, FLAG, state); return state.covers[combatantId];
+}
+
+export async function removeCoverCorrection(combat, combatantId) {
+  const state = foundry.utils.deepClone(tacticalState(combat));
+  if (!state.covers?.[combatantId]) return false;
+  delete state.covers[combatantId]; state.revision = Number(state.revision ?? 0) + 1;
+  await combat.setFlag(SCOPE, FLAG, state); return true;
+}
+
 export async function openCoverDeclaration(actor) {
   const combat = game.combat ?? game.combats?.active;
   const combatant = combatantForActor(combat, actor, actor?.token?.uuid);
@@ -151,13 +177,9 @@ async function applyCoverDeclaration(request) {
   const combatant = combat?.combatants.get(request.combatantId); const user = game.users.get(request.userId);
   if (!combat || Number(state.revision ?? 0) !== Number(request.revision) || !combatant?.actor
     || !user || (!user.isGM && !combatant.actor.testUserPermission(user, "OWNER"))) return;
-  const next = foundry.utils.deepClone(state); next.covers ??= {};
-  const current = next.covers[combatant.id];
-  if (request.result === "remove") delete next.covers[combatant.id];
-  else next.covers[combatant.id] = { schemaVersion: 1, status: "active", ...request.result,
-    actorUuid: combatant.actor.uuid, combatantId: combatant.id, userId: request.userId,
-    revision: Number(current?.revision ?? 0) + 1, updatedAt: Date.now() };
-  next.revision = Number(next.revision ?? 0) + 1; await combat.setFlag(SCOPE, FLAG, next);
+  if (request.result === "remove") await removeCoverCorrection(combat, combatant.id);
+  else await setCoverCorrection(combat, combatant.id,
+    { status: "active", ...request.result }, request.userId);
 }
 
 export function registerTacticalSocket() {

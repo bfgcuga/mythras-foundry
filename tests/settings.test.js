@@ -48,6 +48,10 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
   const detailedReach = registrations.find(({ key }) => key === SETTING_KEYS.detailedReach);
   assert.equal(detailedReach.options.default, true);
   assert.equal(detailedReach.options.requiresReload, false);
+  const passiveBlockContiguity = registrations.find(
+    ({ key }) => key === SETTING_KEYS.passiveBlockContiguity);
+  assert.equal(passiveBlockContiguity.options.default, false);
+  assert.equal(passiveBlockContiguity.options.requiresReload, false);
   const catalogSources = registrations.find(
     ({ key }) => key === SETTING_KEYS.catalogSources);
   assert.deepEqual(catalogSources.options.default, { version: 1, packIds: [] });

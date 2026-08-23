@@ -9,6 +9,7 @@ export const SETTING_KEYS = Object.freeze({
   professionPointMaximum: "professionPointMaximum",
   socialClassMethod: "socialClassMethod",
   detailedReach: "detailedReach",
+  passiveBlockContiguity: "passiveBlockContiguity",
   catalogSources: "catalogSources",
   parties: "parties"
 });
@@ -128,6 +129,15 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       name: "MYTHRASF.Settings.DetailedReach.Name",
       hint: "MYTHRASF.Settings.DetailedReach.Hint",
       scope: "world", config: true, type: Boolean, default: true,
+      requiresReload: false
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.passiveBlockContiguity,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.PassiveBlockContiguity.Name",
+      hint: "MYTHRASF.Settings.PassiveBlockContiguity.Hint",
+      scope: "world", config: true, type: Boolean, default: false,
       requiresReload: false
     })
   }),

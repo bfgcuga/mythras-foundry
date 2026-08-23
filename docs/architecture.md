@@ -118,16 +118,22 @@ intercambios de ataque. Cada lado de una relación conserva explícitamente el
 arma y modo empuñados; el DJ puede sustituirlos o eliminar la relación desde la
 vista táctica sin alterar los Items de los actores.
 
-La contigüidad del Bloqueo Pasivo humano es anatómica, no el orden de los rangos
-del d20: el pecho conecta cabeza, abdomen y brazos, y el abdomen conecta las
-piernas. Las anatomías personalizadas sin categorías humanas conservan como
-alternativa el orden de sus rangos. La cola de preparación muestra todos los
-combatientes elegibles y diferencia de forma explícita por declarar, declarado
-y pasado.
+La comprobación automática de contigüidad del Bloqueo Pasivo es un ajuste de
+mundo desactivado por defecto, porque las anatomías extrañas pueden requerir el
+criterio del DJ. Cuando se activa, la contigüidad humana es anatómica, no el
+orden de los rangos del d20: el pecho conecta cabeza, abdomen y brazos, y el
+abdomen conecta las piernas. Las anatomías personalizadas sin categorías
+humanas conservan como alternativa el orden de sus rangos. Un combatiente con
+dos armas manufacturadas de una mano puede dedicar cualquiera de ellas a
+proteger una localización aunque no tenga el rasgo Bloqueo Pasivo. La cola de
+preparación muestra todos los combatientes elegibles y diferencia de forma
+explícita por declarar, declarado y pasado.
 
 El mismo estado táctico conserva perfiles de cobertura física por combatiente:
 fuente, protección y localizaciones cubiertas. Se aplica entre parada y
-armadura; no tiene PG automáticos y su deterioro queda en manos del DJ.
+armadura; no tiene PG automáticos y su deterioro queda en manos del DJ. La
+corrección del DJ del menú táctico crea, modifica, desactiva o elimina estos
+perfiles y, por tanto, altera directamente su aplicación a personajes y PNJ.
 
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.
