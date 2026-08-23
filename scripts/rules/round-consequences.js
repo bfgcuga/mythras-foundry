@@ -195,7 +195,7 @@ export async function openPassiveBlockCorrection(combat, combatantId) {
   const entry = passiveBlockEntries(combat).find((candidate) => candidate.combatantId === combatantId);
   const actor = combat?.combatants.get(combatantId)?.actor;
   const current = tacticalState(combat).passiveBlocks?.[combatantId];
-  if (!game.user.isGM || !entry || !actor || !current) return false;
+  if ((!game.user.isGM && !actor?.isOwner) || !entry || !actor || !current) return false;
   const weaponOptions = entry.choices.map((choice) => {
     const value = `${choice.weaponId}:${choice.modeKey}`;
     return `<option value="${escape(value)}" ${choice.weaponId === current.weaponId

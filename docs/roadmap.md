@@ -47,13 +47,6 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
   Cegado—, qué estados de Foundry conviene incorporar al sistema y cuáles pueden
   eliminarse sin perder funcionalidad ni compatibilidad relevante.
 
-### Menú de situación táctica
-
-- Revisar el menú para que sus tablas sean la propia superficie de corrección:
-  el DJ podrá modificar directamente relaciones, armas, alcance, bloqueos
-  pasivos y demás valores editables en sus filas, mientras que los jugadores
-  conservarán una vista estrictamente de solo lectura.
-
 ### Macros de daño y peligros
 
 - Crear macros para ácido, caídas e inclemencias del tiempo.

@@ -2774,6 +2774,15 @@
   overflow-wrap: anywhere;
 }
 .mythras-foundry.tactical-overview-menu table + table { margin-top: 0.6rem; }
+.mythras-foundry .tactical-table-title { margin: 0.7rem 0 0.25rem; font-size: 1rem; text-align: center; }
+.mythras-foundry.tactical-overview-menu :is(th, td).tactical-actions-column {
+  border: 0;
+  background: transparent !important;
+  background-image: none !important;
+}
+.mythras-foundry.tactical-overview-menu td select,
+.mythras-foundry.tactical-overview-menu td input { width: 100%; text-align: center; }
+.mythras-foundry.tactical-overview-menu td .sheet-state-box { width: 1rem; }
 .mythras-foundry .tactical-control-row {
   display: grid;
   grid-auto-flow: column;
