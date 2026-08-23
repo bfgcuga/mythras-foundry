@@ -1670,11 +1670,11 @@
 .mythras-foundry .combat-paper-layout {
   display: grid;
   grid-template-areas:
+    "actions actions"
     "locations locations"
-    "styles styles"
     "meleeWeapons meleeWeapons"
     "rangedWeapons rangedWeapons"
-    "fatigue fatigue";
+    "styles styles";
   grid-template-columns: minmax(24rem, 1fr) minmax(24rem, 1fr);
   align-items: stretch;
   gap: 0.75rem;
@@ -1766,6 +1766,7 @@
 
 .mythras-foundry .combat-paper-locations { grid-area: locations; }
 .mythras-foundry .combat-paper-fatigue { grid-area: fatigue; }
+.mythras-foundry .combat-action-panel { grid-area: actions; }
 .mythras-foundry .combat-paper-styles { grid-area: styles; }
 .mythras-foundry .combat-paper-melee-weapons { grid-area: meleeWeapons; overflow-x: auto; }
 .mythras-foundry .combat-paper-ranged-weapons { grid-area: rangedWeapons; overflow-x: auto; }
@@ -2017,14 +2018,14 @@
 
 @container (max-width: 760px) {
   .mythras-foundry .combat-paper-layout {
-    grid-template-areas: "locations locations" "styles styles" "meleeWeapons meleeWeapons" "rangedWeapons rangedWeapons" "fatigue fatigue";
+    grid-template-areas: "actions actions" "locations locations" "meleeWeapons meleeWeapons" "rangedWeapons rangedWeapons" "styles styles";
     grid-template-columns: minmax(18rem, 1fr) minmax(14rem, 0.8fr);
   }
 }
 
 @container (max-width: 520px) {
   .mythras-foundry .combat-paper-layout {
-    grid-template-areas: "locations" "styles" "meleeWeapons" "rangedWeapons" "fatigue";
+    grid-template-areas: "actions" "locations" "meleeWeapons" "rangedWeapons" "styles";
     grid-template-columns: minmax(0, 1fr);
   }
 }

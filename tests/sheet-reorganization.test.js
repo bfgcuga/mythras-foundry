@@ -39,6 +39,7 @@ test("personaje y PNJ comparten Combate e Inventario", async () => {
 
 test("Combate de personaje conserva el orden operativo de sus paneles", async () => {
   const combat = await read("templates/actor/parts/combat-tab.hbs");
+  const css = await read("styles/mythras-foundry.css");
   const expectedOrder = [
     "combat-action-panel",
     "hit-location-table.hbs",
@@ -49,6 +50,8 @@ test("Combate de personaje conserva el orden operativo de sus paneles", async ()
   const positions = expectedOrder.map((marker) => combat.indexOf(marker));
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
+  assert.match(css, /grid-template-areas:\s*"actions actions"\s*"locations locations"\s*"meleeWeapons meleeWeapons"\s*"rangedWeapons rangedWeapons"\s*"styles styles"/);
+  assert.match(css, /grid-template-areas:\s*"actions"\s*"locations"\s*"meleeWeapons"\s*"rangedWeapons"\s*"styles"/);
 });
 
 test("todas las navegaciones usan pestañas elevadas con superficie activa", async () => {
