@@ -345,10 +345,10 @@ function activateTacticalMenu(dialog, combat) {
   }
 }
 export async function openTacticalOverview() { const combat = game.combat; if (!combat) return;
-  await foundry.applications.api.DialogV2.wait({ window: { title: game.i18n.localize("MYTHRASF.Reach.Overview") },
+  await foundry.applications.api.DialogV2.wait({ window: {
+    title: game.i18n.localize("MYTHRASF.Reach.Overview"), resizable: true },
+    position: { width: 480 },
     content: `<div class="mythras-foundry mythras-dialog tactical-overview-menu">${tacticalMenuContent(combat)}</div>`,
     buttons: [{ action: "close", label: game.i18n.localize("MYTHRASF.Close") }],
-    render: (event, dialog) => { const bounds = dialog.element.getBoundingClientRect();
-      dialog.setPosition({ width: Math.ceil(bounds.width), height: Math.ceil(bounds.height) });
-      activateTacticalMenu(dialog, combat); }, rejectClose: false });
+    render: (event, dialog) => activateTacticalMenu(dialog, combat), rejectClose: false });
 }
