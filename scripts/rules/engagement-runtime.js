@@ -2,6 +2,7 @@ import { engagementId, engagementRestriction, relationSnapshot, reachIndex,
   shiftedWeaponSize } from "./engagements.js";
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
+import { applyTimedCondition } from "./timed-condition-runtime.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "tacticalState";
@@ -81,9 +82,11 @@ export async function setRelationWeapons(combat, relationId, selections, userId 
 }
 export async function removeRelation(combat, relationId) {
   const state = foundry.utils.deepClone(tacticalState(combat));
-  if (!state.relations?.[relationId]) return false;
-  delete state.relations[relationId]; state.revision += 1;
-  await combat.setFlag(SCOPE, FLAG, state); return true;
+  const relation = state.relations?.[relationId];
+  if (!relation || relation.status === "removed") return false;
+  Object.assign(relation, { status: "removed", reason: "gmRemoval", userId: game.user.id,
+    updatedAt: Date.now(), revision: Number(relation.revision ?? 0) + 1 });
+  state.revision += 1; await combat.setFlag(SCOPE, FLAG, state); return true;
 }
 export async function deactivatePassiveBlock(combat, combatantId, userId = game.user.id) {
   const state = foundry.utils.deepClone(tacticalState(combat));
@@ -95,6 +98,25 @@ export async function deactivatePassiveBlock(combat, combatantId, userId = game.
   if (actor && block.crouchEffectId && actor.effects.get(block.crouchEffectId)) {
     await actor.deleteEmbeddedDocuments("ActiveEffect", [block.crouchEffectId]);
   }
+  state.revision += 1; await combat.setFlag(SCOPE, FLAG, state); return true;
+}
+export async function reactivatePassiveBlock(combat, combatantId, userId = game.user.id) {
+  const state = foundry.utils.deepClone(tacticalState(combat));
+  const block = state.passiveBlocks?.[combatantId]; const actor = combat?.combatants.get(combatantId)?.actor;
+  const weapon = actor?.items.get(block?.weaponId);
+  const locationsExist = block?.locationIds?.every((id) => actor?.items.get(id)?.type === "hitLocation");
+  if (!block || block.status === "active" || !weapon?.system.equipped || !locationsExist) return false;
+  let crouchEffectId = "";
+  if (block.crouched) {
+    const [effect] = await applyTimedCondition(actor, { key: "crouchedBehindShield",
+      statusId: "crouchedBehindShield", name: game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"),
+      img: "icons/svg/shield.svg", combat: { uuid: combat.uuid, round: combat.round },
+      duration: { unit: "round", phase: "endRound" } });
+    crouchEffectId = effect?.id ?? "";
+  }
+  Object.assign(block, { status: "active", round: combat.round, crouchEffectId,
+    reason: "gmCorrection", userId, updatedAt: Date.now(),
+    revision: Number(block.revision ?? 0) + 1 });
   state.revision += 1; await combat.setFlag(SCOPE, FLAG, state); return true;
 }
 export async function consumePassiveBlock(combat, combatantId, weaponId, reason) {

@@ -191,6 +191,59 @@ export async function openPassiveBlockDeclaration(actor) {
   return requestPassiveBlock(message, state, entry.id, false);
 }
 
+export async function openPassiveBlockCorrection(combat, combatantId) {
+  const entry = passiveBlockEntries(combat).find((candidate) => candidate.combatantId === combatantId);
+  const actor = combat?.combatants.get(combatantId)?.actor;
+  const current = tacticalState(combat).passiveBlocks?.[combatantId];
+  if (!game.user.isGM || !entry || !actor || !current) return false;
+  const weaponOptions = entry.choices.map((choice) => {
+    const value = `${choice.weaponId}:${choice.modeKey}`;
+    return `<option value="${escape(value)}" ${choice.weaponId === current.weaponId
+      && choice.modeKey === current.modeKey ? "selected" : ""}>${escape(choice.weaponName)} (${choice.capacity})</option>`;
+  }).join("");
+  const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${current.locationIds?.includes(location.id) ? "checked" : ""}> ${escape(location.name)}</label>`).join("");
+  const resolution = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Modify") },
+    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" class="sheet-state-box" name="crouched" ${current.crouched ? "checked" : ""}> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
+    buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.CombatEffect.Confirm"),
+      callback: (event, button) => ({ weapon: button.form.elements.weapon.value,
+        locationIds: Array.from(button.form.querySelectorAll("input[name='location']:checked"),
+          (control) => control.value), crouched: button.form.elements.crouched.checked }) }],
+    rejectClose: false
+  });
+  if (!resolution) return false;
+  const [weaponId, modeKey] = resolution.weapon.split(":");
+  const weapon = actor.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
+  const choice = entry.choices.find((candidate) => candidate.weaponId === weaponId
+    && candidate.modeKey === modeKey);
+  resolution.crouched = Boolean(resolution.crouched && mode?.weaponType === "shield");
+  const valid = validatePassiveBlock({ mode, locations: entry.locations,
+    selectedIds: resolution.locationIds, crouched: resolution.crouched,
+    baseCapacity: choice?.capacity ?? 0,
+    checkContiguity: Boolean(getSystemSetting(SETTING_KEYS.passiveBlockContiguity)) });
+  if (!weapon?.system.equipped || !choice || !valid.valid) {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.PassiveBlock.Invalid")); return false;
+  }
+  if (current.crouchEffectId && actor.effects.get(current.crouchEffectId)) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", [current.crouchEffectId]);
+  }
+  let crouchEffectId = "";
+  if (resolution.crouched) {
+    const [effect] = await applyTimedCondition(actor, { key: "crouchedBehindShield",
+      statusId: "crouchedBehindShield", name: game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"),
+      img: "icons/svg/shield.svg", combat: { uuid: combat.uuid, round: combat.round },
+      duration: { unit: "round", phase: "endRound" } });
+    crouchEffectId = effect?.id ?? "";
+  }
+  const tactical = foundry.utils.deepClone(tacticalState(combat));
+  tactical.passiveBlocks[combatantId] = { ...current, status: "active", round: combat.round,
+    weaponId, modeKey, weaponName: weapon.name, weaponSize: mode.size, capacity: valid.capacity,
+    locationIds: resolution.locationIds, crouched: resolution.crouched, crouchEffectId,
+    reason: "gmCorrection", userId: game.user.id, updatedAt: Date.now(),
+    revision: Number(current.revision ?? 0) + 1 };
+  tactical.revision += 1; await combat.setFlag(SCOPE, "tacticalState", tactical); return true;
+}
+
 async function applyPassiveBlock(message, request) {
   const state = foundry.utils.deepClone(message.getFlag(SCOPE, "roundConsequences"));
   const entry = state?.queue.find((candidate) => candidate.id === request.entryId);

@@ -116,7 +116,13 @@ Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o
 coordina mediante mensajes revisables y comparte coordinador y permisos con los
 intercambios de ataque. Cada lado de una relación conserva explícitamente el
 arma y modo empuñados; el DJ puede sustituirlos o eliminar la relación desde la
-vista táctica sin alterar los Items de los actores.
+vista táctica sin alterar los Items de los actores. Una relación eliminada queda
+suprimida durante el encuentro para que la detección automática no la regenere;
+crear deliberadamente la misma pareja vuelve a activarla. Al finalizar el
+encuentro se elimina todo el estado táctico.
+Desde esa misma vista el DJ puede cancelar o reactivar una declaración de
+Bloqueo Pasivo y volver a abrir su selector para corregir arma, localizaciones
+y postura; estas operaciones sincronizan el efecto temporal de agacharse.
 
 La comprobación automática de contigüidad del Bloqueo Pasivo es un ajuste de
 mundo desactivado por defecto, porque las anatomías extrañas pueden requerir el

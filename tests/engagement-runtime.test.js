@@ -1,18 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { coverFor, deactivatePassiveBlock, removeCoverCorrection, removeRelation,
-  setCoverCorrection } from "../scripts/rules/engagement-runtime.js";
+  reactivatePassiveBlock, setCoverCorrection } from "../scripts/rules/engagement-runtime.js";
 
-test("eliminar una relación la retira del estado táctico persistido", async () => {
+test("eliminar una relación la suprime durante el encuentro para que no se recree", async () => {
   globalThis.foundry = { utils: { deepClone: structuredClone } };
+  globalThis.game = { user: { id: "gm" } };
   let stored = { schemaVersion: 1, revision: 4, relations: {
     "left::right": {}, "left::third": { id: "left::third" }
   }, passiveBlocks: {}, covers: {} };
   const combat = { getFlag: () => stored, setFlag: async (scope, flag, value) => { stored = value; } };
 
   assert.equal(await removeRelation(combat, "left::right"), true);
-  assert.deepEqual(Object.keys(stored.relations), ["left::third"]);
+  assert.equal(stored.relations["left::right"].status, "removed");
+  assert.equal(stored.relations["left::right"].reason, "gmRemoval");
   assert.equal(stored.revision, 5);
+  assert.equal(await removeRelation(combat, "left::right"), false);
   assert.equal(await removeRelation(combat, "missing"), false);
 });
 
@@ -58,4 +61,23 @@ test("la corrección del DJ desactiva el bloqueo y retira el efecto de agacharse
   assert.equal(stored.revision, 3);
   assert.deepEqual(deleted, ["crouched"]);
   assert.equal(await deactivatePassiveBlock(combat, "fighter", "gm"), false);
+});
+
+test("la corrección del DJ reactiva un bloqueo válido en el asalto actual", async () => {
+  globalThis.foundry = { utils: { deepClone: structuredClone } };
+  globalThis.game = { i18n: { localize: (key) => key } };
+  let stored = { schemaVersion: 1, revision: 2, relations: {}, covers: {},
+    passiveBlocks: { fighter: { combatantId: "fighter", status: "cancelled", revision: 1,
+      weaponId: "shield", locationIds: ["head"], crouched: false } } };
+  const items = new Map([["shield", { id: "shield", type: "weapon", system: { equipped: true } }],
+    ["head", { id: "head", type: "hitLocation" }]]);
+  const actor = { items }; const combat = { round: 4, uuid: "Combat.test",
+    combatants: new Map([["fighter", { actor }]]), getFlag: () => stored,
+    setFlag: async (scope, flag, value) => { stored = value; } };
+
+  assert.equal(await reactivatePassiveBlock(combat, "fighter", "gm"), true);
+  assert.equal(stored.passiveBlocks.fighter.status, "active");
+  assert.equal(stored.passiveBlocks.fighter.round, 4);
+  assert.equal(stored.passiveBlocks.fighter.revision, 2);
+  assert.equal(await reactivatePassiveBlock(combat, "fighter", "gm"), false);
 });

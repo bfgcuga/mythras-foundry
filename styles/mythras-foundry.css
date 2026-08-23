@@ -2757,6 +2757,12 @@
   background-color: transparent !important;
   background-image: none !important;
 }
+.mythras-foundry.tactical-overview-menu thead th {
+  border-color: var(--mythras-header-line);
+  background-color: var(--mythras-header-accent) !important;
+  background-image: linear-gradient(rgb(255 255 255 / 10%), rgb(48 46 42 / 5%)) !important;
+  color: var(--mythras-header-ink);
+}
 .mythras-foundry.tactical-overview-menu th,
 .mythras-foundry.tactical-overview-menu td {
   padding: 0.35rem;
@@ -2779,9 +2785,18 @@
 .mythras-foundry .tactical-control-row select,
 .mythras-foundry .tactical-control-row input,
 .mythras-foundry .tactical-control-row output { min-width: 0; text-align: center; }
-.mythras-foundry .tactical-cover-correction select[multiple] {
-  min-height: 4.6rem;
+.mythras-foundry .tactical-cover-locations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.25rem 0.5rem;
+  margin: 0.4rem 0;
 }
+.mythras-foundry .tactical-row-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+.mythras-foundry .tactical-row-actions button { white-space: nowrap; }
 .mythras-paper-sheet:has(.tactical-overview-menu) .window-content > form {
   display: flex;
   min-height: 0;
