@@ -32,6 +32,11 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - Revisar el Bloqueo Pasivo con armas naturales: concretar qué anatomías y
   ataques naturales pueden emplearlo y cómo deben identificarse, sin heredar
   automáticamente la regla de combate con dos armas manufacturadas.
+- Valorar la migración de `tacticalState.covers` desde un único perfil por
+  combatiente a múltiples coberturas simultáneas, definiendo cómo se combinan
+  protección, localizaciones y cobertura completa en la resolución de impactos.
+- Realizar una revisión estética final del menú de situación táctica una vez
+  estabilizados sus controles, permisos y operaciones sobre las tres tablas.
 
 ### Estados y penalizaciones
 

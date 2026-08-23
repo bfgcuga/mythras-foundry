@@ -121,9 +121,9 @@ suprimida durante el encuentro para que la detección automática no la regenere
 crear deliberadamente la misma pareja vuelve a activarla. Al finalizar el
 encuentro se elimina todo el estado táctico.
 Las tablas de la vista táctica son la superficie de corrección: el DJ edita en
-ellas relaciones, armas y coberturas; los propietarios pueden gestionar el
-Bloqueo Pasivo de sus propios actores y el resto de jugadores conserva esos
-controles deshabilitados.
+ellas relaciones, armas y todas las coberturas; los propietarios pueden
+gestionar el Bloqueo Pasivo y la cobertura de sus propios actores y el resto de
+jugadores conserva esos controles deshabilitados.
 Desde esa misma vista el DJ puede cancelar o reactivar una declaración de
 Bloqueo Pasivo y volver a abrir su selector para corregir arma, localizaciones
 y postura; estas operaciones sincronizan el efecto temporal de agacharse.

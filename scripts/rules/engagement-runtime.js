@@ -162,8 +162,12 @@ export async function setCoverCorrection(combat, combatantId, correction, userId
 
 export async function removeCoverCorrection(combat, combatantId) {
   const state = foundry.utils.deepClone(tacticalState(combat));
-  if (!state.covers?.[combatantId]) return false;
-  delete state.covers[combatantId]; state.revision = Number(state.revision ?? 0) + 1;
+  const cover = state.covers?.[combatantId];
+  if (!cover || cover.status !== "active") return false;
+  Object.assign(cover, { status: "cancelled", source: "", protection: 0, complete: false,
+    locationIds: [], reason: "gmRemoval", userId: game.user.id, updatedAt: Date.now(),
+    revision: Number(cover.revision ?? 0) + 1 });
+  state.revision = Number(state.revision ?? 0) + 1;
   await combat.setFlag(SCOPE, FLAG, state); return true;
 }
 
@@ -187,7 +191,11 @@ export async function openCoverDeclaration(actor) {
     { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false
   });
   if (!result) return;
-  const request = { action: "tacticalCover", combatId: combat.id, combatantId: combatant.id,
+  await submitCoverDeclaration(combat, combatant.id, result);
+}
+
+export async function submitCoverDeclaration(combat, combatantId, result) {
+  const request = { action: "tacticalCover", combatId: combat.id, combatantId,
     revision: Number(tacticalState(combat).revision ?? 0), userId: game.user.id, result };
   const activeGm = game.users.some((user) => user.active && user.isGM);
   if (game.user.isGM || (!activeGm && combat.isOwner)) await applyCoverDeclaration(request);

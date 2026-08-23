@@ -21,6 +21,11 @@ test("el menú táctico filtra armas y mantiene sus acciones dentro de la ventan
   assert.match(source, /data-tactical-action="explain-complete-cover"/);
   assert.match(source, /<span>CCP<\/span>/);
   assert.match(source, /tactical-cover-location-cell/);
+  assert.match(source, /tactical-relation-position/);
+  assert.match(source, /storedCover\?\.status === "active" \? storedCover : null/);
+  assert.match(source, /game\.user\?\.isGM \|\| combatant\.actor\?\.isOwner/);
+  assert.match(source, /submitCoverDeclaration\(combat, combatantId/);
+  assert.match(source, /submitCoverDeclaration\(combat, button\.dataset\.combatantId, "remove"\)/);
   assert.match(source, /addButton\("add-relation"/);
   assert.match(source, /addButton\("add-cover"/);
   assert.match(source, /action === "add-relation"/);
@@ -48,4 +53,6 @@ test("las tablas tácticas conservan el contenido transparente y destacan sus ca
   assert.match(css, /background-image: none !important;/);
   assert.match(css, /\.tactical-overview-menu thead th \{[\s\S]*?var\(--mythras-header-accent\)/);
   assert.match(css, /\.tactical-reach-rules \{[\s\S]*?grid-template-columns: 1fr;/);
+  assert.match(css, /table:first-of-type th:nth-child\(1\),[\s\S]*?th:nth-child\(2\) \{ width: 18%; \}/);
+  assert.match(css, /table:first-of-type th:nth-child\(4\) \{ width: 24%; \}/);
 });

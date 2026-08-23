@@ -21,6 +21,7 @@ test("eliminar una relación la suprime durante el encuentro para que no se recr
 
 test("la corrección del DJ crea, modifica, desactiva y elimina coberturas", async () => {
   globalThis.foundry = { utils: { deepClone: structuredClone } };
+  globalThis.game = { user: { id: "gm" } };
   let stored = { schemaVersion: 1, revision: 1, relations: {}, passiveBlocks: {}, covers: {} };
   const locations = [{ id: "head", type: "hitLocation" }, { id: "chest", type: "hitLocation" },
     { id: "sword", type: "weapon" }];
@@ -38,8 +39,14 @@ test("la corrección del DJ crea, modifica, desactiva y elimina coberturas", asy
     status: "cancelled", locationIds: ["chest"] }, "gm");
   assert.equal(stored.covers.fighter.protection, 0); assert.equal(stored.covers.fighter.revision, 2);
   assert.equal(coverFor(combat, "fighter", "chest"), null);
+  await setCoverCorrection(combat, "fighter", { source: "Escudo", protection: 4,
+    status: "active", complete: true, locationIds: ["chest"] }, "gm");
   assert.equal(await removeCoverCorrection(combat, "fighter"), true);
-  assert.equal(stored.covers.fighter, undefined);
+  assert.equal(stored.covers.fighter.status, "cancelled");
+  assert.equal(stored.covers.fighter.source, "");
+  assert.equal(stored.covers.fighter.protection, 0);
+  assert.equal(stored.covers.fighter.complete, false);
+  assert.deepEqual(stored.covers.fighter.locationIds, []);
   assert.equal(await removeCoverCorrection(combat, "fighter"), false);
 });
 

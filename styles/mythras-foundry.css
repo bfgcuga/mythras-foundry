@@ -2787,6 +2787,25 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.25rem;
 }
+.mythras-foundry .tactical-relation-position {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+.mythras-foundry.tactical-overview-menu td .tactical-relation-position select {
+  flex: 0 1 6rem;
+  width: auto;
+  min-width: 0;
+}
+.mythras-foundry .tactical-relation-position span { flex: 0 1 auto; }
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type { table-layout: fixed; }
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type th:nth-child(1),
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type th:nth-child(2) { width: 18%; }
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type th:nth-child(3) { width: 13%; }
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type th:nth-child(4) { width: 24%; }
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type th:nth-child(5) { width: 20%; }
+.mythras-foundry.tactical-overview-menu > div > table:first-of-type th:nth-child(6) { width: 7%; }
 .mythras-foundry .tactical-cover-table th:nth-child(3) { width: 28%; }
 .mythras-foundry .tactical-cover-table th:nth-child(4) { width: 7%; }
 .mythras-foundry .tactical-cover-table th:nth-child(5) { width: 9%; }
