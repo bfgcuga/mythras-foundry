@@ -46,6 +46,12 @@ export class NpcData extends foundry.abstract.TypeDataModel {
       description: new HTMLField({ required: true, nullable: false, initial: "" }),
       magicNotes: new HTMLField({ required: true, nullable: false, initial: "" }),
       armorNotes: textField(),
+      currency: new SchemaField({
+        copper: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
+        silver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
+        gold: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
+        startingSilver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 })
+      }),
       fatigueLevel: new StringField({ required: true, nullable: false, initial: "fresh",
         choices: FATIGUE_LEVELS.map((level) => level.key) }),
       attributeOverrides: new SchemaField({

@@ -56,8 +56,11 @@ El sistema incluye actualmente:
   todas las hojas usan pestañas elevadas con una superficie activa de papel;
 - los encabezados de Actor usan texto, separadores y controles claros propios
   sobre la superficie roja, sin heredar el contraste de la superficie de papel;
-- Estado reúne estados activos, penalizaciones y Fatiga. La hoja de personaje
-  añade Trasfondo narrativo y una silueta humana interactiva vinculada por datos
+- Estado reúne estados activos, penalizaciones y Fatiga. Personajes y PNJ
+  comparten también las vistas operativas de Combate e Inventario; los ataques
+  naturales permanecen en Combate sin tratarse como objetos transportados. La
+  hoja de personaje añade Trasfondo narrativo y una silueta humana interactiva
+  vinculada por datos
   canónicos a sus localizaciones de golpe;
 - antes de cada tirada física, personaje y PNJ permiten decidir si una Herida
   Grave aumenta su dificultad y si una localización inutilizada o amputada hace

@@ -348,25 +348,7 @@
       </section>
 
       <section class="tab-panel" data-tab-content="inventory">
-        {{#each inventorySections as |section|}}
-        <fieldset class="inventory-panel inventory-location-frame" data-inventory-destination="{{section.id}}">
-          <legend>{{section.label}}</legend>
-          {{#if section.property}}<div class="inventory-property-actions" data-item-id="{{section.id}}"><button type="button" class="sheet-icon-button" data-action="edit-item" aria-label="{{localize "MYTHRASF.Edit"}}" title="{{localize "MYTHRASF.Edit"}}"><i class="fas fa-pen" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button></div>{{/if}}
-          {{#if editable}}
-            <button type="button" class="inventory-panel-add sheet-add-button" data-action="create-item"
-              data-type="equipment" data-parent-id="{{#if section.property}}{{section.id}}{{/if}}" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}">
-              <i class="fas fa-plus" aria-hidden="true"></i></button>
-          {{/if}}
-          <div class="inventory-wallet {{#if section.property}}inventory-property-wallet{{/if}}">
-            <strong>{{#if section.property}}{{localize "MYTHRASF.Currency.Reserve"}}{{else}}{{localize "MYTHRASF.Currency.Personal"}}{{/if}}</strong>
-            <label><span>PC</span><input type="number" min="0" step="0.01" class="sheet-field-editable" {{#if section.property}}data-property-funds="copper" value="{{section.property.system.funds.copper}}"{{else}}name="system.currency.copper" value="{{@root.actor.system.currency.copper}}"{{/if}}></label>
-            <label><span>PP</span><input type="number" min="0" step="0.01" class="sheet-field-editable" {{#if section.property}}data-property-funds="silver" value="{{section.property.system.funds.silver}}"{{else}}name="system.currency.silver" value="{{@root.actor.system.currency.silver}}"{{/if}}></label>
-            <label><span>PO</span><input type="number" min="0" step="0.01" class="sheet-field-editable" {{#if section.property}}data-property-funds="gold" value="{{section.property.system.funds.gold}}"{{else}}name="system.currency.gold" value="{{@root.actor.system.currency.gold}}"{{/if}}></label>
-            {{#if @root.editable}}<div class="inventory-wallet-actions"><button type="button" class="sheet-icon-button" data-action="buy-item" data-wallet-id="{{section.id}}" aria-label="{{localize "MYTHRASF.Inventory.Buy"}}" title="{{localize "MYTHRASF.Inventory.Buy"}}"><i class="fas fa-cart-shopping" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-action="transfer-money" data-wallet-id="{{section.id}}" aria-label="{{localize "MYTHRASF.Inventory.Transfer"}}" title="{{localize "MYTHRASF.Inventory.Transfer"}}"><i class="fas fa-right-left" aria-hidden="true"></i></button>{{#unless section.property}}<button type="button" class="sheet-add-button" data-action="create-item" data-type="equipment" data-category="property" aria-label="{{localize "MYTHRASF.Inventory.AddProperty"}}" title="{{localize "MYTHRASF.Inventory.AddProperty"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/unless}}</div>{{/if}}
-          </div>
-          {{> "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs" items=section.rows}}
-        </fieldset>
-        {{/each}}
+        {{> "systems/mythras-foundry/templates/actor/parts/inventory-tab.hbs"}}
       </section>
       <section class="tab-panel" data-tab-content="narrative">
         {{> "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs"}}

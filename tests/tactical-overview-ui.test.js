@@ -39,7 +39,7 @@ test("el menú táctico filtra armas y mantiene sus acciones dentro de la ventan
   assert.match(source, /MYTHRASF\.PassiveBlock\.Table/);
   assert.match(source, /MYTHRASF\.Ranged\.CoversTable/);
   assert.match(source, /function tacticalMenuContent\(combat\) \{ return renderTacticalOverview\(combat\); \}/);
-  assert.match(source, /window: \{[\s\S]*?resizable: true \},[\s\S]*?position: \{ width: 480 \}/);
+  assert.match(source, /window: \{[\s\S]*?resizable: true \},[\s\S]*?position: \{ width: 960 \}/);
   assert.doesNotMatch(source, /dialog\.element\.getBoundingClientRect\(\)/);
   assert.doesNotMatch(source, /dialog\.setPosition\(/);
   assert.match(source, /reference\.open = referenceOpen/);

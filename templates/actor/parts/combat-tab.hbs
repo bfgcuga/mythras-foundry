@@ -11,20 +11,8 @@
     <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button>
   </div></fieldset>
   {{> "systems/mythras-foundry/templates/actor/parts/hit-location-table.hbs"
-    table=hitLocationTable editable=editable canDelete=editMode templateMode=false npcLayout=false}}
-
-  <fieldset class="combat-paper-panel combat-paper-styles">
-    <legend>{{localize "MYTHRASF.Skill.GroupCombat"}} ({{localize "MYTHRASF.Combat.BaseFormula"}})</legend>
-    {{#if editable}}<button type="button" class="combat-panel-add sheet-add-button" data-action="create-combat-style"
-      aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
-    <div class="combat-style-head"><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>{{localize "MYTHRASF.CombatStyle.Weapons"}}</span><span>{{localize "MYTHRASF.CombatStyle.Traits"}}</span><span>%</span></div>
-    {{#each combatStyles as |style|}}
-      <div class="combat-style-line" data-item-id="{{style.item.id}}">
-        <button type="button" data-action="edit-item">{{style.item.name}}</button>
-        <span>{{style.weapons}}</span><span>{{style.traits}}</span><strong class="penalized-value">{{style.totalDisplay.base}}%{{#if style.totalDisplay.penalized}} <span class="penalized-value-modifier">({{style.totalDisplay.effective}}%)</span>{{/if}}</strong>
-      </div>
-    {{else}}<p class="empty">{{localize "MYTHRASF.Combat.NoStyles"}}</p>{{/each}}
-  </fieldset>
+    table=hitLocationTable editable=editable canDelete=canDeleteHitLocations
+    templateMode=hitLocationTemplateMode npcLayout=npcLayout}}
 
   <fieldset class="combat-paper-panel combat-paper-melee-weapons">
     <legend>{{localize "MYTHRASF.Combat.MeleeWeaponsAndShields"}}</legend>
@@ -38,11 +26,11 @@
       <div class="combat-weapon-line combat-weapon-melee" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
           <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{localize "MYTHRASF.Weapon.ToggleHands"}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand" aria-hidden="true"></i><i class="fas fa-hand" aria-hidden="true"></i></button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span>
         <span>{{row.mode.grip}}</span><span class="combat-effects">{{row.mode.effects}}</span>
-        <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>
+        <span>{{row.durabilityDisplay}}</span>
         <div class="combat-style-choice">
           <select data-combat-style aria-label="{{localize "MYTHRASF.Combat.Style"}}">
             {{#if row.needsStyleChoice}}<option value="">{{localize "MYTHRASF.Combat.SelectStyle"}}</option>{{/if}}
@@ -54,7 +42,7 @@
         </div>
         <strong class="penalized-value" title="{{row.difficultyLabel}}">{{row.baseTarget}}%{{#if row.hasTargetPenalty}} <span class="penalized-value-modifier">({{row.effectiveTarget}}%)</span>{{/if}}</strong>
         <button type="button" class="sheet-icon-button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
-          aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
+          aria-label="{{localize "MYTHRASF.Combat.Attack"}}" title="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
       </div>
     {{else}}<p class="empty">{{localize "MYTHRASF.Empty.MeleeWeapons"}}</p>{{/each}}
 
@@ -73,11 +61,11 @@
       <div class="combat-weapon-line combat-weapon-ranged" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
           <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{localize "MYTHRASF.Weapon.ToggleHands"}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand" aria-hidden="true"></i><i class="fas fa-hand" aria-hidden="true"></i></button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.damageModifierLabel}}</span><span>{{row.mode.range}}</span>
         <span>{{row.mode.reload}}{{#if row.mode.ammoTracking}} · {{row.mode.ammoLoaded}}/{{row.mode.ammoReserve}}{{/if}}</span><span class="combat-effects">{{row.mode.effects}}</span>
-        <span>{{row.item.system.armorPoints}} / {{row.item.system.currentHitPoints}}–{{row.item.system.maxHitPoints}}</span>
+        <span>{{row.durabilityDisplay}}</span>
         <div class="combat-style-choice">
           <select data-combat-style aria-label="{{localize "MYTHRASF.Combat.Style"}}">
             {{#if row.needsStyleChoice}}<option value="">{{localize "MYTHRASF.Combat.SelectStyle"}}</option>{{/if}}
@@ -89,9 +77,22 @@
         </div>
         <strong class="penalized-value" title="{{row.difficultyLabel}}">{{row.baseTarget}}%{{#if row.hasTargetPenalty}} <span class="penalized-value-modifier">({{row.effectiveTarget}}%)</span>{{/if}}</strong>
         <button type="button" class="sheet-icon-button" data-action="roll-weapon-attack" {{#unless row.canAttack}}disabled{{/unless}}
-          aria-label="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20"></i></button>
+          aria-label="{{localize "MYTHRASF.Combat.Attack"}}" title="{{localize "MYTHRASF.Combat.Attack"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button>
       </div>
     {{else}}<p class="empty">{{localize "MYTHRASF.Empty.RangedWeapons"}}</p>{{/each}}
+  </fieldset>
+
+  <fieldset class="combat-paper-panel combat-paper-styles">
+    <legend>{{localize "MYTHRASF.Skill.GroupCombat"}} ({{localize "MYTHRASF.Combat.BaseFormula"}})</legend>
+    {{#if editable}}<button type="button" class="combat-panel-add sheet-add-button" data-action="create-combat-style"
+      aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+    <div class="combat-style-head"><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>{{localize "MYTHRASF.CombatStyle.Weapons"}}</span><span>{{localize "MYTHRASF.CombatStyle.Traits"}}</span><span>%</span></div>
+    {{#each combatStyles as |style|}}
+      <div class="combat-style-line" data-item-id="{{style.item.id}}">
+        <button type="button" data-action="edit-item">{{style.item.name}}</button>
+        <span>{{style.weapons}}</span><span>{{style.traits}}</span>{{#if ../combatStyleTemplateMode}}<input class="sheet-field-editable" type="number" min="0" data-manual-value value="{{style.total}}" aria-label="{{localize "MYTHRASF.Skill.ManualValue"}}">{{else}}<strong class="penalized-value">{{style.totalDisplay.base}}%{{#if style.totalDisplay.penalized}} <span class="penalized-value-modifier">({{style.totalDisplay.effective}}%)</span>{{/if}}</strong>{{/if}}
+      </div>
+    {{else}}<p class="empty">{{localize "MYTHRASF.Combat.NoStyles"}}</p>{{/each}}
   </fieldset>
 
 </div>

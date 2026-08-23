@@ -54,15 +54,12 @@ import {
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { calculatePassionBase, PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
-import { difficultyTarget, resolveWeaponStyle,
-  UNTRAINED_COMBAT_STYLE_ID } from "../rules/combat.js";
-import { createAttackMessage } from "../rules/combat-chat.js";
+import { difficultyTarget } from "../rules/combat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
-import { inventoryCarried, inventoryLocation, inventoryRows,
-  inventorySections } from "../rules/inventory.js";
+import { inventoryCarried } from "../rules/inventory.js";
 import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
-import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "../rules/weapon-modes.js";
+import { findWeaponMode, weaponModeDisplayName, weaponModes } from "../rules/weapon-modes.js";
 import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
@@ -76,10 +73,13 @@ import { evaluateAnimatedRoll } from "../rules/dice-animation.js";
 import { rollSpecial } from "../rules/special-roll.js";
 import { INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
-import { activeSkillStatusPenalties, activeStatusRules, canActorAttack,
+import { activeSkillStatusPenalties, activeStatusRules,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
 import { prepareHitLocationTable } from "../ui/hit-location-table.js";
+import { InventorySheetController, prepareInventoryView } from "../ui/inventory-sheet.js";
+import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponView,
+  splitCombatWeapons } from "../ui/combat-sheet.js";
 import { bindSheetEvents } from "../ui/sheet-events.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { updateActorFromSheet } from "../rules/document-names.js";
@@ -164,25 +164,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equipment = items.filter((item) => item.type === "equipment");
     const weapons = items.filter((item) => item.type === "weapon");
     const armor = items.filter((item) => item.type === "armor");
-    const allInventoryItems = [...equipment, ...weapons, ...armor];
-    const prepareInventoryRows = (sectionItems) => inventoryRows(sectionItems).map((row) => ({ ...row,
-      handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
-      encumbrance: itemEncumbrance(row.item),
-      priceLabel: `${Number(row.system.value ?? 0)} ${game.i18n.localize(
-        `MYTHRASF.Currency.${row.system.currency ?? "silver"}`)}`,
-      locationLabel: inventoryLocation(row.item, allInventoryItems) === "person"
-        ? game.i18n.localize("MYTHRASF.Item.Carried")
-        : inventoryLocation(row.item, allInventoryItems),
-      groupLabel: game.i18n.localize(`MYTHRASF.Inventory.Category.${row.groupKey}`),
-      categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
-        : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
-          : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`) }));
-    const equipmentRows = prepareInventoryRows(allInventoryItems);
-    const preparedInventorySections = inventorySections(allInventoryItems).map((section) => ({
-      ...section,
-      label: section.property?.name ?? game.i18n.localize("MYTHRASF.Inventory.OnPerson"),
-      rows: prepareInventoryRows(section.items)
-    }));
+    const inventoryView = prepareInventoryView(items);
+    const allInventoryItems = inventoryView.items;
     const equippedArmor = armor.filter((item) => item.system.equipped);
     const hitLocationTable = prepareHitLocationTable({ actor: this.actor, armor,
       combat: game.combat ?? game.combats?.active,
@@ -230,8 +213,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       baseAttributes.actionPointsMax,
       effectiveAttributes.actionPointsMax
     );
-    const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon)
-      .map((mode) => this.#prepareCombatWeapon(weapon, mode, combatStyles)));
+    const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon).map((mode) =>
+      prepareCombatWeaponView({ actor: this.actor, weapon, mode, styles: combatStyles,
+        hitLocations, resolveDifficulty: (difficulty) => this.#conditionResolution({
+          baseDifficulty: difficulty, physical: true }).difficulty })));
+    const combatWeaponGroups = splitCombatWeapons(combatWeapons);
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
       label: game.i18n.localize(`MYTHRASF.Characteristic.${key}`),
@@ -338,8 +324,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       combatSkillGroup,
       secondarySkillGroups,
       passions: items.filter((item) => item.type === "passion"),
-      equipment: equipmentRows,
-      inventorySections: preparedInventorySections,
+      equipment: inventoryView.rows,
+      inventorySections: inventoryView.sections,
       weapons: weapons.map((item) => ({ item,
         hasMultipleModes: weaponModes(item).length > 1,
         modeOptions: weaponModes(item).map((mode) => ({ ...mode,
@@ -349,21 +335,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       armor,
       hitLocations,
       hitLocationTable,
-      combatStyles: combatStyles.map((style) => ({
-        item: style,
-        weapons: (style.system.weaponProfiles ?? [])
-          .map((profile) => profile.name)
-          .filter(Boolean)
-          .join(", "),
-        traits: (style.system.traitRefs ?? [])
-          .map((reference) => reference.name || reference.key).join(", "),
-        total: Number(style.system.total ?? 0),
-        totalDisplay: penalizedValue(
-          Number(style.system.total ?? 0),
-          difficultyTarget(Number(style.system.total ?? 0),
-            conditionResolution.difficulties.physical)
-        )
-      })),
+      canDeleteHitLocations: this._editMode,
+      hitLocationTemplateMode: false,
+      npcLayout: false,
+      combatStyleTemplateMode: false,
+      combatStyles: prepareCombatStyleViews(combatStyles,
+        conditionResolution.difficulties.physical),
       inventoryArmor: armor.map((item) => this.#prepareArmor(item, hitLocations)),
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
         selected: level.key === this.actor.system.fatigueLevel,
@@ -376,62 +353,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         recoveryLabel: game.i18n.localize(`MYTHRASF.Fatigue.RecoveryValue.${level.recovery}`)
       })),
       combatWeapons,
-      meleeCombatWeapons: combatWeapons.filter((row) => !["ranged", "siege"].includes(row.mode.weaponType)),
-      rangedCombatWeapons: combatWeapons.filter((row) => ["ranged", "siege"].includes(row.mode.weaponType))
-        .map((row) => ({ ...row,
-          damageModifierLabel: game.i18n.localize(
-            `MYTHRASF.Weapon.DamageModifier.${row.mode.damageModifierMode ?? "full"}`) })),
+      ...combatWeaponGroups,
       familiarityChoices: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
         .map((value) => ({ value, label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) }))
     }, { inplace: false });
-  }
-
-  #prepareCombatWeapon(weapon, mode, combatStyles) {
-    const modeWeapon = weaponModeView(weapon, mode);
-    const resolution = resolveWeaponStyle({
-      weapon: modeWeapon,
-      styles: combatStyles,
-      selectedStyleId: mode.preferredCombatStyleId,
-      familiarity: mode.familiarity
-    });
-    resolution.difficulty = this.#conditionResolution({ baseDifficulty: resolution.difficulty,
-      physical: true }).difficulty;
-    const candidates = resolution.matching.length ? resolution.matching : combatStyles;
-    const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
-    return {
-      item: weapon,
-      mode,
-      displayName: weaponModeDisplayName(weapon, mode),
-      handsRequired: weaponHandsRequired(weapon, mode),
-      prepared: Boolean(weapon.system.equipped && weapon.system.activeModeKey === mode.key),
-      styleOptions: [
-        ...candidates.map((style) => ({
-          id: style.id,
-          name: style.name,
-          selected: style.id === resolution.style?.id
-        })),
-        ...(resolution.matching.length === 0 ? [{
-          id: UNTRAINED_COMBAT_STYLE_ID,
-          name: game.i18n.localize("MYTHRASF.Combat.Untrained"),
-          selected: resolution.untrained
-        }] : [])
-      ],
-      hasDirectStyle: resolution.matching.length > 0,
-      usesUntrained: resolution.untrained,
-      needsStyleChoice: !resolution.style && !resolution.untrained,
-      familiarity: resolution.familiarity,
-      familiarityOptions: ["similar", "broadlySimilar", "reasonablyDifferent", "substantiallyDifferent"]
-        .map((value) => ({ value, selected: value === resolution.familiarity,
-          label: game.i18n.localize(`MYTHRASF.Familiarity.${value}`) })),
-      difficulty: resolution.difficulty,
-      difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${resolution.difficulty}`),
-      baseTarget: resolution.target,
-      effectiveTarget,
-      hasTargetPenalty: effectiveTarget !== resolution.target,
-      canAttack: canActorAttack(this.actor.statuses)
-        && resolution.difficulty !== "impossible" && weapon.system.equipped && weapon.system.activeModeKey === mode.key
-        && (Boolean(resolution.style) || resolution.usesBase)
-    };
   }
 
   _onRender(context, options) {
@@ -479,14 +404,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='edit-item']", "click", (event) => this.#editItem(event)],
       ["[data-action='delete-item']", "click", (event) => this.#deleteItem(event)],
       ["[data-action='toggle-equipped']", "click", (event) => this.#toggleEquipped(event)],
-      ["[data-action='toggle-container']", "click", (event) => this.#toggleContainer(event)],
-      ["[data-action='sell-item']", "click", (event) => this.#sellItem(event)],
-      ["[data-property-funds]", "change", (event) => this.#updatePropertyFunds(event)],
-      ["[data-action='buy-item']", "click", (event) => game.mythrasFoundry?.shop?.open?.({
-        actorUuid: this.actor.uuid,
-        destinationId: event.currentTarget.dataset.walletId ?? "person"
-      })],
-      ["[data-action='transfer-money']", "click", (event) => this.#transferMoney(event)],
       ["[data-active-weapon-mode]", "change", (event) => this.#prepareWeaponMode(event)],
       ["[data-fatigue-level]", "change", (event) => this.#updateFatigue(event)],
       ["[data-incapacitated-manual]", "change", (event) => this.#toggleManualIncapacitated(event)],
@@ -503,20 +420,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='create-combat-style']", "click", () => this.#createCombatStyle()],
       ["[data-resource-action]", "click", (event) => this.#adjustResource(event)],
       ["[data-skill-field]", "change", (event) => this.#updateSkillField(event)],
-      ["[data-passion-field]", "change", (event) => this.#updatePassionField(event)],
-      ["[data-combat-style]", "change", (event) => this.#updateWeaponCombatChoice(event)],
-      ["[data-combat-familiarity]", "change", (event) => this.#updateWeaponCombatChoice(event)],
-      ["[data-action='roll-weapon-attack']", "click", (event) => this.#rollWeaponAttack(event)],
-      ["[data-action='choose-weapon-attack']", "click", () => this.#chooseWeaponAttack()],
-      ["[data-action='change-reach']", "click", () => game.mythrasFoundry?.combat?.changeReach?.(this.actor)],
-      ["[data-action='declare-passive-block']", "click", () => game.mythrasFoundry?.combat?.declarePassiveBlock?.(this.actor)],
-      ["[data-action='declare-cover']", "click", () => game.mythrasFoundry?.combat?.declareCover?.(this.actor)],
-      ["[data-action='aim-ranged']", "click", () => game.mythrasFoundry?.combat?.aim?.(this.actor)],
-      ["[data-action='reload-ranged']", "click", () => game.mythrasFoundry?.combat?.reload?.(this.actor)],
-      ["[data-action='tactical-overview']", "click", () => game.mythrasFoundry?.combat?.openTacticalOverview?.()]
+      ["[data-passion-field]", "change", (event) => this.#updatePassionField(event)]
     ]);
     this.#showTab(this._activeTab ?? "character");
-    this.#activateInventoryDragAndDrop();
+    new InventorySheetController(this).bind();
+    new CombatSheetController(this, { resolveSituationalDifficulty: (difficulty, physical) =>
+      this.#resolveSituationalDifficulty(difficulty, physical) }).bind();
     this.#fitCombatEffects();
     const changeReach = this.element.querySelector("[data-action='change-reach']");
     if (changeReach) changeReach.disabled = !game.combat?.started
@@ -827,73 +736,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (impact.unusableMember) return "impossible";
     return this.#conditionResolution({ baseDifficulty, physical,
       situational: impact.seriousPenalty }).difficulty;
-  }
-
-  async #updateWeaponCombatChoice(event) {
-    if (!this.isEditable) return;
-    const row = event.currentTarget.closest("[data-item-id]");
-    const weapon = this.actor.items.get(row?.dataset.itemId);
-    if (!weapon || weapon.type !== "weapon") return;
-    const modes = weaponModes(weapon).map((mode) => ({ ...mode }));
-    const mode = modes.find((entry) => entry.key === row.dataset.modeKey);
-    if (!mode) return;
-    if (event.currentTarget.matches("[data-combat-style]")) {
-      mode.preferredCombatStyleId = event.currentTarget.value;
-    } else {
-      mode.familiarity = event.currentTarget.value;
-    }
-    await weapon.update({ "system.modes": modes });
-  }
-
-  async #chooseWeaponAttack() {
-    const rows = Array.from(this.element.querySelectorAll("[data-action='roll-weapon-attack']"))
-      .filter((button) => !button.disabled).map((button, index) => ({ button, index,
-        label: button.closest("[data-item-id]")?.querySelector("[data-action='edit-item']")?.textContent?.trim() }));
-    if (!rows.length) return ui.notifications.warn(
-      game.i18n.localize("MYTHRASF.Action.Unavailable.preparedWeapon"));
-    const selected = await DialogV2.wait({ window: { title: game.i18n.localize("MYTHRASF.Combat.Attack") },
-      content: `<div class="mythras-foundry mythras-dialog"><label><span>${game.i18n.localize("MYTHRASF.Weapon.Name")}</span><select name="attack">${rows.map((row) => `<option value="${row.index}">${foundry.utils.escapeHTML(row.label ?? "")}</option>`).join("")}</select></label></div>`,
-      buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.Combat.Attack"),
-        callback: (event, button) => Number(button.form.elements.attack.value) },
-      { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false });
-    rows.find((row) => row.index === selected)?.button.click();
-  }
-
-  async #rollWeaponAttack(event) {
-    event.preventDefault();
-    if (!canActorAttack(this.actor.statuses)) {
-      return ui.notifications.warn(game.i18n.localize("MYTHRASF.Status.CannotAttack"));
-    }
-    const row = event.currentTarget.closest("[data-item-id]");
-    const weapon = this.actor.items.get(row?.dataset.itemId);
-    if (!weapon) return;
-    const mode = findWeaponMode(weapon, row.dataset.modeKey);
-    if (!weapon.system.equipped || weapon.system.activeModeKey !== mode?.key) {
-      ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.ModeNotPrepared"));
-      return;
-    }
-    const modeWeapon = weaponModeView(weapon, mode);
-    const styles = this.actor.items.filter((item) => item.type === "combatStyle");
-    const resolution = resolveWeaponStyle({
-      weapon: modeWeapon,
-      styles,
-      selectedStyleId: row.querySelector("[data-combat-style]")?.value,
-      familiarity: row.querySelector("[data-combat-familiarity]")?.value
-        ?? mode.familiarity
-    });
-    resolution.difficulty = await this.#resolveSituationalDifficulty(
-      resolution.difficulty, true);
-    if (resolution.difficulty === "impossible") {
-      ui.notifications.warn(game.i18n.localize("MYTHRASF.Fatigue.NoActivity"));
-      return;
-    }
-    if (!resolution.style && !resolution.usesBase) {
-      ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
-      return;
-    }
-    const targets = Array.from(game.user.targets ?? []);
-    await createAttackMessage({ actor: this.actor, weapon, mode, resolution,
-      target: targets.length === 1 ? targets[0] : null });
   }
 
   async #choosePortrait() {

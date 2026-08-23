@@ -83,6 +83,16 @@ estados activos del token se muestran antes de la tabla como controles para
 retirarlos; los que tienen consecuencias mecánicas aparecen además en la tabla.
 Los estados inactivos no ocupan espacio en la pestaña.
 
+Las hojas de personaje y PNJ comparten los parciales y preparadores de las
+pestañas Combate e Inventario. Combate conserva una única jerarquía de acciones,
+localizaciones, armas y estilos; las diferencias del PNJ, como la durabilidad de
+un arma natural vinculada a una localización, se resuelven al preparar los datos.
+Inventario comparte monederos, propiedades, contenedores y operaciones. Las
+armas cuyos modos son íntegramente naturales permanecen visibles en Combate y
+se excluyen del Inventario para ambos tipos de Actor. Esta clasificación solo
+decide la presentación del inventario: no crea automáticamente Puño/Patada ni
+concede por sí misma capacidad de ataque o parada.
+
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las
 reglas de condición compartidas. Mientras exista una causa automática no puede

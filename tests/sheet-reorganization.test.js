@@ -8,15 +8,47 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 test("las acciones tácticas permanecen reunidas y visibles en ambas hojas", async () => {
   const [characterCombat, npc] = await Promise.all([
     read("templates/actor/parts/combat-tab.hbs"), read("templates/actor/npc-sheet.hbs")]);
-  for (const source of [characterCombat, npc]) {
-    for (const action of ["attack", "changeReach", "aim", "reload", "seekCover"]) {
-      assert.match(source, new RegExp(`data-combat-action-key=["']${action}["']`));
-    }
-    assert.match(source, /data-action="declare-passive-block"/);
+  for (const action of ["attack", "changeReach", "aim", "reload", "seekCover"]) {
+    assert.match(characterCombat, new RegExp(`data-combat-action-key=["']${action}["']`));
   }
+  assert.match(characterCombat, /data-action="declare-passive-block"/);
+  assert.match(npc, /parts\/combat-tab\.hbs/);
   assert.doesNotMatch(characterCombat, /combat-paper-ranged-weapons[\s\S]*?<div class="combat-tactical-actions">/);
-  const npcCombat = npc.slice(npc.indexOf('data-tab-content="combat"'));
-  assert.ok(npcCombat.indexOf("combat-action-panel") < npcCombat.indexOf("hit-location-table.hbs"));
+});
+
+test("personaje y PNJ comparten Combate e Inventario", async () => {
+  const [character, npc, inventory, characterSheet, npcSheet, npcData] = await Promise.all([
+    read("templates/actor/character-sheet.hbs"), read("templates/actor/npc-sheet.hbs"),
+    read("templates/actor/parts/inventory-tab.hbs"), read("scripts/sheets/character-sheet.js"),
+    read("scripts/sheets/npc-sheet.js"), read("scripts/data/npc-data.js")]);
+  for (const source of [character, npc]) {
+    assert.match(source, /parts\/combat-tab\.hbs/);
+    assert.match(source, /parts\/inventory-tab\.hbs/);
+  }
+  assert.match(npc, /data-tab="inventory"/);
+  assert.match(inventory, /data-action="buy-item"/);
+  assert.match(inventory, /data-action="transfer-money"/);
+  for (const source of [characterSheet, npcSheet]) {
+    assert.match(source, /prepareCombatWeaponView/);
+    assert.match(source, /new CombatSheetController/);
+    assert.match(source, /prepareInventoryView/);
+    assert.match(source, /new InventorySheetController/);
+  }
+  assert.match(npcData, /currency: new SchemaField/);
+});
+
+test("Combate de personaje conserva el orden operativo de sus paneles", async () => {
+  const combat = await read("templates/actor/parts/combat-tab.hbs");
+  const expectedOrder = [
+    "combat-action-panel",
+    "hit-location-table.hbs",
+    "combat-paper-melee-weapons",
+    "combat-paper-ranged-weapons",
+    "combat-paper-styles"
+  ];
+  const positions = expectedOrder.map((marker) => combat.indexOf(marker));
+  assert.ok(positions.every((position) => position >= 0));
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
 });
 
 test("todas las navegaciones usan pestañas elevadas con superficie activa", async () => {

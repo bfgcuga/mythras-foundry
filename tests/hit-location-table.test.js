@@ -13,8 +13,9 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
     assert.match(source, /prepareHitLocationTable\(\{ actor: this\.actor/);
     assert.doesNotMatch(source, /passiveBlockLocationIds|hitLocations\.map\(\(item\) => \(\{/);
   }
+  assert.match(characterTemplate, /templates\/actor\/parts\/hit-location-table\.hbs/);
+  assert.match(npcTemplate, /templates\/actor\/parts\/combat-tab\.hbs/);
   for (const source of [characterTemplate, npcTemplate]) {
-    assert.match(source, /templates\/actor\/parts\/hit-location-table\.hbs/);
     assert.doesNotMatch(source, /class="combat-location-line/);
   }
   assert.match(registration, /templates\/actor\/parts\/hit-location-table\.hbs/);

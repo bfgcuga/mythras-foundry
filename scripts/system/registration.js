@@ -33,6 +33,7 @@ const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/fatigue-table.hbs",
   "systems/mythras-foundry/templates/actor/parts/hit-location-table.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-list.hbs",
+  "systems/mythras-foundry/templates/actor/parts/inventory-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs",
   "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs",

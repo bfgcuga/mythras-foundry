@@ -32,6 +32,17 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - Revisar el Bloqueo Pasivo con armas naturales: concretar qué anatomías y
   ataques naturales pueden emplearlo y cómo deben identificarse, sin heredar
   automáticamente la regla de combate con dos armas manufacturadas.
+- Garantizar que todo personaje pueda usar el ataque canónico Puño/Patada sin
+  convertirlo en un objeto transportado. Si algún estilo incluye el perfil
+  estable `puno-patada`, la tirada debe usar ese estilo; si ninguno lo incluye,
+  debe usar el porcentaje efectivo de la habilidad básica con `slug` estable
+  `pelea`, no la resolución genérica sin entrenamiento basada en FUE + DES. La
+  tirada y una posible pifia deben quedar asociadas a la habilidad empleada.
+- Restringir las paradas activas con armas naturales: `parryChoices` solo debe
+  ofrecerlas cuando el Actor posea el rasgo de criatura con clave estable
+  `formidable-natural-weapons` (Armas Naturales Formidables). Las armas
+  manufacturadas no dependen de este rasgo. Cubrir tanto la presencia como la
+  ausencia del rasgo con pruebas y no confundir esta regla con Bloqueo Pasivo.
 - Valorar la migración de `tacticalState.covers` desde un único perfil por
   combatiente a múltiples coberturas simultáneas, definiendo cómo se combinan
   protección, localizaciones y cobertura completa en la resolución de impactos.

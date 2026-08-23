@@ -347,7 +347,7 @@ function activateTacticalMenu(dialog, combat) {
 export async function openTacticalOverview() { const combat = game.combat; if (!combat) return;
   await foundry.applications.api.DialogV2.wait({ window: {
     title: game.i18n.localize("MYTHRASF.Reach.Overview"), resizable: true },
-    position: { width: 480 },
+    position: { width: 960 },
     content: `<div class="mythras-foundry mythras-dialog tactical-overview-menu">${tacticalMenuContent(combat)}</div>`,
     buttons: [{ action: "close", label: game.i18n.localize("MYTHRASF.Close") }],
     render: (event, dialog) => activateTacticalMenu(dialog, combat), rejectClose: false });
