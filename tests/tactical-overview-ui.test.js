@@ -13,20 +13,27 @@ test("el menú táctico filtra armas y mantiene sus acciones dentro de la ventan
   assert.match(source, /Object\.entries\(state\.relations/);
   assert.match(source, /relation\.status !== "removed"/);
   assert.doesNotMatch(source, /<optgroup label=/);
-  for (const action of ["save-relation-row", "remove-relation", "create", "deactivate-block",
-    "reactivate-block", "modify-block", "save-cover-row", "edit-cover-locations", "remove-cover-row"]) {
+  for (const action of ["save-relation-row", "remove-relation", "deactivate-block",
+    "reactivate-block", "modify-block", "save-cover-row", "edit-cover-locations",
+    "remove-cover-row"]) {
     assert.match(source, new RegExp(`<button[^>]*type="button"[^>]*data-tactical-action="${action}"`));
   }
+  assert.match(source, /data-tactical-action="explain-complete-cover"/);
+  assert.match(source, /<span>CCP<\/span>/);
+  assert.match(source, /tactical-cover-location-cell/);
+  assert.match(source, /addButton\("add-relation"/);
+  assert.match(source, /addButton\("add-cover"/);
+  assert.match(source, /action === "add-relation"/);
+  assert.match(source, /action === "add-cover"/);
   assert.doesNotMatch(source, /data-tactical-action="remove"/);
   assert.match(source, /name="coverLocation"/);
   assert.doesNotMatch(source, /tactical-correction/);
   assert.doesNotMatch(source, /tactical-cover-correction/);
   assert.match(source, /\[name='coverLocation'\]:checked/);
-  assert.match(source, /return create;/);
   assert.match(source, /MYTHRASF\.Reach\.RelationsTable/);
   assert.match(source, /MYTHRASF\.PassiveBlock\.Table/);
   assert.match(source, /MYTHRASF\.Ranged\.CoversTable/);
-  assert.match(source, /return `\$\{renderTacticalControls\(combat\)\}\$\{renderTacticalOverview\(combat\)\}`/);
+  assert.match(source, /function tacticalMenuContent\(combat\) \{ return renderTacticalOverview\(combat\); \}/);
   assert.match(source, /dialog\.element\.getBoundingClientRect\(\)/);
   assert.match(source, /dialog\.setPosition\(\{ width: Math\.ceil\(bounds\.width\), height: Math\.ceil\(bounds\.height\) \}\)/);
   assert.match(source, /reference\.open = referenceOpen/);

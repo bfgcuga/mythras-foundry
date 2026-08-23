@@ -1236,6 +1236,7 @@
   "MYTHRASF.Ranged.CoverSource": "Cover source",
   "MYTHRASF.Ranged.CoverProtection": "Protection",
   "MYTHRASF.Ranged.CompleteCover": "Complete penetrable cover",
+  "MYTHRASF.Ranged.CompleteCoverExplanation": "Complete penetrable cover: the attacker knows the projectile can pass through the cover, but cannot see the target precisely. Attack difficulty increases by one grade and the hit location cannot be chosen.",
   "MYTHRASF.Ranged.CoverCorrection": "GM cover correction",
   "MYTHRASF.Ranged.CoversTable": "Cover table",
   "MYTHRASF.Ranged.EditCoverLocations": "Edit covered locations",

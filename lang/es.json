@@ -1236,6 +1236,7 @@
   "MYTHRASF.Ranged.CoverSource": "Fuente de cobertura",
   "MYTHRASF.Ranged.CoverProtection": "Protección",
   "MYTHRASF.Ranged.CompleteCover": "Cobertura completa penetrable",
+  "MYTHRASF.Ranged.CompleteCoverExplanation": "Cobertura completa penetrable: el atacante sabe que el proyectil puede atravesar la cobertura, pero no ve el objetivo con precisión. La dificultad del ataque aumenta un grado y no puede elegirse la localización del impacto.",
   "MYTHRASF.Ranged.CoverCorrection": "Corrección de cobertura del DJ",
   "MYTHRASF.Ranged.CoversTable": "Tabla de coberturas",
   "MYTHRASF.Ranged.EditCoverLocations": "Editar localizaciones cubiertas",

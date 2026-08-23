@@ -2775,14 +2775,33 @@
 }
 .mythras-foundry.tactical-overview-menu table + table { margin-top: 0.6rem; }
 .mythras-foundry .tactical-table-title { margin: 0.7rem 0 0.25rem; font-size: 1rem; text-align: center; }
-.mythras-foundry.tactical-overview-menu :is(th, td).tactical-actions-column {
-  border: 0;
-  background: transparent !important;
-  background-image: none !important;
-}
 .mythras-foundry.tactical-overview-menu td select,
 .mythras-foundry.tactical-overview-menu td input { width: 100%; text-align: center; }
 .mythras-foundry.tactical-overview-menu td .sheet-state-box { width: 1rem; }
+.mythras-foundry.tactical-overview-menu th .sheet-add-button {
+  position: static;
+  margin: 0 auto;
+}
+.mythras-foundry .tactical-relation-weapons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+.mythras-foundry .tactical-cover-table th:nth-child(3) { width: 28%; }
+.mythras-foundry .tactical-cover-table th:nth-child(4) { width: 7%; }
+.mythras-foundry .tactical-cover-table th:nth-child(5) { width: 9%; }
+.mythras-foundry .tactical-cover-table th:nth-child(6) { width: 5%; }
+.mythras-foundry .tactical-cover-table th:nth-child(7) { width: 7%; }
+.mythras-foundry .tactical-cover-location-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+.mythras-foundry .tactical-cover-location-cell span { flex: 1 1 auto; }
+.mythras-foundry .tactical-cover-location-cell button,
+.mythras-foundry .tactical-row-actions button { flex: 0 0 auto; }
+.mythras-foundry .tactical-help-button { display: inline-grid; width: 1.2rem; padding: 0; }
 .mythras-foundry .tactical-control-row {
   display: grid;
   grid-auto-flow: column;
@@ -2802,6 +2821,8 @@
 }
 .mythras-foundry .tactical-row-actions {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 0.25rem;
 }
