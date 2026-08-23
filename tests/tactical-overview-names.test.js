@@ -26,7 +26,7 @@ test("el menú táctico resuelve personajes y PNJ con los nombres compartidos", 
   assert.match(html, /Hodei/);
   assert.match(html, /Guardián del puente/);
   assert.doesNotMatch(html, /Prueba final|>Hombre lagarto</);
-  assert.match(html, /<details class="tactical-reach-reference" open>/);
+  assert.match(html, /<details class="tactical-reach-reference">/);
   for (const reach of ["T", "C", "M", "L", "ML"]) {
     assert.match(html, new RegExp(`MYTHRASF\\.Reach\\.Category${reach}`));
   }

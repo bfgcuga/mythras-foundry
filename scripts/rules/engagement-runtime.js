@@ -85,6 +85,18 @@ export async function removeRelation(combat, relationId) {
   delete state.relations[relationId]; state.revision += 1;
   await combat.setFlag(SCOPE, FLAG, state); return true;
 }
+export async function deactivatePassiveBlock(combat, combatantId, userId = game.user.id) {
+  const state = foundry.utils.deepClone(tacticalState(combat));
+  const block = state.passiveBlocks?.[combatantId];
+  if (!block || block.status !== "active") return false;
+  Object.assign(block, { status: "cancelled", reason: "gmCorrection", userId,
+    updatedAt: Date.now(), revision: Number(block.revision ?? 0) + 1 });
+  const actor = combat.combatants.get(combatantId)?.actor;
+  if (actor && block.crouchEffectId && actor.effects.get(block.crouchEffectId)) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", [block.crouchEffectId]);
+  }
+  state.revision += 1; await combat.setFlag(SCOPE, FLAG, state); return true;
+}
 export async function consumePassiveBlock(combat, combatantId, weaponId, reason) {
   if (!combat) return;
   const state = foundry.utils.deepClone(tacticalState(combat)); const block = state.passiveBlocks?.[combatantId];

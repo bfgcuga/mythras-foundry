@@ -267,6 +267,7 @@
   "MYTHRASF.Status.CrouchedBehindShield": "Agachado tras el escudo",
   "MYTHRASF.Status.PassiveBlock": "Bloqueo pasivo",
   "MYTHRASF.PassiveBlock.Declare": "Declarar bloqueo",
+  "MYTHRASF.PassiveBlock.Deactivate": "Desactivar bloqueo pasivo",
   "MYTHRASF.PassiveBlock.Waive": "Renunciar",
   "MYTHRASF.PassiveBlock.Waived": "Sin bloqueo pasivo",
   "MYTHRASF.PassiveBlock.Invalid": "La selección no coincide con localizaciones contiguas o con la capacidad del arma.",

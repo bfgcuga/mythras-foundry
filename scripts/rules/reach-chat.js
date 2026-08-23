@@ -3,7 +3,8 @@ import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { opposedEffectWinner } from "./combat-effects.js";
 import { currentActionPoints } from "./action-points.js";
 import { engagementId, initialReachPosition, relationSituationReach } from "./engagements.js";
-import { combatantForActor, ensureEngagement, longestPreparedWeapon, preparedMeleeWeapons, removeRelation,
+import { combatantForActor, deactivatePassiveBlock, ensureEngagement, longestPreparedWeapon,
+  preparedMeleeWeapons, removeRelation,
   consumePassiveBlock, detailedReachEnabled, setRelationPosition,
   setRelationWeapons, tacticalState } from "./engagement-runtime.js";
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
@@ -147,7 +148,7 @@ function renderReachReference() {
   const categories = ["T", "C", "M", "L", "ML"].map((key) => `<tr><td><strong>${key}</strong></td><td>${escape(
     game.i18n.localize(`MYTHRASF.Reach.Category${key}`))}</td><td>${escape(
     game.i18n.localize(`MYTHRASF.Reach.Category${key}Hint`))}</td></tr>`).join("");
-  return `<details class="tactical-reach-reference" open><summary>${escape(game.i18n.localize(
+  return `<details class="tactical-reach-reference"><summary>${escape(game.i18n.localize(
     "MYTHRASF.Reach.ReferenceTitle"))}</summary><table><thead><tr><th>${escape(game.i18n.localize(
     "MYTHRASF.Reach.Code"))}</th><th>${escape(game.i18n.localize(
     "MYTHRASF.Reach.Description"))}</th><th>${escape(game.i18n.localize(
@@ -175,12 +176,15 @@ export function renderTacticalOverview(combat) {
   const blocks = Object.values(state.passiveBlocks ?? {}).map((block) => `<tr><td>${escape(
     combatantDisplayName(combat.combatants.get(block.combatantId)))}</td><td>${escape(block.weaponName)}</td><td>${escape(
     block.locationIds?.map((id) => combat.combatants.get(block.combatantId)?.actor?.items.get(id)?.name)
-      .filter(Boolean).join(", "))}</td><td>${escape(block.status)}</td></tr>`).join("");
+      .filter(Boolean).join(", "))}</td><td>${escape(block.status)}</td><td>${game.user?.isGM && block.status === "active"
+        ? `<button type="button" class="sheet-icon-button" data-tactical-action="deactivate-block" data-combatant-id="${escape(
+          block.combatantId)}" title="${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Deactivate"))}" aria-label="${escape(
+          game.i18n.localize("MYTHRASF.PassiveBlock.Deactivate"))}"><i class="fas fa-ban" aria-hidden="true"></i></button>` : ""}</td></tr>`).join("");
   const covers = Object.values(state.covers ?? {}).map((cover) => `<tr><td>${escape(
     combatantDisplayName(combat.combatants.get(cover.combatantId)))}</td><td>${escape(cover.source)}</td><td>${escape(
     cover.locationIds?.map((id) => combat.combatants.get(cover.combatantId)?.actor?.items.get(id)?.name)
       .filter(Boolean).join(", "))}</td><td>${Number(cover.protection ?? 0)}</td></tr>`).join("");
-  return `<div class="mythras-foundry mythras-dialog"><table><thead><tr><th>A</th><th>B</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Engagement"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Reach"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Position"))}</th></tr></thead><tbody>${rows}</tbody></table><table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th></tr></thead><tbody>${blocks}</tbody></table><table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverSource"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverProtection"))}</th></tr></thead><tbody>${covers}</tbody></table>${renderReachReference()}</div>`;
+  return `<div class="mythras-foundry mythras-dialog"><table><thead><tr><th>A</th><th>B</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Engagement"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Reach"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Position"))}</th></tr></thead><tbody>${rows}</tbody></table><table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th><th></th></tr></thead><tbody>${blocks}</tbody></table><table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverSource"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverProtection"))}</th></tr></thead><tbody>${covers}</tbody></table>${renderReachReference()}</div>`;
 }
 function weaponOptions(combat, combatantId, selected = "") {
   const combatant = combat.combatants.get(combatantId);
@@ -215,7 +219,10 @@ function tacticalMenuContent(combat) { return `${renderTacticalOverview(combat)}
 function activateTacticalMenu(dialog, combat) {
   const menu = dialog.window.content.querySelector(".tactical-overview-menu");
   const form = menu?.closest("form"); if (!menu || !form) return;
-  const refresh = () => { menu.innerHTML = tacticalMenuContent(combat); activateTacticalMenu(dialog, combat); };
+  const refresh = () => { const referenceOpen = menu.querySelector(".tactical-reach-reference")?.open;
+    menu.innerHTML = tacticalMenuContent(combat);
+    const reference = menu.querySelector(".tactical-reach-reference"); if (reference) reference.open = referenceOpen;
+    activateTacticalMenu(dialog, combat); };
   const updateCorrection = () => {
     const relation = tacticalState(combat).relations?.[form.elements.relation?.value];
     const sides = Object.values(relation?.sides ?? {}); if (!relation || sides.length < 2) return;
@@ -232,11 +239,13 @@ function activateTacticalMenu(dialog, combat) {
       form.elements[weaponName].innerHTML = weaponOptions(combat, form.elements[combatantName].value);
     });
   }
-  menu.onclick = async (event) => {
-    const button = event.target.closest("[data-tactical-action]"); if (!button) return;
+  const handleAction = async (event) => {
+    event.preventDefault(); event.stopPropagation();
+    const button = event.currentTarget;
     button.disabled = true;
     const action = button.dataset.tacticalAction;
     if (action === "remove") await removeRelation(combat, form.elements.relation.value);
+    if (action === "deactivate-block") await deactivatePassiveBlock(combat, button.dataset.combatantId);
     if (action === "correct") {
       const relation = tacticalState(combat).relations?.[form.elements.relation.value];
       const sides = Object.values(relation?.sides ?? {}); if (sides.length < 2) return refresh();
@@ -263,10 +272,15 @@ function activateTacticalMenu(dialog, combat) {
     }
     refresh();
   };
+  for (const button of menu.querySelectorAll("[data-tactical-action]")) {
+    button.addEventListener("click", handleAction);
+  }
 }
 export async function openTacticalOverview() { const combat = game.combat; if (!combat) return;
   await foundry.applications.api.DialogV2.wait({ window: { title: game.i18n.localize("MYTHRASF.Reach.Overview") },
     content: `<div class="mythras-foundry mythras-dialog tactical-overview-menu">${tacticalMenuContent(combat)}</div>`,
     buttons: [{ action: "close", label: game.i18n.localize("MYTHRASF.Close") }],
-    render: (event, dialog) => activateTacticalMenu(dialog, combat), rejectClose: false });
+    render: (event, dialog) => { const bounds = dialog.element.getBoundingClientRect();
+      dialog.setPosition({ width: Math.ceil(bounds.width), height: Math.ceil(bounds.height) });
+      activateTacticalMenu(dialog, combat); }, rejectClose: false });
 }

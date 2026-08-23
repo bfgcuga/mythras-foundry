@@ -2778,6 +2778,16 @@
 .mythras-foundry .tactical-control-row + .tactical-control-row { margin-top: 0.4rem; }
 .mythras-foundry .tactical-control-row select,
 .mythras-foundry .tactical-control-row output { min-width: 0; text-align: center; }
+.mythras-paper-sheet:has(.tactical-overview-menu) .window-content > form {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+.mythras-foundry.tactical-overview-menu {
+  min-height: 0;
+  overflow: auto;
+}
+.mythras-paper-sheet:has(.tactical-overview-menu) .form-footer { flex: 0 0 auto; }
 .mythras-foundry .tactical-reach-reference {
   margin-top: 0.65rem;
   border: 1px solid var(--mythras-border);

@@ -9,11 +9,15 @@ test("el menú táctico filtra armas y mantiene sus acciones dentro de la ventan
   assert.match(source, /function weaponOptions\(combat, combatantId/);
   assert.match(source, /combat\.combatants\.get\(combatantId\)/);
   assert.doesNotMatch(source, /<optgroup label=/);
-  for (const action of ["correct", "remove", "create"]) {
-    assert.match(source, new RegExp(`<button type="button" data-tactical-action="${action}"`));
+  for (const action of ["correct", "remove", "create", "deactivate-block"]) {
+    assert.match(source, new RegExp(`<button[^>]*type="button"[^>]*data-tactical-action="${action}"`));
   }
-  assert.match(source, /render: \(event, dialog\) => activateTacticalMenu\(dialog, combat\)/);
+  assert.match(source, /dialog\.element\.getBoundingClientRect\(\)/);
+  assert.match(source, /dialog\.setPosition\(\{ width: Math\.ceil\(bounds\.width\), height: Math\.ceil\(bounds\.height\) \}\)/);
+  assert.match(source, /reference\.open = referenceOpen/);
   assert.match(source, /buttons: \[\{ action: "close"/);
+  assert.match(source, /event\.preventDefault\(\); event\.stopPropagation\(\)/);
+  assert.match(source, /button\.addEventListener\("click", handleAction\)/);
 });
 
 test("las tablas tácticas fuerzan una superficie totalmente transparente", () => {
