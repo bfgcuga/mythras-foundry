@@ -226,8 +226,11 @@ tracker solo avanza cuando la tarjeta queda cerrada.
 representa el asalto y `flags.mythras-foundry.turnEconomy.cycle` los recorridos
 adicionales de iniciativa mientras alguien conserve PA. El máximo efectivo se
 obtiene del resolvedor compartido de condiciones; `Defeated` lo fuerza a cero.
-La iniciativa publicada combina `1d10 + iniciativa` con un d100 secundario en
-la fracción, garantizando un orden total. Esta sustitución deliberada de la
+La iniciativa publicada combina `1d10 + iniciativa`; cuando dos resultados
+coinciden, añade un d100 secundario en la fracción para garantizar un orden
+total. La fracción solo se presenta en el tracker para grupos empatados. Las
+tiradas individuales crean una tarjeta de chat y las selecciones múltiples del
+tracker comparten una tarjeta agregada. Esta sustitución deliberada de la
 simultaneidad permite aplicar de forma segura las transacciones secuenciales.
 
 Las acciones generales se definen en `scripts/rules/combat-actions.js`, que no

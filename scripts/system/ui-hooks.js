@@ -97,7 +97,18 @@ export function registerUiHooks() {
       nameContainer?.append(badge);
       const initiative = entry.getFlag("mythras-foundry", "initiative");
       const value = row.querySelector(".token-initiative, .initiative");
-      if (value && initiative) value.title = game.i18n.format("MYTHRASF.Tracker.InitiativeHint", initiative);
+      if (value && initiative) {
+        const tied = Array.from(combat.combatants).filter((candidate) => {
+          const data = candidate.getFlag("mythras-foundry", "initiative");
+          return candidate.initiative != null && Number(data?.primary ?? Math.trunc(candidate.initiative))
+            === Number(initiative.primary);
+        }).length > 1;
+        value.textContent = tied ? `${initiative.primary} (${initiative.tieBreak})`
+          : String(initiative.primary);
+        value.title = tied
+          ? game.i18n.format("MYTHRASF.Tracker.InitiativeHint", initiative)
+          : game.i18n.format("MYTHRASF.Tracker.InitiativeHintNoTie", initiative);
+      }
       const actions = combatActionState(combat);
       const tactical = [];
       if (actions.delays[entry.id]?.status === "reserved") tactical.push(game.i18n.localize("MYTHRASF.Action.delay"));

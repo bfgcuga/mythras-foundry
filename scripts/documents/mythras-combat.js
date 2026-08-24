@@ -7,7 +7,7 @@ import { advanceActorTurnConditions, expireRoundConditions,
   bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
 import { prepareRoundConsequences } from "../rules/round-consequences.js";
 import { combatActionState, expireCombatActionTurn } from "../rules/combat-action-runtime.js";
-import { evaluateAnimatedRoll } from "../rules/dice-animation.js";
+import { renderInitiativeChat } from "../rules/initiative-chat.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "turnEconomy";
@@ -169,15 +169,7 @@ export class MythrasCombat extends Combat {
 
   async rollInitiative(ids, { updateTurn = true, messageOptions = {} } = {}) {
     ids = typeof ids === "string" ? [ids] : Array.from(ids ?? []);
-    const updates = [];
-    const occupied = new Map();
-    for (const combatant of this.combatants) {
-      if (ids.includes(combatant.id)) continue;
-      const data = combatant.getFlag(SCOPE, "initiative")
-        ?? splitComposedInitiative(combatant.initiative);
-      if (!occupied.has(data.primary)) occupied.set(data.primary, new Set());
-      occupied.get(data.primary).add(data.tieBreak);
-    }
+    const rolled = [];
     for (const id of ids) {
       const combatant = this.combatants.get(id);
       if (!combatant?.actor) continue;
@@ -185,22 +177,64 @@ export class MythrasCombat extends Combat {
       const base = combatant.actor.system.baseAttributes ?? combatant.actor.system.attributes ?? {};
       const bonus = maximum === 0 ? 0 : Number(resolveActorConditions(combatant.actor,
         { baseAttributes: base }).attributes.initiative ?? 0);
-      const primaryRoll = await evaluateAnimatedRoll(`1d10 + ${bonus}`,
-        { speaker: ChatMessage.getSpeaker({ actor: combatant.actor }) });
-      const primary = Number(primaryRoll.total);
-      const used = occupied.get(primary) ?? new Set();
-      let tieRoll; let attempts = 0;
-      do { tieRoll = await new Roll("1d100").evaluate(); attempts += 1; }
-      while (used.has(Number(tieRoll.total)) && attempts < 120);
-      const tieBreak = Number(tieRoll.total);
-      const collision = used.has(tieBreak) ? used.size - 99 : 0;
-      used.add(tieBreak); occupied.set(primary, used);
-      updates.push({ _id: id, initiative: composedInitiative(primary, tieBreak, collision),
-        [`flags.${SCOPE}.initiative`]: { primary, tieBreak,
-          collision, surprisePenaltyApplied: combatant.actor.statuses?.has?.("surprised") ?? false,
-          primaryRoll: primaryRoll.toJSON(), tieBreakRoll: tieRoll.toJSON() } });
+      const primaryRoll = await new Roll("1d10").evaluate();
+      const raw = Number(primaryRoll.total);
+      rolled.push({ id, combatant, bonus, primaryRoll, raw, primary: raw + bonus });
     }
-    if (updates.length) await this.updateEmbeddedDocuments("Combatant", updates);
+    const finalEntries = Array.from(this.combatants).map((combatant) => {
+      const replacement = rolled.find((entry) => entry.id === combatant.id);
+      const stored = combatant.getFlag(SCOPE, "initiative")
+        ?? splitComposedInitiative(combatant.initiative);
+      return { combatant, replacement, stored, primary: replacement?.primary ?? stored.primary };
+    }).filter((entry) => entry.replacement || entry.combatant.initiative != null);
+    const groups = new Map();
+    for (const entry of finalEntries) {
+      if (!groups.has(entry.primary)) groups.set(entry.primary, []);
+      groups.get(entry.primary).push(entry);
+    }
+    const updates = [];
+    for (const [primary, group] of groups) {
+      const tied = group.length > 1;
+      const used = new Set();
+      for (const candidate of group) {
+        if (!candidate.replacement && !tied) continue;
+        let tieRoll = null;
+        let tieBreak = 0;
+        if (tied) {
+          let attempts = 0;
+          do { tieRoll = await new Roll("1d100").evaluate(); attempts += 1; }
+          while (used.has(Number(tieRoll.total)) && attempts < 120);
+          tieBreak = Number(tieRoll.total);
+        }
+        const collision = used.has(tieBreak) ? used.size - 99 : 0;
+        if (tied) used.add(tieBreak);
+        const replacement = candidate.replacement;
+        updates.push({ _id: candidate.combatant.id,
+          initiative: composedInitiative(primary, tieBreak, collision),
+          [`flags.${SCOPE}.initiative`]: { primary, tieBreak, collision,
+            surprisePenaltyApplied: candidate.combatant.actor?.statuses?.has?.("surprised") ?? false,
+            primaryRoll: replacement?.primaryRoll?.toJSON() ?? candidate.stored?.primaryRoll,
+            tieBreakRoll: tieRoll?.toJSON() ?? null } });
+        if (replacement) Object.assign(replacement, { tieBreak: tied ? tieBreak : null,
+          tieRoll, total: primary });
+      }
+    }
+    if (updates.length) await this.updateEmbeddedDocuments("Combatant", updates,
+      { mythrasTieBreak: true });
+    if (rolled.length) {
+      const entries = rolled.map((entry) => ({ name: entry.combatant.name,
+        roll: entry.raw, bonus: entry.bonus, total: entry.total, tieBreak: entry.tieBreak }));
+      const rolls = rolled.flatMap((entry) => [entry.primaryRoll, entry.tieRoll].filter(Boolean));
+      const messageData = { ...messageOptions,
+        speaker: rolled.length === 1
+          ? ChatMessage.getSpeaker({ actor: rolled[0].combatant.actor })
+          : ChatMessage.getSpeaker(),
+        content: renderInitiativeChat(entries, { localize: (key) => game.i18n.localize(key),
+          format: (key, data) => game.i18n.format(key, data) }), rolls };
+      ChatMessage.applyRollMode?.(messageData, messageOptions.rollMode
+        ?? game.settings.get("core", "rollMode"));
+      await ChatMessage.create(messageData);
+    }
     if (updateTurn) await this.selectFirstAvailable();
     return this;
   }
