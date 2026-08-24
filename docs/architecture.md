@@ -115,9 +115,20 @@ terminar el turno propio; las duraciones de asalto vencen en `mythrasRoundEnd`
 y los plazos en minutos u horas permanecen manuales. Las fuentes son
 independientes, por lo que retirar una no elimina otros bloqueos equivalentes.
 Sangrando y Ahogándose crean una cola de Aguante antes del primer turno del
-asalto; Desangrándose pierde Fatiga automáticamente. Sorprendido bloquea la
+asalto; Desangrándose crea una única entrada automática por Actor y pierde un
+nivel de Fatiga, sin tirada, durante esa misma preparación. Su efecto manual
+permanece hasta retirarlo y fuera de combate no avanza. Sorprendido bloquea la
 defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
 un hueco ofensivo al primer ataque exitoso.
+
+`Agonizando` conserva un contador de asaltos que se descuenta durante la misma
+preparación. Una nueva fuente solo reemplaza el efecto si su contador es
+estrictamente menor, de modo que una herida posterior nunca retrasa la muerte.
+Al llegar a cero se aplica el estado especial nativo Muerto/Derrotado y se
+sincronizan los combatientes del Actor. Las heridas críticas de combate y de
+peligros comparten el criterio central: extremidad, Ritmo de curación ×60;
+zona vital con Aguante superado, ×2; zona vital con Aguante fallado, muerte.
+La Fatiga que alcanza `dead` utiliza la misma integración nativa.
 
 Ácido usa dos estados temporales administrados, `Salpicadura de ácido` e
 `Inmersión en ácido`. Cada efecto conserva concentración, exposición y una
@@ -144,7 +155,9 @@ Caídas es un peligro puntual sin estado ni integración con la cola de asalto.
 `scripts/rules/fall.js` calcula la distancia efectiva tras TAM, Acrobacias y
 superficie blanda; añade los dados por gran tamaño, objeto o velocidad de
 vehículo, y aplica tiradas independientes a localizaciones aleatorias sin
-consultar PA. En vehículos, los metros por asalto se muestran también como
+consultar PA. Una superficie peligrosa añade una fórmula configurable y una
+tirada independiente a cada localización dañada por la caída. En vehículos,
+los metros por asalto se muestran también como
 metros por segundo usando asaltos de cinco segundos y la equivalencia de reglas
 para daño es velocidad dividida entre dos. La API pública es
 `game.mythrasFoundry.hazards.fall`.
@@ -166,7 +179,8 @@ de Fatiga únicamente ante fallo o pifia. La API pública es
 
 El compendio de macros incluye un lanzador de peligros exclusivo del DJ. Su
 diálogo solo selecciona y delega en las APIs públicas de Ácido, Fuego, Caída,
-Fatiga grupal o Asfixia/Ahogamiento; no duplica ninguna regla de resolución.
+Fatiga grupal, Asfixia/Ahogamiento o Agonizando; no duplica ninguna regla de
+resolución.
 
 La Fatiga periódica de combate comparte la cola bloqueante de preparación del
 asalto. Cada combatiente conserva en sus flags un contador idempotente y vence

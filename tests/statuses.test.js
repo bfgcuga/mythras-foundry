@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { activeSkillStatusPenalties, applyStatusAttributes, BLINDED_STATUS_ID,
   ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, BLEEDING_STATUS_ID,
-  BURNING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, MYTHRAS_STATUS_EFFECTS,
+  BURNING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, DYING_STATUS_ID,
+  MYTHRAS_STATUS_EFFECTS,
   PRONE_STATUS_ID, statusSkillDifficulty, STUNNED_STATUS_ID,
   SUFFOCATING_STATUS_ID, SURPRISED_STATUS_ID,
   UNCONSCIOUS_STATUS_ID } from "../scripts/rules/statuses.js";
@@ -49,6 +50,11 @@ test("asfixiándose se registra como estado neutral antes de exigir Aguante", ()
   assert.ok(MYTHRAS_STATUS_EFFECTS.some((status) => status.id === SUFFOCATING_STATUS_ID));
   assert.equal(statusSkillDifficulty(new Set([SUFFOCATING_STATUS_ID])), "standard");
   assert.equal(canActorAttack(new Set([SUFFOCATING_STATUS_ID])), true);
+});
+
+test("agonizando se registra y bloquea los ataques", () => {
+  assert.ok(MYTHRAS_STATUS_EFFECTS.some((status) => status.id === DYING_STATUS_ID));
+  assert.equal(canActorAttack(new Set([DYING_STATUS_ID])), false);
 });
 
 test("sorprendido penaliza iniciativa y bloquea ataque y defensa", () => {

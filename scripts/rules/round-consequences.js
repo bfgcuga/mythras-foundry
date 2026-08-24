@@ -18,6 +18,7 @@ import { uniqueActorEntries } from "./combat-turns.js";
 import { prepareSuffocationEntry } from "./suffocation.js";
 import { advanceCombatFatigue, COMBAT_FATIGUE_FLAG, COMBAT_FATIGUE_SCOPE,
   combatFatigueInterval, combatFatigueLoss } from "./combat-fatigue.js";
+import { prepareDyingEntry } from "./dying.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -25,7 +26,7 @@ const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
 export function periodicConditionEntries(combat) {
   const entries = [];
-  for (const combatant of combat?.combatants ?? []) {
+  for (const combatant of uniqueActorEntries(combat?.combatants)) {
     const actor = combatant.actor; if (!actor) continue;
     for (const effect of timedEffects(actor)) {
       const condition = effect.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
@@ -148,7 +149,8 @@ async function prepareCombatFatigueEntries(combat, previous) {
 export async function prepareRoundConsequences(combat) {
   const economy = combat.mythrasTurnEconomy;
   const previous = new Map((economy.roundQueue ?? []).filter((entry) =>
-    ["burning", "acidReview", "suffocating", "combatFatigue"].includes(entry.key)
+    ["burning", "acidReview", "suffocating", "combatFatigue", "exsanguinating", "dying",
+      "bleeding", "drowning"].includes(entry.key)
       && Number(entry.round) === Number(combat.round))
     .map((entry) => [entry.id, entry]));
   const suffocation = [];
@@ -157,7 +159,12 @@ export async function prepareRoundConsequences(combat) {
     if (entry) suffocation.push(entry);
   }
   const combatFatigue = await prepareCombatFatigueEntries(combat, previous);
-  const queue = [...periodicConditionEntries(combat), ...suffocation, ...combatFatigue,
+  const dying = [];
+  for (const combatant of uniqueActorEntries(combat?.combatants)) {
+    const entry = await prepareDyingEntry(combat, combatant);
+    if (entry) dying.push(entry);
+  }
+  const queue = [...periodicConditionEntries(combat), ...suffocation, ...combatFatigue, ...dying,
     ...acidReviewEntries(combat),
     ...burningEntries(combat),
     ...passiveBlockEntries(combat)]
@@ -192,13 +199,18 @@ export function renderRoundConsequences(state) {
     game.i18n.localize(`MYTHRASF.Status.${entry.key === "exsanguinating" ? "Exsanguinating"
       : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
         ? "PassiveBlock" : entry.key === "suffocating" ? "Suffocating"
-          : entry.key === "combatFatigue" ? "CombatFatigue" : "Drowning"}`))}${["suffocating", "combatFatigue"].includes(entry.key) ? ` — ${escape(entry.actorName)}` : ""}</span><strong>${escape(
+          : entry.key === "combatFatigue" ? "CombatFatigue"
+            : entry.key === "dying" ? "Dying" : "Drowning"}`))}${["suffocating", "combatFatigue", "dying"].includes(entry.key) ? ` — ${escape(entry.actorName)}` : ""}</span><strong>${escape(
     game.i18n.localize(`MYTHRASF.RoundConsequence.${entry.status}`))}</strong>${entry.status === "pending"
       ? entry.key === "passiveBlock"
         ? `<button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button>`
         : `<button type="button" data-round-action="roll" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.Roll"))}</button><button type="button" data-round-action="manual" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : entry.resolution ? entry.key === "passiveBlock"
           ? `<span>${escape(entry.resolution.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Waived") : entry.resolution.weaponName)}</span>`
-          : `<span>${entry.resolution.rawRoll != null ? `${escape(game.i18n.localize("MYTHRASF.Suffocation.Endurance"))}: <strong class="mythras-chat-roll-value">${Number(entry.resolution.rawRoll)}</strong> / ${Number(entry.resolution.target)} — ${escape(game.i18n.localize(`MYTHRASF.RollResult.${entry.resolution.result}`))}; ` : ""}${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
+          : entry.key === "dying" ? `<span>${escape(entry.resolution.dead
+            ? game.i18n.localize("MYTHRASF.Dying.Death")
+            : game.i18n.format("MYTHRASF.Dying.RoundsRemainingValue", {
+              remaining: entry.resolution.remaining }))}</span>`
+            : `<span>${entry.resolution.rawRoll != null ? `${escape(game.i18n.localize("MYTHRASF.Suffocation.Endurance"))}: <strong class="mythras-chat-roll-value">${Number(entry.resolution.rawRoll)}</strong> / ${Number(entry.resolution.target)} — ${escape(game.i18n.localize(`MYTHRASF.RollResult.${entry.resolution.result}`))}; ` : ""}${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
   const blocks = state.queue.filter((entry) => entry.key === "passiveBlock").map((entry) => {
     const status = entry.status === "pending" ? game.i18n.localize("MYTHRASF.PassiveBlock.Pending")
       : entry.resolution?.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Passed")

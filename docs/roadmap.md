@@ -58,7 +58,7 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 - Ampliar el motor temporal ya disponible cuando se incorporen acciones
   generales, alcance y tiempo mundial. Las duraciones por turno y asalto,
-  Sangrando, Desangrándose, Ahogándose, Sorpresa y las consecuencias temporales
+  Sangrando, Desangrándose, Agonizando, Ahogándose, Sorpresa y las consecuencias temporales
   de heridas y efectos de combate ya están integradas con el tracker.
 - Revisar conjuntamente el catálogo propio de estados y los estados nativos de
   Foundry antes de reducir los iconos disponibles en el HUD. Identificar qué

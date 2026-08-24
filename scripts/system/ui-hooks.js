@@ -11,6 +11,8 @@ import { isCombatCoordinator, restoreCombatActors,
 import { activateRoundConsequenceCard,
   registerRoundConsequenceSocket } from "../rules/round-consequences.js";
 import { initializeSurpriseEffect } from "../rules/timed-condition-runtime.js";
+import { initializeExsanguinatingEffect } from "../rules/exsanguination.js";
+import { initializeDyingEffect } from "../rules/dying.js";
 import { activateReachCard, openTacticalOverview, registerReachSocket } from "../rules/reach-chat.js";
 import { registerTacticalSocket } from "../rules/engagement-runtime.js";
 import { activateCombatActionCard, combatActionState,
@@ -166,6 +168,8 @@ export function registerUiHooks() {
   };
   Hooks.on("createActiveEffect", async (effect) => {
     await initializeSurpriseEffect(effect);
+    await initializeExsanguinatingEffect(effect);
+    await initializeDyingEffect(effect);
     await syncEffectActor(effect);
   });
   Hooks.on("updateActiveEffect", syncEffectActor);

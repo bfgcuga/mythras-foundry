@@ -74,7 +74,7 @@ if (!game.user.isGM) {
   return;
 }
 
-const choices = ["acid", "fire", "fall", "fatigue", "drowning"];
+const choices = ["acid", "fire", "fall", "fatigue", "drowning", "dying"];
 const options = choices.map((choice, index) => \`<label>
   <input type="radio" class="sheet-state-box" name="hazard" value="\${choice}"\${index === 0 ? " checked" : ""}>
   <span>\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}</span>
@@ -106,7 +106,8 @@ const launchers = {
   fire: game.mythrasFoundry?.hazards?.fire?.open,
   fall: game.mythrasFoundry?.hazards?.fall?.open,
   fatigue: game.mythrasFoundry?.fatigueChecks?.open,
-  drowning: game.mythrasFoundry?.hazards?.suffocation?.open
+  drowning: game.mythrasFoundry?.hazards?.suffocation?.open,
+  dying: game.mythrasFoundry?.conditions?.dying?.open
 };
 const open = launchers[result];
 if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.HazardLauncher.Unavailable"));
@@ -128,7 +129,37 @@ export const MACRO_SOURCES = [{
   type: "script",
   img: "icons/svg/hazard.svg",
   command: HAZARD_LAUNCHER_COMMAND,
-  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 1 } }
+  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 2 } }
+}, {
+  buildKey: "apply-dying",
+  name: "Aplicar Agonizando",
+  type: "script",
+  img: "icons/svg/skull.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Dying.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.conditions?.dying?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Dying.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-dying", macroVersion: 1 } }
+}, {
+  buildKey: "apply-exsanguination",
+  name: "Aplicar Desangrándose",
+  type: "script",
+  img: "icons/svg/blood.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Exsanguination.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.conditions?.exsanguination?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Exsanguination.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-exsanguination", macroVersion: 1 } }
 }, {
   buildKey: "apply-acid-damage",
   name: "Aplicar daño por ácido",
@@ -178,7 +209,7 @@ else await open();
   buildKey: "apply-suffocation",
   name: "Aplicar asfixia",
   type: "script",
-  img: "icons/svg/drowning.svg",
+  img: "systems/mythras-foundry/assets/icons/suffocation.svg",
   command: `
 if (!game.user.isGM) {
   ui.notifications.warn(game.i18n.localize("MYTHRASF.Suffocation.GMOnly"));
@@ -188,7 +219,7 @@ const open = game.mythrasFoundry?.hazards?.suffocation?.open;
 if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Suffocation.Unavailable"));
 else await open();
 `,
-  flags: { "mythras-foundry": { macroKey: "apply-suffocation", macroVersion: 1 } }
+  flags: { "mythras-foundry": { macroKey: "apply-suffocation", macroVersion: 2 } }
 }, {
   buildKey: "request-fatigue-checks",
   name: "Solicitar tiradas de fatiga",

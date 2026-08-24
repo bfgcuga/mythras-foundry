@@ -30,6 +30,7 @@ import { removeRecoveredLocationConditions } from "./rules/timed-condition-runti
 import { clearAim } from "./rules/ranged-actions.js";
 import { parseRangeProfile } from "./rules/ranged-combat.js";
 import { resolveActorConditions } from "./rules/actor-conditions.js";
+import { synchronizeFatigueDeath } from "./rules/death.js";
 
 registerSystemInitialization();
 registerUiHooks();
@@ -246,6 +247,7 @@ Hooks.once("ready", async () => {
     if (actor.type === "character") await ensureDefaultHome(actor);
     await migrateActorArmor(actor);
     await syncIncapacitatedStatus(actor);
+    await synchronizeFatigueDeath(actor);
   }
   const worldIconUpdates = game.items
     .map(getLegacyItemIconUpdate)
@@ -312,6 +314,9 @@ Hooks.on("updateActor", async (actor, changed, options, userId) => {
     if (fumbleUpdates.length) await actor.updateEmbeddedDocuments("Item", fumbleUpdates);
   }
   await syncIncapacitatedStatus(actor);
+  if (foundry.utils.hasProperty(changed, "system.fatigueLevel")) {
+    await synchronizeFatigueDeath(actor);
+  }
   if (!foundry.utils.hasProperty(changed, "system.constitution")
     && !foundry.utils.hasProperty(changed, "system.size")) return;
   const updates = actor.items.filter((item) => item.type === "hitLocation"

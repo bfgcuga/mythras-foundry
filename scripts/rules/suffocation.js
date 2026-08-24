@@ -65,7 +65,8 @@ export async function applySuffocation(actor, configuration = {}, { token = null
   const timing = suffocationTiming({ endurance: enduranceValue(actor), circumstance });
   const metadata = { ...timing, lastCountedRound: combat?.round ?? null };
   const [effect] = await applyTimedCondition(actor, {
-    name: game.i18n.localize("MYTHRASF.Status.Suffocating"), img: "icons/svg/drowning.svg",
+    name: game.i18n.localize("MYTHRASF.Status.Suffocating"),
+    img: "systems/mythras-foundry/assets/icons/suffocation.svg",
     key: SUFFOCATING_STATUS_ID, statusId: SUFFOCATING_STATUS_ID,
     combat: combat ? { uuid: combat.uuid, round: combat.round,
       cycle: combat.mythrasTurnEconomy?.cycle, turn: combat.turn } : null,

@@ -1,4 +1,4 @@
-import { applyHazardWoundConsequences } from "./acid.js";
+import { applyHazardWoundConsequences, hazardWoundConsequenceRows } from "./acid.js";
 import { woundLevel } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 
@@ -80,11 +80,13 @@ function validFormula(formula) {
 async function createFireChat(actor, token, configuration, results) {
   const profile = FIRE_PROFILES[configuration.intensity];
   const rows = results.map(({ location, roll, damage, hitPointsBefore, hitPointsAfter,
-    woundBefore, woundAfter }) => `<fieldset><legend>${escape(location.name)}</legend>
+    woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(location.name)}</legend>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fire.DamageRoll"))} (${escape(configuration.formula)})</span><strong class="mythras-chat-roll-value">${damage}</strong></div>
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fire.HitPoints"))}</span><strong>${hitPointsBefore} → ${hitPointsAfter}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}</fieldset>`).join("");
-  return ChatMessage.create({ speaker: actorSpeaker(actor, token), rolls: results.map((entry) => entry.roll),
+      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
+      ${hazardWoundConsequenceRows(woundConsequence)}</fieldset>`).join("");
+  return ChatMessage.create({ speaker: actorSpeaker(actor, token), rolls: results.flatMap(
+    (entry) => [entry.roll, entry.woundConsequence?.enduranceRoll].filter(Boolean)),
     content: `<section class="mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.localize("MYTHRASF.Fire.ChatTitle"))}</div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fire.Target"))}</span><strong>${escape(actorDisplayName(actor))}</strong></div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fire.IntensityLabel"))}</span><strong>${configuration.intensity} — ${escape(game.i18n.localize(`MYTHRASF.Fire.Example.${profile.example}`))}</strong></div>
@@ -110,15 +112,17 @@ export async function applyFireDamage(actor, configuration, { token = null } = {
     const damage = fireDamageResult(roll.total, location.system.currentHitPoints);
     await location.update({ "system.currentHitPoints": damage.hitPointsAfter });
     const woundAfter = woundLevel(damage.hitPointsAfter, location.system.maxHitPoints);
-    await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
+    const woundConsequence = await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
       { sourceStatus: "MYTHRASF.Status.Burning" });
-    results.push({ location, roll, ...damage, woundBefore, woundAfter });
+    results.push({ location, roll, ...damage, woundBefore, woundAfter, woundConsequence });
   }
   if (normalized.keepBurning) await setBurning(actor, normalized);
   else await extinguishFire(actor);
   await createFireChat(actor, token, normalized, results);
-  return { configuration: normalized, results: results.map(({ location, roll, ...entry }) => ({
-    ...entry, locationId: location.id, roll: roll.toJSON() })) };
+  return { configuration: normalized, results: results.map(({ location, roll,
+    woundConsequence, ...entry }) => ({ ...entry, locationId: location.id, roll: roll.toJSON(),
+    woundConsequence: woundConsequence ? { ...woundConsequence,
+      enduranceRoll: woundConsequence.enduranceRoll?.toJSON?.() ?? null } : null })) };
 }
 
 function locationGuidance(intensity) {

@@ -1,4 +1,4 @@
-import { applyHazardWoundConsequences } from "./acid.js";
+import { applyHazardWoundConsequences, hazardWoundConsequenceRows } from "./acid.js";
 import { findHitLocation, woundLevel } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 
@@ -25,6 +25,11 @@ export function fallDistanceProfile(distance) {
 
 export function fallLargeSizeBonus(size) {
   return Math.max(0, Math.ceil((Number(size) - 20) / 10));
+}
+
+export function combinedFallDamage(fallDamage, dangerousSurfaceDamage = 0) {
+  return Math.max(0, Math.floor(Number(fallDamage) || 0))
+    + Math.max(0, Math.floor(Number(dangerousSurfaceDamage) || 0));
 }
 
 export function calculateFall(configuration = {}) {
@@ -80,14 +85,18 @@ async function randomLocations(locations, count) {
 
 async function createFallChat(actor, token, configuration, results, locationRolls) {
   const rows = results.map(({ location, roll, damage, before, after, woundBefore,
-    woundAfter }) => `<fieldset><legend>${escape(location.name)}</legend>
-      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageRoll"))} (${escape(configuration.formula)})</span><strong class="mythras-chat-roll-value">${damage}</strong></div>
+    woundAfter, fallDamage, dangerousRoll, dangerousDamage, woundConsequence }) => `<fieldset><legend>${escape(location.name)}</legend>
+      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageRoll"))} (${escape(configuration.formula)})</span><strong class="mythras-chat-roll-value">${fallDamage}</strong></div>
+      ${dangerousRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurfaceDamageRoll"))} (${escape(configuration.dangerousSurfaceFormula)})</span><strong class="mythras-chat-roll-value">${dangerousDamage}</strong></div>` : ""}
+      ${dangerousRoll ? `<div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fall.TotalDamage"))}</span><strong>${damage}</strong></div>` : ""}
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fall.HitPoints"))}</span><strong>${before} → ${after}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}</fieldset>`).join("");
+      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
+      ${hazardWoundConsequenceRows(woundConsequence)}</fieldset>`).join("");
   const safeLanding = configuration.acrobaticsSuccess
     && !results.some((entry) => ["serious", "major"].includes(entry.woundAfter));
   return ChatMessage.create({ speaker: actorSpeaker(actor, token),
-    rolls: [...locationRolls, ...results.map((entry) => entry.roll)],
+    rolls: [...locationRolls, ...results.flatMap((entry) => [entry.roll,
+      entry.dangerousRoll, entry.woundConsequence?.enduranceRoll].filter(Boolean))],
     content: `<section class="mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.localize("MYTHRASF.Fall.ChatTitle"))}</div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.Target"))}</span><strong>${escape(actorDisplayName(actor))}</strong></div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.TypeLabel"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Fall.Type.${configuration.kind}`))}</strong></div>
@@ -96,16 +105,19 @@ async function createFallChat(actor, token, configuration, results, locationRoll
       ${configuration.kind === "vehicle" ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.VehicleSpeed"))}</span><strong>${configuration.speedPerRound} m/${escape(game.i18n.localize("MYTHRASF.Fall.Round"))} — ${configuration.speedPerSecond} m/s</strong></div>` : ""}
       ${rows || `<div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageRoll"))}</span><strong>${escape(game.i18n.localize("MYTHRASF.Fall.NoDamage"))}</strong></div>`}
       ${configuration.kind !== "object" ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.Landing"))}</span><strong>${escape(game.i18n.localize(safeLanding ? "MYTHRASF.Fall.SafeLanding" : "MYTHRASF.Fall.KnockdownApplies"))}</strong></div>` : ""}
-      ${configuration.dangerousSurface ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurface"))}</span><strong>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurfaceReminder"))}</strong></div>` : ""}</section>` });
+      ${configuration.dangerousSurface ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurface"))}</span><strong>${escape(configuration.dangerousSurfaceFormula)}</strong></div>` : ""}</section>` });
 }
 
 export async function applyFallDamage(actor, configuration, { token = null } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
   const calculated = calculateFall({ ...configuration, actorSize: actor.system.size });
   const formula = String(configuration.formula ?? calculated.formula).trim() || calculated.formula;
+  const dangerousSurfaceFormula = String(configuration.dangerousSurfaceFormula ?? "1d6").trim()
+    || "1d6";
   const locationCount = Math.max(0, Math.floor(Number(configuration.locationCount
     ?? calculated.locations) || 0));
-  if (!validFormula(formula)) {
+  if (!validFormula(formula) || (calculated.dangerousSurface
+    && !validFormula(dangerousSurfaceFormula))) {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Fall.InvalidFormula")); return null;
   }
   const locations = actor.items.filter((item) => item.type === "hitLocation")
@@ -118,20 +130,28 @@ export async function applyFallDamage(actor, configuration, { token = null } = {
   const results = [];
   for (const location of selected) {
     const roll = await new Roll(formula).evaluate();
-    const damage = Math.max(0, Math.floor(Number(roll.total) || 0));
+    const fallDamage = Math.max(0, Math.floor(Number(roll.total) || 0));
+    const dangerousRoll = calculated.dangerousSurface
+      ? await new Roll(dangerousSurfaceFormula).evaluate() : null;
+    const dangerousDamage = Math.max(0, Math.floor(Number(dangerousRoll?.total) || 0));
+    const damage = combinedFallDamage(fallDamage, dangerousDamage);
     const before = Number(location.system.currentHitPoints) || 0;
     const after = before - damage;
     const woundBefore = woundLevel(before, location.system.maxHitPoints);
     await location.update({ "system.currentHitPoints": after });
     const woundAfter = woundLevel(after, location.system.maxHitPoints);
-    await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
+    const woundConsequence = await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
       { sourceStatus: "MYTHRASF.Fall.ChatTitle" });
-    results.push({ location, roll, damage, before, after, woundBefore, woundAfter });
+    results.push({ location, roll, damage, fallDamage, dangerousRoll, dangerousDamage,
+      before, after, woundBefore, woundAfter, woundConsequence });
   }
-  const resolved = { ...calculated, formula, locationCount };
+  const resolved = { ...calculated, formula, dangerousSurfaceFormula, locationCount };
   await createFallChat(actor, token, resolved, results, locationRolls);
-  return { configuration: resolved, results: results.map(({ location, roll, ...entry }) => ({
-    ...entry, locationId: location.id, roll: roll.toJSON() })),
+  return { configuration: resolved, results: results.map(({ location, roll,
+    dangerousRoll, woundConsequence, ...entry }) => ({ ...entry, locationId: location.id,
+    roll: roll.toJSON(), dangerousRoll: dangerousRoll?.toJSON?.() ?? null,
+    woundConsequence: woundConsequence ? { ...woundConsequence,
+      enduranceRoll: woundConsequence.enduranceRoll?.toJSON?.() ?? null } : null })),
   locationRolls: locationRolls.map((roll) => roll.toJSON()) };
 }
 
@@ -151,7 +171,7 @@ export async function openFallDialog({ actor = null, token = null } = {}) {
     window: { title: game.i18n.localize("MYTHRASF.Fall.Title") },
     content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Target"))}</legend><div class="sheet-field-readonly">${escape(actorDisplayName(actor))} — TAM ${initial.actorSize}</div></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.TypeLabel"))}</legend>${["fall", "vehicle", "object"].map((kind) => `<label><input type="radio" class="sheet-state-box" name="kind" value="${kind}" ${kind === "fall" ? "checked" : ""}><span>${escape(game.i18n.localize(`MYTHRASF.Fall.Type.${kind}`))}</span></label>`).join("")}</fieldset>
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Parameters"))}</legend><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.Distance"))}</span><input type="number" class="sheet-field-editable" name="distance" min="0" step="0.5" value="2"></label><label data-fall-vehicle hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.VehicleSpeed"))}</span><input type="number" class="sheet-field-editable" name="speedPerRound" min="0" step="1" value="0"></label><label data-fall-object hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.ObjectSize"))}</span><input type="number" class="sheet-field-editable" name="objectSize" min="1" step="1" value="6"></label><label><input type="checkbox" class="sheet-state-box" name="acrobaticsSuccess"><span>${escape(game.i18n.localize("MYTHRASF.Fall.AcrobaticsSuccess"))}</span></label><label><input type="checkbox" class="sheet-state-box" name="softSurface"><span>${escape(game.i18n.localize("MYTHRASF.Fall.SoftSurface"))}</span></label><label><input type="checkbox" class="sheet-state-box" name="dangerousSurface"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurface"))}</span></label></fieldset>
+      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Parameters"))}</legend><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.Distance"))}</span><input type="number" class="sheet-field-editable" name="distance" min="0" step="0.5" value="2"></label><label data-fall-vehicle hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.VehicleSpeed"))}</span><input type="number" class="sheet-field-editable" name="speedPerRound" min="0" step="1" value="0"></label><label data-fall-object hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.ObjectSize"))}</span><input type="number" class="sheet-field-editable" name="objectSize" min="1" step="1" value="6"></label><label><input type="checkbox" class="sheet-state-box" name="acrobaticsSuccess"><span>${escape(game.i18n.localize("MYTHRASF.Fall.AcrobaticsSuccess"))}</span></label><label><input type="checkbox" class="sheet-state-box" name="softSurface"><span>${escape(game.i18n.localize("MYTHRASF.Fall.SoftSurface"))}</span></label><label><input type="checkbox" class="sheet-state-box" name="dangerousSurface"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurface"))}</span></label><label data-fall-dangerous hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurfaceFormula"))}</span><input class="sheet-field-editable" name="dangerousSurfaceFormula" value="1d6"></label></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Damage"))}</legend><div data-fall-summary class="sheet-field-readonly"></div><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageFormula"))}</span><input class="sheet-field-editable" name="formula" value="${initial.formula}"></label><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.LocationCount"))}</span><input type="number" class="sheet-field-editable" name="locationCount" min="0" step="1" value="${initial.locations}"></label></fieldset></div>`,
     buttons: [{ action: "apply", label: game.i18n.localize("MYTHRASF.Fall.Apply"),
       icon: "fas fa-person-falling", default: true, callback: (event, button) => ({
@@ -162,6 +182,7 @@ export async function openFallDialog({ actor = null, token = null } = {}) {
         acrobaticsSuccess: button.form.elements.acrobaticsSuccess.checked,
         softSurface: button.form.elements.softSurface.checked,
         dangerousSurface: button.form.elements.dangerousSurface.checked,
+        dangerousSurfaceFormula: button.form.elements.dangerousSurfaceFormula.value.trim(),
         formula: button.form.elements.formula.value.trim(),
         locationCount: Number(button.form.elements.locationCount.value)
       }) }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"),
@@ -178,6 +199,7 @@ export async function openFallDialog({ actor = null, token = null } = {}) {
           dangerousSurface: form.elements.dangerousSurface.checked });
         form.querySelector("[data-fall-vehicle]").hidden = current.kind !== "vehicle";
         form.querySelector("[data-fall-object]").hidden = current.kind !== "object";
+        form.querySelector("[data-fall-dangerous]").hidden = !current.dangerousSurface;
         form.elements.acrobaticsSuccess.closest("label").hidden = current.kind === "object";
         if (form.elements.formula.value.trim() === previous.formula) form.elements.formula.value = current.formula;
         if (Number(form.elements.locationCount.value) === previous.locations) form.elements.locationCount.value = current.locations;

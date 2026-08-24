@@ -34,6 +34,9 @@ export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
         const durationNote = timed.map((condition) => {
           const duration = condition.unit === "actorTurn"
             ? game.i18n.format("MYTHRASF.Status.TurnsRemaining", { remaining: condition.remaining })
+            : condition.unit === "dyingRounds"
+              ? game.i18n.format("MYTHRASF.Dying.RoundsRemainingValue", {
+                remaining: condition.remaining })
             : condition.unit === "round" ? game.i18n.localize("MYTHRASF.Status.UntilRoundEnd")
               : condition.durationNote ?? game.i18n.localize("MYTHRASF.Status.ManualDuration");
           const location = condition.locationId ? actor.items.get(condition.locationId)?.name : "";

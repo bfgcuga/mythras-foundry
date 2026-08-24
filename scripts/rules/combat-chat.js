@@ -27,6 +27,8 @@ import { actorDisplayName, actorSpeaker, tokenDisplayName } from "./document-nam
 import { evaluatedDamageExpression } from "./combat-damage-display.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
 import { openAttackRollDialog } from "../apps/skill-roll-dialog.js";
+import { applyDying, criticalWoundOutcome } from "./dying.js";
+import { applyDeath } from "./death.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -1414,21 +1416,26 @@ async function applyWoundConsequences(combat, defender, location) {
       metadata: { durationNote: `${Math.max(1, Number(combat.damage.penetratingDamage))} minutes` } });
   }
   if (wound === "major") {
+    const healingRate = defender.system.attributes?.healingRate;
     if (extremity) {
       await addManagedStatus(combat, pseudoEffect, { key: "prone", statusId: "prone",
         unit: "manual", locationId: location.id });
       combat.consequences = [...(combat.consequences ?? []), { key: "destroyedExtremity",
-        status: "pending", locationId: location.id, requiresConfirmation: true },
-      { key: "treatmentDeadline", status: "pending", requiresConfirmation: true,
-        note: "healingRate × 5 minutes" }];
+        status: "pending", locationId: location.id, requiresConfirmation: true }];
+      const plan = criticalWoundOutcome({ extremity: true, healingRate });
+      await applyDying(defender, { rounds: plan.rounds, mode: plan.mode,
+        locationId: location.id, sourceName: location.name });
       if (failed) await addManagedStatus(combat, pseudoEffect, { key: "unconscious",
         statusId: "unconscious", unit: "manual", locationId: location.id });
     } else {
       await addManagedStatus(combat, pseudoEffect, { key: "unconscious",
         statusId: "unconscious", unit: "manual", locationId: location.id });
-      if (failed != null) combat.consequences = [...(combat.consequences ?? []), {
-        key: failed ? "immediateDeath" : "treatmentDeadline", status: "pending",
-        requiresConfirmation: true, note: failed ? "" : "2 × healingRate rounds" }];
+      if (failed != null) {
+        const plan = criticalWoundOutcome({ enduranceSucceeded: !failed, healingRate });
+        if (plan.outcome === "dead") await applyDeath(defender);
+        else await applyDying(defender, { rounds: plan.rounds, mode: plan.mode,
+          locationId: location.id, sourceName: location.name });
+      }
     }
   }
 }

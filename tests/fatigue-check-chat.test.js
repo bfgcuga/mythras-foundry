@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { fatigueCheckTarget, validateFatigueCheckResponse }
   from "../scripts/rules/fatigue-check-chat.js";
 
@@ -25,4 +26,12 @@ test("la respuesta exige revisión vigente, participante pendiente y propiedad",
     { actor, user }), "participant");
   assert.equal(validateFatigueCheckResponse(state(), request,
     { actor: { testUserPermission: () => false }, user }), "ownership");
+});
+
+test("el selector de participantes usa la lista vertical compartida", () => {
+  const source = readFileSync(new URL("../scripts/rules/fatigue-check-chat.js", import.meta.url),
+    "utf8");
+  const css = readFileSync(new URL("../styles/mythras-foundry.css", import.meta.url), "utf8");
+  assert.match(source, /class="sheet-state-list" data-fatigue-members/);
+  assert.match(css, /\.sheet-state-list\s*\{[^}]*flex-direction:\s*column/s);
 });

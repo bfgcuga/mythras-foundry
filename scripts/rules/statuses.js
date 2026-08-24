@@ -21,6 +21,7 @@ export const ACID_SPLASH_STATUS_ID = "acidSplash";
 export const ACID_IMMERSION_STATUS_ID = "acidImmersion";
 export const BURNING_STATUS_ID = "burning";
 export const SUFFOCATING_STATUS_ID = "suffocating";
+export const DYING_STATUS_ID = "dying";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: BLINDED_STATUS_ID, name: "MYTHRASF.Status.Blinded",
@@ -35,7 +36,7 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: BLEEDING_STATUS_ID, name: "MYTHRASF.Status.Bleeding",
     img: "icons/svg/blood.svg", roundAutomation: "resistance" },
   { id: DROWNING_STATUS_ID, name: "MYTHRASF.Status.Drowning",
-    img: "icons/svg/drowning.svg", roundAutomation: "resistance" },
+    img: "systems/mythras-foundry/assets/icons/suffocation.svg", roundAutomation: "resistance" },
   { id: SURPRISED_STATUS_ID, name: "MYTHRASF.Status.Surprised",
     img: "icons/svg/mystery-man.svg", initiativePenalty: 10, canAttack: false,
     canDefend: false },
@@ -63,7 +64,9 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: ACID_IMMERSION_STATUS_ID, name: "MYTHRASF.Status.AcidImmersion", img: "icons/svg/acid.svg" },
   { id: BURNING_STATUS_ID, name: "MYTHRASF.Status.Burning", img: "icons/svg/fire.svg" },
   { id: SUFFOCATING_STATUS_ID, name: "MYTHRASF.Status.Suffocating",
-    img: "icons/svg/drowning.svg" }
+    img: "systems/mythras-foundry/assets/icons/suffocation.svg" },
+  { id: DYING_STATUS_ID, name: "MYTHRASF.Status.Dying", img: "icons/svg/skull.svg",
+    canAttack: false, canTakeProactiveTurn: false }
 ]);
 
 export function activeStatusRules(statuses = new Set()) {

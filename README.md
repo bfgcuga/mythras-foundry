@@ -105,7 +105,12 @@ El sistema incluye actualmente:
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
 - macro lanzadora de DJ para abrir desde un único menú Ácido, Fuego, Caída,
-  Fatiga o Ahogamiento/Asfixia;
+  Fatiga, Ahogamiento/Asfixia o Agonizando;
+- macro de DJ para aplicar `Desangrándose`; el estado permanece hasta retirarlo
+  y reduce automáticamente un nivel de Fatiga al preparar cada asalto;
+- macro de DJ para aplicar `Agonizando` con contador libre, Ritmo de curación ×2
+  o ×60; el contador baja al inicio de cada asalto, nunca puede ampliarse y al
+  llegar a cero aplica el estado nativo Muerto/Derrotado de Foundry;
 - solicitud de tiradas de Fatiga para miembros seleccionados de cualquier
   grupo, con habilidad y dificultad configurables, resolución individual desde
   el chat y pérdida automática de un nivel al fallar;
@@ -124,7 +129,8 @@ El sistema incluye actualmente:
   de cada asalto sin automatizar ignición ni propagación;
 - macro puntual de DJ para caídas normales, desde vehículos y de objetos, con
   ajuste por TAM, Acrobacias, superficie y tiradas independientes en
-  localizaciones aleatorias que ignoran los PA;
+  localizaciones aleatorias que ignoran los PA; las superficies peligrosas
+  admiten una fórmula adicional aplicada por separado a cada zona alcanzada;
 - macro de DJ para iniciar Asfixia según Aguante y preparación; cuenta asaltos
   de cinco segundos y, agotado el aire, solicita Aguante cada asalto y aplica
   automáticamente la pérdida de Fatiga correspondiente;
@@ -188,6 +194,8 @@ game.mythrasFoundry.hazards.fire.open(); // Solo DJ; usa el token controlado.
 game.mythrasFoundry.hazards.fall.open(); // Solo DJ; aplicación puntual.
 game.mythrasFoundry.hazards.suffocation.open(); // Solo DJ; inicia el contador.
 game.mythrasFoundry.fatigueChecks.open(); // Solo DJ; solicitud grupal en chat.
+game.mythrasFoundry.conditions.exsanguination.open(); // Solo DJ; aplica el estado.
+game.mythrasFoundry.conditions.dying.open(); // Solo DJ; aplica Agonizando.
 ```
 
 También expone `party` para consultar o abrir el gestor de grupos, `homebrew`
@@ -198,7 +206,8 @@ diálogos o permiten aplicar configuraciones estructuradas desde otra macro. La
 forma exacta de estas APIs se define en
 `scripts/api/party-api.js`, `scripts/apps/item-catalog.js`,
 `scripts/apps/homebrew-item-creator.js`, `scripts/rules/acid.js`,
-`scripts/rules/fire.js`, `scripts/rules/fall.js`, `scripts/rules/suffocation.js` y
+`scripts/rules/fire.js`, `scripts/rules/fall.js`, `scripts/rules/suffocation.js`,
+`scripts/rules/dying.js` y
 `scripts/rules/traits.js`.
 
 ## Publicación

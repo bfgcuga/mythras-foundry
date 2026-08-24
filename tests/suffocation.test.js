@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { breathHoldingSeconds, BREATH_CIRCUMSTANCES, SUFFOCATION_ROUND_SECONDS,
   prepareSuffocationEntry, suffocationTiming } from "../scripts/rules/suffocation.js";
+
+test("el icono local de asfixia existe", () => {
+  assert.equal(existsSync(new URL("../assets/icons/suffocation.svg", import.meta.url)), true);
+});
 
 test("la preparación y la actividad ajustan el tiempo de Aguante", () => {
   assert.deepEqual(BREATH_CIRCUMSTANCES, { prepared: 1, passive: 0.5, strenuous: 0.2 });

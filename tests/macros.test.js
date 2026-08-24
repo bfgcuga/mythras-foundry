@@ -38,6 +38,26 @@ test("el compendio incluye una macro GM para aplicar ácido mediante la API púb
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });
 
+test("el compendio incluye una macro GM para aplicar Desangrándose", () => {
+  const macro = MACRO_SOURCES.find((source) => source.buildKey === "apply-exsanguination");
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /conditions\?\.exsanguination\?\.open/);
+  assert.equal(macro.img, "icons/svg/blood.svg");
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
+test("el compendio incluye una macro GM para aplicar Agonizando", () => {
+  const macro = MACRO_SOURCES.find((source) => source.buildKey === "apply-dying");
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /conditions\?\.dying\?\.open/);
+  assert.equal(macro.img, "icons/svg/skull.svg");
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
 test("el compendio incluye un lanzador común de peligros y fatiga", () => {
   const macro = MACRO_SOURCES.find((source) => source.buildKey === "open-hazard-launcher");
   assert.ok(macro);
@@ -47,6 +67,8 @@ test("el compendio incluye un lanzador común de peligros y fatiga", () => {
   assert.match(macro.command, /hazards\?\.fall\?\.open/);
   assert.match(macro.command, /fatigueChecks\?\.open/);
   assert.match(macro.command, /hazards\?\.suffocation\?\.open/);
+  assert.match(macro.command, /conditions\?\.dying\?\.open/);
+  assert.equal(macro.flags["mythras-foundry"].macroVersion, 2);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });
@@ -74,6 +96,8 @@ test("el compendio incluye una macro GM para aplicar asfixia mediante la API pú
   assert.ok(macro);
   assert.match(macro.command, /game\.user\.isGM/);
   assert.match(macro.command, /hazards\?\.suffocation\?\.open/);
+  assert.equal(macro.img, "systems/mythras-foundry/assets/icons/suffocation.svg");
+  assert.equal(macro.flags["mythras-foundry"].macroVersion, 2);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });

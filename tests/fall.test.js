@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateFall, COMBAT_ROUND_SECONDS, fallDistanceProfile,
+import { calculateFall, combinedFallDamage, COMBAT_ROUND_SECONDS, fallDistanceProfile,
   fallLargeSizeBonus, fallSizeDistanceReduction } from "../scripts/rules/fall.js";
 
 test("la tabla de caída determina dados y localizaciones", () => {
@@ -44,4 +44,10 @@ test("un objeto suma dados por TAM al daño de la distancia y afecta una zona", 
   const fall = calculateFall({ kind: "object", distance: 10, objectSize: 12 });
   assert.equal(fall.formula, "4d6");
   assert.equal(fall.locations, 1);
+});
+
+test("la superficie peligrosa suma su daño en cada localización alcanzada", () => {
+  assert.equal(combinedFallDamage(7, 4), 11);
+  assert.equal(combinedFallDamage(7), 7);
+  assert.equal(combinedFallDamage(7, -3), 7);
 });
