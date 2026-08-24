@@ -193,10 +193,11 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           contest: { resolutionMode, sides: { initiator: initiatorSide, opponent: opponentSide },
             participants: [...initiatorSide.participants, ...opponentSide.participants] } };
       }
-    }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
+    }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times",
+      callback: () => null }],
     rejectClose: false
   });
-  if (!result) return null;
+  if (!result || typeof result !== "object") return null;
   return { ...result, targets: resolveSkillRollTargets({
     baseTarget: item.system.total, difficulty: result.difficulty, imposedDifficulty,
     limited: Boolean(result.limitedSkill), limitedTarget: result.limitedSkill?.system.total,

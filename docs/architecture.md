@@ -119,6 +119,25 @@ asalto; Desangrándose pierde Fatiga automáticamente. Sorprendido bloquea la
 defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
 un hueco ofensivo al primer ataque exitoso.
 
+Ácido usa dos estados temporales administrados, `Salpicadura de ácido` e
+`Inmersión en ácido`. Cada efecto conserva concentración, exposición y
+localización. La primera aplicación es inmediata y, al preparar cada asalto,
+cada efecto crea una entrada bloqueante: el DJ decide aplicar el daño, omitirlo
+durante ese asalto o retirar el estado. No existe daño automático. Aplicar u
+omitir consume una revisión de la duración limitada de una salpicadura; una
+inmersión continúa hasta retirarla. Fuera de combate la revisión queda pausada.
+Cuando el DJ aplica daño, la tirada corroe una sola capa: primero la pieza
+equipada con más PA y, cuando ya no queda ninguna, la armadura natural;
+únicamente el exceso alcanza los PG.
+
+Fuego reutiliza la resolución de daño localizado, pero permanece deliberadamente
+dirigido por el DJ: ignora los PA y aplica una tirada independiente a cada
+localización seleccionada. `Ardiendo` es un estado manual con una configuración
+recordada de Intensidad, fórmula y localizaciones. Al preparar cada asalto crea
+una entrada bloqueante en la cola existente; el DJ debe aplicar el daño, omitirlo
+durante ese asalto o extinguir el estado. La tabla de ignición y el alcance por
+Intensidad son informativos: el sistema no decide ignición ni propagación.
+
 El estado táctico vive en `flags.mythras-foundry.tacticalState` del `Combat`.
 Contiene relaciones versionadas por pareja de combatientes y declaraciones de
 Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o

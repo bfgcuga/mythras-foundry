@@ -296,7 +296,8 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     source: localize("MYTHRASF.SkillRoll.ActorConditions"),
     effect: localize(`MYTHRASF.Difficulty.${resolution.difficulty}`), type: "penalty"
   });
-  if (resolution.familiarity && resolution.familiarity !== "similar") rollModifiers.push({
+  if (resolution.familiarity && !["included", "similar", "untrained"].includes(
+    resolution.familiarity)) rollModifiers.push({
     source: localize("MYTHRASF.Combat.Familiarity"),
     effect: localize(`MYTHRASF.Familiarity.${resolution.familiarity}`), type: "penalty"
   });

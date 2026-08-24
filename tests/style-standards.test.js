@@ -38,6 +38,7 @@ const uiHooksScript = readFileSync(
 );
 const rollDialog = readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
 const rollChat = readFileSync(new URL("../scripts/rules/skill-roll-chat.js", import.meta.url), "utf8");
+const es = JSON.parse(readFileSync(new URL("../lang/es.json", import.meta.url), "utf8"));
 
 test("hojas y mensajes Mythras comparten la superficie de papel", () => {
   assert.match(css, /--mythras-paper-texture:/);
@@ -85,6 +86,17 @@ test("el ataque reutiliza los ajustes porcentuales sin configurar un concurso", 
   assert.match(chatScript, /configured\.targets\.adjustedTarget/);
   assert.match(chatScript, /if \(!configured\) return null;[\s\S]*spendActionPoint/);
   assert.match(chatScript, /rollConfiguration/);
+  assert.match(rollDialog, /action: "cancel"[\s\S]*?callback: \(\) => null/);
+  assert.match(rollDialog, /if \(!result \|\| typeof result !== "object"\) return null/);
+});
+
+test("la familiaridad de combate muestra descriptores localizados y solo penaliza cuando procede", () => {
+  for (const key of ["included", "untrained", "similar", "broadlySimilar",
+    "reasonablyDifferent", "substantiallyDifferent"]) {
+    assert.ok(es[`MYTHRASF.Familiarity.${key}`]);
+  }
+  assert.match(es["MYTHRASF.Familiarity.included"], /sin penalización/);
+  assert.match(chatScript, /!\["included", "similar", "untrained"\]\.includes/);
 });
 
 test("la superficie compartida queda registrada como estándar visual", () => {

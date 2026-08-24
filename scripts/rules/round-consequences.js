@@ -10,6 +10,11 @@ import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { findWeaponMode } from "./weapon-modes.js";
 import { tacticalState } from "./engagement-runtime.js";
 import { actorDisplayName } from "./document-names.js";
+import { ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, acidCondition, acidEffects,
+  acidReviewConfiguration, applyAcidDamage, openAcidDialog, removeAcidEffect } from "./acid.js";
+import { applyFireDamage, extinguishFire, fireEffectConfiguration,
+  openFireDialog } from "./fire.js";
+import { uniqueActorEntries } from "./combat-turns.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -59,6 +64,26 @@ export function passiveBlockEntries(combat) {
   return entries;
 }
 
+export function burningEntries(combat) {
+  return uniqueActorEntries(combat?.combatants).flatMap((combatant) => {
+    const actor = combatant.actor;
+    if (!actor?.statuses?.has?.("burning")) return [];
+    return [{ id: `${combatant.id}:burning`, combatantId: combatant.id,
+      actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "burning",
+      automatic: false, status: "pending", defaults: fireEffectConfiguration(actor) }];
+  });
+}
+
+export function acidReviewEntries(combat) {
+  return uniqueActorEntries(combat?.combatants).flatMap((combatant) => {
+    const actor = combatant.actor;
+    return acidEffects(actor).map((effect) => ({ id: `${combatant.id}:acid:${effect.id}`,
+      combatantId: combatant.id, actorUuid: actor.uuid, actorName: actorDisplayName(actor),
+      effectId: effect.id, key: "acidReview", automatic: false, status: "pending",
+      defaults: acidReviewConfiguration(effect) }));
+  });
+}
+
 export async function applyFatigueLoss(actor, loss) {
   const before = actor.system.fatigueLevel ?? "fresh";
   const after = worsenFatigueLevel(before, loss);
@@ -68,8 +93,18 @@ export async function applyFatigueLoss(actor, loss) {
 
 export async function prepareRoundConsequences(combat) {
   const economy = combat.mythrasTurnEconomy;
-  const queue = [...periodicConditionEntries(combat), ...passiveBlockEntries(combat)]
-    .map((entry) => ({ ...entry, round: combat.round }));
+  const previous = new Map((economy.roundQueue ?? []).filter((entry) =>
+    ["burning", "acidReview"].includes(entry.key)
+      && Number(entry.round) === Number(combat.round))
+    .map((entry) => [entry.id, entry]));
+  const queue = [...periodicConditionEntries(combat), ...acidReviewEntries(combat),
+    ...burningEntries(combat),
+    ...passiveBlockEntries(combat)]
+    .map((entry) => {
+      const prior = previous.get(entry.id);
+      return prior ? { ...entry, round: combat.round, status: prior.status,
+        resolution: prior.resolution } : { ...entry, round: combat.round };
+    });
   for (const entry of queue.filter((candidate) => candidate.automatic)) {
     const actor = await fromUuid(entry.actorUuid);
     entry.resolution = actor ? await applyFatigueLoss(actor, 1) : { missing: true };
@@ -89,7 +124,7 @@ async function createRoundMessage(combat, queue) {
 }
 
 export function renderRoundConsequences(state) {
-  const rows = state.queue.filter((entry) => entry.key !== "passiveBlock").map((entry) => `<div class="mythras-chat-row"><span>${escape(
+  const rows = state.queue.filter((entry) => !["passiveBlock", "burning", "acidReview"].includes(entry.key)).map((entry) => `<div class="mythras-chat-row"><span>${escape(
     game.i18n.localize(`MYTHRASF.Status.${entry.key === "exsanguinating" ? "Exsanguinating"
       : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
         ? "PassiveBlock" : "Drowning"}`))}</span><strong>${escape(
@@ -112,7 +147,63 @@ export function renderRoundConsequences(state) {
     return `<div class="mythras-chat-row"><span>${escape(entry.actorName)}</span><strong>${escape(status + detail)}</strong>${actions}</div>`;
   }).join("");
   const blockPanel = blocks ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Status.PassiveBlock"))}</legend>${blocks}</fieldset>` : "";
-  return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}${blockPanel}</section>`;
+  const fires = state.queue.filter((entry) => entry.key === "burning").map((entry) => {
+    const resolution = entry.resolution?.action
+      ? game.i18n.localize(`MYTHRASF.Fire.Round.${entry.resolution.action}`)
+      : game.i18n.localize("MYTHRASF.RoundConsequence.pending");
+    const actions = entry.status === "pending"
+      ? `<button type="button" data-round-action="fire-apply" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.Fire.Apply"))}</button><button type="button" data-round-action="fire-skip" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.Fire.SkipRound"))}</button><button type="button" data-round-action="fire-extinguish" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.Fire.Extinguish"))}</button>` : "";
+    return `<div class="mythras-chat-row"><span>${escape(entry.actorName)}</span><strong>${escape(resolution)}</strong>${actions}</div>`;
+  }).join("");
+  const firePanel = fires ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Status.Burning"))}</legend>${fires}</fieldset>` : "";
+  const acids = state.queue.filter((entry) => entry.key === "acidReview").map((entry) => {
+    const resolution = entry.resolution?.action
+      ? game.i18n.localize(`MYTHRASF.Acid.Round.${entry.resolution.action}`)
+      : game.i18n.localize("MYTHRASF.RoundConsequence.pending");
+    const exposure = game.i18n.localize(`MYTHRASF.Acid.Exposure.${entry.defaults.exposure}`);
+    const actions = entry.status === "pending"
+      ? `<button type="button" data-round-action="acid-apply" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.Acid.Apply"))}</button><button type="button" data-round-action="acid-skip" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.Acid.SkipRound"))}</button><button type="button" data-round-action="acid-remove" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.Acid.Remove"))}</button>` : "";
+    return `<div class="mythras-chat-row"><span>${escape(entry.actorName)} — ${escape(exposure)}</span><strong>${escape(resolution)}</strong>${actions}</div>`;
+  }).join("");
+  const acidPanel = acids ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Status.Acid"))}</legend>${acids}</fieldset>` : "";
+  return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}${acidPanel}${firePanel}${blockPanel}</section>`;
+}
+
+async function requestAcidResolution(message, state, entryId, action) {
+  if (!game.user.isGM) return;
+  const entry = state.queue.find((candidate) => candidate.id === entryId
+    && candidate.key === "acidReview");
+  const combat = game.combats.get(state.combatId);
+  const combatant = combat?.combatants.get(entry?.combatantId);
+  if (!entry || !combatant?.actor || entry.status !== "pending") return;
+  let resolution = { action };
+  if (action === "apply") {
+    resolution = await openAcidDialog({ actor: combatant.actor, token: combatant.token,
+      defaults: entry.defaults, deferApply: true, fixedExposure: true });
+    if (!resolution) return;
+  }
+  const request = { action: "roundAcid", messageId: message.id, revision: state.revision,
+    entryId, userId: game.user.id, resolution };
+  if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyAcidResolution(message, request);
+  else game.socket.emit(SOCKET, request);
+}
+
+async function requestBurningResolution(message, state, entryId, action) {
+  if (!game.user.isGM) return;
+  const entry = state.queue.find((candidate) => candidate.id === entryId && candidate.key === "burning");
+  const combat = game.combats.get(state.combatId);
+  const combatant = combat?.combatants.get(entry?.combatantId);
+  if (!entry || !combatant?.actor || entry.status !== "pending") return;
+  let resolution = { action };
+  if (action === "apply") {
+    resolution = await openFireDialog({ actor: combatant.actor, token: combatant.token,
+      defaults: entry.defaults, deferApply: true });
+    if (!resolution) return;
+  }
+  const request = { action: "roundFire", messageId: message.id, revision: state.revision,
+    entryId, userId: game.user.id, resolution };
+  if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyBurningResolution(message, request);
+  else game.socket.emit(SOCKET, request);
 }
 
 async function requestResolution(message, state, entryId, manual) {
@@ -309,6 +400,71 @@ async function applyResolution(message, request) {
   }
 }
 
+async function applyBurningResolution(message, request) {
+  const state = foundry.utils.deepClone(message.getFlag(SCOPE, "roundConsequences"));
+  const entry = state?.queue.find((candidate) => candidate.id === request.entryId
+    && candidate.key === "burning");
+  const combat = state ? game.combats.get(state.combatId) : null;
+  const combatant = combat?.combatants.get(entry?.combatantId); const actor = combatant?.actor;
+  const user = game.users.get(request.userId); const action = request.resolution?.action;
+  if (!state || !entry || entry.status !== "pending" || state.revision !== request.revision
+    || !actor || !user?.isGM || !["apply", "skip", "extinguish"].includes(action)) return;
+  if (action === "apply") {
+    const applied = await applyFireDamage(actor, request.resolution, { token: combatant.token });
+    if (!applied) return;
+  } else if (action === "extinguish") await extinguishFire(actor);
+  entry.status = "resolved"; entry.resolution = { action, userId: user.id,
+    resolvedAt: Date.now() }; state.revision += 1;
+  await message.update({ content: renderRoundConsequences(state),
+    [`flags.${SCOPE}.roundConsequences`]: state });
+  if (state.queue.every((candidate) => candidate.status === "resolved")) {
+    await combat.completeRoundPreparation(state.queue);
+  }
+}
+
+async function applyAcidResolution(message, request) {
+  const state = foundry.utils.deepClone(message.getFlag(SCOPE, "roundConsequences"));
+  const entry = state?.queue.find((candidate) => candidate.id === request.entryId
+    && candidate.key === "acidReview");
+  const combat = state ? game.combats.get(state.combatId) : null;
+  const combatant = combat?.combatants.get(entry?.combatantId); const actor = combatant?.actor;
+  const effect = actor?.effects?.get?.(entry?.effectId)
+    ?? acidEffects(actor).find((candidate) => candidate.id === entry?.effectId);
+  const user = game.users.get(request.userId); const action = request.resolution?.action;
+  if (!state || !entry || entry.status !== "pending" || state.revision !== request.revision
+    || !actor || !effect || !user?.isGM || !["apply", "skip", "remove"].includes(action)) return;
+  const current = acidReviewConfiguration(effect);
+  const { action: _requestedAction, ...requestedConfiguration } = request.resolution;
+  let configuration = action === "apply" ? { ...current, ...requestedConfiguration } : current;
+  let damage = null;
+  const next = current.exposure === "immersion" ? null
+    : Math.max(0, Number(current.applicationsRemaining) - 1);
+  configuration = { ...configuration, applicationsRemaining: next };
+  if (action === "apply") {
+    damage = await applyAcidDamage(actor, configuration, { token: combatant.token });
+    if (!damage) return;
+    configuration.locationId = damage.locationId; configuration.randomLocation = false;
+  }
+  if (action === "remove" || (current.exposure === "splash" && next <= 0)) {
+    await removeAcidEffect(actor, effect.id);
+  } else if (action !== "remove") {
+    const stored = acidCondition(effect) ?? { schemaVersion: 1,
+      key: current.exposure === "immersion" ? ACID_IMMERSION_STATUS_ID : ACID_SPLASH_STATUS_ID,
+      statusId: current.exposure === "immersion" ? ACID_IMMERSION_STATUS_ID : ACID_SPLASH_STATUS_ID,
+      unit: "acidReview", phase: "startRound" };
+    await effect.update({ [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]: {
+      ...stored, ...configuration, combatUuid: combat.uuid, lastReviewedRound: combat.round
+    } });
+  }
+  entry.status = "resolved"; entry.resolution = { action, damage,
+    userId: user.id, resolvedAt: Date.now() }; state.revision += 1;
+  await message.update({ content: renderRoundConsequences(state),
+    [`flags.${SCOPE}.roundConsequences`]: state });
+  if (state.queue.every((candidate) => candidate.status === "resolved")) {
+    await combat.completeRoundPreparation(state.queue);
+  }
+}
+
 export function activateRoundConsequenceCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
   const card = root?.matches?.(".mythras-round-card") ? root : root?.querySelector?.(".mythras-round-card");
@@ -325,6 +481,10 @@ export function activateRoundConsequenceCard(message, html) {
     const button = event.target.closest("[data-round-action]"); if (!button) return;
     if (["block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
       state, button.dataset.entryId, button.dataset.roundAction === "waive");
+    else if (button.dataset.roundAction.startsWith("fire-")) requestBurningResolution(message,
+      state, button.dataset.entryId, button.dataset.roundAction.slice(5));
+    else if (button.dataset.roundAction.startsWith("acid-")) requestAcidResolution(message,
+      state, button.dataset.entryId, button.dataset.roundAction.slice(5));
     else requestResolution(message, state, button.dataset.entryId, button.dataset.roundAction === "manual");
   });
 }
@@ -337,5 +497,15 @@ export function registerRoundConsequenceSocket() {
   game.socket.on(SOCKET, async (request) => {
     if (request?.action !== "roundPassiveBlock" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
     const message = game.messages.get(request.messageId); if (message) await applyPassiveBlock(message, request);
+  });
+  game.socket.on(SOCKET, async (request) => {
+    if (request?.action !== "roundFire" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
+    const message = game.messages.get(request.messageId);
+    if (message) await applyBurningResolution(message, request);
+  });
+  game.socket.on(SOCKET, async (request) => {
+    if (request?.action !== "roundAcid" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
+    const message = game.messages.get(request.messageId);
+    if (message) await applyAcidResolution(message, request);
   });
 }

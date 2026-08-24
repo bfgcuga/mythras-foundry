@@ -104,6 +104,14 @@ El sistema incluye actualmente:
 - PNJ y criaturas con anatomías configurables, valores manuales o derivados y
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
+- macro de DJ para ácido débil, fuerte o concentrado, con salpicaduras de
+  duración limitada e inmersiones persistentes; ambos estados crean una
+  revisión obligatoria por asalto en la que el DJ aplica, omite o retira el
+  ácido, y solo al aplicarlo se deteriora por capas la armadura equipada y
+  natural y alcanza la localización con el exceso;
+- macro de DJ para fuego de Intensidad 1–5, con fórmula y localizaciones bajo
+  control manual; el estado Ardiendo crea una resolución obligatoria al inicio
+  de cada asalto sin automatizar ignición ni propagación;
 - interfaz localizada en español e inglés;
 - migraciones automáticas de datos heredados al abrir un mundo con un GM activo.
 
@@ -159,13 +167,18 @@ El sistema publica `game.mythrasFoundry` durante `init`:
 const party = game.mythrasFoundry.party.getActiveMembers();
 game.mythrasFoundry.shop.open({ actorUuid: actor.uuid });
 game.mythrasFoundry.homebrew.open(); // Solo DJ.
+game.mythrasFoundry.hazards.acid.open(); // Solo DJ; usa el token controlado.
+game.mythrasFoundry.hazards.fire.open(); // Solo DJ; usa el token controlado.
 ```
 
 También expone `party` para consultar o abrir el gestor de grupos, `homebrew`
 para abrir el creador de Items y `traits` para consultar rasgos y registrar reglas
-de rasgo adicionales. La forma exacta de estas APIs se define en
+de rasgo adicionales. `hazards.acid` abre el diálogo o permite aplicar una
+exposición estructurada desde otra macro. La forma exacta de estas APIs se define en
 `scripts/api/party-api.js`, `scripts/apps/item-catalog.js`,
-`scripts/apps/homebrew-item-creator.js` y `scripts/rules/traits.js`.
+`scripts/apps/homebrew-item-creator.js`, `scripts/rules/acid.js`,
+`scripts/rules/fire.js` y
+`scripts/rules/traits.js`.
 
 ## Publicación
 

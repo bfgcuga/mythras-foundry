@@ -29,6 +29,24 @@ test("el compendio incluye una macro GM para abrir el gestor de grupos", () => {
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });
 
+test("el compendio incluye una macro GM para aplicar ácido mediante la API pública", () => {
+  const macro = MACRO_SOURCES.find((source) => source.buildKey === "apply-acid-damage");
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /hazards\?\.acid\?\.open/);
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
+test("el compendio incluye una macro GM para aplicar fuego mediante la API pública", () => {
+  const macro = MACRO_SOURCES.find((source) => source.buildKey === "apply-fire-damage");
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /hazards\?\.fire\?\.open/);
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
 test("el compendio incluye un lanzador ligero para el catálogo", () => {
   const macro = MACRO_SOURCES.find((source) => source.buildKey === "open-item-catalog");
   assert.ok(macro);

@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { activeSkillStatusPenalties, applyStatusAttributes, BLINDED_STATUS_ID,
-  BLEEDING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, MYTHRAS_STATUS_EFFECTS,
+  ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, BLEEDING_STATUS_ID,
+  BURNING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, MYTHRAS_STATUS_EFFECTS,
   PRONE_STATUS_ID, statusSkillDifficulty, STUNNED_STATUS_ID,
   SURPRISED_STATUS_ID, UNCONSCIOUS_STATUS_ID } from "../scripts/rules/statuses.js";
 
@@ -28,6 +29,19 @@ test("sangrando y ahogándose exigen resistencia por asalto", () => {
   const periodic = MYTHRAS_STATUS_EFFECTS.filter((status) => status.roundAutomation === "resistance")
     .map((status) => status.id);
   assert.deepEqual(periodic, [BLEEDING_STATUS_ID, DROWNING_STATUS_ID]);
+});
+
+test("ácido se registra como estado sin imponer una penalización adicional", () => {
+  assert.ok(MYTHRAS_STATUS_EFFECTS.some((status) => status.id === ACID_SPLASH_STATUS_ID));
+  assert.ok(MYTHRAS_STATUS_EFFECTS.some((status) => status.id === ACID_IMMERSION_STATUS_ID));
+  assert.equal(statusSkillDifficulty(new Set([ACID_SPLASH_STATUS_ID])), "standard");
+  assert.equal(canActorAttack(new Set([ACID_IMMERSION_STATUS_ID])), true);
+});
+
+test("ardiendo se registra como estado neutral resuelto por la cola del DJ", () => {
+  assert.ok(MYTHRAS_STATUS_EFFECTS.some((status) => status.id === BURNING_STATUS_ID));
+  assert.equal(statusSkillDifficulty(new Set([BURNING_STATUS_ID])), "standard");
+  assert.equal(canActorAttack(new Set([BURNING_STATUS_ID])), true);
 });
 
 test("sorprendido penaliza iniciativa y bloquea ataque y defensa", () => {

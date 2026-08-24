@@ -78,6 +78,36 @@ export const MACRO_SOURCES = [{
     macroKey: "award-party-experience-rolls", macroVersion: 2
   } }
 }, {
+  buildKey: "apply-acid-damage",
+  name: "Aplicar daño por ácido",
+  type: "script",
+  img: "icons/svg/acid.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Acid.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.hazards?.acid?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Acid.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-acid-damage", macroVersion: 1 } }
+}, {
+  buildKey: "apply-fire-damage",
+  name: "Aplicar daño por fuego",
+  type: "script",
+  img: "icons/svg/fire.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Fire.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.hazards?.fire?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Fire.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-fire-damage", macroVersion: 1 } }
+}, {
   buildKey: "open-item-catalog",
   name: "Abrir catálogo de objetos",
   type: "script",

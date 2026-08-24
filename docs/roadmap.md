@@ -69,11 +69,7 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Macros de daño y peligros
 
-- Crear macros para ácido, caídas e inclemencias del tiempo.
-- Antes de implementarlas, concretar si sólo calculan o también aplican daño a
-  tokens seleccionados.
-- Definir los parámetros de ácido, como intensidad, duración, localización y
-  daño continuado.
+- Crear macros para caídas e inclemencias del tiempo.
 - Definir los parámetros de las caídas, como altura, superficie, armadura y
   localización.
 - Delimitar qué peligros cubren las inclemencias: frío, calor, exposición u
