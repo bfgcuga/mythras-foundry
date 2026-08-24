@@ -27,6 +27,9 @@ import { actionAvailability, actionPresentation, combatActionState,
   requestCombatAction } from "../rules/combat-action-runtime.js";
 import { createHazardsApi } from "../rules/acid.js";
 import { createFireApi } from "../rules/fire.js";
+import { createFallApi } from "../rules/fall.js";
+import { createSuffocationApi } from "../rules/suffocation.js";
+import { createFatigueCheckApi } from "../rules/fatigue-check-chat.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -100,7 +103,9 @@ export function registerSystemInitialization() {
           return manager;
         }
       }),
-      hazards: Object.freeze({ ...createHazardsApi(), fire: createFireApi() }),
+      hazards: Object.freeze({ ...createHazardsApi(), fire: createFireApi(), fall: createFallApi(),
+        suffocation: createSuffocationApi() }),
+      fatigueChecks: createFatigueCheckApi(),
       traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
         registerRule: registerTraitRule, unregisterRule: unregisterTraitRule },
       combat: { isCoordinator: isCombatCoordinator, changeReach: requestReachChange,

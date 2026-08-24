@@ -52,6 +52,10 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
     ({ key }) => key === SETTING_KEYS.passiveBlockContiguity);
   assert.equal(passiveBlockContiguity.options.default, false);
   assert.equal(passiveBlockContiguity.options.requiresReload, false);
+  const showNpcCombatFatigueChecks = registrations.find(
+    ({ key }) => key === SETTING_KEYS.showNpcCombatFatigueChecks);
+  assert.equal(showNpcCombatFatigueChecks.options.default, false);
+  assert.equal(showNpcCombatFatigueChecks.options.requiresReload, false);
   const catalogSources = registrations.find(
     ({ key }) => key === SETTING_KEYS.catalogSources);
   assert.deepEqual(catalogSources.options.default, { version: 1, packIds: [] });

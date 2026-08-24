@@ -1,5 +1,5 @@
 import { classifyContestRoll } from "./contest-rolls.js";
-import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { appendSerializedRolls, evaluateAnimatedRoll } from "./dice-animation.js";
 import { recordAbilityFumble } from "./skills.js";
 import { fatigueLossForResult, worsenFatigueLevel, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
@@ -15,6 +15,9 @@ import { ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, acidCondition, acidEff
 import { applyFireDamage, extinguishFire, fireEffectConfiguration,
   openFireDialog } from "./fire.js";
 import { uniqueActorEntries } from "./combat-turns.js";
+import { prepareSuffocationEntry } from "./suffocation.js";
+import { advanceCombatFatigue, COMBAT_FATIGUE_FLAG, COMBAT_FATIGUE_SCOPE,
+  combatFatigueInterval, combatFatigueLoss } from "./combat-fatigue.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -91,13 +94,71 @@ export async function applyFatigueLoss(actor, loss) {
   return { before, after, loss };
 }
 
+async function prepareCombatFatigueEntries(combat, previous) {
+  const entries = [];
+  const showNpcChecks = Boolean(getSystemSetting(SETTING_KEYS.showNpcCombatFatigueChecks));
+  for (const combatant of uniqueActorEntries(combat?.combatants)) {
+    const actor = combatant.actor;
+    if (!actor || combatant.isDefeated || !["character", "npc"].includes(actor.type)) continue;
+    const interval = combatFatigueInterval(actor.system.constitution);
+    const currentState = combatant.getFlag?.(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG);
+    const advanced = advanceCombatFatigue(currentState,
+      { combatId: combat.id, round: combat.round, interval });
+    if (advanced.state !== currentState) {
+      await combatant.setFlag(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG, advanced.state);
+    }
+    if (!advanced.due) continue;
+    const entry = { id: `${combatant.id}:combat-fatigue`, combatantId: combatant.id,
+      actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "combatFatigue",
+      automatic: false, status: "pending", interval };
+    const prior = previous.get(entry.id);
+    if (prior) {
+      entries.push({ ...entry, status: prior.status, resolution: prior.resolution });
+      continue;
+    }
+    if (Number(currentState?.resolvedRound) === Number(combat.round)) {
+      entry.status = "resolved";
+      entry.resolution = currentState.resolution;
+      if (Number(entry.resolution?.loss) > 0 || showNpcChecks) entries.push(entry);
+      continue;
+    }
+    if (actor.type === "character") {
+      entries.push(entry);
+      continue;
+    }
+    const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
+    if (!skill) continue;
+    const roll = await new Roll("1d100").evaluate();
+    const target = Number(skill.system.total ?? 0);
+    const result = classifyContestRoll(roll.total, target);
+    await recordAbilityFumble(skill, result);
+    const loss = combatFatigueLoss(result);
+    const fatigue = await applyFatigueLoss(actor, loss);
+    entry.status = "resolved";
+    entry.resolution = { target, rawRoll: roll.total, serializedRoll: roll.toJSON(), result,
+      loss, before: fatigue.before, after: fatigue.after };
+    await combatant.setFlag(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG, {
+      ...advanced.state, resolvedRound: combat.round, resolution: entry.resolution
+    });
+    if (loss > 0 || showNpcChecks) entries.push(entry);
+  }
+  return entries;
+}
+
 export async function prepareRoundConsequences(combat) {
   const economy = combat.mythrasTurnEconomy;
   const previous = new Map((economy.roundQueue ?? []).filter((entry) =>
-    ["burning", "acidReview"].includes(entry.key)
+    ["burning", "acidReview", "suffocating", "combatFatigue"].includes(entry.key)
       && Number(entry.round) === Number(combat.round))
     .map((entry) => [entry.id, entry]));
-  const queue = [...periodicConditionEntries(combat), ...acidReviewEntries(combat),
+  const suffocation = [];
+  for (const combatant of uniqueActorEntries(combat?.combatants)) {
+    const entry = await prepareSuffocationEntry(combat, combatant);
+    if (entry) suffocation.push(entry);
+  }
+  const combatFatigue = await prepareCombatFatigueEntries(combat, previous);
+  const queue = [...periodicConditionEntries(combat), ...suffocation, ...combatFatigue,
+    ...acidReviewEntries(combat),
     ...burningEntries(combat),
     ...passiveBlockEntries(combat)]
     .map((entry) => {
@@ -105,7 +166,8 @@ export async function prepareRoundConsequences(combat) {
       return prior ? { ...entry, round: combat.round, status: prior.status,
         resolution: prior.resolution } : { ...entry, round: combat.round };
     });
-  for (const entry of queue.filter((candidate) => candidate.automatic)) {
+  for (const entry of queue.filter((candidate) => candidate.automatic
+    && candidate.status === "pending")) {
     const actor = await fromUuid(entry.actorUuid);
     entry.resolution = actor ? await applyFatigueLoss(actor, 1) : { missing: true };
     entry.status = actor ? "resolved" : "pending";
@@ -119,7 +181,9 @@ export async function prepareRoundConsequences(combat) {
 async function createRoundMessage(combat, queue) {
   const state = { schemaVersion: 1, combatId: combat.id, combatUuid: combat.uuid,
     round: combat.round, revision: 0, queue };
-  return ChatMessage.create({ content: renderRoundConsequences(state),
+  const rolls = queue.flatMap((entry) => entry.resolution?.serializedRoll
+    ? [Roll.fromData(entry.resolution.serializedRoll)] : []);
+  return ChatMessage.create({ content: renderRoundConsequences(state), rolls,
     flags: { [SCOPE]: { roundConsequences: state } } });
 }
 
@@ -127,13 +191,14 @@ export function renderRoundConsequences(state) {
   const rows = state.queue.filter((entry) => !["passiveBlock", "burning", "acidReview"].includes(entry.key)).map((entry) => `<div class="mythras-chat-row"><span>${escape(
     game.i18n.localize(`MYTHRASF.Status.${entry.key === "exsanguinating" ? "Exsanguinating"
       : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
-        ? "PassiveBlock" : "Drowning"}`))}</span><strong>${escape(
+        ? "PassiveBlock" : entry.key === "suffocating" ? "Suffocating"
+          : entry.key === "combatFatigue" ? "CombatFatigue" : "Drowning"}`))}${["suffocating", "combatFatigue"].includes(entry.key) ? ` — ${escape(entry.actorName)}` : ""}</span><strong>${escape(
     game.i18n.localize(`MYTHRASF.RoundConsequence.${entry.status}`))}</strong>${entry.status === "pending"
       ? entry.key === "passiveBlock"
         ? `<button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button>`
         : `<button type="button" data-round-action="roll" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.Roll"))}</button><button type="button" data-round-action="manual" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : entry.resolution ? entry.key === "passiveBlock"
           ? `<span>${escape(entry.resolution.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Waived") : entry.resolution.weaponName)}</span>`
-          : `<span>${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
+          : `<span>${entry.resolution.rawRoll != null ? `${escape(game.i18n.localize("MYTHRASF.Suffocation.Endurance"))}: <strong class="mythras-chat-roll-value">${Number(entry.resolution.rawRoll)}</strong> / ${Number(entry.resolution.target)} — ${escape(game.i18n.localize(`MYTHRASF.RollResult.${entry.resolution.result}`))}; ` : ""}${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
   const blocks = state.queue.filter((entry) => entry.key === "passiveBlock").map((entry) => {
     const status = entry.status === "pending" ? game.i18n.localize("MYTHRASF.PassiveBlock.Pending")
       : entry.resolution?.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Passed")
@@ -226,13 +291,14 @@ async function requestResolution(message, state, entryId, manual) {
     const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
     const result = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
     await recordAbilityFumble(skill, result);
-    const lossRoll = result === "failure" ? await evaluateAnimatedRoll("1d2",
+    const lossRoll = entry.key !== "combatFatigue" && result === "failure" ? await evaluateAnimatedRoll("1d2",
       { speaker: ChatMessage.getSpeaker({ actor }) })
-      : result === "fumble" ? await evaluateAnimatedRoll("1d3",
+      : entry.key !== "combatFatigue" && result === "fumble" ? await evaluateAnimatedRoll("1d3",
         { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
     resolution = { manual: false, target: Number(skill.system.total ?? 0), rawRoll: roll.total,
       serializedRoll: roll.toJSON(), result,
-      loss: fatigueLossForResult(result, lossRoll?.total ?? 1),
+      loss: entry.key === "combatFatigue" ? combatFatigueLoss(result)
+        : fatigueLossForResult(result, lossRoll?.total ?? 1),
       lossRoll: lossRoll?.toJSON?.() ?? null };
   }
   if (!resolution) return;
@@ -374,6 +440,8 @@ async function applyPassiveBlock(message, request) {
   }
   entry.status = "resolved"; entry.resolution = resolution; state.revision += 1;
   await message.update({ content: renderRoundConsequences(state),
+    rolls: appendSerializedRolls(message, request.resolution.serializedRoll,
+      request.resolution.lossRoll),
     [`flags.${SCOPE}.roundConsequences`]: state });
   if (state.queue.every((candidate) => candidate.status === "resolved")) {
     await combat.completeRoundPreparation(state.queue);
@@ -393,6 +461,8 @@ async function applyResolution(message, request) {
   entry.status = "resolved"; entry.resolution = { ...request.resolution, ...fatigue,
     userId: user.id, resolvedAt: Date.now() }; state.revision += 1;
   await message.update({ content: renderRoundConsequences(state),
+    rolls: appendSerializedRolls(message, request.resolution.serializedRoll,
+      request.resolution.lossRoll),
     [`flags.${SCOPE}.roundConsequences`]: state });
   const combat = game.combats.get(state.combatId);
   if (combat && state.queue.every((candidate) => candidate.status === "resolved")) {
@@ -443,7 +513,8 @@ async function applyAcidResolution(message, request) {
   if (action === "apply") {
     damage = await applyAcidDamage(actor, configuration, { token: combatant.token });
     if (!damage) return;
-    configuration.locationId = damage.locationId; configuration.randomLocation = false;
+    configuration.locationIds = damage.configuration.locationIds;
+    configuration.randomLocation = damage.configuration.randomLocation;
   }
   if (action === "remove" || (current.exposure === "splash" && next <= 0)) {
     await removeAcidEffect(actor, effect.id);

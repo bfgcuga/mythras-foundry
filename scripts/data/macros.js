@@ -68,6 +68,51 @@ await ChatMessage.create({
 });
 `;
 
+const HAZARD_LAUNCHER_COMMAND = `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.HazardLauncher.GMOnly"));
+  return;
+}
+
+const choices = ["acid", "fire", "fall", "fatigue", "drowning"];
+const options = choices.map((choice, index) => \`<label>
+  <input type="radio" class="sheet-state-box" name="hazard" value="\${choice}"\${index === 0 ? " checked" : ""}>
+  <span>\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}</span>
+</label>\`).join("");
+const result = await foundry.applications.api.DialogV2.wait({
+  window: { title: game.i18n.localize("MYTHRASF.HazardLauncher.Title") },
+  content: \`<div class="mythras-foundry mythras-dialog">
+    <fieldset><legend>\${game.i18n.localize("MYTHRASF.HazardLauncher.Select")}</legend>
+      <div class="sheet-state-list">\${options}</div>
+    </fieldset>
+  </div>\`,
+  buttons: [{
+    action: "open",
+    label: game.i18n.localize("MYTHRASF.HazardLauncher.Open"),
+    icon: "fas fa-arrow-right",
+    default: true,
+    callback: (event, button) => button.form.elements.hazard.value
+  }, {
+    action: "cancel",
+    label: game.i18n.localize("MYTHRASF.Cancel"),
+    icon: "fas fa-times"
+  }],
+  rejectClose: false
+});
+if (!result) return;
+
+const launchers = {
+  acid: game.mythrasFoundry?.hazards?.acid?.open,
+  fire: game.mythrasFoundry?.hazards?.fire?.open,
+  fall: game.mythrasFoundry?.hazards?.fall?.open,
+  fatigue: game.mythrasFoundry?.fatigueChecks?.open,
+  drowning: game.mythrasFoundry?.hazards?.suffocation?.open
+};
+const open = launchers[result];
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.HazardLauncher.Unavailable"));
+else await open();
+`;
+
 export const MACRO_SOURCES = [{
   buildKey: "award-party-experience-rolls",
   name: "Asignar tiradas de experiencia al grupo",
@@ -77,6 +122,13 @@ export const MACRO_SOURCES = [{
   flags: { "mythras-foundry": {
     macroKey: "award-party-experience-rolls", macroVersion: 2
   } }
+}, {
+  buildKey: "open-hazard-launcher",
+  name: "Aplicar peligros y fatiga",
+  type: "script",
+  img: "icons/svg/hazard.svg",
+  command: HAZARD_LAUNCHER_COMMAND,
+  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 1 } }
 }, {
   buildKey: "apply-acid-damage",
   name: "Aplicar daño por ácido",
@@ -107,6 +159,51 @@ if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Fire.Unavailable"
 else await open();
 `,
   flags: { "mythras-foundry": { macroKey: "apply-fire-damage", macroVersion: 1 } }
+}, {
+  buildKey: "apply-fall-damage",
+  name: "Aplicar daño por caída",
+  type: "script",
+  img: "icons/svg/falling.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Fall.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.hazards?.fall?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Fall.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-fall-damage", macroVersion: 1 } }
+}, {
+  buildKey: "apply-suffocation",
+  name: "Aplicar asfixia",
+  type: "script",
+  img: "icons/svg/drowning.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.Suffocation.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.hazards?.suffocation?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.Suffocation.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-suffocation", macroVersion: 1 } }
+}, {
+  buildKey: "request-fatigue-checks",
+  name: "Solicitar tiradas de fatiga",
+  type: "script",
+  img: "icons/svg/downgrade.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.FatigueCheck.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.fatigueChecks?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.FatigueCheck.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "request-fatigue-checks", macroVersion: 1 } }
 }, {
   buildKey: "open-item-catalog",
   name: "Abrir catálogo de objetos",

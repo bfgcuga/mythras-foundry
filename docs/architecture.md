@@ -120,8 +120,10 @@ defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
 un hueco ofensivo al primer ataque exitoso.
 
 Ácido usa dos estados temporales administrados, `Salpicadura de ácido` e
-`Inmersión en ácido`. Cada efecto conserva concentración, exposición y
-localización. La primera aplicación es inmediata y, al preparar cada asalto,
+`Inmersión en ácido`. Cada efecto conserva concentración, exposición y una
+selección libre de localizaciones o la opción aleatoria. La fórmula de daño
+depende solo de la concentración y se evalúa por separado para cada localización.
+La primera aplicación es inmediata y, al preparar cada asalto,
 cada efecto crea una entrada bloqueante: el DJ decide aplicar el daño, omitirlo
 durante ese asalto o retirar el estado. No existe daño automático. Aplicar u
 omitir consume una revisión de la duración limitada de una salpicadura; una
@@ -137,6 +139,42 @@ recordada de Intensidad, fórmula y localizaciones. Al preparar cada asalto crea
 una entrada bloqueante en la cola existente; el DJ debe aplicar el daño, omitirlo
 durante ese asalto o extinguir el estado. La tabla de ignición y el alcance por
 Intensidad son informativos: el sistema no decide ignición ni propagación.
+
+Caídas es un peligro puntual sin estado ni integración con la cola de asalto.
+`scripts/rules/fall.js` calcula la distancia efectiva tras TAM, Acrobacias y
+superficie blanda; añade los dados por gran tamaño, objeto o velocidad de
+vehículo, y aplica tiradas independientes a localizaciones aleatorias sin
+consultar PA. En vehículos, los metros por asalto se muestran también como
+metros por segundo usando asaltos de cinco segundos y la equivalencia de reglas
+para daño es velocidad dividida entre dos. La API pública es
+`game.mythrasFoundry.hazards.fall`.
+
+Asfixia usa un efecto temporal `Asfixiándose`, pero no aplica desgaste hasta
+agotar el tiempo calculado desde Aguante y la preparación inicial. Cada
+preparación de asalto avanza cinco segundos de forma idempotente; una vez
+alcanzado el umbral, añade una entrada bloqueante de Aguante a la misma cola de
+consecuencias. Crítico, éxito, fallo y pifia producen respectivamente 0, 1,
+`1d2` y `1d3` niveles de Fatiga. Retirar el estado detiene el contador. La
+recuperación posterior queda fuera del sistema.
+
+Las solicitudes grupales de Fatiga viven en flags versionados del mensaje de
+chat y no dependen de un combate. El DJ escoge grupo, participantes, Atletismo,
+Músculo o Aguante y dificultad. Cada respuesta valida revisión, pertenencia y
+propiedad en el coordinador, incorpora el `Roll` al mensaje y empeora un nivel
+de Fatiga únicamente ante fallo o pifia. La API pública es
+`game.mythrasFoundry.fatigueChecks.open()`.
+
+El compendio de macros incluye un lanzador de peligros exclusivo del DJ. Su
+diálogo solo selecciona y delega en las APIs públicas de Ácido, Fuego, Caída,
+Fatiga grupal o Asfixia/Ahogamiento; no duplica ninguna regla de resolución.
+
+La Fatiga periódica de combate comparte la cola bloqueante de preparación del
+asalto. Cada combatiente conserva en sus flags un contador idempotente y vence
+cada `ceil(CON / 5)` asaltos. Los personajes solicitan Aguante a sus propietarios;
+los PNJ resuelven la misma tirada en el coordinador y solo publican el resultado
+si pierden un nivel, salvo que el ajuste mundial
+`showNpcCombatFatigueChecks` habilite el flujo completo. Éxito y crítico no
+causan pérdida; fallo y pifia incrementan la Fatiga en un nivel.
 
 El estado táctico vive en `flags.mythras-foundry.tacticalState` del `Combat`.
 Contiene relaciones versionadas por pareja de combatientes y declaraciones de

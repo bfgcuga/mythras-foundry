@@ -16,6 +16,8 @@ import { registerTacticalSocket } from "../rules/engagement-runtime.js";
 import { activateCombatActionCard, combatActionState,
   registerCombatActionSocket } from "../rules/combat-action-runtime.js";
 import { actorDisplayName, tokenDisplayName } from "../rules/document-names.js";
+import { activateFatigueCheckCard, registerFatigueCheckSocket }
+  from "../rules/fatigue-check-chat.js";
 
 function activateChatCards(message, html) {
   activateCombatCard(message, html);
@@ -24,6 +26,7 @@ function activateChatCards(message, html) {
   activateSkillRollCard(message, html);
   activateContestCard(message, html);
   activateCombatActionCard(message, html);
+  activateFatigueCheckCard(message, html);
 }
 
 function activateApplicationUi(element) {
@@ -48,6 +51,7 @@ export function registerUiHooks() {
     registerReachSocket();
     registerTacticalSocket();
     registerCombatActionSocket();
+    registerFatigueCheckSocket();
     if (isCombatCoordinator()) {
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
     }

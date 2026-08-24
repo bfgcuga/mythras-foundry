@@ -69,9 +69,8 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Macros de daño y peligros
 
-- Crear macros para caídas e inclemencias del tiempo.
-- Definir los parámetros de las caídas, como altura, superficie, armadura y
-  localización.
+- Crear macros para inclemencias del tiempo. Las caídas normales, desde
+  vehículos y de objetos ya disponen de una macro puntual de daño.
 - Delimitar qué peligros cubren las inclemencias: frío, calor, exposición u
   otros efectos ambientales.
 

@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ACID_CONCENTRATIONS, acidArmorLayer, acidDamageResult,
-  acidExposureDuration, acidReviewConfiguration } from "../scripts/rules/acid.js";
+  acidExposureDuration, acidReviewConfiguration,
+  normalizeAcidConfiguration } from "../scripts/rules/acid.js";
 
 function armor(id, points, { equipped = true, locationId = "torso" } = {}) {
   return { id, type: "armor", system: { armorPoints: points, equipped,
@@ -51,4 +52,14 @@ test("los estados de salpicadura e inmersión preparan revisiones distintas", ()
   assert.equal(acidReviewConfiguration(splash).exposure, "splash");
   assert.equal(acidReviewConfiguration(immersion).applicationsRemaining, null);
   assert.equal(acidReviewConfiguration(immersion).exposure, "immersion");
+});
+
+test("la selección de ácido admite varias localizaciones o una tirada aleatoria", () => {
+  assert.deepEqual(normalizeAcidConfiguration({ concentration: "strong",
+    locationIds: ["head", "arm", "head"], randomLocation: false }).locationIds,
+  ["head", "arm"]);
+  assert.equal(normalizeAcidConfiguration({ locationIds: ["head"] }).randomLocation, false);
+  assert.equal(normalizeAcidConfiguration({ locationIds: [], randomLocation: true }).randomLocation, true);
+  assert.equal(normalizeAcidConfiguration({ locationIds: [], randomLocation: false }).randomLocation, false);
+  assert.equal(normalizeAcidConfiguration({ locationId: "torso" }).locationIds[0], "torso");
 });

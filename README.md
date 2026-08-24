@@ -104,14 +104,30 @@ El sistema incluye actualmente:
 - PNJ y criaturas con anatomías configurables, valores manuales o derivados y
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
+- macro lanzadora de DJ para abrir desde un único menú Ácido, Fuego, Caída,
+  Fatiga o Ahogamiento/Asfixia;
+- solicitud de tiradas de Fatiga para miembros seleccionados de cualquier
+  grupo, con habilidad y dificultad configurables, resolución individual desde
+  el chat y pérdida automática de un nivel al fallar;
+- Fatiga periódica en combate cada `ceil(CON / 5)` asaltos: los personajes
+  resuelven Aguante desde la preparación bloqueante del chat y los PNJ tiran
+  automáticamente; por defecto solo se publican los PNJ que incrementan su
+  Fatiga, con una opción mundial para mostrar todas sus tiradas;
 - macro de DJ para ácido débil, fuerte o concentrado, con salpicaduras de
   duración limitada e inmersiones persistentes; ambos estados crean una
   revisión obligatoria por asalto en la que el DJ aplica, omite o retira el
   ácido, y solo al aplicarlo se deteriora por capas la armadura equipada y
-  natural y alcanza la localización con el exceso;
+  natural y alcanza las localizaciones seleccionadas —o una aleatoria— con el
+  exceso;
 - macro de DJ para fuego de Intensidad 1–5, con fórmula y localizaciones bajo
   control manual; el estado Ardiendo crea una resolución obligatoria al inicio
   de cada asalto sin automatizar ignición ni propagación;
+- macro puntual de DJ para caídas normales, desde vehículos y de objetos, con
+  ajuste por TAM, Acrobacias, superficie y tiradas independientes en
+  localizaciones aleatorias que ignoran los PA;
+- macro de DJ para iniciar Asfixia según Aguante y preparación; cuenta asaltos
+  de cinco segundos y, agotado el aire, solicita Aguante cada asalto y aplica
+  automáticamente la pérdida de Fatiga correspondiente;
 - interfaz localizada en español e inglés;
 - migraciones automáticas de datos heredados al abrir un mundo con un GM activo.
 
@@ -169,15 +185,20 @@ game.mythrasFoundry.shop.open({ actorUuid: actor.uuid });
 game.mythrasFoundry.homebrew.open(); // Solo DJ.
 game.mythrasFoundry.hazards.acid.open(); // Solo DJ; usa el token controlado.
 game.mythrasFoundry.hazards.fire.open(); // Solo DJ; usa el token controlado.
+game.mythrasFoundry.hazards.fall.open(); // Solo DJ; aplicación puntual.
+game.mythrasFoundry.hazards.suffocation.open(); // Solo DJ; inicia el contador.
+game.mythrasFoundry.fatigueChecks.open(); // Solo DJ; solicitud grupal en chat.
 ```
 
 También expone `party` para consultar o abrir el gestor de grupos, `homebrew`
 para abrir el creador de Items y `traits` para consultar rasgos y registrar reglas
-de rasgo adicionales. `hazards.acid` abre el diálogo o permite aplicar una
-exposición estructurada desde otra macro. La forma exacta de estas APIs se define en
+de rasgo adicionales. `hazards.acid`, `hazards.fire`, `hazards.fall` y
+`hazards.suffocation` abren sus
+diálogos o permiten aplicar configuraciones estructuradas desde otra macro. La
+forma exacta de estas APIs se define en
 `scripts/api/party-api.js`, `scripts/apps/item-catalog.js`,
 `scripts/apps/homebrew-item-creator.js`, `scripts/rules/acid.js`,
-`scripts/rules/fire.js` y
+`scripts/rules/fire.js`, `scripts/rules/fall.js`, `scripts/rules/suffocation.js` y
 `scripts/rules/traits.js`.
 
 ## Publicación

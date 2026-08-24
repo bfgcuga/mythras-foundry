@@ -42,6 +42,18 @@ export function acidExposureDuration({ exposure, rolledDuration }) {
     indefinite: false };
 }
 
+export function normalizeAcidConfiguration(configuration = {}) {
+  const concentration = ACID_CONCENTRATIONS[configuration.concentration]
+    ? configuration.concentration : "weak";
+  const legacyLocation = configuration.locationId ? [configuration.locationId] : [];
+  const locationIds = Array.from(new Set(configuration.locationIds ?? legacyLocation));
+  return Object.freeze({ ...configuration, concentration,
+    damageFormula: ACID_CONCENTRATIONS[concentration].damageFormula,
+    durationFormula: ACID_CONCENTRATIONS[concentration].durationFormula,
+    locationIds, randomLocation: configuration.randomLocation === undefined
+      ? !locationIds.length : configuration.randomLocation === true });
+}
+
 export function acidCondition(effect) {
   return effect?.getFlag?.(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG)
     ?? effect?.flags?.[TIMED_CONDITION_SCOPE]?.[TIMED_CONDITION_FLAG];
@@ -56,27 +68,28 @@ async function rollFormula(formula) {
   return { roll, total: Number(roll.total) };
 }
 
-async function createAcidChat({ actor, token, condition, location, layer, result, damageRoll,
-  locationRoll, remaining, woundBefore, woundAfter }) {
-  const armorName = layer?.kind === "natural"
-    ? game.i18n.localize("MYTHRASF.Acid.NaturalArmor") : layer?.item?.name;
+async function createAcidChat(actor, token, condition, results) {
   const duration = condition.exposure === "immersion"
     ? game.i18n.localize("MYTHRASF.Acid.UntilRemoved")
-    : game.i18n.format("MYTHRASF.Acid.Remaining", { count: Math.max(0, remaining ?? 0) });
+    : game.i18n.format("MYTHRASF.Acid.Remaining", {
+      count: Math.max(0, condition.applicationsRemaining ?? 0) });
+  const rows = results.map(({ location, armorName, result, damageRoll, locationRoll,
+    woundBefore, woundAfter }) => `<fieldset><legend>${escape(location.name)}</legend>
+      ${locationRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${Number(locationRoll.total)}</strong></div>` : ""}
+      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.DamageRoll"))} (${escape(condition.damageFormula)})</span><strong class="mythras-chat-roll-value">${result.damage}</strong></div>
+      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Armor"))}</span><strong>${escape(armorName ?? "—")} — ${result.armorBefore} → ${result.armorAfter}</strong></div>
+      <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${result.penetrating}</strong></div>
+      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.HitPoints"))}</span><strong>${result.hitPointsBefore} → ${result.hitPointsAfter}</strong></div>
+      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}</fieldset>`).join("");
   return ChatMessage.create({
-    speaker: actorSpeaker(actor, token), rolls: [damageRoll, locationRoll].filter(Boolean),
+    speaker: actorSpeaker(actor, token),
+    rolls: results.flatMap(({ damageRoll, locationRoll }) => [damageRoll, locationRoll].filter(Boolean)),
     content: `<section class="mythras-chat-card"><div class="mythras-chat-title">${escape(
       game.i18n.localize("MYTHRASF.Acid.ChatTitle"))}</div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.Target"))}</span><strong>${escape(actorDisplayName(actor))}</strong></div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.ConcentrationLabel"))}</span><strong>${escape(concentrationLabel(condition.concentration))}</strong></div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.ExposureLabel"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Acid.Exposure.${condition.exposure}`))}</strong></div>
-      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.DamageRoll"))} (${escape(condition.damageFormula)})</span><strong class="mythras-chat-roll-value">${result.damage}</strong></div>
-      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.Location"))}</span><strong>${escape(location.name)}</strong></div>
-      ${locationRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${Number(locationRoll.total)}</strong></div>` : ""}
-      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Armor"))}</span><strong>${escape(armorName ?? "—")} — ${result.armorBefore} → ${result.armorAfter}</strong></div>
-      <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${result.penetrating}</strong></div>
-      <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.HitPoints"))}</span><strong>${result.hitPointsBefore} → ${result.hitPointsAfter}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
+      ${rows}
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.Duration"))}</span><strong>${escape(duration)}</strong></div></section>`
   });
 }
@@ -106,33 +119,47 @@ export async function applyHazardWoundConsequences(actor, location, before, afte
 
 export async function applyAcidDamage(actor, condition, { token = null } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
-  const locations = actor.items.filter((item) => item.type === "hitLocation")
+  const normalized = normalizeAcidConfiguration(condition);
+  const available = actor.items.filter((item) => item.type === "hitLocation")
     .sort((left, right) => Number(left.system.rangeStart) - Number(right.system.rangeStart));
-  let location = locations.find((item) => item.id === condition.locationId);
-  let locationRoll = null;
-  if (!location || condition.randomLocation) {
-    const rolled = await rollFormula("1d20"); locationRoll = rolled.roll;
-    location = findHitLocation(locations, rolled.total);
+  let locations = normalized.locationIds.map((id) => available.find((item) => item.id === id))
+    .filter(Boolean);
+  let randomRoll = null;
+  if (normalized.randomLocation) {
+    const rolled = await rollFormula("1d20");
+    randomRoll = rolled.roll; locations = [findHitLocation(available, rolled.total)].filter(Boolean);
   }
-  if (!location) throw new Error("No acid hit location available");
-  const layer = acidArmorLayer(location, actor.items.filter((item) => item.type === "armor"));
-  const damage = await rollFormula(condition.damageFormula);
-  const woundBefore = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
-  const result = acidDamageResult({ damage: damage.total, armorPoints: layer?.armorPoints,
-    hitPoints: location.system.currentHitPoints });
-  if (layer?.kind === "worn") await layer.item.update({
-    "system.armorPoints": result.armorAfter,
-    ...(result.armorAfter === 0 ? { "system.equipped": false } : {})
-  });
-  else if (layer?.kind === "natural") await location.update({ "system.armorPoints": result.armorAfter });
-  if (result.penetrating > 0) await location.update({ "system.currentHitPoints": result.hitPointsAfter });
-  const woundAfter = woundLevel(result.hitPointsAfter, location.system.maxHitPoints);
-  await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter);
-  await createAcidChat({ actor, token, condition, location, layer, result,
-    damageRoll: damage.roll, remaining: condition.applicationsRemaining,
-    woundBefore, woundAfter, locationRoll });
-  return { locationId: location.id, layerKind: layer?.kind ?? "none", ...result,
-    woundBefore, woundAfter };
+  if (!locations.length || (!normalized.randomLocation
+    && locations.length !== normalized.locationIds.length)) {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.Acid.SelectLocations")); return null;
+  }
+  const results = [];
+  for (const location of locations) {
+    const layer = acidArmorLayer(location, actor.items.filter((item) => item.type === "armor"));
+    const damage = await rollFormula(normalized.damageFormula);
+    const woundBefore = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
+    const result = acidDamageResult({ damage: damage.total, armorPoints: layer?.armorPoints,
+      hitPoints: location.system.currentHitPoints });
+    if (layer?.kind === "worn") await layer.item.update({
+      "system.armorPoints": result.armorAfter,
+      ...(result.armorAfter === 0 ? { "system.equipped": false } : {})
+    });
+    else if (layer?.kind === "natural") await location.update({ "system.armorPoints": result.armorAfter });
+    if (result.penetrating > 0) await location.update({ "system.currentHitPoints": result.hitPointsAfter });
+    const woundAfter = woundLevel(result.hitPointsAfter, location.system.maxHitPoints);
+    await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter);
+    const armorName = layer?.kind === "natural"
+      ? game.i18n.localize("MYTHRASF.Acid.NaturalArmor") : layer?.item?.name;
+    results.push({ location, armorName, layerKind: layer?.kind ?? "none",
+      result, damageRoll: damage.roll,
+      locationRoll: randomRoll, woundBefore, woundAfter });
+  }
+  await createAcidChat(actor, token, normalized, results);
+  return { configuration: normalized, locationIds: locations.map((location) => location.id),
+    results: results.map(({ location, armorName, layerKind, result, damageRoll, locationRoll,
+      woundBefore, woundAfter }) => ({ locationId: location.id, armorName, ...result,
+      layerKind, damageRoll: damageRoll.toJSON(),
+      locationRoll: locationRoll?.toJSON?.() ?? null, woundBefore, woundAfter })) };
 }
 
 async function activeCombatForActor(actor) {
@@ -141,32 +168,33 @@ async function activeCombatForActor(actor) {
 }
 
 export async function applyAcidExposure(actor, configuration, { token = null } = {}) {
-  const profile = ACID_CONCENTRATIONS[configuration.concentration];
+  const normalized = normalizeAcidConfiguration(configuration);
+  const profile = ACID_CONCENTRATIONS[normalized.concentration];
   if (!profile) throw new Error("Invalid acid concentration");
-  const durationRoll = configuration.exposure === "splash"
+  const durationRoll = normalized.exposure === "splash"
     ? await rollFormula(profile.durationFormula) : null;
-  const duration = acidExposureDuration({ exposure: configuration.exposure,
+  const duration = acidExposureDuration({ exposure: normalized.exposure,
     rolledDuration: durationRoll?.total });
   const combat = await activeCombatForActor(actor);
-  const condition = { concentration: configuration.concentration,
-    exposure: configuration.exposure, damageFormula: profile.damageFormula,
-    durationFormula: profile.durationFormula, locationId: configuration.locationId ?? "",
-    randomLocation: Boolean(configuration.randomLocation),
+  const condition = { concentration: normalized.concentration,
+    exposure: normalized.exposure, damageFormula: profile.damageFormula,
+    durationFormula: profile.durationFormula, locationIds: normalized.locationIds,
+    randomLocation: normalized.randomLocation,
     applicationsRemaining: duration.applicationsRemaining, totalApplications: duration.totalApplications };
   const result = await applyAcidDamage(actor, condition, { token });
-  const statusId = configuration.exposure === "immersion"
+  if (!result) return null;
+  const statusId = normalized.exposure === "immersion"
     ? ACID_IMMERSION_STATUS_ID : ACID_SPLASH_STATUS_ID;
-  await applyTimedCondition(actor, { name: game.i18n.localize(configuration.exposure === "immersion"
+  await applyTimedCondition(actor, { name: game.i18n.localize(normalized.exposure === "immersion"
     ? "MYTHRASF.Status.AcidImmersion" : "MYTHRASF.Status.AcidSplash"),
     img: "icons/svg/acid.svg", key: statusId, statusId,
     combat: combat ? { uuid: combat.uuid, round: combat.round,
       cycle: combat.mythrasTurnEconomy?.cycle, turn: combat.turn } : null,
-    duration: combat && configuration.exposure === "splash"
+    duration: combat && normalized.exposure === "splash"
       && duration.applicationsRemaining === 0
       ? { unit: "round", phase: "endRound" }
-      : { unit: "acidReview", phase: "startRound" }, locationId: result.locationId,
-    metadata: { ...condition, locationId: result.locationId,
-      randomLocation: false, applicationsRemaining: duration.applicationsRemaining } });
+      : { unit: "acidReview", phase: "startRound" }, locationId: result.locationIds[0] ?? "",
+    metadata: { ...condition, applicationsRemaining: duration.applicationsRemaining } });
   return result;
 }
 
@@ -184,7 +212,8 @@ export function acidReviewConfiguration(effect) {
   const concentration = ACID_CONCENTRATIONS[stored.concentration] ? stored.concentration : "weak";
   return { concentration, exposure, damageFormula: ACID_CONCENTRATIONS[concentration].damageFormula,
     durationFormula: ACID_CONCENTRATIONS[concentration].durationFormula,
-    locationId: stored.locationId ?? "", randomLocation: !stored.locationId,
+    locationIds: Array.from(new Set(stored.locationIds ?? (stored.locationId ? [stored.locationId] : []))),
+    randomLocation: stored.randomLocation === true || !(stored.locationIds?.length || stored.locationId),
     applicationsRemaining: exposure === "immersion" ? null
       : Math.max(1, Number(stored.applicationsRemaining ?? 1)) };
 }
@@ -208,8 +237,9 @@ export async function openAcidDialog({ actor = null, token = null, defaults = nu
     }
     token = controlled[0]; actor = token.actor;
   }
-  const initial = { concentration: defaults?.concentration ?? "weak",
-    exposure: defaults?.exposure ?? "splash", locationId: defaults?.locationId ?? "" };
+  const initial = normalizeAcidConfiguration({ concentration: defaults?.concentration ?? "weak",
+    exposure: defaults?.exposure ?? "splash", locationIds: defaults?.locationIds,
+    locationId: defaults?.locationId, randomLocation: defaults?.randomLocation });
   const locations = actor.items.filter((item) => item.type === "hitLocation")
     .sort((left, right) => Number(left.system.rangeStart) - Number(right.system.rangeStart));
   const result = await foundry.applications.api.DialogV2.wait({
@@ -217,21 +247,34 @@ export async function openAcidDialog({ actor = null, token = null, defaults = nu
     content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.Target"))}</legend><div class="sheet-field-readonly">${escape(actorDisplayName(actor))}</div></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.ConcentrationLabel"))}</legend>${Object.entries(ACID_CONCENTRATIONS).map(([key, profile]) => `<label><input type="radio" class="sheet-state-box" name="concentration" value="${key}" ${key === initial.concentration ? "checked" : ""} aria-label="${escape(concentrationLabel(key))}"><span>${escape(concentrationLabel(key))} — ${profile.damageFormula} / ${profile.durationFormula}</span></label>`).join("")}</fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.ExposureLabel"))}</legend><label><input type="radio" class="sheet-state-box" name="exposure" value="splash" ${initial.exposure === "splash" ? "checked" : ""} ${fixedExposure ? "disabled" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.Exposure.splash"))}</span></label><label><input type="radio" class="sheet-state-box" name="exposure" value="immersion" ${initial.exposure === "immersion" ? "checked" : ""} ${fixedExposure ? "disabled" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.Exposure.immersion"))}</span></label><input type="hidden" name="fixedExposure" value="${initial.exposure}"></fieldset>
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.Location"))}</legend><select name="location" class="sheet-field-editable"><option value="random">${escape(game.i18n.localize("MYTHRASF.Acid.RandomLocation"))}</option>${locations.map((location) => `<option value="${escape(location.id)}" ${location.id === initial.locationId ? "selected" : ""}>${escape(location.name)}</option>`).join("")}</select></fieldset></div>`,
+      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.Locations"))}</legend><label><input type="checkbox" class="sheet-state-box" name="randomLocation" ${initial.randomLocation ? "checked" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.RandomLocation"))}</span></label>${locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${initial.locationIds.includes(location.id) ? "checked" : ""}><span>${escape(location.name)}</span></label>`).join("")}</fieldset></div>`,
     buttons: [{ action: "apply", label: game.i18n.localize("MYTHRASF.Acid.Apply"),
       icon: "fas fa-flask", default: true, callback: (event, button) => ({
         concentration: button.form.elements.concentration.value,
         exposure: fixedExposure ? button.form.elements.fixedExposure.value
           : button.form.elements.exposure.value,
-        locationId: button.form.elements.location.value === "random" ? "" : button.form.elements.location.value,
-        randomLocation: button.form.elements.location.value === "random"
+        locationIds: Array.from(button.form.querySelectorAll("input[name='location']:checked"),
+          (control) => control.value),
+        randomLocation: button.form.elements.randomLocation.checked
       }) }, { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"),
-      icon: "fas fa-times", callback: () => null }], rejectClose: false
+      icon: "fas fa-times", callback: () => null }],
+    render: (event, dialog) => {
+      const form = dialog.element.querySelector("form");
+      form?.addEventListener("change", (change) => {
+        if (change.target.name === "randomLocation" && change.target.checked) {
+          form.querySelectorAll("input[name='location']").forEach((control) => { control.checked = false; });
+        } else if (change.target.name === "location" && change.target.checked) {
+          form.elements.randomLocation.checked = false;
+        }
+      });
+    }, rejectClose: false
   });
   if (!result || typeof result !== "object") return null;
-  const profile = ACID_CONCENTRATIONS[result.concentration];
-  const configuration = { ...result, damageFormula: profile.damageFormula,
-    durationFormula: profile.durationFormula, applicationsRemaining: defaults?.applicationsRemaining };
+  const configuration = normalizeAcidConfiguration({ ...result,
+    applicationsRemaining: defaults?.applicationsRemaining });
+  if (!configuration.randomLocation && !configuration.locationIds.length) {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.Acid.SelectLocations")); return null;
+  }
   return deferApply ? { action: "apply", ...configuration }
     : applyAcidExposure(actor, configuration, { token });
 }

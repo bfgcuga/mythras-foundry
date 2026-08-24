@@ -10,6 +10,7 @@ export const SETTING_KEYS = Object.freeze({
   socialClassMethod: "socialClassMethod",
   detailedReach: "detailedReach",
   passiveBlockContiguity: "passiveBlockContiguity",
+  showNpcCombatFatigueChecks: "showNpcCombatFatigueChecks",
   catalogSources: "catalogSources",
   parties: "parties"
 });
@@ -137,6 +138,15 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
     options: Object.freeze({
       name: "MYTHRASF.Settings.PassiveBlockContiguity.Name",
       hint: "MYTHRASF.Settings.PassiveBlockContiguity.Hint",
+      scope: "world", config: true, type: Boolean, default: false,
+      requiresReload: false
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.showNpcCombatFatigueChecks,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.CombatFatigue.ShowNpc.Name",
+      hint: "MYTHRASF.Settings.CombatFatigue.ShowNpc.Hint",
       scope: "world", config: true, type: Boolean, default: false,
       requiresReload: false
     })
