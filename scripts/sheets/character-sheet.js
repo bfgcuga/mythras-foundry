@@ -1544,7 +1544,18 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const { phase, backgroundStyleAction: action, style } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
-    if (action === "add") {
+    if (action === "select" && style) {
+      await this.#selectBackgroundCombatStyle(draft, phase, style);
+      return;
+    } else if (action === "create" && style) {
+      await this.#createBackgroundCombatStyle(draft, phase, style);
+      return;
+    } else if (action === "edit" && style) {
+      const name = draft.styles[style]?.name ?? "";
+      this.actor.items.find((item) => item.type === "combatStyle" && item.name === name)
+        ?.sheet?.render(true);
+      return;
+    } else if (action === "add") {
       if (phase === "culture") return;
       const id = `${phase}:extra-${Date.now().toString(36)}`;
       draft.extraStyles[phase].push(id);
@@ -1558,6 +1569,85 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this.#pruneBackgroundAllocation(draft, phase);
     }
     await this.#saveBackgroundDraft(draft);
+  }
+
+  async #selectBackgroundCombatStyle(draft, phase, styleId) {
+    const packs = game.packs.filter((pack) => (
+      (pack.documentName ?? pack.metadata?.type) === "Item" && pack.visible
+    ));
+    const available = [];
+    for (const pack of packs) {
+      const index = await pack.getIndex({ fields: ["type"] });
+      const styles = index.filter((entry) => entry.type === "combatStyle");
+      if (styles.length) available.push({ pack, styles });
+    }
+    if (!available.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.NoCombatStylesInPacks"));
+      return;
+    }
+    const escape = foundry.utils.escapeHTML;
+    const packId = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.Background.SelectCompendium") },
+      content: `<div class="mythras-foundry"><label>${game.i18n.localize("MYTHRASF.Background.Compendium")}<select class="sheet-field-editable" name="pack">${available.map(({ pack }) => `<option value="${escape(pack.collection)}">${escape(pack.title)}</option>`).join("")}</select></label></div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Background.Continue"),
+        callback: (dialogEvent, button) => button.form.elements.pack.value }
+    });
+    if (!packId) return;
+    const choice = available.find(({ pack }) => pack.collection === packId);
+    if (!choice) return;
+    const documentId = await DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.Background.SelectCombatStyle") },
+      content: `<div class="mythras-foundry"><label>${game.i18n.localize("MYTHRASF.Combat.Style")}<select class="sheet-field-editable" name="style">${choice.styles
+        .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang))
+        .map((entry) => `<option value="${escape(entry._id)}">${escape(entry.name)}</option>`).join("")}</select></label></div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Background.SelectStyle"),
+        callback: (dialogEvent, button) => button.form.elements.style.value }
+    });
+    if (!documentId) return;
+    const source = await choice.pack.getDocument(documentId);
+    if (!source) return;
+    const previousName = draft.styles[styleId]?.name ?? "";
+    const previousItem = this.actor.items.find((item) => item.type === "combatStyle"
+      && item.name === previousName && item.getFlag("mythras-foundry", "backgroundDraftAbility"));
+    if (previousItem) await previousItem.delete();
+    const data = source.toObject();
+    delete data._id;
+    data.flags = foundry.utils.mergeObject(data.flags ?? {}, {
+      "mythras-foundry": { backgroundDraftAbility: styleAbilityKey(source.name) }
+    }, { inplace: false });
+    const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
+    draft.styles[styleId] = {
+      name: source.name,
+      weapons: "",
+      traits: "",
+      traitKeys: (source.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean)
+    };
+    this.#transferBackgroundPoints(draft.allocations[phase],
+      styleAbilityKey(previousName), styleAbilityKey(source.name));
+    this.#pruneBackgroundAllocation(draft, phase);
+    await this.#saveBackgroundDraft(draft);
+    created?.sheet?.render(true);
+  }
+
+  async #createBackgroundCombatStyle(draft, phase, styleId) {
+    const baseName = game.i18n.localize("MYTHRASF.Background.NewCombatStyle");
+    let name = baseName;
+    let suffix = 2;
+    while (this.actor.items.some((item) => item.type === "combatStyle" && item.name === name)) {
+      name = `${baseName} ${suffix++}`;
+    }
+    const previousName = draft.styles[styleId]?.name ?? "";
+    const ability = { key: styleAbilityKey(name), type: "combatStyle", name,
+      weapons: "", traits: "", traitKeys: [], prompt: "" };
+    const data = this.#createBackgroundAbilityData(ability,
+      { culturePoints: 0, professionPoints: 0, freePoints: 0 }, true);
+    const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
+    draft.styles[styleId] = { name, weapons: "", traits: "", traitKeys: [] };
+    this.#transferBackgroundPoints(draft.allocations[phase],
+      styleAbilityKey(previousName), styleAbilityKey(name));
+    this.#pruneBackgroundAllocation(draft, phase);
+    await this.#saveBackgroundDraft(draft);
+    created?.sheet?.render(true);
   }
 
   async #rollStartingMoney(draft) {

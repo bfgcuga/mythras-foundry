@@ -1190,6 +1190,27 @@
   font-size: var(--mythras-font-size-table);
 }
 
+.mythras-foundry .background-style-selected,
+.mythras-foundry .background-style-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mythras-foundry .background-style-selected {
+  justify-content: space-between;
+  padding-bottom: 0.4rem;
+}
+
+.mythras-foundry .background-style-actions {
+  flex-wrap: wrap;
+}
+
+.mythras-foundry .background-style-help {
+  margin: 0 0 0.45rem;
+  font-size: var(--mythras-font-size-auxiliary);
+}
+
 .mythras-foundry .background-summary-header,
 .mythras-foundry .background-summary-row {
   display: grid;

@@ -213,28 +213,31 @@
               </button>
             {{/if}}
           </h4>
-          <label>
-            <span>{{localize "MYTHRASF.Background.StyleName"}}</span>
-            <input type="text" value="{{style.name}}" data-background-style-field="name"
-              list="combat-styles-{{style.id}}" data-style="{{style.id}}">
-            {{#if style.existingStyleNames.length}}
-              <datalist id="combat-styles-{{style.id}}">
-                {{#each style.existingStyleNames as |styleName|}}
-                  <option value="{{styleName}}"></option>
-                {{/each}}
-              </datalist>
-            {{/if}}
-          </label>
-          <label>
-            <span>{{localize "MYTHRASF.CombatStyle.Weapons"}}</span>
-            <input type="text" value="{{style.weapons}}" data-background-style-field="weapons"
-              data-style="{{style.id}}">
-          </label>
-          <fieldset class="background-style-traits"><legend>{{localize "MYTHRASF.CombatStyle.Traits"}}</legend>
-            {{#each style.traitOptions as |trait|}}<label><input type="checkbox" class="sheet-state-box"
-              data-background-style-trait data-style="{{style.id}}" data-trait-key="{{trait.key}}"
-              {{checked trait.checked}}> {{trait.name}}</label>{{/each}}
-          </fieldset>
+          {{#if style.name}}
+            <div class="background-style-selected">
+              <strong>{{style.name}}</strong>
+              <button type="button" class="sheet-icon-button" data-background-style-action="edit"
+                data-phase="{{style.phase}}" data-style="{{style.id}}"
+                title="{{localize "MYTHRASF.Background.EditStyle"}}"
+                aria-label="{{localize "MYTHRASF.Background.EditStyle"}}">
+                <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+              </button>
+            </div>
+          {{else}}
+            <p class="background-style-help">{{localize "MYTHRASF.Background.StyleChoiceHelp"}}</p>
+          {{/if}}
+          <div class="background-style-actions">
+            <button type="button" data-background-style-action="select"
+              data-phase="{{style.phase}}" data-style="{{style.id}}">
+              <i class="fas fa-book" aria-hidden="true"></i>
+              {{localize "MYTHRASF.Background.SelectStyleFromPack"}}
+            </button>
+            <button type="button" data-background-style-action="create"
+              data-phase="{{style.phase}}" data-style="{{style.id}}">
+              <i class="fas fa-plus" aria-hidden="true"></i>
+              {{localize "MYTHRASF.Background.CreateStyle"}}
+            </button>
+          </div>
         </section>
       {{/each}}
       {{#unless wizard.isCulture}}<button type="button" class="background-style-add"

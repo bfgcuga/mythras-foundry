@@ -8,7 +8,8 @@ import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { mergeWeaponProfiles } from "./rules/combat-style-weapons.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
-import { styleAbilityKey } from "./rules/background-generation.js";
+import { parseBackgroundDraft, serializeBackgroundDraft,
+  styleAbilityKey } from "./rules/background-generation.js";
 import { legacyWeaponMode, weaponModes } from "./rules/weapon-modes.js";
 import { conditionDescriptors, resolveConditions } from "./rules/condition-resolver.js";
 import { configureNewArmorPiece } from "./apps/armor-piece-configurator.js";
@@ -87,6 +88,37 @@ Hooks.on("preUpdateActor", (actor, changed) => {
 
 Hooks.on("updateItem", async (item, changed, options, userId) => {
   const actor = item.parent;
+  const draftKey = item.getFlag("mythras-foundry", "backgroundDraftAbility");
+  if (userId === game.user.id && item.type === "combatStyle" && actor?.type === "character"
+    && draftKey && (Object.hasOwn(changed, "name")
+      || foundry.utils.hasProperty(changed, "system.traitRefs"))) {
+    const draft = parseBackgroundDraft(actor.system.backgroundDraft);
+    const styleEntry = Object.entries(draft.styles)
+      .find(([, style]) => styleAbilityKey(style.name) === draftKey);
+    if (styleEntry) {
+      const [styleId, style] = styleEntry;
+      const phase = styleId.split(":")[0];
+      const oldKey = styleAbilityKey(style.name);
+      const name = String(changed.name ?? item.name).trim();
+      const nextKey = styleAbilityKey(name);
+      draft.styles[styleId] = {
+        ...style,
+        name,
+        traitKeys: (item.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean)
+      };
+      if (oldKey !== nextKey) {
+        const points = Number(draft.allocations[phase]?.[oldKey] ?? 0);
+        if (points > 0) draft.allocations[phase][nextKey] = points;
+        delete draft.allocations[phase][oldKey];
+        await item.update({
+          "flags.mythras-foundry.backgroundDraftAbility": nextKey
+        });
+      }
+      await actor.update({
+        "system.backgroundDraft": serializeBackgroundDraft(draft)
+      });
+    }
+  }
   if (userId === game.user.id && item.type === "weapon" && isCombatActor(actor)
     && (foundry.utils.hasProperty(changed, "system.equipped")
       || foundry.utils.hasProperty(changed, "system.activeModeKey"))) await clearAim(actor);

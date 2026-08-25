@@ -207,6 +207,19 @@ test("la ficha de estilo resume asociaciones y separa el cálculo no editable", 
   assert.match(styleSchema, /\.\.\.super\.defineSchema\(\)/);
 });
 
+test("el asistente crea o importa estilos y delega armas y rasgos en su hoja", () => {
+  const wizard = readFileSync(new URL(
+    "../templates/actor/parts/background-wizard.hbs", import.meta.url), "utf8");
+  const characterSheet = readFileSync(new URL(
+    "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
+  assert.match(wizard, /data-background-style-action="select"/);
+  assert.match(wizard, /data-background-style-action="create"/);
+  assert.match(wizard, /data-background-style-action="edit"/);
+  assert.doesNotMatch(wizard, /data-background-style-field="weapons"/);
+  assert.match(characterSheet, /pack\.getIndex\(\{ fields: \["type"\] \}\)/);
+  assert.match(characterSheet, /created\?\.sheet\?\.render\(true\)/);
+});
+
 test("las hojas de Item y el creador usan recuadros discretos sin superficie propia", () => {
   assert.match(css, /\.item-sheet-content fieldset,[^}]*\.homebrew-creator-content fieldset[^}]*background: transparent/s);
   assert.match(css, /\.item-sheet-content input,[^}]*\.homebrew-creator-content textarea[^}]*background: transparent !important/s);
