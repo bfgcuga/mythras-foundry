@@ -728,6 +728,7 @@
   "MYTHRASF.Background.StyleChoiceHelp": "Selecciona un estilo existente o crea uno nuevo. Podrás completar sus armas y rasgos ahora o más adelante.",
   "MYTHRASF.Background.SelectStyleFromPack": "Seleccionar de compendio",
   "MYTHRASF.Background.CreateStyle": "Crear estilo de combate",
+  "MYTHRASF.Background.CreateStyleFailed": "No se pudo crear el estilo de combate en el personaje.",
   "MYTHRASF.Background.NewCombatStyle": "Nuevo estilo de combate",
   "MYTHRASF.Background.NoCombatStylesInPacks": "No hay estilos de combate en los compendios visibles.",
   "MYTHRASF.Background.SelectCompendium": "Seleccionar compendio",

@@ -1747,30 +1747,33 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #createBackgroundCombatStyle(draft, phase, styleId) {
-    const baseName = game.i18n.localize("MYTHRASF.Background.NewCombatStyle");
-    let name = baseName;
-    let suffix = 2;
-    while (this.actor.items.some((item) => item.type === "combatStyle" && item.name === name)) {
-      name = `${baseName} ${suffix++}`;
+    try {
+      const baseName = game.i18n.localize("MYTHRASF.Background.NewCombatStyle");
+      const reservedNames = new Set([
+        ...this.actor.items.filter((item) => item.type === "combatStyle")
+          .map((item) => styleAbilityKey(item.name)),
+        ...Object.values(draft.styles).map((style) => styleAbilityKey(style.name))
+      ]);
+      let name = baseName;
+      let suffix = 2;
+      while (reservedNames.has(styleAbilityKey(name))) name = `${baseName} ${suffix++}`;
+      const previousName = draft.styles[styleId]?.name ?? "";
+      draft.styles[styleId] = { name, weapons: "", traits: "", traitKeys: [] };
+      this.#transferBackgroundPoints(draft.allocations[phase],
+        styleAbilityKey(previousName), styleAbilityKey(name));
+      this.#pruneBackgroundAllocation(draft, phase);
+      await this.#saveBackgroundDraft(draft);
+      const created = this.actor.items.find((item) => (
+        item.type === "combatStyle" && styleAbilityKey(item.name) === styleAbilityKey(name)
+      ));
+      if (!created) throw new Error("combat-style-not-created");
+      created.sheet?.render(true);
+    } catch (error) {
+      console.error("Mythras Foundry | Error creating background combat style", error);
+      ui.notifications.error(game.i18n.localize(
+        "MYTHRASF.Background.CreateStyleFailed"
+      ));
     }
-    const previousName = draft.styles[styleId]?.name ?? "";
-    const ability = { key: styleAbilityKey(name), type: "combatStyle", name,
-      weapons: "", traits: "", traitKeys: [], prompt: "" };
-    const data = this.#createBackgroundAbilityData(ability,
-      { culturePoints: 0, professionPoints: 0, freePoints: 0 }, true);
-    const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
-    if (!created) return;
-    name = created.name;
-    const createdKey = styleAbilityKey(name);
-    if (created.getFlag("mythras-foundry", "backgroundDraftAbility") !== createdKey) {
-      await created.update({ "flags.mythras-foundry.backgroundDraftAbility": createdKey });
-    }
-    draft.styles[styleId] = { name, weapons: "", traits: "", traitKeys: [] };
-    this.#transferBackgroundPoints(draft.allocations[phase],
-      styleAbilityKey(previousName), styleAbilityKey(name));
-    this.#pruneBackgroundAllocation(draft, phase);
-    await this.#saveBackgroundDraft(draft);
-    created?.sheet?.render(true);
   }
 
   async #rollStartingMoney(draft) {

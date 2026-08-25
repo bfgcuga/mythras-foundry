@@ -218,7 +218,14 @@ test("el asistente crea o importa estilos y delega armas y rasgos en su hoja", (
   assert.match(wizard, /data-background-style-action="edit"/);
   assert.doesNotMatch(wizard, /data-background-style-field="weapons"/);
   assert.match(characterSheet, /pack\.getIndex\(\{ fields: \["type"\] \}\)/);
-  assert.match(characterSheet, /created\?\.sheet\?\.render\(true\)/);
+  const createStyle = characterSheet.slice(
+    characterSheet.indexOf("async #createBackgroundCombatStyle"),
+    characterSheet.indexOf("async #rollStartingMoney")
+  );
+  assert.match(createStyle,
+    /await this\.#saveBackgroundDraft\(draft\)[^]*this\.actor\.items\.find/);
+  assert.match(createStyle, /created\.sheet\?\.render\(true\)/);
+  assert.doesNotMatch(createStyle, /createEmbeddedDocuments/);
   assert.match(characterSheet, /NoLearnedStyles/);
   assert.match(characterSheet, /getPhaseAbilities\(getCulture\(draft\.cultureKey\), draft, "culture"\)/);
   assert.match(characterSheet, /#ensureProfessionalStyleDefaults\(draft\)/);
