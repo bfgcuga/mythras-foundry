@@ -4,6 +4,7 @@ import { engagementId, engagementRestriction, initialReachPosition, reachDiffere
   relationSituationReach, shiftedWeaponSize } from "../scripts/rules/engagements.js";
 import { contiguousLocationIds, isNaturalWeaponMode, passiveBlockCapacity,
   validatePassiveBlock } from "../scripts/rules/passive-block.js";
+import { passiveBlockEntries } from "../scripts/rules/round-consequences.js";
 
 test("las relaciones usan una identidad estable y el alcance largo con dos grados", () => {
   assert.equal(engagementId("b", "a"), "a::b");
@@ -59,6 +60,25 @@ test("un arma manufacturada puede bloquear una localización al luchar con dos a
   assert.equal(passiveBlockCapacity(sword, { dualWield: true }), 1);
   assert.equal(isNaturalWeaponMode(claw), true);
   assert.equal(passiveBlockCapacity(claw, { dualWield: true }), 0);
+});
+
+test("las armas naturales no cuentan para habilitar el bloqueo pasivo con dos armas", () => {
+  const weapon = (id, name, mode) => ({ id, name, type: "weapon",
+    system: { equipped: true, modes: [{ key: id, name, size: "M", traitRefs: [], ...mode }] } });
+  const sword = weapon("sword", "Espada", { weaponType: "melee", handsRequired: 1,
+    grip: "1 mano" });
+  const claw = weapon("claw", "Garra", { weaponType: "melee", handsRequired: 0,
+    grip: "Natural" });
+  const actor = { uuid: "Actor.fighter", name: "Combatiente", items: [sword, claw] };
+  const combat = { combatants: [{ id: "fighter", actor, isDefeated: false }] };
+
+  assert.deepEqual(passiveBlockEntries(combat), []);
+
+  actor.items.push(weapon("dagger", "Daga", { weaponType: "melee", handsRequired: 1,
+    grip: "1 mano" }));
+  const [entry] = passiveBlockEntries(combat);
+  assert.deepEqual(entry.choices.map((choice) => choice.weaponId).sort(), ["dagger", "sword"]);
+  assert.equal(entry.choices.some((choice) => choice.weaponId === "claw"), false);
 });
 
 test("las localizaciones humanas forman una red anatómica y no el orden del d20", () => {

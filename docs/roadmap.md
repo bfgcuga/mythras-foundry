@@ -36,9 +36,6 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 - Completar Elegir Localización contra una extremidad lisiada: debe tirar `1d3`
   para comprobar si alcanza la parte restante, sin reutilizar la resolución
   aleatoria que ya descarta resultados de impacto anulados.
-- Revisar el Bloqueo Pasivo con armas naturales: concretar qué anatomías y
-  ataques naturales pueden emplearlo y cómo deben identificarse, sin heredar
-  automáticamente la regla de combate con dos armas manufacturadas.
 - Garantizar que todo personaje pueda usar el ataque canónico Puño/Patada sin
   convertirlo en un objeto transportado. Si algún estilo incluye el perfil
   estable `puno-patada`, la tirada debe usar ese estilo; si ninguno lo incluye,
@@ -49,7 +46,7 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
   ofrecerlas cuando el Actor posea el rasgo de criatura con clave estable
   `formidable-natural-weapons` (Armas Naturales Formidables). Las armas
   manufacturadas no dependen de este rasgo. Cubrir tanto la presencia como la
-  ausencia del rasgo con pruebas y no confundir esta regla con Bloqueo Pasivo.
+  ausencia del rasgo con pruebas.
 - Valorar la migración de `tacticalState.covers` desde un único perfil por
   combatiente a múltiples coberturas simultáneas, definiendo cómo se combinan
   protección, localizaciones y cobertura completa en la resolución de impactos.
@@ -72,6 +69,8 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 
 ### Macros de daño y peligros
 
+- Implementar la lógica y las herramientas de juego para venenos, enfermedades
+  y trampas.
 - Crear macros para inclemencias del tiempo. Las caídas normales, desde
   vehículos y de objetos ya disponen de una macro puntual de daño.
 - Delimitar qué peligros cubren las inclemencias: frío, calor, exposición u
@@ -98,6 +97,10 @@ resolución directa del Game Master.
   arrastrables.
 
 ## Hoja de personaje
+
+### Experiencia y entrenamiento
+
+- Desarrollar la lógica de Entrenar Habilidad.
 
 ### Pestaña Trasfondo
 
