@@ -1211,6 +1211,14 @@
   font-size: var(--mythras-font-size-auxiliary);
 }
 
+.mythras-foundry .background-style-catalog-dialog fieldset {
+  margin: 0;
+}
+
+.mythras-foundry .background-style-catalog-dialog select {
+  width: 100%;
+}
+
 .mythras-foundry .background-summary-header,
 .mythras-foundry .background-summary-row {
   display: grid;
@@ -1287,6 +1295,7 @@
 .mythras-foundry .paper-skill-header {
   font-size: var(--mythras-font-size-table);
   font-weight: 700;
+  text-align: center;
 }
 
 .mythras-foundry .paper-skill-header.creation-skill-grid,

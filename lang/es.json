@@ -732,6 +732,8 @@
   "MYTHRASF.Background.NoCombatStylesInPacks": "No hay estilos de combate en los compendios visibles.",
   "MYTHRASF.Background.SelectCompendium": "Seleccionar compendio",
   "MYTHRASF.Background.Compendium": "Compendio",
+  "MYTHRASF.Background.StyleSource": "Origen del estilo",
+  "MYTHRASF.Background.CharacterStyles": "Estilos del personaje",
   "MYTHRASF.Background.Continue": "Continuar",
   "MYTHRASF.Background.SelectCombatStyle": "Seleccionar estilo de combate",
   "MYTHRASF.Background.SelectStyle": "Seleccionar estilo",

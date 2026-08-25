@@ -218,6 +218,22 @@ test("el asistente crea o importa estilos y delega armas y rasgos en su hoja", (
   assert.doesNotMatch(wizard, /data-background-style-field="weapons"/);
   assert.match(characterSheet, /pack\.getIndex\(\{ fields: \["type"\] \}\)/);
   assert.match(characterSheet, /created\?\.sheet\?\.render\(true\)/);
+  assert.match(characterSheet, /CharacterStyles/);
+  assert.match(characterSheet, /getPhaseAbilities\(getCulture\(draft\.cultureKey\), draft, "culture"\)/);
+  const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
+    characterSheet.indexOf("#backgroundItemsNeedSync"));
+  assert.doesNotMatch(syncItems, /"system\.traitRefs"/);
+});
+
+test("las pasiones validadas se materializan durante el asistente", () => {
+  const characterSheet = readFileSync(new URL(
+    "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
+  const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
+    characterSheet.indexOf("async #syncBackgroundPassions"));
+  assert.match(syncItems, /await this\.#syncBackgroundPassions\(draft\)/);
+  assert.match(characterSheet, /!\["culture", "passions"\]\.includes\(draft\.stage\)/);
+  assert.match(characterSheet,
+    /expectsPassions[^]*culturalPassions\.length !== draft\.passions\.length/);
 });
 
 test("las hojas de Item y el creador usan recuadros discretos sin superficie propia", () => {

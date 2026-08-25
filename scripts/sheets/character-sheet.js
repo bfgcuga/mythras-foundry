@@ -1279,10 +1279,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           _id: existing.id,
           "system.culturePoints": points.culturePoints,
           "system.professionPoints": points.professionPoints,
-          "system.freePoints": points.freePoints,
-          ...(ability.type === "combatStyle"
-            ? { "system.traitRefs": this.#backgroundTraitReferences(ability.traitKeys) }
-            : {})
+          "system.freePoints": points.freePoints
         });
       } else {
         creations.push(this.#createBackgroundAbilityData(ability, points, true));
@@ -1294,6 +1291,67 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (creations.length > 0) {
       await this.actor.createEmbeddedDocuments("Item", creations);
     }
+    await this.#syncBackgroundPassions(draft);
+  }
+
+  async #syncBackgroundPassions(draft) {
+    const culture = getCulture(draft.cultureKey);
+    const flagged = this.actor.items.filter((item) => (
+      item.type === "passion" && item.getFlag("mythras-foundry", "culturalPassion")
+    ));
+    const currentCulturePrefix = culture ? `${culture.key}:` : "";
+    const stale = flagged.filter((item) => (
+      !currentCulturePrefix
+      || !String(item.getFlag("mythras-foundry", "culturalPassion"))
+        .startsWith(currentCulturePrefix)
+    ));
+    if (stale.length > 0) {
+      await this.actor.deleteEmbeddedDocuments("Item", stale.map((item) => item.id));
+    }
+    const current = new Map(flagged
+      .filter((item) => !stale.includes(item))
+      .map((item) => [item.getFlag("mythras-foundry", "culturalPassion"), item]));
+    const shouldMaterialize = culture && (
+      current.size > 0 || !["culture", "passions"].includes(draft.stage)
+    );
+    if (!shouldMaterialize) return;
+
+    const updates = [];
+    const creations = [];
+    for (const [index, passion] of draft.passions.entries()) {
+      const flag = `${culture.key}:${index}`;
+      const data = this.#backgroundPassionData(passion, flag);
+      const existing = current.get(flag);
+      if (existing) updates.push({
+        _id: existing.id,
+        name: data.name,
+        img: data.img,
+        system: data.system,
+        flags: data.flags
+      }); else creations.push(data);
+    }
+    if (updates.length > 0) await this.actor.updateEmbeddedDocuments("Item", updates);
+    if (creations.length > 0) await this.actor.createEmbeddedDocuments("Item", creations);
+  }
+
+  #backgroundPassionData(passion, flag) {
+    const verb = passion.verb === "other"
+      ? passion.customVerb
+      : game.i18n.localize(`MYTHRASF.Passion.Verb.${passion.verb}`);
+    return {
+      name: `${verb} (${passion.objectDescription})`,
+      type: "passion",
+      img: defaultItemIcon("passion"),
+      system: {
+        structured: true,
+        ...passion,
+        experiencePoints: 0,
+        manualAdjustment: 0,
+        value: 0,
+        description: ""
+      },
+      flags: { "mythras-foundry": { culturalPassion: flag } }
+    };
   }
 
   #backgroundItemsNeedSync(draft) {
@@ -1316,19 +1374,15 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       desired.length !== currentKeys.size
       || desired.some((ability) => !currentKeys.has(ability.key))
     ) return true;
-    for (const ability of desired.filter((candidate) => candidate.type === "combatStyle")) {
-      const item = this.actor.items.find((candidate) => (
-        candidate.type === "combatStyle"
-        && styleAbilityKey(candidate.name) === ability.key
-      ));
-      if (!item) return true;
-      const desiredTraitKeys = new Set(ability.traitKeys ?? []);
-      const currentTraitKeys = new Set((item.system.traitRefs ?? []).map((trait) => trait.key));
-      if (
-        desiredTraitKeys.size !== currentTraitKeys.size
-        || [...desiredTraitKeys].some((key) => !currentTraitKeys.has(key))
-      ) return true;
-    }
+    const cultureKey = getCulture(draft.cultureKey)?.key;
+    const culturalPassions = this.actor.items.filter((item) => (
+      item.type === "passion" && item.getFlag("mythras-foundry", "culturalPassion")
+    ));
+    const expectsPassions = cultureKey && !["culture", "passions"].includes(draft.stage);
+    if (culturalPassions.some((item) => !String(item.getFlag(
+      "mythras-foundry", "culturalPassion")).startsWith(`${cultureKey}:`))) return true;
+    if (expectsPassions && culturalPassions.length !== draft.passions.length) return true;
+
     return BASIC_SKILL_SOURCES.some((source) => {
       if (source.system.slug === "estilo-de-combate") return false;
       const item = this.actor.items.find((candidate) => (
@@ -1422,6 +1476,18 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
       for (const key of Object.keys(draft.styles)) {
         if (key.startsWith("profession:")) delete draft.styles[key];
+      }
+      const culturalStyle = getPhaseAbilities(getCulture(draft.cultureKey), draft, "culture")
+        .find((ability) => ability.type === "combatStyle" && ability.name);
+      if (culturalStyle) {
+        for (const [index] of (getProfession(draft.professionKey)?.styles ?? []).entries()) {
+          draft.styles[`profession:${index}`] = {
+            name: culturalStyle.name,
+            weapons: "",
+            traits: "",
+            traitKeys: [...(culturalStyle.traitKeys ?? [])]
+          };
+        }
       }
     }
     await this.#saveBackgroundDraft(draft);
@@ -1572,61 +1638,73 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #selectBackgroundCombatStyle(draft, phase, styleId) {
+    const actorStyles = this.actor.items.filter((item) => item.type === "combatStyle");
     const packs = game.packs.filter((pack) => (
       (pack.documentName ?? pack.metadata?.type) === "Item" && pack.visible
     ));
-    const available = [];
+    const available = actorStyles.length ? [{
+      id: "actor",
+      title: game.i18n.localize("MYTHRASF.Background.CharacterStyles"),
+      styles: actorStyles
+    }] : [];
     for (const pack of packs) {
       const index = await pack.getIndex({ fields: ["type"] });
       const styles = index.filter((entry) => entry.type === "combatStyle");
-      if (styles.length) available.push({ pack, styles });
+      if (styles.length) available.push({ id: pack.collection, title: pack.title, pack, styles });
     }
     if (!available.length) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.NoCombatStylesInPacks"));
       return;
     }
     const escape = foundry.utils.escapeHTML;
-    const packId = await DialogV2.input({
+    const sourceId = await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.Background.SelectCompendium") },
-      content: `<div class="mythras-foundry"><label>${game.i18n.localize("MYTHRASF.Background.Compendium")}<select class="sheet-field-editable" name="pack">${available.map(({ pack }) => `<option value="${escape(pack.collection)}">${escape(pack.title)}</option>`).join("")}</select></label></div>`,
+      content: `<div class="mythras-foundry mythras-dialog background-style-catalog-dialog"><fieldset><legend>${game.i18n.localize("MYTHRASF.Background.StyleSource")}</legend><select class="sheet-field-editable" name="source">${available.map((source) => `<option value="${escape(source.id)}">${escape(source.title)}</option>`).join("")}</select></fieldset></div>`,
       ok: { label: game.i18n.localize("MYTHRASF.Background.Continue"),
-        callback: (dialogEvent, button) => button.form.elements.pack.value }
+        callback: (dialogEvent, button) => button.form.elements.source.value }
     });
-    if (!packId) return;
-    const choice = available.find(({ pack }) => pack.collection === packId);
+    if (!sourceId) return;
+    const choice = available.find((source) => source.id === sourceId);
     if (!choice) return;
     const documentId = await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.Background.SelectCombatStyle") },
-      content: `<div class="mythras-foundry"><label>${game.i18n.localize("MYTHRASF.Combat.Style")}<select class="sheet-field-editable" name="style">${choice.styles
+      content: `<div class="mythras-foundry mythras-dialog background-style-catalog-dialog"><fieldset><legend>${game.i18n.localize("MYTHRASF.Combat.Style")}</legend><select class="sheet-field-editable" name="style">${choice.styles
         .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang))
-        .map((entry) => `<option value="${escape(entry._id)}">${escape(entry.name)}</option>`).join("")}</select></label></div>`,
+        .map((entry) => `<option value="${escape(entry.id ?? entry._id)}">${escape(entry.name)}</option>`).join("")}</select></fieldset></div>`,
       ok: { label: game.i18n.localize("MYTHRASF.Background.SelectStyle"),
         callback: (dialogEvent, button) => button.form.elements.style.value }
     });
     if (!documentId) return;
-    const source = await choice.pack.getDocument(documentId);
+    const source = choice.id === "actor"
+      ? this.actor.items.get(documentId)
+      : await choice.pack.getDocument(documentId);
     if (!source) return;
     const previousName = draft.styles[styleId]?.name ?? "";
-    const previousItem = this.actor.items.find((item) => item.type === "combatStyle"
-      && item.name === previousName && item.getFlag("mythras-foundry", "backgroundDraftAbility"));
-    if (previousItem) await previousItem.delete();
-    const data = source.toObject();
-    delete data._id;
-    data.flags = foundry.utils.mergeObject(data.flags ?? {}, {
-      "mythras-foundry": { backgroundDraftAbility: styleAbilityKey(source.name) }
-    }, { inplace: false });
-    const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
+    let selected = source;
+    if (choice.id !== "actor") {
+      selected = actorStyles.find((item) => (
+        styleAbilityKey(item.name) === styleAbilityKey(source.name)
+      ));
+      if (!selected) {
+        const data = source.toObject();
+        delete data._id;
+        data.flags = foundry.utils.mergeObject(data.flags ?? {}, {
+          "mythras-foundry": { backgroundDraftAbility: styleAbilityKey(source.name) }
+        }, { inplace: false });
+        [selected] = await this.actor.createEmbeddedDocuments("Item", [data]);
+      }
+    }
     draft.styles[styleId] = {
       name: source.name,
       weapons: "",
       traits: "",
-      traitKeys: (source.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean)
+      traitKeys: (selected.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean)
     };
     this.#transferBackgroundPoints(draft.allocations[phase],
       styleAbilityKey(previousName), styleAbilityKey(source.name));
     this.#pruneBackgroundAllocation(draft, phase);
     await this.#saveBackgroundDraft(draft);
-    created?.sheet?.render(true);
+    selected?.sheet?.render(true);
   }
 
   async #createBackgroundCombatStyle(draft, phase, styleId) {
@@ -1642,6 +1720,12 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const data = this.#createBackgroundAbilityData(ability,
       { culturePoints: 0, professionPoints: 0, freePoints: 0 }, true);
     const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
+    if (!created) return;
+    name = created.name;
+    const createdKey = styleAbilityKey(name);
+    if (created.getFlag("mythras-foundry", "backgroundDraftAbility") !== createdKey) {
+      await created.update({ "flags.mythras-foundry.backgroundDraftAbility": createdKey });
+    }
     draft.styles[styleId] = { name, weapons: "", traits: "", traitKeys: [] };
     this.#transferBackgroundPoints(draft.allocations[phase],
       styleAbilityKey(previousName), styleAbilityKey(name));
@@ -1926,34 +2010,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }));
           if (updates.length > 0) {
             await this.actor.updateEmbeddedDocuments("Item", updates);
-          }
-          const existing = new Set(this.actor.items
-            .filter((item) => item.type === "passion")
-            .map((item) => item.getFlag("mythras-foundry", "culturalPassion"))
-            .filter(Boolean));
-          const passionItems = draft.passions.flatMap((passion, index) => {
-            const flag = `${culture.key}:${index}`;
-            if (existing.has(flag)) return [];
-            const verb = passion.verb === "other"
-              ? passion.customVerb
-              : game.i18n.localize(`MYTHRASF.Passion.Verb.${passion.verb}`);
-            return [{
-              name: `${verb} (${passion.objectDescription})`,
-              type: "passion",
-              img: defaultItemIcon("passion"),
-              system: {
-                structured: true,
-                ...passion,
-                experiencePoints: 0,
-                manualAdjustment: 0,
-                value: 0,
-                description: ""
-              },
-              flags: { "mythras-foundry": { culturalPassion: flag } }
-            }];
-          });
-          if (passionItems.length > 0) {
-            await this.actor.createEmbeddedDocuments("Item", passionItems);
           }
           const equipmentItems = this.#startingEquipmentItems(startingEquipment);
           const alreadyGranted = this.actor.items.some((item) => item.getFlag(
