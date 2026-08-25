@@ -106,8 +106,12 @@ El sistema incluye actualmente:
 - PNJ y criaturas con anatomías configurables, valores manuales o derivados y
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
-- macro lanzadora de DJ para abrir desde un único menú Ácido, Fuego, Caída,
-  Fatiga, Ahogamiento/Asfixia o Agonizando;
+- macro lanzadora de DJ «Aplicación de daño o estados», con botones para daño
+  directo, Ácido, Fuego, Caída, Fatiga, Ahogamiento/Asfixia, Desangrándose y
+  Agonizando;
+- macro puntual de DJ para aplicar una cantidad fija o una fórmula de daño a
+  varias localizaciones elegidas o a una aleatoria; aplica directamente a PG,
+  ignora armadura y ejecuta las consecuencias compartidas de heridas;
 - macro de DJ para aplicar `Desangrándose`; el estado permanece hasta retirarlo
   y reduce automáticamente un nivel de Fatiga al preparar cada asalto;
 - macro de DJ para aplicar `Agonizando` con contador libre, Ritmo de curación ×2
@@ -176,6 +180,8 @@ npm run check
 - `npm run check` comprueba la sintaxis JavaScript, los recursos declarados en
   `system.json`, los idiomas, los compendios y la coherencia entre versión y URL
   de descarga.
+- `node scripts/dev/build-packs.mjs macros` reconstruye únicamente el compendio
+  indicado; sin nombres, el comando reconstruye todos los compendios.
 - `npm run check -- v<versión>` comprueba además que la etiqueta indicada
   coincida con la versión del manifiesto.
 
@@ -191,6 +197,7 @@ El sistema publica `game.mythrasFoundry` durante `init`:
 const party = game.mythrasFoundry.party.getActiveMembers();
 game.mythrasFoundry.shop.open({ actorUuid: actor.uuid });
 game.mythrasFoundry.homebrew.open(); // Solo DJ.
+game.mythrasFoundry.hazards.damage.open(); // Solo DJ; daño localizado puntual.
 game.mythrasFoundry.hazards.acid.open(); // Solo DJ; usa el token controlado.
 game.mythrasFoundry.hazards.fire.open(); // Solo DJ; usa el token controlado.
 game.mythrasFoundry.hazards.fall.open(); // Solo DJ; aplicación puntual.
@@ -202,12 +209,12 @@ game.mythrasFoundry.conditions.dying.open(); // Solo DJ; aplica Agonizando.
 
 También expone `party` para consultar o abrir el gestor de grupos, `homebrew`
 para abrir el creador de Items y `traits` para consultar rasgos y registrar reglas
-de rasgo adicionales. `hazards.acid`, `hazards.fire`, `hazards.fall` y
+de rasgo adicionales. `hazards.damage`, `hazards.acid`, `hazards.fire`, `hazards.fall` y
 `hazards.suffocation` abren sus
 diálogos o permiten aplicar configuraciones estructuradas desde otra macro. La
 forma exacta de estas APIs se define en
 `scripts/api/party-api.js`, `scripts/apps/item-catalog.js`,
-`scripts/apps/homebrew-item-creator.js`, `scripts/rules/acid.js`,
+`scripts/apps/homebrew-item-creator.js`, `scripts/rules/direct-damage.js`, `scripts/rules/acid.js`,
 `scripts/rules/fire.js`, `scripts/rules/fall.js`, `scripts/rules/suffocation.js`,
 `scripts/rules/dying.js` y
 `scripts/rules/traits.js`.

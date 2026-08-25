@@ -38,6 +38,15 @@ test("el compendio incluye una macro GM para aplicar ácido mediante la API púb
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });
 
+test("el compendio incluye una macro GM para aplicar daño directo", () => {
+  const macro = MACRO_SOURCES.find((source) => source.buildKey === "apply-direct-damage");
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /hazards\?\.damage\?\.open/);
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
 test("el compendio incluye una macro GM para aplicar Desangrándose", () => {
   const macro = MACRO_SOURCES.find((source) => source.buildKey === "apply-exsanguination");
   assert.ok(macro);
@@ -62,13 +71,18 @@ test("el compendio incluye un lanzador común de peligros y fatiga", () => {
   const macro = MACRO_SOURCES.find((source) => source.buildKey === "open-hazard-launcher");
   assert.ok(macro);
   assert.match(macro.command, /DialogV2\.wait/);
+  assert.match(macro.command, /data-launcher-choice/);
+  assert.doesNotMatch(macro.command, /type="radio"/);
+  assert.match(macro.command, /hazards\?\.damage\?\.open/);
   assert.match(macro.command, /hazards\?\.acid\?\.open/);
   assert.match(macro.command, /hazards\?\.fire\?\.open/);
   assert.match(macro.command, /hazards\?\.fall\?\.open/);
   assert.match(macro.command, /fatigueChecks\?\.open/);
   assert.match(macro.command, /hazards\?\.suffocation\?\.open/);
   assert.match(macro.command, /conditions\?\.dying\?\.open/);
-  assert.equal(macro.flags["mythras-foundry"].macroVersion, 2);
+  assert.match(macro.command, /conditions\?\.exsanguination\?\.open/);
+  assert.equal(macro.name, "Aplicación de daño o estados");
+  assert.equal(macro.flags["mythras-foundry"].macroVersion, 3);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });

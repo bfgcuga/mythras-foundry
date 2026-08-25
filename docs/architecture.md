@@ -177,10 +177,18 @@ propiedad en el coordinador, incorpora el `Roll` al mensaje y empeora un nivel
 de Fatiga únicamente ante fallo o pifia. La API pública es
 `game.mythrasFoundry.fatigueChecks.open()`.
 
-El compendio de macros incluye un lanzador de peligros exclusivo del DJ. Su
-diálogo solo selecciona y delega en las APIs públicas de Ácido, Fuego, Caída,
-Fatiga grupal, Asfixia/Ahogamiento o Agonizando; no duplica ninguna regla de
-resolución.
+El compendio de macros incluye el lanzador exclusivo del DJ «Aplicación de daño
+o estados». Presenta botones y delega en las APIs públicas de daño directo,
+Ácido, Fuego, Caída, Fatiga grupal, Asfixia/Ahogamiento, Desangrándose o
+Agonizando; no duplica ninguna regla de resolución.
+
+El daño directo vive en `scripts/rules/direct-damage.js` y no mantiene estado.
+Acepta una cantidad fija o una fórmula evaluada independientemente por cada
+localización seleccionada; alternativamente resuelve una sola zona mediante
+`1d20`. Modifica directamente los PG sin consultar ni deteriorar armadura,
+publica una tarjeta agrupada y delega las consecuencias de heridas en el mismo
+flujo que Ácido, Fuego y Caída. Su API es
+`game.mythrasFoundry.hazards.damage`.
 
 La Fatiga periódica de combate comparte la cola bloqueante de preparación del
 asalto. Cada combatiente conserva en sus flags un contador idempotente y vence

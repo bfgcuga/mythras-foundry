@@ -32,6 +32,7 @@ import { createSuffocationApi } from "../rules/suffocation.js";
 import { createFatigueCheckApi } from "../rules/fatigue-check-chat.js";
 import { createExsanguinationApi } from "../rules/exsanguination.js";
 import { createDyingApi } from "../rules/dying.js";
+import { createDirectDamageApi } from "../rules/direct-damage.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -106,8 +107,8 @@ export function registerSystemInitialization() {
           return manager;
         }
       }),
-      hazards: Object.freeze({ ...createHazardsApi(), fire: createFireApi(), fall: createFallApi(),
-        suffocation: createSuffocationApi() }),
+      hazards: Object.freeze({ ...createHazardsApi(), damage: createDirectDamageApi(),
+        fire: createFireApi(), fall: createFallApi(), suffocation: createSuffocationApi() }),
       fatigueChecks: createFatigueCheckApi(),
       conditions: Object.freeze({ exsanguination: createExsanguinationApi(),
         dying: createDyingApi() }),

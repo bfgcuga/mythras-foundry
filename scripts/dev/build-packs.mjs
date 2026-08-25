@@ -233,15 +233,26 @@ async function buildRollTablePack(name, sources, idNamespace) {
   console.log(`Compendio ${name} generado con ${sources.length} tablas.`);
 }
 
-await buildPack("skills", ALL_SKILL_SOURCES, "skill");
-await buildPack("cultures", CULTURE_SOURCES, "culture");
-await buildPack("professions", PROFESSION_SOURCES, "profession");
-await buildPack("weapons", WEAPON_SOURCES, "weapon");
-await buildPack("equipment", EQUIPMENT_SOURCES, "equipment");
-await buildPack("armor-pieces", ARMOR_SOURCES, "armor-piece");
-await buildPack("traits", TRAIT_SOURCES, "trait");
-await buildPack("combat-effects", COMBAT_EFFECT_SOURCES, "combat-effect");
-await buildPack("combat-styles", COMBAT_STYLE_SOURCES, "combat-style");
-await buildActorPack("creatures", CREATURE_SOURCES, "creature");
-await buildMacroPack("macros", MACRO_SOURCES, "macro");
-await buildRollTablePack("social-class-tables", SOCIAL_CLASS_TABLE_SOURCES, "table");
+const packBuilders = new Map([
+  ["skills", () => buildPack("skills", ALL_SKILL_SOURCES, "skill")],
+  ["cultures", () => buildPack("cultures", CULTURE_SOURCES, "culture")],
+  ["professions", () => buildPack("professions", PROFESSION_SOURCES, "profession")],
+  ["weapons", () => buildPack("weapons", WEAPON_SOURCES, "weapon")],
+  ["equipment", () => buildPack("equipment", EQUIPMENT_SOURCES, "equipment")],
+  ["armor-pieces", () => buildPack("armor-pieces", ARMOR_SOURCES, "armor-piece")],
+  ["traits", () => buildPack("traits", TRAIT_SOURCES, "trait")],
+  ["combat-effects", () => buildPack("combat-effects", COMBAT_EFFECT_SOURCES, "combat-effect")],
+  ["combat-styles", () => buildPack("combat-styles", COMBAT_STYLE_SOURCES, "combat-style")],
+  ["creatures", () => buildActorPack("creatures", CREATURE_SOURCES, "creature")],
+  ["macros", () => buildMacroPack("macros", MACRO_SOURCES, "macro")],
+  ["social-class-tables", () => buildRollTablePack("social-class-tables",
+    SOCIAL_CLASS_TABLE_SOURCES, "table")]
+]);
+
+const requestedPacks = process.argv.slice(2);
+const selectedPacks = requestedPacks.length ? requestedPacks : Array.from(packBuilders.keys());
+for (const name of selectedPacks) {
+  const build = packBuilders.get(name);
+  if (!build) throw new Error(`Compendio desconocido: ${name}`);
+  await build();
+}

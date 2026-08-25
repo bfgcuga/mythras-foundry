@@ -74,44 +74,50 @@ if (!game.user.isGM) {
   return;
 }
 
-const choices = ["acid", "fire", "fall", "fatigue", "drowning", "dying"];
-const options = choices.map((choice, index) => \`<label>
-  <input type="radio" class="sheet-state-box" name="hazard" value="\${choice}"\${index === 0 ? " checked" : ""}>
-  <span>\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}</span>
-</label>\`).join("");
-const result = await foundry.applications.api.DialogV2.wait({
-  window: { title: game.i18n.localize("MYTHRASF.HazardLauncher.Title") },
-  content: \`<div class="mythras-foundry mythras-dialog">
-    <fieldset><legend>\${game.i18n.localize("MYTHRASF.HazardLauncher.Select")}</legend>
-      <div class="sheet-state-list">\${options}</div>
-    </fieldset>
-  </div>\`,
-  buttons: [{
-    action: "open",
-    label: game.i18n.localize("MYTHRASF.HazardLauncher.Open"),
-    icon: "fas fa-arrow-right",
-    default: true,
-    callback: (event, button) => button.form.elements.hazard.value
-  }, {
-    action: "cancel",
-    label: game.i18n.localize("MYTHRASF.Cancel"),
-    icon: "fas fa-times"
-  }],
-  rejectClose: false
-});
-if (!result) return;
-
 const launchers = {
+  damage: game.mythrasFoundry?.hazards?.damage?.open,
   acid: game.mythrasFoundry?.hazards?.acid?.open,
   fire: game.mythrasFoundry?.hazards?.fire?.open,
   fall: game.mythrasFoundry?.hazards?.fall?.open,
   fatigue: game.mythrasFoundry?.fatigueChecks?.open,
   drowning: game.mythrasFoundry?.hazards?.suffocation?.open,
+  exsanguination: game.mythrasFoundry?.conditions?.exsanguination?.open,
   dying: game.mythrasFoundry?.conditions?.dying?.open
 };
-const open = launchers[result];
-if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.HazardLauncher.Unavailable"));
-else await open();
+const icons = { damage: "fa-heart-crack", acid: "fa-flask", fire: "fa-fire",
+  fall: "fa-person-falling", fatigue: "fa-person-running", drowning: "fa-lungs",
+  exsanguination: "fa-droplet", dying: "fa-skull" };
+const options = Object.keys(launchers).map((choice) => \`<button type="button"
+  class="mythras-launcher-button" data-launcher-choice="\${choice}"
+  title="\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}"
+  aria-label="\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}">
+  <i class="fas \${icons[choice]}" aria-hidden="true"></i>
+  <span>\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}</span>
+</button>\`).join("");
+await foundry.applications.api.DialogV2.wait({
+  window: { title: game.i18n.localize("MYTHRASF.HazardLauncher.Title") },
+  content: \`<div class="mythras-foundry mythras-dialog">
+    <h2 class="mythras-launcher-title">\${game.i18n.localize("MYTHRASF.HazardLauncher.Title")}</h2>
+    <p>\${game.i18n.localize("MYTHRASF.HazardLauncher.Select")}</p>
+    <div class="mythras-launcher-grid">\${options}</div>
+  </div>\`,
+  buttons: [{
+    action: "cancel",
+    label: game.i18n.localize("MYTHRASF.Cancel"),
+    icon: "fas fa-times"
+  }],
+  render: (event, dialog) => {
+    for (const button of dialog.element.querySelectorAll("[data-launcher-choice]")) {
+      button.addEventListener("click", async () => {
+        const open = launchers[button.dataset.launcherChoice];
+        await dialog.close();
+        if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.HazardLauncher.Unavailable"));
+        else await open();
+      });
+    }
+  },
+  rejectClose: false
+});
 `;
 
 export const MACRO_SOURCES = [{
@@ -125,11 +131,26 @@ export const MACRO_SOURCES = [{
   } }
 }, {
   buildKey: "open-hazard-launcher",
-  name: "Aplicar peligros y fatiga",
+  name: "Aplicación de daño o estados",
   type: "script",
   img: "icons/svg/hazard.svg",
   command: HAZARD_LAUNCHER_COMMAND,
-  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 2 } }
+  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 3 } }
+}, {
+  buildKey: "apply-direct-damage",
+  name: "Aplicar daño",
+  type: "script",
+  img: "icons/svg/bones.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.DirectDamage.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.hazards?.damage?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.DirectDamage.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "apply-direct-damage", macroVersion: 1 } }
 }, {
   buildKey: "apply-dying",
   name: "Aplicar Agonizando",
