@@ -334,6 +334,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         handsRequired: weaponHandsRequired(item) })),
       armor,
       hitLocations,
+      permanentWounds: hitLocations.filter((item) =>
+        Number(item.system.permanentWound?.severity ?? 0) > 0).map((item) => ({
+        item, ...item.system.permanentWound
+      })),
       hitLocationTable,
       canDeleteHitLocations: this._editMode,
       hitLocationTemplateMode: false,
@@ -409,6 +413,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-incapacitated-manual]", "change", (event) => this.#toggleManualIncapacitated(event)],
       ["[data-status-toggle]", "change", (event) => this.#toggleStatus(event)],
       ["[data-location-disabled]", "change", (event) => this.#updateLocationDisabled(event)],
+      ["[data-item-field]", "change", (event) => this.#updateItemField(event)],
       ["[data-location-hp-delta]", "click", (event) => this.#adjustLocationHitPoints(event)],
       ["[data-location-armor]", "change", (event) => this.#updateLocationArmor(event)],
       ["[data-action='roll-skill']", "click", (event) => this.#rollSkill(event)],
@@ -605,6 +610,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
     await location.update({ "system.disabled": event.currentTarget.checked });
+  }
+
+  async #updateItemField(event) {
+    if (!this.isEditable) return;
+    const field = event.currentTarget;
+    const item = this.actor.items.get(field.closest("[data-item-id]")?.dataset.itemId);
+    if (!item) return;
+    let value = field.type === "checkbox" ? field.checked : field.value;
+    if (field.type === "number") value = Number(value);
+    await item.update({ [`system.${field.dataset.itemField}`]: value });
   }
 
   async #adjustLocationHitPoints(event) {

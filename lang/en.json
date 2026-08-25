@@ -1525,5 +1525,19 @@
   "MYTHRASF.FatigueCheck.NoMembers": "The party contains no characters.",
   "MYTHRASF.FatigueCheck.SelectParticipants": "Select at least one participant.",
   "MYTHRASF.FatigueCheck.NoSkills": "No participant has the selected skill.",
-  "MYTHRASF.FatigueCheck.Unavailable": "Fatigue check requests are unavailable."
+  "MYTHRASF.FatigueCheck.Unavailable": "Fatigue check requests are unavailable.",
+  "MYTHRASF.HitLocation.Crippled": "Crippled",
+  "MYTHRASF.PermanentWound.Plural": "Permanent wounds",
+  "MYTHRASF.PermanentWound.Severity": "Severity",
+  "MYTHRASF.PermanentWound.HitPoints": "Original/effective HP",
+  "MYTHRASF.PermanentWound.LostResults": "Lost d20 results",
+  "MYTHRASF.PermanentWound.Description": "Description",
+  "MYTHRASF.PermanentWound.Empty": "There are no permanent wounds.",
+  "MYTHRASF.PermanentWound.OriginalRoll": "Original 1d3 result",
+  "MYTHRASF.PermanentWound.OriginalMaximum": "Original maximum HP",
+  "MYTHRASF.PermanentWound.EffectiveMaximum": "Effective maximum HP",
+  "MYTHRASF.PermanentWound.LegacyDescription": "Crippled limb recorded before migration.",
+  "MYTHRASF.PermanentWound.Suggested.extremity": "{location}: permanent mutilation of severity {severity}.",
+  "MYTHRASF.PermanentWound.Suggested.other": "{location}: permanent wound of severity {severity}.",
+  "MYTHRASF.Combat.NoHitLocation": "No hit location was struck; the attack causes no damage."
 }

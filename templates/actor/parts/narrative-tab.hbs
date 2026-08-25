@@ -4,6 +4,7 @@
     <label class="narrative-wide"><span>{{localize "MYTHRASF.Narrative.description"}}</span><textarea name="system.narrative.description">{{actor.system.narrative.description}}</textarea></label>
     <label><span>{{localize "MYTHRASF.Narrative.personality"}}</span><textarea name="system.narrative.personality">{{actor.system.narrative.personality}}</textarea></label>
   </fieldset>
+  {{> "systems/mythras-foundry/templates/actor/parts/permanent-wounds.hbs"}}
   <fieldset class="narrative-section"><legend>{{localize "MYTHRASF.Narrative.Drive"}}</legend>
     <label><span>{{localize "MYTHRASF.Narrative.motivation"}}</span><textarea name="system.narrative.motivation">{{actor.system.narrative.motivation}}</textarea></label><label><span>{{localize "MYTHRASF.Narrative.goals"}}</span><textarea name="system.narrative.goals">{{actor.system.narrative.goals}}</textarea></label><label><span>{{localize "MYTHRASF.Narrative.beliefs"}}</span><textarea name="system.narrative.beliefs">{{actor.system.narrative.beliefs}}</textarea></label>
   </fieldset>

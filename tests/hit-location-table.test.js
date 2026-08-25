@@ -30,7 +30,8 @@ test("d20 y Localización alinean igual sus cabeceras y datos", async () => {
 test("el preparador común resuelve estados, armadura y bloqueo pasivo", () => {
   const location = { id: "chest", type: "hitLocation", name: "Pecho", system: {
     rangeStart: 10, rangeEnd: 12, armorPoints: 1, woundLevel: "major",
-    disabled: false, amputated: true } };
+    disabled: false, permanentWound: { severity: 3, originalMaxHitPoints: 6,
+      effectiveMaxHitPoints: 1, lostHitResults: 0 } } };
   const armor = { id: "mail", type: "armor", name: "Cota", system: {
     equipped: true, armorPoints: 4, coveredLocationIds: ["chest"] } };
   const actor = { uuid: "Actor.hodei", token: { uuid: "Scene.s.Token.hodei" },
@@ -41,8 +42,8 @@ test("el preparador común resuelve estados, armadura y bloqueo pasivo", () => {
   } }) };
   const table = prepareHitLocationTable({ actor, armor: [armor], combat, armorPointLabel: "PA" });
   assert.equal(table.hasNaturalArmor, true);
-  assert.deepEqual({ disabled: table.rows[0].disabled, amputated: table.rows[0].amputated,
+  assert.deepEqual({ disabled: table.rows[0].disabled, crippled: table.rows[0].crippled,
     passiveBlocked: table.rows[0].passiveBlocked, totalArmor: table.rows[0].totalArmor },
-  { disabled: true, amputated: true, passiveBlocked: true, totalArmor: 5 });
+  { disabled: true, crippled: true, passiveBlocked: true, totalArmor: 5 });
   assert.equal(table.rows[0].armorOptions[0].label, "Cota (4 PA)");
 });

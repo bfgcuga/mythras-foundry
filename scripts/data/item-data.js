@@ -329,7 +329,16 @@ export class HitLocationData extends foundry.abstract.TypeDataModel {
       armorCostPercentage: nonNegativeNumber(10),
       armorFactorsVersion: nonNegativeNumber(0, true),
       disabled: new BooleanField({ required: true, nullable: false, initial: false }),
-      amputated: new BooleanField({ required: true, nullable: false, initial: false }),
+      permanentWound: new SchemaField({
+        severity: new NumberField({ required: true, nullable: false, integer: true,
+          initial: 0, min: 0, max: 3 }),
+        roll: new NumberField({ required: true, nullable: false, integer: true,
+          initial: 0, min: 0, max: 3 }),
+        originalMaxHitPoints: nonNegativeNumber(0, true),
+        effectiveMaxHitPoints: nonNegativeNumber(0, true),
+        lostHitResults: nonNegativeNumber(0, true),
+        description: textField()
+      }),
       description: descriptionField()
     };
   }

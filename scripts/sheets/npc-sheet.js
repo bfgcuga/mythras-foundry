@@ -188,6 +188,10 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       activeStatusControls,
       hasActiveStatusControls: activeStatusControls.length > 0,
       hitLocationTable,
+      permanentWounds: hitLocations.filter((item) =>
+        Number(item.system.permanentWound?.severity ?? 0) > 0).map((item) => ({
+        item, ...item.system.permanentWound
+      })),
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,
         selected: level.key === this.actor.system.fatigueLevel,
         levelLabel: game.i18n.localize(`MYTHRASF.Fatigue.Level.${level.key}`),

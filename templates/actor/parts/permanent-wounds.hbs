@@ -1,0 +1,23 @@
+<fieldset class="permanent-wounds-panel">
+  <legend>{{localize "MYTHRASF.PermanentWound.Plural"}}</legend>
+  <div class="permanent-wound-head" aria-hidden="true">
+    <span>{{localize "MYTHRASF.HitLocation.Location"}}</span>
+    <span>{{localize "MYTHRASF.PermanentWound.Severity"}}</span>
+    <span>{{localize "MYTHRASF.PermanentWound.HitPoints"}}</span>
+    <span>{{localize "MYTHRASF.PermanentWound.LostResults"}}</span>
+    <span>{{localize "MYTHRASF.PermanentWound.Description"}}</span>
+  </div>
+  {{#each permanentWounds as |row|}}
+    <div class="permanent-wound-row" data-item-id="{{row.item.id}}">
+      <button type="button" data-action="edit-item">{{row.item.name}}</button>
+      <output class="sheet-field-readonly">{{row.severity}}</output>
+      <output class="sheet-field-readonly penalized-value">{{row.originalMaxHitPoints}}
+        <span class="penalized-value-modifier">({{row.effectiveMaxHitPoints}})</span></output>
+      <output class="sheet-field-readonly">{{row.lostHitResults}}</output>
+      <textarea class="sheet-field-editable" data-item-field="permanentWound.description"
+        aria-label="{{localize "MYTHRASF.PermanentWound.Description"}}">{{row.description}}</textarea>
+    </div>
+  {{else}}
+    <p class="empty">{{localize "MYTHRASF.PermanentWound.Empty"}}</p>
+  {{/each}}
+</fieldset>

@@ -86,6 +86,16 @@ async function materializeItem(item, evaluateFormula, failures) {
       integer: true, evaluateFormula, failures,
       apply: (value) => { system.maxHitPoints = value; } });
     system.currentHitPoints = Number(system.maxHitPoints ?? 0);
+    if (item.type === "hitLocation" && Number(system.permanentWound?.severity ?? 0) > 0) {
+      const original = Number(system.maxHitPoints);
+      const severity = Number(system.permanentWound.severity);
+      const effective = permanentWoundMaximum(original, severity);
+      system.permanentWound.originalMaxHitPoints = original;
+      system.permanentWound.effectiveMaxHitPoints = effective;
+      system.permanentWound.lostHitResults = permanentWoundLostHitResults(item, severity);
+      system.maxHitPoints = effective;
+      system.currentHitPoints = effective;
+    }
   }
   if (["hitLocation", "weapon", "armor"].includes(item.type)) {
     await applyFormula({ formula: system.armorPointsFormula,
@@ -117,3 +127,4 @@ function clone(value) {
     ? globalThis.structuredClone(value)
     : JSON.parse(JSON.stringify(value));
 }
+import { permanentWoundMaximum, permanentWoundLostHitResults } from "./hit-locations.js";

@@ -84,16 +84,16 @@ test("Estado contiene Fatiga y Combate ya no la duplica", async () => {
   assert.match(npc, /MYTHRASF\.Tab\.Status/);
 });
 
-test("Trasfondo, amputación y silueta canónica quedan modelados", async () => {
+test("Trasfondo, lesión permanente y silueta canónica quedan modelados", async () => {
   const [model, itemModel, sheet, silhouette] = await Promise.all([
     read("scripts/data/character-data.js"), read("scripts/data/item-data.js"),
     read("templates/actor/character-sheet.hbs"), read("scripts/ui/body-silhouette.js")]);
   for (const field of ["history", "description", "personality", "motivation", "goals",
     "beliefs", "siblings", "parents", "partner", "children", "extendedFamily", "allies",
     "contacts", "rivals", "enemies", "secrets", "notes"]) assert.match(model, new RegExp(`"${field}"`));
-  assert.match(itemModel, /amputated: new BooleanField/);
+  assert.match(itemModel, /permanentWound: new SchemaField/);
   const itemSheet = await read("templates/item/item-sheet.hbs");
-  assert.match(itemSheet, /name="system\.amputated"/);
+  assert.match(itemSheet, /item\.system\.permanentWound\.severity/);
   assert.doesNotMatch(sheet, /data-location-amputated/);
   assert.match(sheet, /data-body-silhouette/);
   assert.match(silhouette, /assets\/Silueta\/Silueta\.svg/);
@@ -102,9 +102,11 @@ test("Trasfondo, amputación y silueta canónica quedan modelados", async () => 
 
 test("las consecuencias narrativas distinguen herida grave y miembro inutilizable", () => {
   const locations = [{ id: "arm", type: "hitLocation", name: "Brazo",
-    system: { currentHitPoints: 0, maxHitPoints: 5, disabled: false, amputated: false } },
+    system: { currentHitPoints: 0, maxHitPoints: 5, disabled: false,
+      permanentWound: { severity: 0 } } },
   { id: "leg", type: "hitLocation", name: "Pierna",
-    system: { currentHitPoints: 5, maxHitPoints: 5, disabled: false, amputated: true } }];
+    system: { currentHitPoints: 5, maxHitPoints: 5, disabled: false,
+      permanentWound: { severity: 3 } } }];
   const risks = woundRollRisks({ items: locations, effects: [] });
   assert.deepEqual(risks.serious.map((item) => item.id), ["arm"]);
   assert.deepEqual(risks.unusable.map((item) => item.id), ["leg"]);

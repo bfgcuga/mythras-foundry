@@ -17,6 +17,14 @@ test("paradas y daño se incorporan como Roll al mensaje interactivo", () => {
   assert.match(source, /rolls: appendSerializedRolls\(message, request\.serializedRoll\)/);
 });
 
+test("una tirada sin localización cierra el daño sin reasignarlo", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(source, /combat\.damage\.status = "missedLocation"/);
+  assert.match(source, /MYTHRASF\.Combat\.NoHitLocation/);
+  assert.match(source, /"unavailable", "applied", "missedLocation"/);
+  assert.match(source, /permanentWound: entry\.permanentWound/);
+});
+
 test("la respuesta de combate rechaza estado, revision, propiedad y tipo invalidos", () => {
   const combat = { status: "awaitingDefense", revision: 2 };
   const actor = { testUserPermission: () => true };

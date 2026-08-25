@@ -19,6 +19,10 @@ import {
   findHitLocation,
   humanHitLocationData,
   hasSeriousWound,
+  permanentWoundLostHitResults,
+  permanentWoundMaximum,
+  permanentWoundSeverity,
+  permanentWoundState,
   woundLevel,
   woundLocationKind,
   woundPenaltyKey,
@@ -175,6 +179,29 @@ test("una tirada localiza el rango correspondiente o devuelve null", () => {
   ];
   assert.equal(findHitLocation(locations, 17), locations[1]);
   assert.equal(findHitLocation(locations, 21), null);
+});
+
+test("la lesión permanente progresa, redondea y conserva el máximo original", () => {
+  assert.deepEqual([1, 2, 3].map((grade) => permanentWoundMaximum(5, grade)), [4, 2, 1]);
+  assert.equal(permanentWoundSeverity(1, 1), 2);
+  assert.equal(permanentWoundSeverity(2, 1), 3);
+  assert.equal(permanentWoundSeverity(3, 1), 3);
+  const arm = { system: { rangeStart: 13, rangeEnd: 15, category: "limb",
+    hpClass: "arm", maxHitPoints: 5, permanentWound: { severity: 1,
+      originalMaxHitPoints: 5, description: "Anterior" } } };
+  const wound = permanentWoundState(arm, { severity: 2, roll: 1, description: "Nueva" });
+  assert.deepEqual({ severity: wound.severity, original: wound.originalMaxHitPoints,
+    effective: wound.effectiveMaxHitPoints, lost: wound.lostHitResults },
+  { severity: 2, original: 5, effective: 2, lost: 2 });
+  assert.equal(permanentWoundLostHitResults(arm, 3), 3);
+});
+
+test("los resultados anulados desde el inicio no impactan ninguna localización", () => {
+  const arm = { system: { rangeStart: 13, rangeEnd: 15,
+    permanentWound: { lostHitResults: 2 } } };
+  assert.equal(findHitLocation([arm], 13), null);
+  assert.equal(findHitLocation([arm], 14), null);
+  assert.equal(findHitLocation([arm], 15), arm);
 });
 
 test("una defensa predeclarada comparte la mayor reduccion por encima de 100", () => {

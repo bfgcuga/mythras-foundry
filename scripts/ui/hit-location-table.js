@@ -25,7 +25,16 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
         (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
       showDisabledControl: item.system.woundLevel === "serious",
       disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
-      amputated: Boolean(item.system.amputated),
+      crippled: Number(item.system.permanentWound?.severity ?? 0) > 0,
+      permanentWound: item.system.permanentWound,
+      maximumDisplay: {
+        base: Number(item.system.permanentWound?.originalMaxHitPoints)
+          || Number(item.system.maxHitPoints),
+        effective: Number(item.system.maxHitPoints),
+        penalized: Number(item.system.permanentWound?.originalMaxHitPoints) > 0
+          && Number(item.system.permanentWound.originalMaxHitPoints)
+            !== Number(item.system.maxHitPoints)
+      },
       passiveBlocked: blockedIds.has(item.id)
     }))
   };

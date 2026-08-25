@@ -43,6 +43,7 @@ const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/inventory-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/inventory-tree.hbs",
   "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs",
+  "systems/mythras-foundry/templates/actor/parts/permanent-wounds.hbs",
   "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs",
   "systems/mythras-foundry/templates/actor/parts/skill-overview.hbs"
 ];

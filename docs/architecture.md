@@ -321,9 +321,20 @@ bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
 
 La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
 `assets/Silueta`. Vincula regiones mediante rangos, categoría y clase de PG
-humanos, nunca mediante nombres traducidos. `hitLocation.system.amputated` es
-independiente de inutilización y herida. Los textos de Trasfondo residen en
-`CharacterData.system.narrative`.
+humanos, nunca mediante nombres traducidos. La lesión consolidada reside en
+`hitLocation.system.permanentWound`: conserva gravedad, tirada, máximo original,
+máximo efectivo, resultados del d20 anulados y descripción. El máximo operativo
+de la localización es siempre el efectivo; los recálculos por CON/TAM y la
+generación de PNJ reaplican la lesión mediante los ayudantes puros de
+`scripts/rules/hit-locations.js`. Los textos de Trasfondo residen en
+`CharacterData.system.narrative`, mientras que el panel de heridas permanentes
+edita directamente sus Items de localización.
+
+Una Herida Crítica aplicada por el flujo de combate tira `1d3` si la localización
+no ha alcanzado gravedad 3, fuerza una mejora mínima de un grado y actualiza la
+lesión junto con sus PG. En extremidades, los resultados anulados se retiran
+desde el inicio del intervalo; una tirada aleatoria que cae en ellos termina el
+ataque sin localización ni daño.
 
 La tabla operativa de localizaciones de personaje y PNJ tiene una única fuente
 de presentación. `scripts/ui/hit-location-table.js` prepara filas, armadura y

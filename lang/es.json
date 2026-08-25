@@ -1525,5 +1525,19 @@
   "MYTHRASF.FatigueCheck.NoMembers": "El grupo no contiene personajes.",
   "MYTHRASF.FatigueCheck.SelectParticipants": "Selecciona al menos un participante.",
   "MYTHRASF.FatigueCheck.NoSkills": "Ningún participante dispone de la habilidad seleccionada.",
-  "MYTHRASF.FatigueCheck.Unavailable": "La solicitud de tiradas de fatiga no está disponible."
+  "MYTHRASF.FatigueCheck.Unavailable": "La solicitud de tiradas de fatiga no está disponible.",
+  "MYTHRASF.HitLocation.Crippled": "Lisiada",
+  "MYTHRASF.PermanentWound.Plural": "Heridas permanentes",
+  "MYTHRASF.PermanentWound.Severity": "Gravedad",
+  "MYTHRASF.PermanentWound.HitPoints": "PG original/efectivo",
+  "MYTHRASF.PermanentWound.LostResults": "Resultados d20 anulados",
+  "MYTHRASF.PermanentWound.Description": "Descripción",
+  "MYTHRASF.PermanentWound.Empty": "No hay heridas permanentes.",
+  "MYTHRASF.PermanentWound.OriginalRoll": "Resultado original del 1d3",
+  "MYTHRASF.PermanentWound.OriginalMaximum": "PG máximos originales",
+  "MYTHRASF.PermanentWound.EffectiveMaximum": "PG máximos efectivos",
+  "MYTHRASF.PermanentWound.LegacyDescription": "Extremidad lisiada registrada antes de la migración.",
+  "MYTHRASF.PermanentWound.Suggested.extremity": "{location}: mutilación permanente de gravedad {severity}.",
+  "MYTHRASF.PermanentWound.Suggested.other": "{location}: lesión permanente de gravedad {severity}.",
+  "MYTHRASF.Combat.NoHitLocation": "Ninguna localización impactada; el ataque no causa daño."
 }

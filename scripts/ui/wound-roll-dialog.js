@@ -14,7 +14,7 @@ export function woundRollRisks(actor) {
       ? [condition.locationId] : [];
   }));
   const unusable = locations.filter((location) => location.system.disabled
-    || location.system.amputated || timedIds.has(location.id));
+    || Number(location.system.permanentWound?.severity ?? 0) > 0 || timedIds.has(location.id));
   return Object.freeze({ serious, unusable });
 }
 

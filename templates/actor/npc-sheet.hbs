@@ -109,6 +109,7 @@
       </div>
       <fieldset class="npc-magic-panel"><legend>{{localize "MYTHRASF.Npc.Magic"}}</legend><textarea class="sheet-field-editable" name="system.magicNotes">{{actor.system.magicNotes}}</textarea></fieldset>
       <fieldset class="npc-description-panel"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable" name="system.description">{{actor.system.description}}</textarea></fieldset>
+      {{> "systems/mythras-foundry/templates/actor/parts/permanent-wounds.hbs"}}
       <fieldset><legend>{{localize "MYTHRASF.Npc.ArmorNotes"}}</legend><input class="sheet-field-editable" type="text" name="system.armorNotes" value="{{actor.system.armorNotes}}"></fieldset>
     </section>
 

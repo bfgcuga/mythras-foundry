@@ -36,7 +36,8 @@ function tooltip(actor, location, armors) {
       total: totalArmorPoints(location, armors) }),
     game.i18n.format("MYTHRASF.Silhouette.Wound", { wound: game.i18n.localize(`MYTHRASF.Wound.${level}`) }),
     system.disabled ? game.i18n.localize("MYTHRASF.HitLocation.Disabled") : "",
-    system.amputated ? game.i18n.localize("MYTHRASF.HitLocation.Amputated") : "",
+    Number(system.permanentWound?.severity ?? 0) > 0
+      ? game.i18n.localize("MYTHRASF.HitLocation.Crippled") : "",
     conditions.length ? conditions.join(", ") : ""].filter(Boolean).join(" · ");
 }
 
@@ -64,7 +65,7 @@ export async function renderBodySilhouette(actor, root) {
       continue;
     }
     const level = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
-    region.classList.add(location.system.amputated ? "body-location--amputated"
+    region.classList.add(Number(location.system.permanentWound?.severity ?? 0) > 0 ? "body-location--crippled"
       : `body-location--${level}`);
     const label = tooltip(actor, location, armors);
     region.setAttribute("aria-label", label);

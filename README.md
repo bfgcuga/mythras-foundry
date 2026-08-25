@@ -64,8 +64,10 @@ El sistema incluye actualmente:
   vinculada por datos
   canónicos a sus localizaciones de golpe;
 - antes de cada tirada física, personaje y PNJ permiten decidir si una Herida
-  Grave aumenta su dificultad y si una localización inutilizada o amputada hace
+  Grave aumenta su dificultad y si una localización inutilizada o lisiada hace
   imposible esa acción concreta;
+  las Heridas Críticas consolidan además una lesión permanente por localización,
+  reducen sus PG máximos y pueden anular resultados de la tirada de impacto;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
   limitadas o reforzadas, modificadores visibles y gasto de suerte para repetir
   o invertir los dados, con resultados presentados en tarjetas de chat; una

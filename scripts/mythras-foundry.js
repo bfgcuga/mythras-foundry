@@ -4,7 +4,7 @@ import { DEFAULT_HOME_DATA, equipmentIcon } from "./data/equipment.js";
 import { actorIncapacitatedState, syncIncapacitatedStatus
 } from "./documents/mythras-actor.js";
 import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
-  worstWoundLevel } from "./rules/hit-locations.js";
+  permanentWoundState, worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { mergeWeaponProfiles } from "./rules/combat-style-weapons.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
@@ -222,6 +222,9 @@ Hooks.once("ready", async () => {
   for (const item of game.items.filter((candidate) => candidate.type === "armor")) {
     await migrateWorldArmor(item);
   }
+  for (const item of game.items.filter((candidate) => candidate.type === "hitLocation")) {
+    await migratePermanentWoundItem(item);
+  }
 
   for (const actor of game.actors.filter((candidate) => isCombatActor(candidate))) {
     const legacyEmbeddedSkills = actor.items.filter(
@@ -243,6 +246,7 @@ Hooks.once("ready", async () => {
       await migrateTraitData(item, traitCatalog);
     }
     await migrateCombatItems(actor);
+    await migrateActorPermanentWounds(actor);
     if (actor.type === "character") await ensureHumanHitLocations(actor);
     if (actor.type === "character") await ensureDefaultHome(actor);
     await migrateActorArmor(actor);
@@ -326,10 +330,19 @@ Hooks.on("updateActor", async (actor, changed, options, userId) => {
       );
       const previousMaximum = Number(item.system.maxHitPoints ?? maximum);
       const current = Number(item.system.currentHitPoints ?? previousMaximum);
+      const severity = Number(item.system.permanentWound?.severity ?? 0);
+      const wound = severity ? permanentWoundState({ ...item, system: { ...item.system,
+        maxHitPoints: maximum, permanentWound: { ...item.system.permanentWound,
+          originalMaxHitPoints: maximum } } }, { severity,
+        roll: item.system.permanentWound.roll,
+        description: item.system.permanentWound.description }) : null;
+      const effectiveMaximum = wound?.effectiveMaxHitPoints ?? maximum;
       return {
         _id: item.id,
-        "system.maxHitPoints": maximum,
-        "system.currentHitPoints": current === previousMaximum ? maximum : current
+        "system.maxHitPoints": effectiveMaximum,
+        "system.currentHitPoints": current === previousMaximum ? effectiveMaximum
+          : Math.min(current, effectiveMaximum),
+        ...(wound ? { "system.permanentWound": wound } : {})
       };
     });
   if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
@@ -390,6 +403,40 @@ async function ensureHumanHitLocations(actor) {
     actor.system,
     (key) => game.i18n.localize(key)
   ));
+}
+
+function permanentWoundMigrationUpdate(item) {
+  if (item.type !== "hitLocation") return null;
+  const hasLegacy = foundry.utils.hasProperty(item._source, "system.amputated");
+  const legacy = Boolean(foundry.utils.getProperty(item._source, "system.amputated"));
+  const storedSeverity = Number(item._source.system?.permanentWound?.severity ?? 0);
+  if (!hasLegacy && storedSeverity >= 0
+    && item._source.system?.permanentWound !== undefined) return null;
+  const update = {};
+  if (legacy && storedSeverity === 0) {
+    const wound = permanentWoundState(item, { severity: 3, roll: 3,
+      description: game.i18n.localize("MYTHRASF.PermanentWound.LegacyDescription") });
+    update["system.permanentWound"] = wound;
+    update["system.maxHitPoints"] = wound.effectiveMaxHitPoints;
+    update["system.currentHitPoints"] = Math.min(Number(item.system.currentHitPoints),
+      wound.effectiveMaxHitPoints);
+  }
+  if (hasLegacy) update["system.-=amputated"] = null;
+  return Object.keys(update).length ? update : null;
+}
+
+async function migratePermanentWoundItem(item) {
+  const update = permanentWoundMigrationUpdate(item);
+  if (update) await item.update(update);
+}
+
+async function migrateActorPermanentWounds(actor) {
+  const updates = actor.items.filter((item) => item.type === "hitLocation")
+    .map((item) => {
+      const update = permanentWoundMigrationUpdate(item);
+      return update ? { _id: item.id, ...update } : null;
+    }).filter(Boolean);
+  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
 }
 
 async function ensureDefaultHome(actor) {

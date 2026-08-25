@@ -33,6 +33,48 @@ export function woundLocationKind(location) {
   return Object.freeze({ extremity, arm, leg, vital: !extremity });
 }
 
+export function permanentWoundSeverity(previousSeverity = 0, roll = 0) {
+  const previous = Math.max(0, Math.min(3, Math.floor(Number(previousSeverity) || 0)));
+  if (previous >= 3) return 3;
+  return Math.max(previous + 1, Math.max(1, Math.min(3, Math.floor(Number(roll) || 1))));
+}
+
+export function permanentWoundMaximum(originalMaximum, severity = 0) {
+  const original = Math.max(1, Math.floor(Number(originalMaximum) || 1));
+  const grade = Math.max(0, Math.min(3, Math.floor(Number(severity) || 0)));
+  if (grade === 1) return Math.max(1, Math.ceil(original * 2 / 3));
+  if (grade === 2) return Math.max(1, Math.ceil(original / 3));
+  if (grade === 3) return 1;
+  return original;
+}
+
+export function permanentWoundLostHitResults(location, severity = 0) {
+  if (!woundLocationKind(location).extremity) return 0;
+  const system = location?.system ?? location ?? {};
+  const width = Math.max(0, Number(system.rangeEnd) - Number(system.rangeStart) + 1);
+  const grade = Math.max(0, Math.min(3, Math.floor(Number(severity) || 0)));
+  return grade ? Math.min(width, Math.ceil(width * grade / 3)) : 0;
+}
+
+export function permanentWoundState(location, { severity, roll = 0, description = "" } = {}) {
+  const system = location?.system ?? location ?? {};
+  const previous = system.permanentWound ?? {};
+  const grade = permanentWoundSeverity(previous.severity, severity ?? roll);
+  const original = Math.max(1, Number(previous.originalMaxHitPoints)
+    || Number(system.maxHitPoints) || 1);
+  const effective = permanentWoundMaximum(original, grade);
+  return Object.freeze({ severity: grade, roll: Math.max(0, Math.min(3, Number(roll) || 0)),
+    originalMaxHitPoints: original, effectiveMaxHitPoints: effective,
+    lostHitResults: permanentWoundLostHitResults(location, grade),
+    description: String(description || previous.description || "") });
+}
+
+export function effectiveHitLocationRange(location) {
+  const system = location?.system ?? location ?? {};
+  const lost = Math.max(0, Number(system.permanentWound?.lostHitResults) || 0);
+  return Object.freeze({ start: Number(system.rangeStart) + lost, end: Number(system.rangeEnd) });
+}
+
 export function calculateLocationHitPoints(constitution, size, hpClass = "standard") {
   const band = Math.max(1, Math.ceil((Number(constitution) + Number(size)) / 5));
   const offsets = { arm: -1, standard: 0, abdomen: 1, chest: 2 };
@@ -72,8 +114,10 @@ export function hasSeriousWound(locations) {
 
 export function findHitLocation(locations, roll) {
   const value = Number(roll);
-  return locations.find((location) => value >= Number(location.system.rangeStart)
-    && value <= Number(location.system.rangeEnd)) ?? null;
+  return locations.find((location) => {
+    const range = effectiveHitLocationRange(location);
+    return value >= range.start && value <= range.end;
+  }) ?? null;
 }
 
 export function humanHitLocationData(actorSystem, localize = (key) => key) {
@@ -98,7 +142,9 @@ export function humanHitLocationData(actorSystem, localize = (key) => key) {
         armorEncumbranceMultiplier: location.armorEncumbranceMultiplier,
         armorCostPercentage: location.armorCostPercentage,
         armorFactorsVersion: 2,
-        disabled: false
+        disabled: false,
+        permanentWound: { severity: 0, roll: 0, originalMaxHitPoints: 0,
+          effectiveMaxHitPoints: 0, lostHitResults: 0, description: "" }
       }
     };
   });

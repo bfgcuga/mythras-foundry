@@ -3,7 +3,8 @@ import { combatAttackHits, damageModifierFormula, difficultyTarget, evasionWinne
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "./weapon-modes.js";
 import { resolveActorConditions, actorLoadState } from "./actor-conditions.js";
 import { invertD100 } from "./skill-roll.js";
-import { findHitLocation, woundLevel, woundLocationKind } from "./hit-locations.js";
+import { findHitLocation, permanentWoundState, woundLevel,
+  woundLocationKind } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
@@ -38,6 +39,12 @@ const localize = (key) => game.i18n.localize(key);
 const actorIdentity = (actor) => actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
 const tokenUuid = (token) => token?.document?.uuid ?? token?.uuid ?? "";
 const pendingAttackActors = new Set();
+
+function locationSnapshot(item) {
+  return { id: item.id, name: item.name, rangeStart: item.system.rangeStart,
+    rangeEnd: item.system.rangeEnd,
+    permanentWound: foundry.utils.deepClone(item.system.permanentWound ?? {}) };
+}
 
 function combatEntryDisplayName(entry) {
   if (!entry) return "";
@@ -88,7 +95,7 @@ function exchangeTerminal(combat) {
   if ((combat.effects?.checks ?? []).some((entry) => entry.status === "pending")) return false;
   if ((combat.effects?.selections ?? []).some((entry) => entry.status === "pending")) return false;
   if ((combat.consequences ?? []).some((entry) => entry.status === "pending")) return false;
-  return ["unavailable", "applied"].includes(combat.damage?.status);
+  return ["unavailable", "applied", "missedLocation"].includes(combat.damage?.status);
 }
 
 async function advanceCombatTurnForExchange(message, combat) {
@@ -388,9 +395,8 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       tokenUuid: setup.targetTokenUuid, defense: null, luckHistory: [], size: defender.system.size,
       targetType: setup.targetWeaponId ? "weapon" : "actor", targetWeaponId: setup.targetWeaponId ?? "",
       locations: (setup.targetWeaponId ? defender.items.filter((item) => item.id === setup.targetWeaponId)
-        : defender.items.filter((item) => item.type === "hitLocation")).map((item) => ({
-        id: item.id, name: item.name, rangeStart: item.system.rangeStart, rangeEnd: item.system.rangeEnd
-      })) }, resolution: null, damage: { status: "unavailable" }, turnEconomy, ranged,
+        : defender.items.filter((item) => item.type === "hitLocation")).map(locationSnapshot) },
+    resolution: null, damage: { status: "unavailable" }, turnEconomy, ranged,
     surprise: surpriseOpportunity(defender, roll.total, targetValue) };
   if (!combat.predeclared) combat.attackClassification = resolveCombatExchange({
     attack: { target: targetValue, rawRoll: roll.total }, defense: { type: "none" }
@@ -431,9 +437,7 @@ export async function createResolvedReactionAttack({ tracker, attackerCombatantI
         effects: mode.effects }, rawRoll: attackRoll, serializedRoll: null, luckHistory: [] },
     defender: { actorUuid: defender.uuid, actorId: actorIdentity(defender), actorName: tokenDisplayName(defenderEntry.token),
       tokenUuid: defenderEntry.token?.uuid ?? "", defense, luckHistory: [], size: defender.system.size,
-      locations: defender.items.filter((item) => item.type === "hitLocation").map((item) => ({
-        id: item.id, name: item.name, rangeStart: item.system.rangeStart,
-        rangeEnd: item.system.rangeEnd })) }, resolution,
+      locations: defender.items.filter((item) => item.type === "hitLocation").map(locationSnapshot) }, resolution,
     effects: { winner: resolution.winner, slots: totalSlots, sideSlots, surpriseSlots: 0,
       pendingSide: sideSlots.attacker ? "attacker" : sideSlots.defender ? "defender" : null,
       selections: [], confirmed: totalSlots === 0, checks: [] },
@@ -558,8 +562,7 @@ async function chooseAccidentalTarget(message, combat) {
   combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenDisplayName(token),
     tokenUuid: selected, defense: null, luckHistory: [], size: actor.system.size,
     targetType: "actor", targetWeaponId: "", locations: actor.items
-      .filter((item) => item.type === "hitLocation").map((item) => ({ id: item.id,
-        name: item.name, rangeStart: item.system.rangeStart, rangeEnd: item.system.rangeEnd })) };
+      .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
   if (combat.turnEconomy) combat.turnEconomy.defenderCombatantId = entry.id;
   combat.attacker.target = combat.ranged.normalTarget;
   combat.attacker.difficulty = "standard";
@@ -983,8 +986,12 @@ async function requestCombatDamage(message, combat) {
   if (locationRoll && selectedEffectCount(combat.effects?.selections ?? [], "aimedShot")) {
     const locations = combat.defender.locations ?? [];
     const rolledLocation = findHitLocation(locations.map((entry) => ({ ...entry,
-      system: { rangeStart: entry.rangeStart, rangeEnd: entry.rangeEnd } })), locationRoll.total);
+      system: { rangeStart: entry.rangeStart, rangeEnd: entry.rangeEnd,
+        permanentWound: entry.permanentWound } })), locationRoll.total);
     rolledLocationId = rolledLocation?.id ?? "";
+    if (!rolledLocationId) {
+      chosenLocation = "";
+    } else {
     const index = locations.findIndex((entry) => entry.id === rolledLocationId);
     const adjacent = locations.filter((entry, candidate) => Math.abs(candidate - index) <= 1);
     chosenLocation = await foundry.applications.api.DialogV2.wait({
@@ -994,6 +1001,7 @@ async function requestCombatDamage(message, combat) {
         callback: (event, button) => button.form.elements.location.value }], rejectClose: false
     });
     if (!chosenLocation) return;
+    }
   }
   const request = { action: "combatDamage", messageId: message.id, revision: combat.revision,
     userId: game.user.id, formula, weaponFormula: weaponDamage, modifierFormula: modifier,
@@ -1016,7 +1024,8 @@ async function applyCombatDamage(message, request) {
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
   const location = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
     entry.id === request.locationId) : findHitLocation((combat.defender.locations ?? []).map((entry) => ({
-    id: entry.id, name: entry.name, system: { rangeStart: entry.rangeStart, rangeEnd: entry.rangeEnd }
+    id: entry.id, name: entry.name, system: { rangeStart: entry.rangeStart,
+      rangeEnd: entry.rangeEnd, permanentWound: entry.permanentWound }
   })), request.locationRoll);
   combat.damage = { status: "rolled", formula: request.formula,
     weaponFormula: request.weaponFormula, modifierFormula: request.modifierFormula,
@@ -1027,6 +1036,16 @@ async function applyCombatDamage(message, request) {
     luckHistory: [], locationRoll: request.locationRoll == null ? null : Number(request.locationRoll),
     rolledLocationId: request.rolledLocationId ?? "",
     locationId: location?.id ?? "" };
+  if (!location && combat.defender.targetType !== "weapon") {
+    combat.damage.status = "missedLocation";
+    combat.revision += 1;
+    await message.update({ content: renderCombatExchange(combat),
+      rolls: appendSerializedRolls(message, request.serializedRoll,
+        request.alternateRoll?.serializedRoll, request.serializedLocationRoll),
+      [`flags.${FLAG_SCOPE}.combat`]: combat });
+    await advanceCombatTurnForExchange(message, combat);
+    return;
+  }
   combat.revision += 1;
   await refreshDamageProposal(combat);
   await message.update({ content: renderCombatExchange(combat),
@@ -1371,7 +1390,28 @@ async function applyProposedDamage(message, request) {
   combat.damage.status = "applying";
   combat.revision += 1;
   await message.update({ [`flags.${FLAG_SCOPE}.combat`]: combat });
-  try { await location.update({ "system.currentHitPoints": combat.damage.afterHitPoints }); }
+  const locationUpdate = { "system.currentHitPoints": combat.damage.afterHitPoints };
+  if (combat.defender.targetType !== "weapon" && combat.damage.resultingWound === "major"
+    && Number(location.system.permanentWound?.severity ?? 0) < 3) {
+    const permanentRoll = await evaluateAnimatedRoll("1d3",
+      { speaker: ChatMessage.getSpeaker({ actor: defender }) });
+    const currentSeverity = Number(location.system.permanentWound?.severity ?? 0);
+    const effectiveSeverity = Math.max(permanentRoll.total, currentSeverity + 1);
+    const kind = woundLocationKind(location);
+    const description = game.i18n.format(
+      `MYTHRASF.PermanentWound.Suggested.${kind.extremity ? "extremity" : "other"}`,
+      { location: location.name, severity: effectiveSeverity });
+    const permanentWound = permanentWoundState(location,
+      { severity: effectiveSeverity, roll: permanentRoll.total, description });
+    locationUpdate["system.permanentWound"] = permanentWound;
+    locationUpdate["system.maxHitPoints"] = permanentWound.effectiveMaxHitPoints;
+    locationUpdate["system.currentHitPoints"] = Math.min(combat.damage.afterHitPoints,
+      permanentWound.effectiveMaxHitPoints);
+    combat.damage.afterHitPoints = locationUpdate["system.currentHitPoints"];
+    combat.damage.permanentWound = permanentWound;
+    combat.damage.permanentWoundRoll = permanentRoll.total;
+  }
+  try { await location.update(locationUpdate); }
   catch (error) {
     combat.damage.status = "proposed";
     await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
@@ -1467,11 +1507,13 @@ export function renderCombatExchange(combat) {
   const guidedBeforeDamage = (combat.effects?.selections ?? []).some((effect) =>
     effect.status === "pending" && !effect.requiresWound);
   if (combat.damage?.status === "ready" && !guidedBeforeDamage) damageHtml = `<button type="button" data-combat-action="roll-damage" title="${escape(localize("MYTHRASF.Combat.RollDamage"))}">${escape(localize("MYTHRASF.Combat.RollDamage"))}</button>`;
-  if (["rolled", "proposed", "stale", "applying", "applied"].includes(combat.damage?.status)) {
+  if (combat.damage?.status === "missedLocation") {
+    damageHtml = `<fieldset class="combat-damage-panel"><legend>${escape(localize("MYTHRASF.Chat.Damage"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${combat.damage.locationRoll}</strong></div><div class="combat-card-warning">${escape(localize("MYTHRASF.Combat.NoHitLocation"))}</div></fieldset>`;
+  } else if (["rolled", "proposed", "stale", "applying", "applied"].includes(combat.damage?.status)) {
     const damage = combat.damage;
     const extraordinary = damage.extraordinaryFormula && damage.extraordinaryFormula !== "0"
       ? ` + ${escape(localize("MYTHRASF.Combat.DamageExtraordinary"))} (${escape(damage.extraordinaryFormula)})` : "";
-    damageHtml = `<fieldset class="combat-damage-panel"><legend>${escape(localize("MYTHRASF.Chat.Damage"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageBreakdown"))}</span><strong>${escape(localize("MYTHRASF.Combat.DamageWeapon"))} (${escape(damage.weaponFormula ?? "0")}) + ${escape(localize("MYTHRASF.Combat.DamageBonus"))} (${escape(damage.modifierFormula ?? "0")})${extraordinary}</strong>${["proposed", "stale"].includes(damage.status) ? luck("damage") : ""}</div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageDice"))}</span><strong>${escape(damage.rollExpression ?? damage.resultExpression ?? damage.rawRoll)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.Result"))}</span><strong>${damage.rawRoll}</strong></div>${damage.locationRoll != null ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${damage.locationRoll}</strong></div>` : ""}<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AfterContainedBlow"))}</span><strong>${damage.afterContainedBlow ?? "—"}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span><strong>${escape(localize(`MYTHRASF.Combat.ParryType.${damage.parryType ?? "none"}`))}: ${damage.afterParry ?? "—"}</strong></div><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select data-damage-location ${damage.status === "applied" ? "disabled" : ""}>${locationOptions}</select></label><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Armor"))}</span><strong>${damage.armorPoints ?? "—"}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${damage.penetratingDamage ?? "—"}</strong></div>${damage.push?.triggered ? `<div class="combat-card-warning">${escape(game.i18n.format("MYTHRASF.Combat.PushSummary", { distance: damage.push.distance, excess: damage.push.excess }))}</div>` : ""}${damage.status === "stale" ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Combat.DamageStale"))}</p>` : ""}${damage.status === "applied" ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AppliedHitPoints"))}</span><strong>${damage.beforeHitPoints} → ${damage.afterHitPoints}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(localize(`MYTHRASF.Wound.${damage.resultingWound}`))}</strong></div>${["serious", "major"].includes(damage.resultingWound) ? `<p class="combat-card-warning">${escape(localize(`MYTHRASF.Combat.WoundWarning.${damage.resultingWound}`))}</p>` : ""}` : `<button type="button" data-combat-action="apply-damage" title="${escape(localize("MYTHRASF.Combat.ApplyDamage"))}">${escape(localize("MYTHRASF.Combat.ApplyDamage"))}</button>`}</fieldset>`;
+    damageHtml = `<fieldset class="combat-damage-panel"><legend>${escape(localize("MYTHRASF.Chat.Damage"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageBreakdown"))}</span><strong>${escape(localize("MYTHRASF.Combat.DamageWeapon"))} (${escape(damage.weaponFormula ?? "0")}) + ${escape(localize("MYTHRASF.Combat.DamageBonus"))} (${escape(damage.modifierFormula ?? "0")})${extraordinary}</strong>${["proposed", "stale"].includes(damage.status) ? luck("damage") : ""}</div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.DamageDice"))}</span><strong>${escape(damage.rollExpression ?? damage.resultExpression ?? damage.rawRoll)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.Result"))}</span><strong>${damage.rawRoll}</strong></div>${damage.locationRoll != null ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${damage.locationRoll}</strong></div>` : ""}<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AfterContainedBlow"))}</span><strong>${damage.afterContainedBlow ?? "—"}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span><strong>${escape(localize(`MYTHRASF.Combat.ParryType.${damage.parryType ?? "none"}`))}: ${damage.afterParry ?? "—"}</strong></div><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select data-damage-location ${damage.status === "applied" ? "disabled" : ""}>${locationOptions}</select></label><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Armor"))}</span><strong>${damage.armorPoints ?? "—"}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${damage.penetratingDamage ?? "—"}</strong></div>${damage.push?.triggered ? `<div class="combat-card-warning">${escape(game.i18n.format("MYTHRASF.Combat.PushSummary", { distance: damage.push.distance, excess: damage.push.excess }))}</div>` : ""}${damage.status === "stale" ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Combat.DamageStale"))}</p>` : ""}${damage.status === "applied" ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.AppliedHitPoints"))}</span><strong>${damage.beforeHitPoints} → ${damage.afterHitPoints}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(localize(`MYTHRASF.Wound.${damage.resultingWound}`))}</strong></div>${damage.permanentWound ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.PermanentWound.Severity"))} (1d3: ${damage.permanentWoundRoll})</span><strong>${damage.permanentWound.severity}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.PermanentWound.Description"))}</span><strong>${escape(damage.permanentWound.description)}</strong></div>` : ""}${["serious", "major"].includes(damage.resultingWound) ? `<p class="combat-card-warning">${escape(localize(`MYTHRASF.Combat.WoundWarning.${damage.resultingWound}`))}</p>` : ""}` : `<button type="button" data-combat-action="apply-damage" title="${escape(localize("MYTHRASF.Combat.ApplyDamage"))}">${escape(localize("MYTHRASF.Combat.ApplyDamage"))}</button>`}</fieldset>`;
     if (damage.passiveBlock) damageHtml = damageHtml.replace(
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span>`,
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Status.PassiveBlock"))}</span><strong>${escape(damage.passiveBlock.weaponName)} (${escape(damage.passiveBlock.weaponSize)})</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Combat.ParryReduction"))}</span>`);
