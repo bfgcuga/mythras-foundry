@@ -93,23 +93,26 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
     && draftKey && (Object.hasOwn(changed, "name")
       || foundry.utils.hasProperty(changed, "system.traitRefs"))) {
     const draft = parseBackgroundDraft(actor.system.backgroundDraft);
-    const styleEntry = Object.entries(draft.styles)
-      .find(([, style]) => styleAbilityKey(style.name) === draftKey);
-    if (styleEntry) {
-      const [styleId, style] = styleEntry;
-      const phase = styleId.split(":")[0];
-      const oldKey = styleAbilityKey(style.name);
+    const styleEntries = Object.entries(draft.styles)
+      .filter(([, style]) => styleAbilityKey(style.name) === draftKey);
+    if (styleEntries.length) {
       const name = String(changed.name ?? item.name).trim();
       const nextKey = styleAbilityKey(name);
-      draft.styles[styleId] = {
-        ...style,
-        name,
-        traitKeys: (item.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean)
-      };
-      if (oldKey !== nextKey) {
-        const points = Number(draft.allocations[phase]?.[oldKey] ?? 0);
-        if (points > 0) draft.allocations[phase][nextKey] = points;
-        delete draft.allocations[phase][oldKey];
+      for (const [styleId, style] of styleEntries) {
+        const phase = styleId.split(":")[0];
+        const oldKey = styleAbilityKey(style.name);
+        draft.styles[styleId] = {
+          ...style,
+          name,
+          traitKeys: (item.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean)
+        };
+        if (oldKey !== nextKey) {
+          const points = Number(draft.allocations[phase]?.[oldKey] ?? 0);
+          if (points > 0) draft.allocations[phase][nextKey] = points;
+          delete draft.allocations[phase][oldKey];
+        }
+      }
+      if (draftKey !== nextKey) {
         await item.update({
           "flags.mythras-foundry.backgroundDraftAbility": nextKey
         });

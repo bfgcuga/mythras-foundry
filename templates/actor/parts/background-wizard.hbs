@@ -227,7 +227,12 @@
             <p class="background-style-help">{{localize "MYTHRASF.Background.StyleChoiceHelp"}}</p>
           {{/if}}
           <div class="background-style-actions">
-            <button type="button" data-background-style-action="select"
+            <button type="button" data-background-style-action="select-learned"
+              data-phase="{{style.phase}}" data-style="{{style.id}}">
+              <i class="fas fa-user" aria-hidden="true"></i>
+              {{localize "MYTHRASF.Background.SelectLearnedStyle"}}
+            </button>
+            <button type="button" data-background-style-action="select-pack"
               data-phase="{{style.phase}}" data-style="{{style.id}}">
               <i class="fas fa-book" aria-hidden="true"></i>
               {{localize "MYTHRASF.Background.SelectStyleFromPack"}}

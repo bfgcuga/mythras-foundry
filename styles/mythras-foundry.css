@@ -1471,6 +1471,7 @@
 .mythras-foundry .paper-passion-header {
   font-size: var(--mythras-font-size-table);
   font-weight: 700;
+  text-align: center;
 }
 
 .mythras-foundry .paper-passion-row > button[data-action="edit-item"] {
@@ -2113,12 +2114,12 @@
 .mythras-foundry .inventory-transfer-amounts { display: grid; grid-template-columns: repeat(3, minmax(5rem, 1fr)); gap: 0.5rem; }
 .mythras-foundry .inventory-transfer-amounts legend { font-size: var(--mythras-font-size-section); }
 .mythras-foundry .inventory-transfer-amounts label { display: grid; grid-template-columns: auto minmax(3.5rem, 1fr); }
-.starting-equipment-dialog { display: grid; gap: 0.65rem; max-height: 65vh; overflow-y: auto; }
-.starting-equipment-dialog fieldset { display: grid; grid-template-columns: repeat(2, minmax(12rem, 1fr)); gap: 0.4rem 0.65rem; }
+.starting-equipment-dialog { display: grid; width: 100%; min-width: 0; gap: 0.65rem; max-height: 65vh; overflow-y: auto; }
+.starting-equipment-dialog fieldset { display: grid; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem 0.65rem; }
 .starting-equipment-dialog .starting-equipment-armor { grid-template-columns: minmax(0, 1fr); }
 .starting-equipment-dialog fieldset > p,
 .starting-equipment-dialog fieldset > select { grid-column: 1 / -1; }
-.starting-equipment-dialog label { display: grid; grid-template-columns: minmax(6rem, auto) minmax(8rem, 1fr); align-items: center; gap: 0.4rem; }
+.starting-equipment-dialog label { display: grid; min-width: 0; grid-template-columns: minmax(6rem, auto) minmax(0, 1fr); align-items: center; gap: 0.4rem; }
 .mythras-foundry .inventory-drop-target { outline: 2px dashed var(--mythras-accent); outline-offset: -2px; }
 .mythras-foundry .equipment-quality-prices,
 .mythras-foundry .weapon-crew-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem; align-items: center; }

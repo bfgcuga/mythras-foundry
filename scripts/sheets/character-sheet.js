@@ -54,12 +54,13 @@ import {
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { calculatePassionBase, PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
-import { difficultyTarget } from "../rules/combat.js";
+import { difficultyTarget, normalizeWeaponProfile } from "../rules/combat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { inventoryCarried } from "../rules/inventory.js";
 import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
-import { findWeaponMode, weaponModeDisplayName, weaponModes } from "../rules/weapon-modes.js";
+import { effectiveModeProfileKey, findWeaponMode,
+  weaponModeDisplayName, weaponModes } from "../rules/weapon-modes.js";
 import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, combineDifficulties, fatigueLevel,
@@ -438,6 +439,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     if (context.backgroundWizard && !this._backgroundSyncing) {
       const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+      if (this.#ensureProfessionalStyleDefaults(draft)) {
+        this.#saveBackgroundDraft(draft).catch((error) => console.error(
+          "Mythras Foundry | Error selecting the default professional combat style",
+          error
+        ));
+        return;
+      }
       if (this.#backgroundItemsNeedSync(draft)) {
         this._backgroundSyncing = true;
         this.#syncBackgroundItems(draft)
@@ -1610,8 +1618,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const { phase, backgroundStyleAction: action, style } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
-    if (action === "select" && style) {
-      await this.#selectBackgroundCombatStyle(draft, phase, style);
+    if (["select-learned", "select-pack"].includes(action) && style) {
+      await this.#selectBackgroundCombatStyle(draft, phase, style,
+        action === "select-learned" ? "actor" : "pack");
       return;
     } else if (action === "create" && style) {
       await this.#createBackgroundCombatStyle(draft, phase, style);
@@ -1637,34 +1646,64 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.#saveBackgroundDraft(draft);
   }
 
-  async #selectBackgroundCombatStyle(draft, phase, styleId) {
+  #ensureProfessionalStyleDefaults(draft) {
+    if (draft.stage !== "profession") return false;
+    const definitions = getProfession(draft.professionKey)?.styles ?? [];
+    if (!definitions.length) return false;
+    const actorStyleNames = new Set(this.actor.items
+      .filter((item) => item.type === "combatStyle")
+      .map((item) => styleAbilityKey(item.name)));
+    const culturalStyle = getPhaseAbilities(getCulture(draft.cultureKey), draft, "culture")
+      .find((ability) => ability.type === "combatStyle"
+        && actorStyleNames.has(styleAbilityKey(ability.name)));
+    const fallback = culturalStyle ?? this.actor.items
+      .filter((item) => item.type === "combatStyle")
+      .map((item) => ({ name: item.name,
+        traitKeys: (item.system.traitRefs ?? []).map((trait) => trait.key).filter(Boolean) }))
+      .at(0);
+    if (!fallback) return false;
+    let changed = false;
+    for (const [index] of definitions.entries()) {
+      const id = `profession:${index}`;
+      const selected = draft.styles[id];
+      if (selected?.name && actorStyleNames.has(styleAbilityKey(selected.name))) continue;
+      draft.styles[id] = { name: fallback.name, weapons: "", traits: "",
+        traitKeys: [...(fallback.traitKeys ?? [])] };
+      changed = true;
+    }
+    return changed;
+  }
+
+  async #selectBackgroundCombatStyle(draft, phase, styleId, sourceType) {
     const actorStyles = this.actor.items.filter((item) => item.type === "combatStyle");
     const packs = game.packs.filter((pack) => (
       (pack.documentName ?? pack.metadata?.type) === "Item" && pack.visible
     ));
-    const available = actorStyles.length ? [{
-      id: "actor",
-      title: game.i18n.localize("MYTHRASF.Background.CharacterStyles"),
-      styles: actorStyles
-    }] : [];
+    if (sourceType === "actor" && !actorStyles.length) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.NoLearnedStyles"));
+      return;
+    }
+    const available = [];
     for (const pack of packs) {
       const index = await pack.getIndex({ fields: ["type"] });
       const styles = index.filter((entry) => entry.type === "combatStyle");
       if (styles.length) available.push({ id: pack.collection, title: pack.title, pack, styles });
     }
-    if (!available.length) {
+    if (sourceType === "pack" && !available.length) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Background.NoCombatStylesInPacks"));
       return;
     }
     const escape = foundry.utils.escapeHTML;
-    const sourceId = await DialogV2.input({
+    const sourceId = sourceType === "actor" ? "actor" : await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.Background.SelectCompendium") },
       content: `<div class="mythras-foundry mythras-dialog background-style-catalog-dialog"><fieldset><legend>${game.i18n.localize("MYTHRASF.Background.StyleSource")}</legend><select class="sheet-field-editable" name="source">${available.map((source) => `<option value="${escape(source.id)}">${escape(source.title)}</option>`).join("")}</select></fieldset></div>`,
       ok: { label: game.i18n.localize("MYTHRASF.Background.Continue"),
         callback: (dialogEvent, button) => button.form.elements.source.value }
     });
     if (!sourceId) return;
-    const choice = available.find((source) => source.id === sourceId);
+    const choice = sourceType === "actor"
+      ? { id: "actor", styles: actorStyles }
+      : available.find((source) => source.id === sourceId);
     if (!choice) return;
     const documentId = await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.Background.SelectCombatStyle") },
@@ -2051,10 +2090,24 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       draft.startingEquipment = { rolls };
       await this.#saveBackgroundDraft(draft);
     }
+    const learnedProfiles = new Set(this.actor.items
+      .filter((item) => item.type === "combatStyle")
+      .flatMap((item) => item.system.weaponProfiles ?? [])
+      .map((profile) => normalizeWeaponProfile(profile.key || profile.name))
+      .filter(Boolean));
     const weapons = WEAPON_SOURCES.filter((source) => (
       Number(source.system.crewMinimum ?? 0) === 0
       && (rule.weaponTier !== "simple" || SIMPLE_WEAPON_KEYS.has(source.buildKey))
+      && weaponModes(source).some((mode) => learnedProfiles.has(
+        normalizeWeaponProfile(effectiveModeProfileKey(source, mode))
+      ))
     )).sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
+    if (rolls.weaponCount > 0 && weapons.length === 0) {
+      ui.notifications.warn(game.i18n.localize(
+        "MYTHRASF.StartingEquipment.NoStyleWeapons"
+      ));
+      return null;
+    }
     const armor = ARMOR_SOURCES.filter((source) => (
       source.system.armorPoints === rolls.armorPoints
       && source.system.referenceLocation !== "special"
@@ -2074,7 +2127,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const clothing = replaceFormula(rule.clothing, rule.clothingFormula, rolls.clothingCount);
     const result = await DialogV2.input({
       window: { title: game.i18n.localize("MYTHRASF.StartingEquipment.Title") },
-      content: `<div class="starting-equipment-dialog">
+      position: { width: 720 },
+      content: `<div class="mythras-foundry mythras-dialog starting-equipment-dialog">
         <fieldset><legend>${game.i18n.localize("MYTHRASF.StartingEquipment.Clothing")}</legend><p>${foundry.utils.escapeHTML(clothing)}</p></fieldset>
         <fieldset><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Weapons", { count: rolls.weaponCount })}</legend>${weaponFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>
         <fieldset class="starting-equipment-armor"><legend>${game.i18n.format("MYTHRASF.StartingEquipment.Armor", { points: rolls.armorPoints, count: rolls.armorLocations })}</legend>${armorFields || `<p>${game.i18n.localize("MYTHRASF.StartingEquipment.None")}</p>`}</fieldset>

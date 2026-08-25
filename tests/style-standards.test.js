@@ -212,17 +212,29 @@ test("el asistente crea o importa estilos y delega armas y rasgos en su hoja", (
     "../templates/actor/parts/background-wizard.hbs", import.meta.url), "utf8");
   const characterSheet = readFileSync(new URL(
     "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
-  assert.match(wizard, /data-background-style-action="select"/);
+  assert.match(wizard, /data-background-style-action="select-learned"/);
+  assert.match(wizard, /data-background-style-action="select-pack"/);
   assert.match(wizard, /data-background-style-action="create"/);
   assert.match(wizard, /data-background-style-action="edit"/);
   assert.doesNotMatch(wizard, /data-background-style-field="weapons"/);
   assert.match(characterSheet, /pack\.getIndex\(\{ fields: \["type"\] \}\)/);
   assert.match(characterSheet, /created\?\.sheet\?\.render\(true\)/);
-  assert.match(characterSheet, /CharacterStyles/);
+  assert.match(characterSheet, /NoLearnedStyles/);
   assert.match(characterSheet, /getPhaseAbilities\(getCulture\(draft\.cultureKey\), draft, "culture"\)/);
+  assert.match(characterSheet, /#ensureProfessionalStyleDefaults\(draft\)/);
   const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
     characterSheet.indexOf("#backgroundItemsNeedSync"));
   assert.doesNotMatch(syncItems, /"system\.traitRefs"/);
+});
+
+test("equipo inicial y pasiones respetan asociaciones y cuadrículas compartidas", () => {
+  const characterSheet = readFileSync(new URL(
+    "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
+  assert.match(characterSheet, /learnedProfiles[^]*effectiveModeProfileKey\(source, mode\)/);
+  assert.match(characterSheet,
+    /mythras-foundry mythras-dialog starting-equipment-dialog/);
+  assert.match(characterSheet, /position: \{ width: 720 \}/);
+  assert.match(css, /\.paper-passion-header \{[^}]*text-align: center/s);
 });
 
 test("las pasiones validadas se materializan durante el asistente", () => {
