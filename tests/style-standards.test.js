@@ -229,9 +229,18 @@ test("el asistente crea o importa estilos y delega armas y rasgos en su hoja", (
   assert.match(characterSheet, /NoLearnedStyles/);
   assert.match(characterSheet, /getPhaseAbilities\(getCulture\(draft\.cultureKey\), draft, "culture"\)/);
   assert.match(characterSheet, /#ensureProfessionalStyleDefaults\(draft\)/);
+  assert.match(characterSheet,
+    /import \{[^}]*parseWeaponProfileReferences[^}]*\} from "\.\.\/rules\/combat\.js";/s);
   const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
     characterSheet.indexOf("#backgroundItemsNeedSync"));
   assert.doesNotMatch(syncItems, /"system\.traitRefs"/);
+});
+
+test("los mensajes de chat usan exclusivamente el hook HTML compatible", () => {
+  const uiHooks = readFileSync(new URL(
+    "../scripts/system/ui-hooks.js", import.meta.url), "utf8");
+  assert.match(uiHooks, /Hooks\.on\("renderChatMessageHTML", activateChatCards\)/);
+  assert.doesNotMatch(uiHooks, /Hooks\.on\("renderChatMessage",/);
 });
 
 test("equipo inicial y pasiones respetan asociaciones y cuadrículas compartidas", () => {

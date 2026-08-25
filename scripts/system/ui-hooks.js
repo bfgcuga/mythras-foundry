@@ -45,7 +45,6 @@ function activateApplicationUi(element) {
 
 export function registerUiHooks() {
   Hooks.on("renderChatMessageHTML", activateChatCards);
-  Hooks.on("renderChatMessage", activateChatCards);
   Hooks.once("ready", async () => {
     registerContestSocket();
     registerCombatSocket();

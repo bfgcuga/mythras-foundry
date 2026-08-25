@@ -54,7 +54,11 @@ import {
 } from "../rules/character-generation.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { calculatePassionBase, PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
-import { difficultyTarget, normalizeWeaponProfile } from "../rules/combat.js";
+import {
+  difficultyTarget,
+  normalizeWeaponProfile,
+  parseWeaponProfileReferences
+} from "../rules/combat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { inventoryCarried } from "../rules/inventory.js";
 import { encumbranceState, itemEncumbrance,
