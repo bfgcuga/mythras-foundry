@@ -18,6 +18,8 @@ import { equipmentIcon } from "../data/equipment.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
 import { childAgeFormula, composeGeneratedNarrative, resolveFamilyTable,
   resolveMarriage } from "../data/family-tables.js";
+import { backgroundEventResult,
+  composeBackgroundEventHistory } from "../data/background-events.js";
 import { COMBAT_STYLE_TRAIT_SOURCES } from "../data/traits.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 import { renderBodySilhouette } from "../ui/body-silhouette.js";
@@ -1841,6 +1843,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const field = event.currentTarget.dataset.backgroundAgeField;
     if (field === "category") {
+      if (draft.ageCategory !== event.currentTarget.value
+        && draft.backgroundEventRolls.entries.length > 0) {
+        await this.actor.update({
+          "system.narrative.history": draft.backgroundEventRolls.originalHistory
+        });
+        draft.backgroundEventRolls = createBackgroundDraft().backgroundEventRolls;
+      }
       draft.ageCategory = event.currentTarget.value;
       draft.allocations.free = {};
     } else if (field === "age") {
@@ -1859,6 +1868,37 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
     draft.age = Number(roll.total);
     await this.#saveBackgroundDraft(draft);
+  }
+
+  async #rollBackgroundEvents(draft) {
+    const category = getAgeCategory(draft.ageCategory);
+    const count = Number(category?.backgroundEvents ?? 0);
+    if (count < 1) return;
+    if (draft.backgroundEventRolls.ageCategory === draft.ageCategory
+      && draft.backgroundEventRolls.entries.length === count) return;
+    const originalHistory = draft.backgroundEventRolls.entries.length > 0
+      ? draft.backgroundEventRolls.originalHistory
+      : String(this.actor.system.narrative.history ?? "");
+    const entries = [];
+    for (let index = 0; index < count; index += 1) {
+      const roll = await evaluateAnimatedRoll("1d100",
+        { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
+      const percentile = Number(roll.total ?? 0);
+      const result = backgroundEventResult(percentile);
+      if (!result) continue;
+      entries.push({ percentile, resultKey: result.key, text: result.text });
+    }
+    draft.backgroundEventRolls = {
+      ageCategory: draft.ageCategory, entries, originalHistory
+    };
+    await this.actor.update({
+      "system.narrative.history": composeBackgroundEventHistory(
+        entries,
+        originalHistory,
+        game.i18n.localize("MYTHRASF.Background.Events.Possible"),
+        game.i18n.localize("MYTHRASF.Background.Family.PlayerNotes")
+      )
+    });
   }
 
   async #rollBackgroundFamily(event) {
@@ -2057,6 +2097,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     const previousStage = draft.stage;
+    if (previousStage === "age") await this.#rollBackgroundEvents(draft);
     draft.stage = {
       culture: "passions", passions: "socialClass", socialClass: "profession", profession: "age",
       age: "free", free: "family", family: "review"

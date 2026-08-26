@@ -87,8 +87,11 @@ resolución directa del Game Master.
   existen como RollTables y como tiradas opcionales de un solo uso dentro del
   asistente, compartiendo una única fuente de reglas. Matrimonio se resuelve
   como procedimiento guiado en la misma fase.
-- Enumerar antes de implementarlas las demás tablas aplicables: acontecimientos,
-  comunidad, edad u otras.
+- La tabla 1d100 de acontecimientos de trasfondo ya existe como RollTable y la
+  edad determina cuántas tiradas automáticas se anteponen a la historia del
+  personaje sin perder sus notas anteriores.
+- Enumerar antes de implementarlas las demás tablas aplicables: comunidad, edad
+  u otras.
 
 ### Editor visual de culturas y profesiones
 

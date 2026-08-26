@@ -58,6 +58,7 @@ export function createBackgroundDraft() {
       traitKeys: []
     },
     familyRolls: { entries: {}, originals: {} },
+    backgroundEventRolls: { ageCategory: "", entries: [], originalHistory: "" },
     allocations: { culture: {}, profession: {}, free: {} }
   };
 }
@@ -100,6 +101,11 @@ export function mergeDraft(draft = {}) {
           fields: { ...(entry?.fields ?? {}) }
         }])),
       originals: { ...(draft.familyRolls?.originals ?? {}) }
+    },
+    backgroundEventRolls: {
+      ageCategory: String(draft.backgroundEventRolls?.ageCategory ?? ""),
+      entries: (draft.backgroundEventRolls?.entries ?? []).map((entry) => ({ ...entry })),
+      originalHistory: String(draft.backgroundEventRolls?.originalHistory ?? "")
     },
     allocations: {
       culture: { ...initial.allocations.culture, ...draft.allocations?.culture },

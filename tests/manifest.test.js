@@ -29,6 +29,11 @@ const EXPECTED_PACKS = Object.freeze({
     label: "Tablas de familia y conexiones",
     path: "packs/family-tables",
     type: "RollTable"
+  },
+  "background-event-tables": {
+    label: "Acontecimientos de trasfondo",
+    path: "packs/background-event-tables",
+    type: "RollTable"
   }
 });
 

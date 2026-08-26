@@ -759,6 +759,7 @@
   "MYTHRASF.Background.Select": "Select...",
   "MYTHRASF.Background.ProfessionalChoices": "Professional skills",
   "MYTHRASF.Background.Specialization": "Specialization",
+  "MYTHRASF.Background.Events.Possible": "Possible background",
   "MYTHRASF.Background.StyleName": "Style name",
   "MYTHRASF.Background.EditStyle": "Edit combat style",
   "MYTHRASF.Background.StyleChoiceHelp": "Select an existing style or create a new one. You can complete its weapons and traits now or later.",

@@ -346,6 +346,14 @@ narrativos. `backgroundDraft.familyRolls` conserva los bloqueos, resultados y
 textos originales hasta completar la creación; cada resultado se aplica de
 inmediato a `CharacterData.system.narrative` y sigue siendo texto editable.
 
+La tabla 1d100 de acontecimientos se define en
+`scripts/data/background-events.js`, que genera el compendio RollTable y
+resuelve las tiradas correspondientes a la edad al abandonar esa fase del
+asistente. `backgroundDraft.backgroundEventRolls` evita repetirlas al navegar
+entre fases y conserva la historia anterior; los resultados se anteponen en
+`CharacterData.system.narrative.history` como «Posible trasfondo», seguidos de
+«Notas del jugador» cuando ya existía texto.
+
 Una Herida Crítica aplicada por el flujo de combate tira `1d3` si la localización
 no ha alcanzado gravedad 3, fuerza una mejora mínima de un grado y actualiza la
 lesión junto con sus PG. En extremidades, los resultados anulados se retiran

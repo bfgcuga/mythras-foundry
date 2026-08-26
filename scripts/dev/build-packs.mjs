@@ -16,6 +16,7 @@ import { TRAIT_SOURCES } from "../data/traits.js";
 import { CREATURE_SOURCES } from "../data/creatures.js";
 import { SOCIAL_CLASS_TABLE_SOURCES } from "../data/social-classes.js";
 import { FAMILY_TABLE_SOURCES } from "../data/family-tables.js";
+import { BACKGROUND_EVENT_TABLE_SOURCES } from "../data/background-events.js";
 import { COMBAT_STYLE_SOURCES } from "../data/combat-styles.js";
 import { combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
 import { deterministicPackId } from "./pack-ids.mjs";
@@ -253,7 +254,9 @@ const packBuilders = new Map([
   ["social-class-tables", () => buildRollTablePack("social-class-tables",
     SOCIAL_CLASS_TABLE_SOURCES, "table")],
   ["family-tables", () => buildRollTablePack("family-tables",
-    FAMILY_TABLE_SOURCES, "family-table")]
+    FAMILY_TABLE_SOURCES, "family-table")],
+  ["background-event-tables", () => buildRollTablePack("background-event-tables",
+    BACKGROUND_EVENT_TABLE_SOURCES, "background-event-table")]
 ]);
 
 const requestedPacks = process.argv.slice(2);

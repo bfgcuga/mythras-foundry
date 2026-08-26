@@ -154,12 +154,13 @@ abiertas se mantienen en [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Compendios
 
-El manifiesto declara doce compendios generados a partir de fuentes canónicas:
+El manifiesto declara trece compendios generados a partir de fuentes canónicas:
 
 - habilidades, culturas y profesiones;
 - armas, equipo y piezas de armadura;
 - rasgos, efectos de combate, estilos de combate y criaturas;
-- macros, tablas de clase social y tablas de familia y conexiones.
+- macros, tablas de clase social, acontecimientos de trasfondo y tablas de
+  familia y conexiones.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
 determinista antes de validar o empaquetar una versión.
