@@ -191,8 +191,10 @@ flujo que Ácido, Fuego y Caída. Su API es
 `game.mythrasFoundry.hazards.damage`.
 
 La Fatiga periódica de combate comparte la cola bloqueante de preparación del
-asalto. Cada combatiente conserva en sus flags un contador idempotente y vence
-cada `ceil(CON / 5)` asaltos. Los personajes solicitan Aguante a sus propietarios;
+asalto. Cada combatiente conserva en sus flags un contador idempotente de asaltos
+completados y vence cada `ceil(CON / 5)` asaltos. Al avanzar, se resuelve durante
+la preparación del asalto siguiente; al terminar el combate se liquida el último
+asalto antes de cerrarlo. Los personajes solicitan Aguante a sus propietarios;
 los PNJ resuelven la misma tirada en el coordinador y solo publican el resultado
 si pierden un nivel, salvo que el ajuste mundial
 `showNpcCombatFatigueChecks` habilite el flujo completo. Éxito y crítico no
@@ -286,10 +288,11 @@ reducción por el mayor porcentaje superior a 100; una defensa tardía conserva
 la clasificación ya obtenida por el ataque. `scripts/rules/combat-chat.js`
 coordina por socket la respuesta de Parar, Evadir o no defenderse, valida
 revisión y propiedad y permite modificar ambos dados mediante suerte.
-Antes de consumir PA, puntería o munición, el ataque resuelve el blanco y sus
-modificadores contextuales y reutiliza el diálogo de ajuste porcentual sin la
-configuración de concurso. La dificultad elegida se combina con la dificultad
-impuesta después de aplicar habilidades limitadas o reforzadas; la transacción
+Antes de consumir PA, puntería o munición, el ataque reúne el blanco, las
+declaraciones, las circunstancias a distancia y los ajustes porcentuales en un
+único diálogo sin la configuración de concurso. Los grados favorables y
+adversos de la dificultad elegida e impuesta se suman alrededor de Estándar
+después de aplicar habilidades limitadas o reforzadas; la transacción
 conserva la base, esos ajustes y el objetivo efectivo como una sola fuente para
 la clasificación, la tarjeta y las repeticiones por suerte.
 El daño, la localización y la armadura continúan en la misma transacción. Parar reduce el

@@ -180,33 +180,28 @@ function rangedSetupFields(mode) {
   </fieldset>`;
 }
 
-async function chooseAttackSetup(actor, suggestedTarget = null, mode = null) {
+function attackSetupFields(actor, suggestedTarget = null, mode = null) {
   const targets = visibleTargets(actor);
-  if (!targets.length) return ui.notifications.warn(localize("MYTHRASF.Combat.NoAvailableTargets"));
+  if (!targets.length) return "";
   const suggestedUuid = tokenUuid(suggestedTarget);
   const options = targets.map((token) => `<option value="${escape(tokenUuid(token))}" ${tokenUuid(token) === suggestedUuid ? "selected" : ""}>${escape(tokenDisplayName(token))}</option>`).join("");
-  const { DialogV2 } = foundry.applications.api;
-  return DialogV2.wait({ window: { title: localize("MYTHRASF.Combat.AttackSetup") },
-    content: `<div class="mythras-foundry mythras-dialog combat-attack-setup"><fieldset><legend>${escape(localize("MYTHRASF.Combat.AttackSetup"))}</legend><label><span>${escape(localize("MYTHRASF.Combat.Defender"))}</span><select name="targetTokenUuid">${options}</select></label><label><span>${escape(localize("MYTHRASF.Combat.DefenseDeclaredBefore"))}</span><input type="checkbox" class="sheet-state-box" name="predeclared"></label><label><span>${escape(localize("MYTHRASF.Combat.ContainedBlow"))}</span><input type="checkbox" class="sheet-state-box" name="containedBlow"></label><label><span>${escape(localize("MYTHRASF.Combat.ExtraordinaryDamage"))}</span><input type="text" name="extraordinaryDamage" placeholder="0"></label></fieldset>${rangedSetupFields(mode)}</div>`,
-    buttons: [{ action: "attack", label: localize("MYTHRASF.Combat.Attack"), icon: "fas fa-dice-d20", default: true,
-      callback: (event, button) => ({ targetTokenUuid: button.form.elements.targetTokenUuid.value,
-        predeclared: button.form.elements.predeclared.checked,
-        containedBlow: button.form.elements.containedBlow.checked,
-        extraordinaryDamage: button.form.elements.extraordinaryDamage.value.trim() || "0",
-        ranged: button.form.elements.distance ? {
-          distance: Number(button.form.elements.distance.value),
-          wind: Number(button.form.elements.wind.value),
-          concealment: Number(button.form.elements.concealment.value),
-          targetMovement: Number(button.form.elements.targetMovement.value),
-          meleePosition: button.form.elements.meleePosition.value,
-          attackerMovement: button.form.elements.attackerMovement.value,
-          unstable: button.form.elements.unstable.checked,
-          attackerProne: button.form.elements.attackerProne.checked,
-          targetProne: button.form.elements.targetProne.checked
-          ,targetStationary: button.form.elements.targetStationary.checked,
-          targetUnaware: button.form.elements.targetUnaware.checked
-        } : null }) },
-    { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
+  return `<fieldset class="combat-attack-setup"><legend>${escape(localize("MYTHRASF.Combat.AttackSetup"))}</legend><label><span>${escape(localize("MYTHRASF.Combat.Defender"))}</span><select name="targetTokenUuid">${options}</select></label><label><span>${escape(localize("MYTHRASF.Combat.DefenseDeclaredBefore"))}</span><input type="checkbox" class="sheet-state-box" name="predeclared"></label><label><span>${escape(localize("MYTHRASF.Combat.ContainedBlow"))}</span><input type="checkbox" class="sheet-state-box" name="containedBlow"></label><label><span>${escape(localize("MYTHRASF.Combat.ExtraordinaryDamage"))}</span><input type="text" name="extraordinaryDamage" placeholder="0"></label></fieldset>${rangedSetupFields(mode)}`;
+}
+
+function collectAttackSetup(form) {
+  return { targetTokenUuid: form.targetTokenUuid.value,
+    predeclared: form.predeclared.checked,
+    containedBlow: form.containedBlow.checked,
+    extraordinaryDamage: form.extraordinaryDamage.value.trim() || "0",
+    ranged: form.distance ? {
+      distance: Number(form.distance.value), wind: Number(form.wind.value),
+      concealment: Number(form.concealment.value),
+      targetMovement: Number(form.targetMovement.value),
+      meleePosition: form.meleePosition.value, attackerMovement: form.attackerMovement.value,
+      unstable: form.unstable.checked, attackerProne: form.attackerProne.checked,
+      targetProne: form.targetProne.checked, targetStationary: form.targetStationary.checked,
+      targetUnaware: form.targetUnaware.checked
+    } : null };
 }
 
 export function preferredCombatCoordinator(users, authorUserId) {
@@ -219,8 +214,30 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   if (pendingAttackActors.has(actor.uuid)) return null;
   pendingAttackActors.add(actor.uuid);
   try {
-  const setup = await chooseAttackSetup(actor, target, mode);
-  if (!setup) return null;
+  const setupFields = attackSetupFields(actor, target, mode);
+  if (!setupFields) return ui.notifications.warn(localize("MYTHRASF.Combat.NoAvailableTargets"));
+  const rollAbility = { id: resolution.style?.id ?? "__combat_base__", actor,
+    name: resolution.style?.name ?? (resolution.untrained
+      ? localize("MYTHRASF.Combat.Untrained") : localize("MYTHRASF.Combat.BaseStyle")),
+    system: { total: Number(resolution.target) || 0 } };
+  const initialModifiers = resolution.difficulty !== "standard" ? [{
+    source: localize("MYTHRASF.SkillRoll.ActorConditions"),
+    effect: localize(`MYTHRASF.Difficulty.${resolution.difficulty}`), type: "penalty"
+  }] : [];
+  if (resolution.familiarity && !["included", "similar", "untrained"].includes(
+    resolution.familiarity)) initialModifiers.push({
+    source: localize("MYTHRASF.Combat.Familiarity"),
+    effect: localize(`MYTHRASF.Familiarity.${resolution.familiarity}`), type: "penalty"
+  });
+  const configured = await openAttackRollDialog(rollAbility, {
+    imposedDifficulty: resolution.difficulty, modifiers: initialModifiers,
+    additionalContent: setupFields, collectAdditional: collectAttackSetup,
+    title: game.i18n.format("MYTHRASF.Combat.AttackWith", { weapon: weapon.name })
+  });
+  if (!configured) return null;
+  const setup = configured.additional;
+  resolution.target = configured.targets.adjustedTarget;
+  resolution.difficulty = configured.targets.difficulty;
   const targetToken = await fromUuid(setup.targetTokenUuid);
   const defender = targetToken?.actor;
   if (!defender) return ui.notifications.warn(localize("MYTHRASF.Combat.TargetUnavailable"));
@@ -300,40 +317,12 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     if (!attackWeapon) return ui.notifications.warn(localize("MYTHRASF.Reach.TooShort"));
     setup.targetWeaponId = targetSide.weaponId;
   }
-  const rollModifiers = [];
-  if (resolution.difficulty !== "standard") rollModifiers.push({
-    source: localize("MYTHRASF.SkillRoll.ActorConditions"),
-    effect: localize(`MYTHRASF.Difficulty.${resolution.difficulty}`), type: "penalty"
-  });
-  if (resolution.familiarity && !["included", "similar", "untrained"].includes(
-    resolution.familiarity)) rollModifiers.push({
-    source: localize("MYTHRASF.Combat.Familiarity"),
-    effect: localize(`MYTHRASF.Familiarity.${resolution.familiarity}`), type: "penalty"
-  });
-  if (ranged) {
-    rollModifiers.push({ source: localize("MYTHRASF.Ranged.Distance"),
-      effect: `${ranged.distance} m — ${localize(`MYTHRASF.Difficulty.${ranged.difficulty}`)}`,
-      type: ranged.steps < 0 ? "bonus" : "penalty" });
-    if (ranged.aim) rollModifiers.push({ source: localize("MYTHRASF.Ranged.Aim"),
-      effect: localize("MYTHRASF.SkillRoll.OneDifficultyStep"), type: "bonus" });
-  }
-  const rollAbility = { id: resolution.style?.id ?? "__combat_base__", actor,
-    name: resolution.style?.name ?? (resolution.untrained
-      ? localize("MYTHRASF.Combat.Untrained") : localize("MYTHRASF.Combat.BaseStyle")),
-    system: { total: Number(resolution.target) || 0 } };
-  const configured = await openAttackRollDialog(rollAbility, {
-    imposedDifficulty: resolution.difficulty, modifiers: rollModifiers,
-    title: game.i18n.format("MYTHRASF.Combat.AttackWith", { weapon: weapon.name })
-  });
-  if (!configured) return null;
-  if (configured.targets.difficulty === "automatic") {
+  if (resolution.difficulty === "automatic") {
     ui.notifications.info(localize("MYTHRASF.RollResult.automatic")); return null;
   }
-  if (configured.targets.difficulty === "impossible") {
+  if (resolution.difficulty === "impossible") {
     ui.notifications.warn(localize("MYTHRASF.RollResult.impossible")); return null;
   }
-  resolution.target = configured.targets.adjustedTarget;
-  resolution.difficulty = configured.targets.difficulty;
   resolution.rollConfiguration = {
     baseTarget: configured.targets.baseTarget,
     adjustedTarget: configured.targets.adjustedTarget,
@@ -827,6 +816,21 @@ async function cancelCombat(message, current) {
 
 async function closeCombatExchange(message, current) {
   if (!game.user.isGM || !current.turnEconomy || current.turnEconomy.turnAdvanced) return;
+  if (exchangeTerminal(current)) {
+    const combat = foundry.utils.deepClone(current);
+    const tracker = game.combats.get(combat.turnEconomy.combatId);
+    if (tracker?.started && tracker.combatant?.id === combat.turnEconomy.combatantId
+      && Number(tracker.round) === Number(combat.turnEconomy.round)) {
+      await advanceCombatTurnForExchange(message, combat);
+    } else {
+      combat.turnEconomy.turnAdvanced = true;
+      combat.turnEconomy.advancedAt = Date.now();
+      combat.revision += 1;
+      await message.update({ content: renderCombatExchange(combat),
+        [`flags.${FLAG_SCOPE}.combat`]: combat });
+    }
+    return;
+  }
   const reason = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.Tracker.CloseExchange") },
     content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.CombatEffect.Reason"))}</span><textarea name="reason" required></textarea></label></div>`,

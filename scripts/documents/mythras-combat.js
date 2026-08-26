@@ -5,7 +5,8 @@ import { getActionPointRules } from "../settings.js";
 import { resolveActorConditions } from "../rules/actor-conditions.js";
 import { advanceActorTurnConditions, expireRoundConditions,
   bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
-import { prepareRoundConsequences } from "../rules/round-consequences.js";
+import { prepareCombatEndFatigue, prepareRoundConsequences }
+  from "../rules/round-consequences.js";
 import { combatActionState, expireCombatActionTurn } from "../rules/combat-action-runtime.js";
 import { renderInitiativeChat } from "../rules/initiative-chat.js";
 
@@ -73,6 +74,11 @@ export class MythrasCombat extends Combat {
     const queue = await prepareRoundConsequences(this);
     if (!queue.some((entry) => entry.status === "pending")) await this.completeRoundPreparation(queue);
     return this;
+  }
+
+  async endCombat() {
+    if (coordinator() === game.user.id) await prepareCombatEndFatigue(this);
+    return super.endCombat();
   }
 
   async nextTurn() {

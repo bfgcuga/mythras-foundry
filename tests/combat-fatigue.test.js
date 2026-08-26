@@ -12,8 +12,11 @@ test("calcula el intervalo de fatiga de combate redondeando CON hacia arriba", (
   assert.equal(combatFatigueInterval(11), 3);
 });
 
-test("cuenta cada asalto una sola vez y conserva el vencimiento al repetir la preparación", () => {
-  const first = advanceCombatFatigue(null, { combatId: "c1", round: 1, interval: 2 });
+test("solo cuenta asaltos terminados y conserva el vencimiento al repetir la preparación", () => {
+  const start = advanceCombatFatigue(null, { combatId: "c1", round: 0, interval: 2 });
+  assert.equal(start.due, false);
+  assert.equal(start.state.roundsElapsed, 0);
+  const first = advanceCombatFatigue(start.state, { combatId: "c1", round: 1, interval: 2 });
   assert.equal(first.due, false);
   const second = advanceCombatFatigue(first.state, { combatId: "c1", round: 2, interval: 2 });
   assert.equal(second.due, true);
@@ -22,6 +25,19 @@ test("cuenta cada asalto una sola vez y conserva el vencimiento al repetir la pr
   assert.deepEqual(repeated.state, second.state);
   const third = advanceCombatFatigue(second.state, { combatId: "c1", round: 3, interval: 2 });
   assert.equal(third.due, false);
+});
+
+test("vence al completar los asaltos correspondientes a CON", () => {
+  let con12 = advanceCombatFatigue(null, { combatId: "c1", round: 0, interval: 3 });
+  con12 = advanceCombatFatigue(con12.state, { combatId: "c1", round: 1, interval: 3 });
+  assert.equal(con12.due, false);
+  con12 = advanceCombatFatigue(con12.state, { combatId: "c1", round: 2, interval: 3 });
+  assert.equal(con12.due, false);
+  con12 = advanceCombatFatigue(con12.state, { combatId: "c1", round: 3, interval: 3 });
+  assert.equal(con12.due, true);
+
+  const con4 = advanceCombatFatigue(null, { combatId: "c2", round: 1, interval: 1 });
+  assert.equal(con4.due, true);
 });
 
 test("la tirada periódica solo pierde un nivel al fallar", () => {

@@ -55,7 +55,9 @@ export function passiveBlockEntries(combat) {
     const choices = prepared.filter(({ mode }) => passiveBlockCapacity(mode, { dualWield }) > 0)
         .map(({ weapon, mode }) => ({ weaponId: weapon.id, weaponName: weapon.name, modeKey: mode.key,
           modeName: mode.name, weaponSize: mode.size, weaponType: mode.weaponType,
-          capacity: passiveBlockCapacity(mode, { dualWield }) }));
+          capacity: passiveBlockCapacity(mode, { dualWield }) }))
+        .sort((left, right) => Number(right.weaponType === "shield")
+          - Number(left.weaponType === "shield"));
     if (!choices.length) continue;
     entries.push({ id: `${combatant.id}:passive-block`, combatantId: combatant.id,
       actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "passiveBlock",
@@ -95,7 +97,7 @@ export async function applyFatigueLoss(actor, loss) {
   return { before, after, loss };
 }
 
-async function prepareCombatFatigueEntries(combat, previous) {
+async function prepareCombatFatigueEntries(combat, previous, completedRound) {
   const entries = [];
   const showNpcChecks = Boolean(getSystemSetting(SETTING_KEYS.showNpcCombatFatigueChecks));
   for (const combatant of uniqueActorEntries(combat?.combatants)) {
@@ -104,7 +106,7 @@ async function prepareCombatFatigueEntries(combat, previous) {
     const interval = combatFatigueInterval(actor.system.constitution);
     const currentState = combatant.getFlag?.(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG);
     const advanced = advanceCombatFatigue(currentState,
-      { combatId: combat.id, round: combat.round, interval });
+      { combatId: combat.id, round: completedRound, interval });
     if (advanced.state !== currentState) {
       await combatant.setFlag(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG, advanced.state);
     }
@@ -117,7 +119,7 @@ async function prepareCombatFatigueEntries(combat, previous) {
       entries.push({ ...entry, status: prior.status, resolution: prior.resolution });
       continue;
     }
-    if (Number(currentState?.resolvedRound) === Number(combat.round)) {
+    if (Number(currentState?.resolvedRound) === Number(completedRound)) {
       entry.status = "resolved";
       entry.resolution = currentState.resolution;
       if (Number(entry.resolution?.loss) > 0 || showNpcChecks) entries.push(entry);
@@ -139,7 +141,7 @@ async function prepareCombatFatigueEntries(combat, previous) {
     entry.resolution = { target, rawRoll: roll.total, serializedRoll: roll.toJSON(), result,
       loss, before: fatigue.before, after: fatigue.after };
     await combatant.setFlag(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG, {
-      ...advanced.state, resolvedRound: combat.round, resolution: entry.resolution
+      ...advanced.state, resolvedRound: completedRound, resolution: entry.resolution
     });
     if (loss > 0 || showNpcChecks) entries.push(entry);
   }
@@ -158,7 +160,8 @@ export async function prepareRoundConsequences(combat) {
     const entry = await prepareSuffocationEntry(combat, combatant);
     if (entry) suffocation.push(entry);
   }
-  const combatFatigue = await prepareCombatFatigueEntries(combat, previous);
+  const combatFatigue = await prepareCombatFatigueEntries(combat, previous,
+    Math.max(0, Number(combat.round) - 1));
   const dying = [];
   for (const combatant of uniqueActorEntries(combat?.combatants)) {
     const entry = await prepareDyingEntry(combat, combatant);
@@ -181,17 +184,27 @@ export async function prepareRoundConsequences(combat) {
   }
   await combat.setFlag(SCOPE, "turnEconomy", { ...economy,
     roundQueue: queue, roundPreparing: queue.some((entry) => entry.status === "pending") });
-  if (queue.length) await createRoundMessage(combat, queue);
+  if (queue.length) await createRoundMessage(combat, queue, { blocksRoundPreparation: true });
   return queue;
 }
 
-async function createRoundMessage(combat, queue) {
+async function createRoundMessage(combat, queue, { blocksRoundPreparation = false,
+  round = combat.round } = {}) {
   const state = { schemaVersion: 1, combatId: combat.id, combatUuid: combat.uuid,
-    round: combat.round, revision: 0, queue };
+    round, revision: 0, blocksRoundPreparation, queue };
   const rolls = queue.flatMap((entry) => entry.resolution?.serializedRoll
     ? [Roll.fromData(entry.resolution.serializedRoll)] : []);
   return ChatMessage.create({ content: renderRoundConsequences(state), rolls,
     flags: { [SCOPE]: { roundConsequences: state } } });
+}
+
+export async function prepareCombatEndFatigue(combat) {
+  const completedRound = Math.max(0, Number(combat?.round) || 0);
+  if (!completedRound) return [];
+  const entries = await prepareCombatFatigueEntries(combat, new Map(), completedRound);
+  const queue = entries.map((entry) => ({ ...entry, round: completedRound }));
+  if (queue.length) await createRoundMessage(combat, queue, { round: completedRound });
+  return queue;
 }
 
 export function renderRoundConsequences(state) {
@@ -455,7 +468,8 @@ async function applyPassiveBlock(message, request) {
     rolls: appendSerializedRolls(message, request.resolution.serializedRoll,
       request.resolution.lossRoll),
     [`flags.${SCOPE}.roundConsequences`]: state });
-  if (state.queue.every((candidate) => candidate.status === "resolved")) {
+  if (state.blocksRoundPreparation !== false
+    && state.queue.every((candidate) => candidate.status === "resolved")) {
     await combat.completeRoundPreparation(state.queue);
   }
 }
@@ -477,7 +491,8 @@ async function applyResolution(message, request) {
       request.resolution.lossRoll),
     [`flags.${SCOPE}.roundConsequences`]: state });
   const combat = game.combats.get(state.combatId);
-  if (combat && state.queue.every((candidate) => candidate.status === "resolved")) {
+  if (combat && state.blocksRoundPreparation !== false
+    && state.queue.every((candidate) => candidate.status === "resolved")) {
     await combat.completeRoundPreparation(state.queue);
   }
 }
@@ -499,7 +514,8 @@ async function applyBurningResolution(message, request) {
     resolvedAt: Date.now() }; state.revision += 1;
   await message.update({ content: renderRoundConsequences(state),
     [`flags.${SCOPE}.roundConsequences`]: state });
-  if (state.queue.every((candidate) => candidate.status === "resolved")) {
+  if (state.blocksRoundPreparation !== false
+    && state.queue.every((candidate) => candidate.status === "resolved")) {
     await combat.completeRoundPreparation(state.queue);
   }
 }
@@ -543,7 +559,8 @@ async function applyAcidResolution(message, request) {
     userId: user.id, resolvedAt: Date.now() }; state.revision += 1;
   await message.update({ content: renderRoundConsequences(state),
     [`flags.${SCOPE}.roundConsequences`]: state });
-  if (state.queue.every((candidate) => candidate.status === "resolved")) {
+  if (state.blocksRoundPreparation !== false
+    && state.queue.every((candidate) => candidate.status === "resolved")) {
     await combat.completeRoundPreparation(state.queue);
   }
 }

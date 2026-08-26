@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 globalThis.Item = class {};
 
 const { classifyRoll, renderRollLine, rollThresholdRanges } = await import("../scripts/documents/mythras-item.js");
-const { invertD100, resolveSkillRollTargets, supportingSkillAdjustment } = await import("../scripts/rules/skill-roll.js");
+const { combineRollDifficulties, invertD100, resolveSkillRollTargets,
+  supportingSkillAdjustment } = await import("../scripts/rules/skill-roll.js");
 
 test("01-05 siempre tiene éxito y el umbral crítico prevalece", () => {
   assert.equal(classifyRoll(4, 3, 1), "success");
@@ -21,6 +22,14 @@ test("la dificultad se aplica después del ajuste y el crítico usa el objetivo 
     reinforced: true, reinforcedTarget: 46, difficulty: "hard" }), {
     baseTarget: 70, adjustedTarget: 80, difficulty: "hard", target: 54, criticalTarget: 6
   });
+});
+
+test("los grados favorables y adversos se combinan alrededor de estándar", () => {
+  assert.equal(combineRollDifficulties("easy", "standard"), "easy");
+  assert.equal(combineRollDifficulties("veryEasy", "standard"), "veryEasy");
+  assert.equal(combineRollDifficulties("easy", "hard"), "standard");
+  assert.equal(resolveSkillRollTargets({ baseTarget: 60, difficulty: "easy" }).target, 90);
+  assert.equal(resolveSkillRollTargets({ baseTarget: 60, difficulty: "veryEasy" }).target, 120);
 });
 
 test("limitada y reforzada pueden aplicarse juntas de forma independiente", () => {

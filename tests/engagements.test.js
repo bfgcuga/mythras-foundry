@@ -81,6 +81,19 @@ test("las armas naturales no cuentan para habilitar el bloqueo pasivo con dos ar
   assert.equal(entry.choices.some((choice) => choice.weaponId === "claw"), false);
 });
 
+test("el bloqueo pasivo propone primero el escudo sin ocultar otras armas", () => {
+  const weapon = (id, name, weaponType) => ({ id, name, type: "weapon",
+    system: { equipped: true, activeModeKey: id, modes: [{ key: id, name,
+      weaponType, size: "M", handsRequired: 1, grip: "1 mano",
+      traitRefs: weaponType === "shield" ? [{ key: "bloqueo-pasivo", value: 2 }] : [] }] } });
+  const actor = { uuid: "Actor.fighter", name: "Combatiente", items: [
+    weapon("sword", "Espada", "melee"), weapon("shield", "Escudo", "shield")
+  ] };
+  const [entry] = passiveBlockEntries({ combatants: [{ id: "fighter", actor,
+    isDefeated: false }] });
+  assert.deepEqual(entry.choices.map((choice) => choice.weaponId), ["shield", "sword"]);
+});
+
 test("las localizaciones humanas forman una red anatómica y no el orden del d20", () => {
   const locations = [
     { id: "leg", rangeStart: 1, category: "leg" },

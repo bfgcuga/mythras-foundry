@@ -73,6 +73,13 @@ export function splitCombatWeapons(rows) {
   };
 }
 
+export function preferAttackChoices(rows = []) {
+  return rows.map((row, index) => ({ ...row, preferenceIndex: index }))
+    .sort((left, right) => Number(left.weaponType === "shield")
+      - Number(right.weaponType === "shield") || left.preferenceIndex - right.preferenceIndex)
+    .map(({ preferenceIndex, ...row }) => row);
+}
+
 export class CombatSheetController {
   constructor(sheet, { resolveSituationalDifficulty }) {
     this.sheet = sheet;
@@ -117,10 +124,15 @@ export class CombatSheetController {
   }
 
   async chooseWeaponAttack() {
-    const rows = Array.from(this.element.querySelectorAll("[data-action='roll-weapon-attack']"))
-      .filter((button) => !button.disabled).map((button, index) => ({ button, index,
-        label: button.closest("[data-item-id]")
-          ?.querySelector("[data-action='edit-item']")?.textContent?.trim() }));
+    const rows = preferAttackChoices(Array.from(this.element
+      .querySelectorAll("[data-action='roll-weapon-attack']"))
+      .filter((button) => !button.disabled).map((button, index) => {
+        const row = button.closest("[data-item-id]");
+        const weapon = this.actor.items.get(row?.dataset.itemId);
+        const mode = weapon ? findWeaponMode(weapon, row.dataset.modeKey) : null;
+        return { button, index, weaponType: mode?.weaponType,
+          label: row?.querySelector("[data-action='edit-item']")?.textContent?.trim() };
+      }));
     if (!rows.length) return ui.notifications.warn(
       game.i18n.localize("MYTHRASF.Action.Unavailable.preparedWeapon"));
     const selected = await foundry.applications.api.DialogV2.wait({

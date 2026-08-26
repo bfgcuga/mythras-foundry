@@ -1,5 +1,17 @@
-import { combineDifficulties } from "./fatigue.js";
 import { difficultyTarget } from "./combat.js";
+
+const ROLL_DIFFICULTIES = Object.freeze(["automatic", "veryEasy", "easy", "standard",
+  "hard", "formidable", "herculean", "impossible"]);
+
+export function combineRollDifficulties(chosen = "standard", imposed = "standard") {
+  const chosenIndex = ROLL_DIFFICULTIES.indexOf(chosen);
+  const imposedIndex = ROLL_DIFFICULTIES.indexOf(imposed);
+  const standardIndex = ROLL_DIFFICULTIES.indexOf("standard");
+  const offset = (chosenIndex < 0 ? standardIndex : chosenIndex) - standardIndex
+    + (imposedIndex < 0 ? standardIndex : imposedIndex) - standardIndex;
+  return ROLL_DIFFICULTIES[Math.max(0, Math.min(ROLL_DIFFICULTIES.length - 1,
+    standardIndex + offset))];
+}
 
 export function supportingSkillAdjustment(baseTarget, supportingTarget, mode = "none") {
   const base = Math.max(0, Number(baseTarget) || 0);
@@ -17,7 +29,7 @@ export function resolveSkillRollTargets({ baseTarget, difficulty = "standard",
   if (reinforced) {
     adjustedTarget = supportingSkillAdjustment(adjustedTarget, reinforcedTarget, "reinforced");
   }
-  const effectiveDifficulty = combineDifficulties(difficulty, imposedDifficulty);
+  const effectiveDifficulty = combineRollDifficulties(difficulty, imposedDifficulty);
   const target = difficultyTarget(adjustedTarget, effectiveDifficulty);
   return {
     baseTarget: Math.max(0, Number(baseTarget) || 0),

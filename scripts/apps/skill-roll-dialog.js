@@ -1,5 +1,4 @@
-import { resolveSkillRollTargets } from "../rules/skill-roll.js";
-import { combineDifficulties } from "../rules/fatigue.js";
+import { combineRollDifficulties, resolveSkillRollTargets } from "../rules/skill-roll.js";
 import { actorDisplayName, tokenDisplayName } from "../rules/document-names.js";
 
 const DIFFICULTIES = ["automatic", "veryEasy", "easy", "standard", "hard",
@@ -44,7 +43,7 @@ function actorByReference(participants, reference) {
 
 export async function openSkillRollDialog(item, { imposedDifficulty = "standard",
   defaultDifficulty = "standard", modifiers = [], includeContest = true,
-  title = null } = {}) {
+  title = null, additionalContent = "", collectAdditional = null } = {}) {
   const { DialogV2 } = foundry.applications.api;
   const sceneParticipants = sceneRollParticipants();
   const initiatorParticipant = sceneParticipants.find((entry) => entry.actor === item.actor)
@@ -122,13 +121,14 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
   const result = await DialogV2.wait({
     window: { title: title ?? game.i18n.format("MYTHRASF.SkillRoll.Title", { skill: item.name }) },
     content: `<div class="mythras-foundry mythras-dialog skill-roll-dialog" data-imposed-difficulty="${imposedDifficulty}" data-base-target="${Number(item.system.total ?? 0)}">
+      ${additionalContent}
       ${contestPanel}
       ${adjustmentPanel("limited")}
       ${adjustmentPanel("reinforced")}
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>${modifierRows}</fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.ChosenDifficulty"))}</legend><select name="difficulty">${difficultyOptions}</select></fieldset>
       <fieldset class="skill-roll-effective-difficulty"><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.FinalDifficulty"))}</legend>
-        <output class="sheet-field-readonly" data-effective-difficulty>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${combineDifficulties(defaultDifficulty, imposedDifficulty)}`))}</output>
+        <output class="sheet-field-readonly" data-effective-difficulty>${escape(game.i18n.localize(`MYTHRASF.Difficulty.${combineRollDifficulties(defaultDifficulty, imposedDifficulty)}`))}</output>
       </fieldset>
       <fieldset class="skill-roll-final-target"><legend>${escape(game.i18n.localize("MYTHRASF.SkillRoll.FinalSkillValue"))}</legend>
         <div><span>${escape(item.name)}</span><output class="sheet-field-readonly penalized-value"><span data-base-target-value>${initialTargets.baseTarget}%</span><span class="skill-roll-target skill-roll-target--${targetComparison(initialTargets.target, initialTargets.baseTarget)}" data-final-target-value ${initialTargets.target === initialTargets.baseTarget ? "hidden" : ""}>(${initialTargets.target}%)</span></output></div>
@@ -149,8 +149,10 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
           ui.notifications.warn(game.i18n.localize("MYTHRASF.SkillRoll.SupportMismatch"));
           return null;
         }
+        const additional = collectAdditional?.(form, button.form) ?? null;
+        if (collectAdditional && !additional) return null;
         if (!includeContest) return { difficulty: form.difficulty.value, limitedSkill,
-          reinforcedSkill, contest: null };
+          reinforcedSkill, contest: null, additional };
         const resolutionMode = form.resolutionMode.value;
         const sideConfig = (side) => {
           const mode = form[`${side}Mode`].value;
@@ -189,7 +191,7 @@ export async function openSkillRollDialog(item, { imposedDifficulty = "standard"
         if (!initiatorSide.valid || !opponentSide.valid) {
           ui.notifications.warn(game.i18n.localize("MYTHRASF.Contest.ParticipantsRequired")); return null;
         }
-        return { difficulty: form.difficulty.value, limitedSkill, reinforcedSkill,
+        return { difficulty: form.difficulty.value, limitedSkill, reinforcedSkill, additional,
           contest: { resolutionMode, sides: { initiator: initiatorSide, opponent: opponentSide },
             participants: [...initiatorSide.participants, ...opponentSide.participants] } };
       }

@@ -41,7 +41,9 @@ El sistema incluye actualmente:
 - Bloqueo Pasivo declarado durante la preparación del asalto, con selección de
   localizaciones conectadas por la anatomía, estado declarado o pasado visible
   por combatiente, opción de agacharse tras el escudo y cancelación al atacar o
-  parar con el arma; las tablas de localizaciones de personaje y PNJ muestran
+  parar con el arma; al combatir con arma y escudo, el ataque propone primero
+  el arma y el Bloqueo Pasivo propone primero el escudo, conservando ambas
+  alternativas; las tablas de localizaciones de personaje y PNJ muestran
   además qué zonas conserva protegidas;
 - combate a distancia con distancia manual, bandas y penalización por TAM y
   circunstancias; Apuntar, Recargar, munición numérica opcional, cobertura
@@ -83,7 +85,9 @@ El sistema incluye actualmente:
 - armas con varios modos, estilos de combate, familiaridad y rasgos
   reutilizables; antes de tirar, los ataques muestran la dificultad elegida y
   la impuesta por estados y situación, permiten aplicar habilidades limitadas o
-  reforzadas y previsualizan el objetivo efectivo. Después crean intercambios diferenciales interactivos con
+  reforzadas y previsualizan el objetivo efectivo; blanco, declaraciones,
+  circunstancias a distancia y ajustes de la tirada se reúnen en un único
+  diálogo de ataque. Después crean intercambios diferenciales interactivos con
   Parar, Evadir o renunciar a la defensa, respetando el momento de declaración
   para la regla compartida de porcentajes superiores al 100 %; los impactos
   resuelven tamaño de parada, golpe contenido, daño, localización y armadura y
@@ -122,8 +126,9 @@ El sistema incluye actualmente:
 - solicitud de tiradas de Fatiga para miembros seleccionados de cualquier
   grupo, con habilidad y dificultad configurables, resolución individual desde
   el chat y pérdida automática de un nivel al fallar;
-- Fatiga periódica en combate cada `ceil(CON / 5)` asaltos: los personajes
-  resuelven Aguante desde la preparación bloqueante del chat y los PNJ tiran
+- Fatiga periódica en combate cada `ceil(CON / 5)` asaltos completados: los personajes
+  resuelven Aguante al finalizar el asalto —o desde la preparación bloqueante
+  del siguiente— y los PNJ tiran
   automáticamente; por defecto solo se publican los PNJ que incrementan su
   Fatiga, con una opción mundial para mostrar todas sus tiradas;
 - macro de DJ para ácido débil, fuerte o concentrado, con salpicaduras de

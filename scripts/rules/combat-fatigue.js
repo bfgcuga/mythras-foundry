@@ -16,6 +16,10 @@ export function advanceCombatFatigue(state, { combatId, round, interval }) {
   if (Number(previous.lastCountedRound) === currentRound) {
     return { due: Number(previous.dueRound) === currentRound, state: previous };
   }
+  if (currentRound === 0) return { due: false, state: {
+    schemaVersion: 1, combatId, lastCountedRound: 0,
+    roundsElapsed: 0, dueRound: null
+  } };
   const elapsed = Math.max(0, Number(previous.roundsElapsed) || 0) + 1;
   const due = elapsed >= currentInterval;
   return { due, state: {

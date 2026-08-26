@@ -83,11 +83,14 @@ test("el ataque reutiliza los ajustes porcentuales sin configurar un concurso", 
   assert.match(rollDialog, /includeContest: false/);
   assert.match(rollDialog, /if \(!includeContest\) return \{ difficulty:/);
   assert.match(chatScript, /await openAttackRollDialog/);
+  assert.match(chatScript, /additionalContent: setupFields, collectAdditional: collectAttackSetup/);
+  assert.doesNotMatch(chatScript, /async function chooseAttackSetup/);
   assert.match(chatScript, /configured\.targets\.adjustedTarget/);
   assert.match(chatScript, /if \(!configured\) return null;[\s\S]*spendActionPoint/);
   assert.match(chatScript, /rollConfiguration/);
   assert.match(rollDialog, /action: "cancel"[\s\S]*?callback: \(\) => null/);
   assert.match(rollDialog, /if \(!result \|\| typeof result !== "object"\) return null/);
+  assert.match(chatScript, /if \(exchangeTerminal\(current\)\)[\s\S]*advanceCombatTurnForExchange/);
 });
 
 test("la familiaridad de combate muestra descriptores localizados y solo penaliza cuando procede", () => {
