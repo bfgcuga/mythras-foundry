@@ -23,15 +23,6 @@
     </label>
   {{/if}}
 
-  {{#if wizard.showPassionSummary}}
-    <fieldset class="background-passion-summary">
-      <legend>{{localize "MYTHRASF.Background.Passions"}}</legend>
-      {{#each wizard.passionRows as |passion|}}
-        <p><strong>{{passion.number}}. {{passion.objectDescription}}</strong><span>{{passion.total}}%</span></p>
-      {{/each}}
-    </fieldset>
-  {{/if}}
-
   {{#if wizard.isPassions}}
     <p class="background-passion-help">{{localize "MYTHRASF.Background.PassionHelp"}}</p>
     <div class="background-passion-list">

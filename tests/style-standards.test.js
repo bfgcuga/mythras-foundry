@@ -254,6 +254,8 @@ test("equipo inicial y pasiones respetan asociaciones y cuadrículas compartidas
 });
 
 test("las pasiones validadas se materializan durante el asistente", () => {
+  const wizard = readFileSync(new URL(
+    "../templates/actor/parts/background-wizard.hbs", import.meta.url), "utf8");
   const characterSheet = readFileSync(new URL(
     "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
   const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
@@ -262,6 +264,10 @@ test("las pasiones validadas se materializan durante el asistente", () => {
   assert.match(characterSheet, /!\["culture", "passions"\]\.includes\(draft\.stage\)/);
   assert.match(characterSheet,
     /expectsPassions[^]*culturalPassions\.length !== draft\.passions\.length/);
+  assert.doesNotMatch(characterSheet, /showPassionSummary/);
+  assert.doesNotMatch(wizard, /background-passion-summary/);
+  assert.match(wizard, /wizard\.isPassions[^]*data-background-passion-field/);
+  assert.match(wizard, /wizard\.isReview[^]*wizard\.passionRows/);
 });
 
 test("las hojas de Item y el creador usan recuadros discretos sin superficie propia", () => {

@@ -1007,8 +1007,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           selected: value === passion.objectType
         }))
       })),
-      showPassionSummary: !["culture", "passions"].includes(stage)
-        && draft.passions.length > 0,
       professions: professionsForCulture(draft.cultureKey).map((entry) => ({
         key: entry.key,
         name: entry.name,
