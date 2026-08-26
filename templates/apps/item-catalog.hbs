@@ -7,15 +7,24 @@
     </label>
     <fieldset>
       <legend>{{localize "MYTHRASF.Catalog.Filters"}}</legend>
+      <button type="button" class="catalog-clear-filters" data-clear-categories
+        title="{{localize "MYTHRASF.Catalog.ClearCategories"}}">{{localize "MYTHRASF.Catalog.ClearAll"}}</button>
       {{#each categories as |category|}}
         <label><input type="checkbox" class="sheet-state-box" data-catalog-category
           value="{{category.key}}" {{checked category.selected}}><span>{{category.label}}</span></label>
       {{/each}}
     </fieldset>
+    <fieldset>
+      <legend>{{localize "MYTHRASF.Catalog.Sources.Show"}}</legend>
+      {{#each sources as |source|}}
+        <label><input type="checkbox" class="sheet-state-box" data-catalog-source
+          value="{{source.packIdsValue}}" {{checked source.selected}}><span>{{source.label}}</span></label>
+      {{/each}}
+    </fieldset>
   </aside>
   <section class="catalog-results">
     <div class="catalog-result-summary">{{localize "MYTHRASF.Catalog.Results" count=count}}</div>
-    <div class="catalog-header" aria-hidden="true"><span></span><span>{{localize "MYTHRASF.Combat.Object"}}</span><span>{{localize "MYTHRASF.ItemClass.Label"}}</span><span>{{localize "MYTHRASF.Item.Price"}}</span><span>{{localize "MYTHRASF.Item.Source"}}</span><span></span><span></span></div>
+    <div class="catalog-header"><span></span>{{#each sortColumns as |column|}}<button type="button" data-catalog-sort="{{column.key}}" title="{{column.title}}">{{column.label}} {{#if column.active}}<i class="fas {{#if column.descending}}fa-sort-down{{else}}fa-sort-up{{/if}}" aria-hidden="true"></i>{{/if}}</button>{{/each}}<span>{{localize "MYTHRASF.Item.Source"}}</span><span></span><span></span></div>
     <ol class="item-list">
       {{#each entries as |entry|}}
         <li draggable="true" data-catalog-uuid="{{entry.uuid}}">

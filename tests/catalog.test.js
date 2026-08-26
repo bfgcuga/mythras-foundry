@@ -52,6 +52,35 @@ test("ordena monedas por equivalencia sin cambiar el precio original", () => {
     [[1, "gold"], [50, "copper"], [6, "silver"]]);
 });
 
+test("ordena por nombre, clase y precio en ambos sentidos", () => {
+  const rows = [
+    { ...prepareCatalogEntry(entry("Espada", "weapon", { value: 20 })),
+      categoryLabel: "Armas" },
+    { ...prepareCatalogEntry(entry("Ábaco", "equipment", { category: "item", value: 5 })),
+      categoryLabel: "Objetos" },
+    { ...prepareCatalogEntry(entry("Broquel", "weapon", { weaponType: "shield", value: 10 })),
+      categoryLabel: "Escudos" }
+  ];
+  assert.deepEqual(filterCatalogEntries(rows, { sort: "name-asc" }).map((row) => row.name),
+    ["Ábaco", "Broquel", "Espada"]);
+  assert.deepEqual(filterCatalogEntries(rows, { sort: "name-desc" }).map((row) => row.name),
+    ["Espada", "Broquel", "Ábaco"]);
+  assert.deepEqual(filterCatalogEntries(rows, { sort: "category-asc" }).map((row) => row.name),
+    ["Espada", "Broquel", "Ábaco"]);
+  assert.deepEqual(filterCatalogEntries(rows, { sort: "price-desc" }).map((row) => row.name),
+    ["Espada", "Broquel", "Ábaco"]);
+});
+
+test("filtra por compendios seleccionados", () => {
+  const rows = [
+    prepareCatalogEntry(entry("Daga", "weapon", {}), { packId: "official.weapons" }),
+    prepareCatalogEntry(entry("Sable lunar", "weapon", {}), { packId: "world.homebrew" })
+  ];
+  assert.deepEqual(filterCatalogEntries(rows, { packIds: ["world.homebrew"] })
+    .map((row) => row.name), ["Sable lunar"]);
+  assert.equal(filterCatalogEntries(rows, { packIds: [] }).length, 0);
+});
+
 test("elimina duplicados por UUID y normaliza fuentes configuradas", () => {
   const repeated = prepareCatalogEntry(entry("Daga", "weapon", {}, "Compendium.test.daga"));
   assert.equal(mergeCatalogEntries([repeated, { ...repeated, name: "Otra" }]).length, 1);

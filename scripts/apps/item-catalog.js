@@ -26,6 +26,8 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
     this.catalogContext = options.catalogContext ?? {};
     this.search = "";
     this.categories = new Set(CATALOG_CATEGORIES);
+    this.selectedSources = null;
+    this.sort = "price-asc";
   }
 
   async #entries() {
@@ -51,15 +53,38 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = await super._prepareContext(options);
     const buyer = this.catalogContext.actorUuid
       ? await fromUuid(this.catalogContext.actorUuid) : null;
-    const entries = filterCatalogEntries(await this.#entries(), {
-      search: this.search, categories: [...this.categories]
-    }).map((entry) => ({ ...entry,
+    const configured = normalizeCatalogConfig(getSystemSetting(SETTING_KEYS.catalogSources));
+    const availablePackIds = [...OFFICIAL_CATALOG_PACKS, ...configured.packIds]
+      .filter((id) => game.packs.has(id));
+    if (this.selectedSources === null) this.selectedSources = new Set(availablePackIds);
+    const prepared = (await this.#entries()).map((entry) => ({ ...entry,
       categoryLabel: game.i18n.localize(`MYTHRASF.Catalog.Category.${entry.category}`) }));
+    const entries = filterCatalogEntries(prepared, {
+      search: this.search, categories: [...this.categories],
+      packIds: [...this.selectedSources], sort: this.sort
+    });
+    const sourceOptions = [{
+      key: "official", label: game.i18n.localize("MYTHRASF.Catalog.Sources.BasicRevised"),
+      packIds: OFFICIAL_CATALOG_PACKS.filter((id) => availablePackIds.includes(id))
+    }, ...configured.packIds.filter((id) => availablePackIds.includes(id)).map((id) => {
+      const pack = game.packs.get(id);
+      return { key: id, label: pack.metadata?.label ?? pack.title ?? id, packIds: [id] };
+    })];
     return { ...context, search: this.search, count: entries.length, entries,
       canPurchase: Boolean(buyer?.isOwner),
       categories: CATALOG_CATEGORIES.map((key) => ({ key,
         label: game.i18n.localize(`MYTHRASF.Catalog.Category.${key}`),
         selected: this.categories.has(key) })),
+      sources: sourceOptions.map((source) => ({ ...source,
+        selected: source.packIds.length > 0
+          && source.packIds.every((id) => this.selectedSources.has(id)),
+        packIdsValue: source.packIds.join(",") })),
+      sort: this.sort,
+      sortColumns: ["name", "category", "price"].map((key) => ({ key,
+        active: this.sort.startsWith(`${key}-`),
+        descending: this.sort === `${key}-desc`,
+        label: game.i18n.localize(`MYTHRASF.Catalog.Sort.${key}`),
+        title: game.i18n.localize(`MYTHRASF.Catalog.Sort.${key}Hint`) })),
       currencyLabels: Object.fromEntries(["copper", "silver", "gold"].map((key) => [
         key, game.i18n.localize(`MYTHRASF.Currency.${key}`)
       ])) };
@@ -68,10 +93,39 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
   _onRender(context, options) {
     super._onRender(context, options);
     const search = this.element.querySelector("[data-catalog-search]");
+    if (this._restoreSearchFocus && search) {
+      search.focus();
+      search.setSelectionRange(this._searchSelectionStart ?? search.value.length,
+        this._searchSelectionEnd ?? search.value.length);
+      this._restoreSearchFocus = false;
+    }
     search?.addEventListener("input", (event) => {
       this.search = event.currentTarget.value;
+      this._searchSelectionStart = event.currentTarget.selectionStart;
+      this._searchSelectionEnd = event.currentTarget.selectionEnd;
+      this._restoreSearchFocus = true;
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this.render({ force: true }), 150);
+    });
+    this.element.querySelector("[data-clear-categories]")?.addEventListener("click", () => {
+      this.categories.clear();
+      this.render({ force: true });
+    });
+    this.element.querySelectorAll("[data-catalog-source]").forEach((field) => {
+      field.addEventListener("change", (event) => {
+        for (const packId of event.currentTarget.value.split(",").filter(Boolean)) {
+          if (event.currentTarget.checked) this.selectedSources.add(packId);
+          else this.selectedSources.delete(packId);
+        }
+        this.render({ force: true });
+      });
+    });
+    this.element.querySelectorAll("[data-catalog-sort]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const field = event.currentTarget.dataset.catalogSort;
+        this.sort = this.sort === `${field}-asc` ? `${field}-desc` : `${field}-asc`;
+        this.render({ force: true });
+      });
     });
     this.element.querySelectorAll("[data-catalog-category]").forEach((field) => {
       field.addEventListener("change", (event) => {

@@ -98,7 +98,8 @@ El sistema incluye actualmente:
 - inventario jerárquico por persona y propiedades, contenedores, monedas,
   transferencias y compras con cambio;
 - catálogo extensible que combina los compendios oficiales con fuentes de Items
-  configuradas por el mundo;
+  configuradas por el mundo, permite filtrar categorías y compendios, buscar sin
+  perder el foco y ordenar por nombre, clase o precio;
 - creador homebrew para los once tipos de Item, con selección o creación de un
   compendio mundial, imagen elegida mediante el navegador de Foundry y acceso
   desde Ajustes o una macro exclusiva del DJ; las armas y estilos continúan su

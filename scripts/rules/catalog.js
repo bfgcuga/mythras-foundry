@@ -10,6 +10,9 @@ export const CATALOG_CATEGORIES = Object.freeze([
 ]);
 
 export const CURRENCY_SORT_VALUE = Object.freeze({ copper: 1, silver: 10, gold: 100 });
+export const CATALOG_SORTS = Object.freeze([
+  "name-asc", "name-desc", "category-asc", "category-desc", "price-asc", "price-desc"
+]);
 
 export function normalizeCatalogConfig(value) {
   const packIds = Array.isArray(value?.packIds) ? value.packIds : [];
@@ -49,13 +52,26 @@ export function prepareCatalogEntry(entry, { packId = "", packLabel = "" } = {})
   };
 }
 
-export function filterCatalogEntries(entries, { search = "", categories = null } = {}) {
+export function filterCatalogEntries(entries, {
+  search = "", categories = null, packIds = null, sort = "price-asc"
+} = {}) {
   const query = normalizeCatalogText(search);
   const selected = new Set(categories ?? []);
+  const selectedPacks = new Set(packIds ?? []);
+  const sorting = CATALOG_SORTS.includes(sort) ? sort : "price-asc";
+  const [field, direction] = sorting.split("-");
+  const sign = direction === "desc" ? -1 : 1;
+  const text = (left, right) => String(left).localeCompare(String(right), "es", {
+    sensitivity: "base"
+  });
   return entries.filter((entry) => (!query || normalizeCatalogText(entry.name).includes(query))
-    && (categories === null || selected.has(entry.category)))
-    .sort((left, right) => left.priceSortValue - right.priceSortValue
-      || String(left.name).localeCompare(String(right.name), "es", { sensitivity: "base" }));
+    && (categories === null || selected.has(entry.category))
+    && (packIds === null || selectedPacks.has(entry.packId)))
+    .sort((left, right) => sign * (field === "price"
+      ? left.priceSortValue - right.priceSortValue
+      : text(field === "category" ? left.categoryLabel ?? left.category : left.name,
+        field === "category" ? right.categoryLabel ?? right.category : right.name))
+      || text(left.name, right.name));
 }
 
 export function mergeCatalogEntries(entries) {
