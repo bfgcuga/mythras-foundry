@@ -30,7 +30,7 @@ export function getAgeCategory(key) {
 }
 
 const SPECIALIZED_SKILLS = new Set([
-  "arte", "artesania", "cultura", "curacion", "ensenar", "idioma",
+  "arte", "artesania", "cultura", "ensenar", "idioma",
   "leer-escribir", "musica", "saber", "supervivencia"
 ]);
 

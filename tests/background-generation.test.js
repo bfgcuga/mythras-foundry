@@ -12,6 +12,7 @@ import {
   createBackgroundDraft,
   culturePassionDrafts,
   finalizeBackgroundCreation,
+  freeSkillNeedsSpecialization,
   getAllAcquiredAbilities,
   getAgeCategory,
   getPhaseAbilities,
@@ -312,6 +313,14 @@ test("la fase libre exige habilidad adicional, especialización y 150 puntos", (
     validateFreePhase(null, null, draft, []),
     { valid: true }
   );
+});
+
+test("curación no exige especialización en la fase libre", () => {
+  assert.equal(freeSkillNeedsSpecialization("curacion"), false);
+  const draft = createBackgroundDraft();
+  draft.freeProfessional = { slug: "curacion", specialization: "" };
+  draft.allocations.free[skillAbilityKey("curacion")] = 150;
+  assert.deepEqual(validateFreePhase(null, null, draft, []), { valid: true });
 });
 
 test("la edad limita el aumento individual de los puntos gratuitos", () => {
