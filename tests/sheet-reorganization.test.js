@@ -90,7 +90,8 @@ test("Trasfondo, lesión permanente y silueta canónica quedan modelados", async
     read("templates/actor/character-sheet.hbs"), read("scripts/ui/body-silhouette.js")]);
   for (const field of ["history", "description", "personality", "motivation", "goals",
     "beliefs", "siblings", "parents", "partner", "children", "extendedFamily", "allies",
-    "contacts", "rivals", "enemies", "secrets", "notes"]) assert.match(model, new RegExp(`"${field}"`));
+    "familyReputation", "familyConnections", "contacts", "rivals", "enemies",
+    "secrets", "notes"]) assert.match(model, new RegExp(`"${field}"`));
   assert.match(itemModel, /permanentWound: new SchemaField/);
   const itemSheet = await read("templates/item/item-sheet.hbs");
   assert.match(itemSheet, /item\.system\.permanentWound\.severity/);

@@ -15,6 +15,7 @@ import { MACRO_SOURCES } from "../data/macros.js";
 import { TRAIT_SOURCES } from "../data/traits.js";
 import { CREATURE_SOURCES } from "../data/creatures.js";
 import { SOCIAL_CLASS_TABLE_SOURCES } from "../data/social-classes.js";
+import { FAMILY_TABLE_SOURCES } from "../data/family-tables.js";
 import { COMBAT_STYLE_SOURCES } from "../data/combat-styles.js";
 import { combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
 import { deterministicPackId } from "./pack-ids.mjs";
@@ -195,19 +196,21 @@ async function buildRollTablePack(name, sources, idNamespace) {
         _key: `!tables.results!${tableId}.${resultId}`,
         _id: resultId,
         type: 0,
-        text: `<strong>${result.name}</strong> (×${result.moneyModifier})<br>${result.resources}`,
+        text: result.text ?? `<strong>${result.name}</strong> (×${result.moneyModifier})<br>${result.resources}`,
         img: "icons/svg/d20-grey.svg",
         documentCollection: "",
         documentId: null,
         weight: result.range[1] - result.range[0] + 1,
         range: result.range,
         drawn: false,
-        flags: { "mythras-foundry": {
-          socialClassKey: result.key,
-          moneyModifier: result.moneyModifier,
-          titles: result.titles,
-          resources: result.resources
-        }}
+        flags: { "mythras-foundry": result.text
+          ? { resultKey: result.key }
+          : {
+            socialClassKey: result.key,
+            moneyModifier: result.moneyModifier,
+            titles: result.titles,
+            resources: result.resources
+          } }
       };
     });
     const document = {
@@ -223,7 +226,9 @@ async function buildRollTablePack(name, sources, idNamespace) {
       folder: null,
       sort: index * 1000,
       ownership: { default: 0 },
-      flags: { "mythras-foundry": { cultureKey: source.cultureKey } }
+      flags: { "mythras-foundry": source.cultureKey
+        ? { cultureKey: source.cultureKey }
+        : { tableKey: source.key } }
     };
     await writeFile(resolve(sourceDirectory, `${source.buildKey}_${tableId}.json`),
       `${JSON.stringify(document, null, 2)}\n`, "utf8");
@@ -246,7 +251,9 @@ const packBuilders = new Map([
   ["creatures", () => buildActorPack("creatures", CREATURE_SOURCES, "creature")],
   ["macros", () => buildMacroPack("macros", MACRO_SOURCES, "macro")],
   ["social-class-tables", () => buildRollTablePack("social-class-tables",
-    SOCIAL_CLASS_TABLE_SOURCES, "table")]
+    SOCIAL_CLASS_TABLE_SOURCES, "table")],
+  ["family-tables", () => buildRollTablePack("family-tables",
+    FAMILY_TABLE_SOURCES, "family-table")]
 ]);
 
 const requestedPacks = process.argv.slice(2);

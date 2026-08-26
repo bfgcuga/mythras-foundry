@@ -83,13 +83,12 @@ resolución directa del Game Master.
 
 ### Tablas aleatorias
 
-- Crear RollTables para familia, conexiones y las demás tablas aplicables a la
-  creación de personajes.
-- Enumerar antes de implementarlas el conjunto exacto de tablas: familia,
-  conexiones, acontecimientos, comunidad, clase social, edad u otras.
-- Decidir si además de existir como RollTables se integrarán como botones del
-  asistente de creación. Si existen ambas vías, deberán compartir una única
-  fuente de datos.
+- Las tablas de padres, hermanos, familia extendida, reputación y conexiones ya
+  existen como RollTables y como tiradas opcionales de un solo uso dentro del
+  asistente, compartiendo una única fuente de reglas. Matrimonio se resuelve
+  como procedimiento guiado en la misma fase.
+- Enumerar antes de implementarlas las demás tablas aplicables: acontecimientos,
+  comunidad, edad u otras.
 
 ### Editor visual de culturas y profesiones
 

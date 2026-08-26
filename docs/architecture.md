@@ -338,6 +338,14 @@ generación de PNJ reaplican la lesión mediante los ayudantes puros de
 `CharacterData.system.narrative`, mientras que el panel de heridas permanentes
 edita directamente sus Items de localización.
 
+Las cinco tablas porcentuales de familia y conexiones se definen una sola vez
+en `scripts/data/family-tables.js`. Esa fuente genera el compendio RollTable y
+alimenta la fase opcional del asistente. El asistente resuelve además sus dados
+secundarios, el procedimiento de matrimonio y la distribución entre campos
+narrativos. `backgroundDraft.familyRolls` conserva los bloqueos, resultados y
+textos originales hasta completar la creación; cada resultado se aplica de
+inmediato a `CharacterData.system.narrative` y sigue siendo texto editable.
+
 Una Herida Crítica aplicada por el flujo de combate tira `1d3` si la localización
 no ha alcanzado gravedad 3, fuerza una mejora mínima de un grado y actualiza la
 lesión junto con sus PG. En extremidades, los resultados anulados se retiran

@@ -1019,7 +1019,7 @@
 
 .mythras-foundry .background-steps {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 0.3rem;
   margin: 0 0 0.75rem;
   padding: 0;
@@ -1058,6 +1058,37 @@
   border-color: var(--mythras-accent);
   color: var(--mythras-ink);
   font-weight: 700;
+}
+
+.mythras-foundry .background-family-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.mythras-foundry .background-family-card {
+  position: relative;
+  min-height: 5.5rem;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.mythras-foundry .background-family-card .sheet-icon-button {
+  font-size: 1.15rem;
+}
+
+.mythras-foundry .background-family-result,
+.mythras-foundry .background-family-completed {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mythras-foundry .background-family-completed {
+  color: var(--mythras-accent);
+  font-size: var(--mythras-font-size-auxiliary);
 }
 
 .mythras-foundry .background-main-select,

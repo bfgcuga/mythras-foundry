@@ -16,6 +16,8 @@ import { ARMOR_SOURCES } from "../data/armor.js";
 import { WEAPON_SOURCES } from "../data/weapons.js";
 import { equipmentIcon } from "../data/equipment.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
+import { childAgeFormula, composeGeneratedNarrative, resolveFamilyTable,
+  resolveMarriage } from "../data/family-tables.js";
 import { COMBAT_STYLE_TRAIT_SOURCES } from "../data/traits.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 import { renderBodySilhouette } from "../ui/body-silhouette.js";
@@ -405,6 +407,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='roll-background-age']", "click", (event) => this.#rollBackgroundAge(event)],
       ["[data-background-social-class]", "change", (event) => this.#selectSocialClass(event)],
       ["[data-action='roll-social-class']", "click", (event) => this.#rollSocialClass(event)],
+      ["[data-background-family-roll]", "click", (event) => this.#rollBackgroundFamily(event)],
       ["[data-background-points]", "change", (event) => this.#updateBackgroundPoints(event)],
       ["[data-background-points-action]", "click", (event) => this.#adjustBackgroundPoints(event)],
       ["[data-background-navigation]", "click", (event) => this.#navigateBackground(event)],
@@ -959,6 +962,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       isProfession: stage === "profession",
       isAge: stage === "age",
       isFree: stage === "free",
+      isFamily: stage === "family",
       isReview: stage === "review",
       cultureName: culture?.name ?? "",
       professionName: profession?.name ?? "",
@@ -982,6 +986,19 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         name: game.i18n.localize(`MYTHRASF.Age.Category.${entry.key}`)
       })),
       selectedAgeCategory: getAgeCategory(draft.ageCategory),
+      familyRows: [
+        ["parents", "Parents"],
+        ["siblings", "Siblings"],
+        ["extendedFamily", "ExtendedFamily"],
+        ["familyReputation", "Reputation"],
+        ["familyConnections", "Connections"],
+        ["marriage", "Marriage"]
+      ].map(([key, label]) => ({
+        key,
+        label: game.i18n.localize(`MYTHRASF.Background.Family.${label}`),
+        completed: Boolean(draft.familyRolls.entries[key]),
+        result: draft.familyRolls.entries[key]?.result ?? ""
+      })),
       cultures: CULTURES.map((entry) => ({
         key: entry.key,
         name: entry.name,
@@ -1844,6 +1861,72 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await this.#saveBackgroundDraft(draft);
   }
 
+  async #rollBackgroundFamily(event) {
+    event.preventDefault();
+    if (!this.isEditable) return;
+    event.currentTarget.disabled = true;
+    const key = event.currentTarget.dataset.backgroundFamilyRoll;
+    const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
+    if (draft.stage !== "family" || draft.familyRolls.entries[key]) return;
+    const language = game.i18n.lang;
+    const roll = async (formula) => Number((await evaluateAnimatedRoll(formula,
+      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) })).total ?? 0);
+    const percentile = await roll("1d100");
+    let resolved;
+    if (key === "marriage") {
+      const influence = this.actor.items.find((item) => item.type === "skill"
+        && (item.system.templateSlug || item.system.slug) === "influencia");
+      const influenceValue = Number(influence?.system.total ?? influence?.system.base ?? 0);
+      const preliminary = resolveMarriage({ percentile, influence: influenceValue }, language);
+      const secondaryRolls = [];
+      let childCount = 0;
+      const childAges = [];
+      if (preliminary.resultKey === "married") {
+        childCount = await roll("1d4-1");
+        secondaryRolls.push({ formula: "1d4-1", total: childCount });
+        const formula = childAgeFormula(draft.ageCategory);
+        for (let index = 0; index < childCount; index += 1) {
+          const age = await roll(formula);
+          secondaryRolls.push({ formula, total: age });
+          childAges.push(age);
+        }
+      }
+      resolved = { ...resolveMarriage({ percentile, influence: influenceValue,
+        childCount, childAges }, language), secondaryRolls };
+    } else {
+      resolved = await resolveFamilyTable(key, percentile, roll, language);
+    }
+    await this.#applyBackgroundFamilyResult(draft, resolved);
+  }
+
+  async #applyBackgroundFamilyResult(draft, resolved) {
+    for (const field of Object.keys(resolved.fields)) {
+      if (!Object.hasOwn(draft.familyRolls.originals, field)) {
+        draft.familyRolls.originals[field] = String(this.actor.system.narrative[field] ?? "");
+      }
+    }
+    draft.familyRolls.entries[resolved.key] = resolved;
+    const generatedByField = {};
+    for (const entry of Object.values(draft.familyRolls.entries)) {
+      for (const [field, value] of Object.entries(entry.fields ?? {})) {
+        (generatedByField[field] ??= []).push(value);
+      }
+    }
+    const update = { "system.backgroundDraft": serializeBackgroundDraft(draft) };
+    const notesLabel = game.i18n.localize("MYTHRASF.Background.Family.PlayerNotes");
+    for (const [field, generated] of Object.entries(generatedByField)) {
+      update[`system.narrative.${field}`] = composeGeneratedNarrative(
+        generated, draft.familyRolls.originals[field], notesLabel
+      );
+    }
+    this._backgroundSyncing = true;
+    try {
+      await this.actor.update(update);
+    } finally {
+      this._backgroundSyncing = false;
+    }
+  }
+
   async #updateFreeSkill(event) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const field = event.currentTarget.dataset.backgroundFreeField;
@@ -1939,7 +2022,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         profession: "socialClass",
         age: "profession",
         free: "age",
-        review: "free"
+        family: "free",
+        review: "family"
       }[draft.stage] ?? "culture";
       await this.#saveBackgroundDraft(draft);
       return;
@@ -1975,7 +2059,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const previousStage = draft.stage;
     draft.stage = {
       culture: "passions", passions: "socialClass", socialClass: "profession", profession: "age",
-      age: "free", free: "review"
+      age: "free", free: "family", family: "review"
     }[draft.stage];
     if (previousStage === "passions"
       && getSocialClassMethod() === SOCIAL_CLASS_METHODS.random

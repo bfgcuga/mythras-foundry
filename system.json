@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.1.33",
+  "version": "0.1.34",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.1.33/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.1.34/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -133,6 +133,13 @@
       "name": "social-class-tables",
       "label": "Tablas de clase social",
       "path": "packs/social-class-tables",
+      "type": "RollTable",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "family-tables",
+      "label": "Tablas de familia y conexiones",
+      "path": "packs/family-tables",
       "type": "RollTable",
       "system": "mythras-foundry"
     }

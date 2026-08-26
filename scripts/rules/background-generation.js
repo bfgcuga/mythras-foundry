@@ -57,6 +57,7 @@ export function createBackgroundDraft() {
       type: "skill", slug: "", specialization: "", name: "", weapons: "", traits: "",
       traitKeys: []
     },
+    familyRolls: { entries: {}, originals: {} },
     allocations: { culture: {}, profession: {}, free: {} }
   };
 }
@@ -91,6 +92,15 @@ export function mergeDraft(draft = {}) {
     },
     freeProfessional: { ...initial.freeProfessional, ...draft.freeProfessional,
       traitKeys: [...(draft.freeProfessional?.traitKeys ?? [])] },
+    familyRolls: {
+      entries: Object.fromEntries(Object.entries(draft.familyRolls?.entries ?? {})
+        .map(([key, entry]) => [key, {
+          ...entry,
+          secondaryRolls: [...(entry?.secondaryRolls ?? [])],
+          fields: { ...(entry?.fields ?? {}) }
+        }])),
+      originals: { ...(draft.familyRolls?.originals ?? {}) }
+    },
     allocations: {
       culture: { ...initial.allocations.culture, ...draft.allocations?.culture },
       profession: { ...initial.allocations.profession, ...draft.allocations?.profession },

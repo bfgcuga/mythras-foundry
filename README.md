@@ -20,7 +20,8 @@ El sistema incluye actualmente:
 - creación de personajes por tiradas, intercambio, reparto de puntos o
   asignación libre desde los mínimos;
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
-  habilidades, estilos de combate, dinero y equipo inicial;
+  habilidades, estilos de combate, dinero, equipo inicial y tiradas opcionales
+  y únicas para familia, reputación, conexiones y matrimonio;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
@@ -158,7 +159,7 @@ El manifiesto declara doce compendios generados a partir de fuentes canónicas:
 - habilidades, culturas y profesiones;
 - armas, equipo y piezas de armadura;
 - rasgos, efectos de combate, estilos de combate y criaturas;
-- macros y tablas de clase social.
+- macros, tablas de clase social y tablas de familia y conexiones.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
 determinista antes de validar o empaquetar una versión.

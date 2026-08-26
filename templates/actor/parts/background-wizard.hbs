@@ -8,7 +8,8 @@
     <li class="{{#if wizard.isProfession}}active{{/if}}">4. {{localize "MYTHRASF.Background.Profession"}}</li>
     <li class="{{#if wizard.isAge}}active{{/if}}">5. {{localize "MYTHRASF.Background.Age"}}</li>
     <li class="{{#if wizard.isFree}}active{{/if}}">6. {{localize "MYTHRASF.Background.FreePoints"}}</li>
-    <li class="{{#if wizard.isReview}}active{{/if}}">7. {{localize "MYTHRASF.Background.Review"}}</li>
+    <li class="{{#if wizard.isFamily}}active{{/if}}">7. {{localize "MYTHRASF.Background.FamilyTitle"}}</li>
+    <li class="{{#if wizard.isReview}}active{{/if}}">8. {{localize "MYTHRASF.Background.Review"}}</li>
   </ol>
 
   {{#if wizard.isCulture}}
@@ -298,6 +299,31 @@
           {{/if}}
         </label>
       {{/if}}
+    </div>
+  {{/if}}
+
+  {{#if wizard.isFamily}}
+    <p class="background-family-help">{{localize "MYTHRASF.Background.FamilyHelp"}}</p>
+    <div class="background-family-grid">
+      {{#each wizard.familyRows as |row|}}
+        <fieldset class="background-family-card">
+          <legend>{{row.label}}</legend>
+          {{#if row.completed}}
+            <p class="background-family-result">{{row.result}}</p>
+            <span class="background-family-completed">
+              <i class="fas fa-check" aria-hidden="true"></i>
+              {{localize "MYTHRASF.Background.Family.Completed"}}
+            </span>
+          {{else}}
+            <button type="button" class="sheet-icon-button"
+              data-background-family-roll="{{row.key}}"
+              title="{{localize "MYTHRASF.Background.Family.Roll" table=row.label}}"
+              aria-label="{{localize "MYTHRASF.Background.Family.Roll" table=row.label}}">
+              <i class="fas fa-dice" aria-hidden="true"></i>
+            </button>
+          {{/if}}
+        </fieldset>
+      {{/each}}
     </div>
   {{/if}}
 

@@ -24,6 +24,11 @@ const EXPECTED_PACKS = Object.freeze({
     label: "Tablas de clase social",
     path: "packs/social-class-tables",
     type: "RollTable"
+  },
+  "family-tables": {
+    label: "Tablas de familia y conexiones",
+    path: "packs/family-tables",
+    type: "RollTable"
   }
 });
 

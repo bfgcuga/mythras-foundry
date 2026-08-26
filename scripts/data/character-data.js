@@ -106,7 +106,8 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
       }),
       narrative: new SchemaField(Object.fromEntries([
         "history", "description", "personality", "motivation", "goals", "beliefs",
-        "siblings", "parents", "partner", "children", "extendedFamily", "allies",
+        "siblings", "parents", "partner", "children", "extendedFamily",
+        "familyReputation", "familyConnections", "allies",
         "contacts", "rivals", "enemies", "secrets", "notes"
       ].map((key) => [key, textField()]))),
       currency: new SchemaField({
