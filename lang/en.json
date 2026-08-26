@@ -1063,6 +1063,8 @@
   "MYTHRASF.Catalog.Filters": "Show categories",
   "MYTHRASF.Catalog.ClearAll": "Clear all",
   "MYTHRASF.Catalog.ClearCategories": "Clear all categories",
+  "MYTHRASF.Catalog.SelectAll": "Select all",
+  "MYTHRASF.Catalog.SelectCategories": "Select all categories",
   "MYTHRASF.Catalog.Sort.name": "Item",
   "MYTHRASF.Catalog.Sort.nameHint": "Sort by name; press again to reverse the order",
   "MYTHRASF.Catalog.Sort.category": "Item class",

@@ -7,8 +7,12 @@
     </label>
     <fieldset>
       <legend>{{localize "MYTHRASF.Catalog.Filters"}}</legend>
-      <button type="button" class="catalog-clear-filters" data-clear-categories
-        title="{{localize "MYTHRASF.Catalog.ClearCategories"}}">{{localize "MYTHRASF.Catalog.ClearAll"}}</button>
+      <div class="catalog-filter-actions">
+        <button type="button" data-select-all-categories
+          title="{{localize "MYTHRASF.Catalog.SelectCategories"}}">{{localize "MYTHRASF.Catalog.SelectAll"}}</button>
+        <button type="button" data-clear-categories
+          title="{{localize "MYTHRASF.Catalog.ClearCategories"}}">{{localize "MYTHRASF.Catalog.ClearAll"}}</button>
+      </div>
       {{#each categories as |category|}}
         <label><input type="checkbox" class="sheet-state-box" data-catalog-category
           value="{{category.key}}" {{checked category.selected}}><span>{{category.label}}</span></label>

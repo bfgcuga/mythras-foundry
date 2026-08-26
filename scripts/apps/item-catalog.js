@@ -107,6 +107,10 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this.render({ force: true }), 150);
     });
+    this.element.querySelector("[data-select-all-categories]")?.addEventListener("click", () => {
+      this.categories = new Set(CATALOG_CATEGORIES);
+      this.render({ force: true });
+    });
     this.element.querySelector("[data-clear-categories]")?.addEventListener("click", () => {
       this.categories.clear();
       this.render({ force: true });

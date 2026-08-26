@@ -1063,6 +1063,8 @@
   "MYTHRASF.Catalog.Filters": "Mostrar categorías",
   "MYTHRASF.Catalog.ClearAll": "Desmarcar todas",
   "MYTHRASF.Catalog.ClearCategories": "Desmarcar todas las categorías",
+  "MYTHRASF.Catalog.SelectAll": "Marcar todas",
+  "MYTHRASF.Catalog.SelectCategories": "Marcar todas las categorías",
   "MYTHRASF.Catalog.Sort.name": "Objeto",
   "MYTHRASF.Catalog.Sort.nameHint": "Ordenar por nombre; pulsa de nuevo para invertir el orden",
   "MYTHRASF.Catalog.Sort.category": "Clase de objeto",

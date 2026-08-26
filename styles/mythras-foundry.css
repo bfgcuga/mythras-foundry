@@ -27,6 +27,13 @@
   color: var(--mythras-ink);
 }
 
+/* Keep system window titles legible independently of Foundry's active theme. */
+.mythras-foundry .window-header .window-title {
+  color: var(--mythras-header-ink) !important;
+  font-family: var(--font-primary);
+  font-weight: 700;
+}
+
 .mythras-foundry.window-content,
 .mythras-foundry .window-content,
 .mythras-paper-sheet.window-content,
@@ -2755,7 +2762,8 @@
 .mythras-foundry .catalog-search-label { display: grid; gap: 0.25rem; }
 .mythras-foundry .catalog-filters fieldset { display: grid; gap: 0.3rem; }
 .mythras-foundry .catalog-filters fieldset label { display: grid; grid-template-columns: 1rem minmax(0, 1fr); align-items: center; gap: 0.4rem; }
-.mythras-foundry .catalog-clear-filters { border: 1px solid var(--mythras-border); background: transparent; color: var(--mythras-ink); font-size: var(--mythras-font-size-table); }
+.mythras-foundry .catalog-filter-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem; }
+.mythras-foundry .catalog-filter-actions button { min-width: 0; border: 1px solid var(--mythras-border); background: transparent; color: var(--mythras-ink); font-size: var(--mythras-font-size-table); white-space: normal; }
 .mythras-foundry .catalog-results { min-height: 0; overflow-y: auto; }
 .mythras-foundry .catalog-result-summary { margin-bottom: 0.35rem; color: color-mix(in srgb, var(--mythras-ink) 75%, transparent); font-size: var(--mythras-font-size-auxiliary); }
 .mythras-foundry .catalog-header,
