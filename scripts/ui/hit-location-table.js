@@ -26,6 +26,7 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
       showDisabledControl: item.system.woundLevel === "serious",
       disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
       crippled: Number(item.system.permanentWound?.severity ?? 0) > 0,
+      overMaximum: Number(item.system.currentHitPoints) > Number(item.system.maxHitPoints),
       permanentWound: item.system.permanentWound,
       maximumDisplay: {
         base: Number(item.system.permanentWound?.originalMaxHitPoints)

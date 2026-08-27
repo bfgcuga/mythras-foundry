@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { woundRollRisks } from "../scripts/ui/wound-roll-dialog.js";
+import { silhouetteRegionId } from "../scripts/ui/body-silhouette.js";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -99,6 +100,13 @@ test("Trasfondo, lesión permanente y silueta canónica quedan modelados", async
   assert.match(sheet, /data-body-silhouette/);
   assert.match(silhouette, /assets\/Silueta\/Silueta\.svg/);
   assert.match(silhouette, /humanArmorFactors/);
+});
+
+test("la orientación frontal refleja las localizaciones laterales de la silueta", () => {
+  assert.equal(silhouetteRegionId("leftArm", "front"), "right-arm");
+  assert.equal(silhouetteRegionId("rightLeg", "front"), "left-leg");
+  assert.equal(silhouetteRegionId("leftArm", "back"), "left-arm");
+  assert.equal(silhouetteRegionId("head", "front"), "head");
 });
 
 test("las consecuencias narrativas distinguen herida grave y miembro inutilizable", () => {

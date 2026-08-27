@@ -11,6 +11,7 @@ import {
   getSystemSetting,
   registerSystemSettings,
   SETTING_KEYS,
+  SILHOUETTE_ORIENTATIONS,
   SOCIAL_CLASS_METHODS,
   setSystemSetting,
   SYSTEM_ID,
@@ -56,6 +57,11 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
     ({ key }) => key === SETTING_KEYS.showNpcCombatFatigueChecks);
   assert.equal(showNpcCombatFatigueChecks.options.default, false);
   assert.equal(showNpcCombatFatigueChecks.options.requiresReload, false);
+  const silhouetteOrientation = registrations.find(
+    ({ key }) => key === SETTING_KEYS.silhouetteOrientation);
+  assert.equal(silhouetteOrientation.options.default, SILHOUETTE_ORIENTATIONS.front);
+  assert.equal(silhouetteOrientation.options.scope, "world");
+  assert.equal(silhouetteOrientation.options.requiresReload, false);
   const catalogSources = registrations.find(
     ({ key }) => key === SETTING_KEYS.catalogSources);
   assert.deepEqual(catalogSources.options.default, { version: 1, packIds: [] });

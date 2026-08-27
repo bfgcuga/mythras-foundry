@@ -347,6 +347,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         Number(item.system.permanentWound?.severity ?? 0) > 0).map((item) => ({
         item, ...item.system.permanentWound
       })),
+      canRemovePermanentWounds: this.isEditable && Boolean(game.user?.isGM),
       hitLocationTable,
       canDeleteHitLocations: this._editMode,
       hitLocationTemplateMode: false,
@@ -417,6 +418,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='create-item']", "click", (event) => this.#createItem(event)],
       ["[data-action='edit-item']", "click", (event) => this.#editItem(event)],
       ["[data-action='delete-item']", "click", (event) => this.#deleteItem(event)],
+      ["[data-action='remove-permanent-wound']", "click", (event) =>
+        this.#removePermanentWound(event)],
       ["[data-action='toggle-equipped']", "click", (event) => this.#toggleEquipped(event)],
       ["[data-active-weapon-mode]", "change", (event) => this.#prepareWeaponMode(event)],
       ["[data-fatigue-level]", "change", (event) => this.#updateFatigue(event)],
@@ -2588,6 +2591,38 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (childUpdates.length) await this.actor.updateEmbeddedDocuments("Item", childUpdates);
       await this.actor.deleteEmbeddedDocuments("Item", [itemId]);
     }
+  }
+
+  async #removePermanentWound(event) {
+    event.preventDefault();
+    if (!this.isEditable || !game.user?.isGM) return;
+    const location = this.actor.items.get(
+      event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (location?.type !== "hitLocation"
+      || Number(location.system.permanentWound?.severity ?? 0) <= 0) return;
+    const confirmed = await DialogV2.confirm({
+      window: { title: game.i18n.localize("MYTHRASF.PermanentWound.Remove") },
+      content: `<p>${game.i18n.format("MYTHRASF.PermanentWound.RemoveConfirm", {
+        location: foundry.utils.escapeHTML(location.name)
+      })}</p>`,
+      yes: { label: game.i18n.localize("MYTHRASF.PermanentWound.Remove") },
+      no: { label: game.i18n.localize("MYTHRASF.Cancel") }
+    });
+    if (!confirmed) return;
+    const originalMaximum = Math.max(1, Number(
+      location.system.permanentWound.originalMaxHitPoints
+    ) || Number(location.system.maxHitPoints) || 1);
+    await location.update({
+      "system.maxHitPoints": originalMaximum,
+      "system.permanentWound": {
+        severity: 0,
+        roll: 0,
+        originalMaxHitPoints: 0,
+        effectiveMaxHitPoints: 0,
+        lostHitResults: 0,
+        description: ""
+      }
+    });
   }
 
   async #rollSkill(event) {

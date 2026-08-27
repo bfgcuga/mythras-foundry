@@ -11,6 +11,7 @@ export const SETTING_KEYS = Object.freeze({
   detailedReach: "detailedReach",
   passiveBlockContiguity: "passiveBlockContiguity",
   showNpcCombatFatigueChecks: "showNpcCombatFatigueChecks",
+  silhouetteOrientation: "silhouetteOrientation",
   catalogSources: "catalogSources",
   parties: "parties"
 });
@@ -23,6 +24,11 @@ export const ACTION_POINT_METHODS = Object.freeze({
 export const SOCIAL_CLASS_METHODS = Object.freeze({
   choose: "choose",
   random: "random"
+});
+
+export const SILHOUETTE_ORIENTATIONS = Object.freeze({
+  front: "front",
+  back: "back"
 });
 
 export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
@@ -148,6 +154,20 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       name: "MYTHRASF.Settings.CombatFatigue.ShowNpc.Name",
       hint: "MYTHRASF.Settings.CombatFatigue.ShowNpc.Hint",
       scope: "world", config: true, type: Boolean, default: false,
+      requiresReload: false
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.silhouetteOrientation,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.Silhouette.Orientation.Name",
+      hint: "MYTHRASF.Settings.Silhouette.Orientation.Hint",
+      scope: "world", config: true, type: String,
+      choices: Object.freeze({
+        [SILHOUETTE_ORIENTATIONS.front]: "MYTHRASF.Settings.Silhouette.Orientation.Front",
+        [SILHOUETTE_ORIENTATIONS.back]: "MYTHRASF.Settings.Silhouette.Orientation.Back"
+      }),
+      default: SILHOUETTE_ORIENTATIONS.front,
       requiresReload: false
     })
   }),

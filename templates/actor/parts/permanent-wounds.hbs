@@ -6,6 +6,7 @@
     <span>{{localize "MYTHRASF.PermanentWound.HitPoints"}}</span>
     <span>{{localize "MYTHRASF.PermanentWound.LostResults"}}</span>
     <span>{{localize "MYTHRASF.PermanentWound.Description"}}</span>
+    {{#if canRemovePermanentWounds}}<span></span>{{/if}}
   </div>
   {{#each permanentWounds as |row|}}
     <div class="permanent-wound-row" data-item-id="{{row.item.id}}">
@@ -16,6 +17,9 @@
       <output class="sheet-field-readonly">{{row.lostHitResults}}</output>
       <textarea class="sheet-field-editable" data-item-field="permanentWound.description"
         aria-label="{{localize "MYTHRASF.PermanentWound.Description"}}">{{row.description}}</textarea>
+      {{#if @root.canRemovePermanentWounds}}<button type="button" class="sheet-icon-button"
+        data-action="remove-permanent-wound" title="{{localize 'MYTHRASF.PermanentWound.Remove'}}"
+        aria-label="{{localize 'MYTHRASF.PermanentWound.Remove'}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
     </div>
   {{else}}
     <p class="empty">{{localize "MYTHRASF.PermanentWound.Empty"}}</p>

@@ -331,8 +331,10 @@ eliminar acciones del DOM. Los controladores especializados de alcance,
 bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
 
 La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
-`assets/Silueta`. Vincula regiones mediante rangos, categoría y clase de PG
-humanos, nunca mediante nombres traducidos. La lesión consolidada reside en
+`assets/Silueta`. El ajuste de mundo `silhouetteOrientation` decide si las
+localizaciones izquierdas y derechas se proyectan como vista frontal o dorsal.
+La vinculación usa rangos, categoría y clase de PG humanos, nunca nombres
+traducidos. La lesión consolidada reside en
 `hitLocation.system.permanentWound`: conserva gravedad, tirada, máximo original,
 máximo efectivo, resultados del d20 anulados y descripción. El máximo operativo
 de la localización es siempre el efectivo; los recálculos por CON/TAM y la

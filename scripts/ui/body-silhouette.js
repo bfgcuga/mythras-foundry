@@ -2,11 +2,19 @@ import { humanArmorFactors, woundLevel } from "../rules/hit-locations.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "../rules/timed-conditions.js";
 import { activateDelayedTooltips } from "./tooltips.js";
+import { getSystemSetting, SETTING_KEYS, SILHOUETTE_ORIENTATIONS } from "../settings.js";
 
 const SVG_PATH = "systems/mythras-foundry/assets/Silueta/Silueta.svg";
 const REGION_IDS = Object.freeze({ head: "head", chest: "chest", abdomen: "abdomen",
   leftArm: "left-arm", rightArm: "right-arm", leftLeg: "left-leg", rightLeg: "right-leg" });
 let silhouetteText;
+
+export function silhouetteRegionId(nameKey, orientation = SILHOUETTE_ORIENTATIONS.front) {
+  if (orientation !== SILHOUETTE_ORIENTATIONS.front) return REGION_IDS[nameKey] ?? "";
+  const mirrored = { leftArm: "rightArm", rightArm: "leftArm",
+    leftLeg: "rightLeg", rightLeg: "leftLeg" };
+  return REGION_IDS[mirrored[nameKey] ?? nameKey] ?? "";
+}
 
 async function svgText() {
   silhouetteText ??= fetch(SVG_PATH).then((response) => {
@@ -48,9 +56,10 @@ export async function renderBodySilhouette(actor, root) {
   catch (error) { console.warn("Mythras Foundry | Silhouette unavailable", error); return; }
   const locations = actor.items.filter((item) => item.type === "hitLocation");
   const armors = actor.items.filter((item) => item.type === "armor" && item.system.equipped);
+  const orientation = getSystemSetting(SETTING_KEYS.silhouetteOrientation);
   const byRegion = new Map(locations.map((location) => {
     const factor = humanArmorFactors(location);
-    return [factor ? REGION_IDS[factor.nameKey] : "", location];
+    return [factor ? silhouetteRegionId(factor.nameKey, orientation) : "", location];
   }).filter(([id]) => id));
   for (const id of Object.values(REGION_IDS)) {
     const region = container.querySelector(`#${id}`);
@@ -65,7 +74,9 @@ export async function renderBodySilhouette(actor, root) {
       continue;
     }
     const level = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
-    region.classList.add(Number(location.system.permanentWound?.severity ?? 0) > 0 ? "body-location--crippled"
+    const crippledWithoutWound = level === "healthy"
+      && Number(location.system.permanentWound?.severity ?? 0) > 0;
+    region.classList.add(crippledWithoutWound ? "body-location--crippled"
       : `body-location--${level}`);
     const label = tooltip(actor, location, armors);
     region.setAttribute("aria-label", label);

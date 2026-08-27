@@ -21,6 +21,7 @@
   --mythras-wound-serious: #e0b93f;
   --mythras-wound-major: #a51f1f;
   --mythras-wound-crippled: #111;
+  --mythras-over-maximum: #752f8f;
 }
 
 .mythras-foundry {
@@ -1828,6 +1829,10 @@
   align-items: center;
   font-size: var(--mythras-font-size-table);
 }
+.mythras-foundry .permanent-wounds-panel:has([data-action="remove-permanent-wound"]) .permanent-wound-head,
+.mythras-foundry .permanent-wounds-panel:has([data-action="remove-permanent-wound"]) .permanent-wound-row {
+  grid-template-columns: minmax(7rem, 1fr) 4rem 6rem 5rem minmax(12rem, 2fr) 1.5rem;
+}
 .mythras-foundry .permanent-wound-head { font-weight: 700; text-align: center; }
 .mythras-foundry .permanent-wound-row textarea { min-height: 3rem; resize: vertical; }
 .mythras-foundry .narrative-wide { grid-column: 1 / -1; }
@@ -1934,14 +1939,18 @@
 .mythras-foundry .combat-fatigue-head,
 .mythras-foundry .combat-fatigue-line {
   display: grid;
-  grid-template-columns: minmax(7rem, 1.35fr) minmax(4rem, 0.8fr) minmax(4rem, 0.75fr) 2.4rem 2.4rem minmax(4rem, 0.8fr);
+  grid-template-columns: minmax(7rem, 1.35fr) minmax(4rem, 0.8fr) minmax(4rem, 0.75fr) 3.2rem 3.2rem minmax(4rem, 0.8fr);
   align-items: center;
   gap: 0.25rem;
-  min-width: 28rem;
+  min-width: 30rem;
 }
 .mythras-foundry .combat-fatigue-head { color: var(--color-text-subtle); font-size: var(--mythras-font-size-table); font-weight: 700; text-align: center; }
 .mythras-foundry .combat-fatigue-line { min-height: 1.9rem; border-bottom: 1px solid rgb(61 57 51 / 25%); font-size: var(--mythras-font-size-table); text-align: center; }
 .mythras-foundry .combat-fatigue-line > span:first-child { text-align: left; }
+.mythras-foundry .combat-fatigue-head > span:nth-child(4),
+.mythras-foundry .combat-fatigue-line > span:nth-child(4) { padding-right: 0.3rem; }
+.mythras-foundry .combat-fatigue-head > span:nth-child(5),
+.mythras-foundry .combat-fatigue-line > span:nth-child(5) { padding-left: 0.3rem; }
 
 .mythras-foundry .combat-location-line,
 .mythras-foundry .combat-armor-line,
@@ -2544,6 +2553,7 @@
 .mythras-foundry .wound-minor { color: var(--mythras-wound-healthy); background-color: color-mix(in srgb, var(--mythras-wound-minor) 35%, transparent) !important; }
 .mythras-foundry .wound-serious { color: #5f4a00; background-color: color-mix(in srgb, var(--mythras-wound-serious) 55%, transparent) !important; }
 .mythras-foundry .wound-major { color: #fff; background-color: var(--mythras-wound-major) !important; }
+.mythras-foundry .location-current--over-maximum { color: var(--mythras-over-maximum) !important; font-weight: 700; }
 .mythras-foundry .combat-wound-legend [class^="wound-"] { padding: 0.08rem 0.3rem; border-radius: 0.25rem; }
 
 .mythras-combat-card { display: grid; gap: 0.35rem; }
