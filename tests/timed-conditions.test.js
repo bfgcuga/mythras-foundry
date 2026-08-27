@@ -1,7 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { advanceActorTurnDuration, expiresAtRoundEnd, fatigueLossForResult,
+import { advanceActorTurnDuration, advanceRoundDuration, expiresAtRoundEnd, fatigueLossForResult,
   timedConditionSource, worsenFatigueLevel } from "../scripts/rules/timed-conditions.js";
+
+test("las duraciones configurables por asaltos se reducen hasta expirar", () => {
+  const condition = timedConditionSource({ key: "prone", combat: { uuid: "Combat.a" },
+    duration: { unit: "round", phase: "endRound", value: 2 } });
+  const first = advanceRoundDuration(condition, "Combat.a");
+  assert.equal(first.action, "update");
+  assert.equal(first.condition.remaining, 1);
+  assert.equal(advanceRoundDuration(first.condition, "Combat.a").action, "expire");
+  assert.equal(advanceRoundDuration(condition, "Combat.other").action, "keep");
+});
 
 test("una condición aplicada durante el turno actual se arma sin descontarse", () => {
   const condition = timedConditionSource({ key: "pressed",

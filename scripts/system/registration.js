@@ -33,6 +33,7 @@ import { createFatigueCheckApi } from "../rules/fatigue-check-chat.js";
 import { createExsanguinationApi } from "../rules/exsanguination.js";
 import { createDyingApi } from "../rules/dying.js";
 import { createDirectDamageApi } from "../rules/direct-damage.js";
+import { createStatusAssignmentApi } from "../rules/status-assignment.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -111,7 +112,7 @@ export function registerSystemInitialization() {
         fire: createFireApi(), fall: createFallApi(), suffocation: createSuffocationApi() }),
       fatigueChecks: createFatigueCheckApi(),
       conditions: Object.freeze({ exsanguination: createExsanguinationApi(),
-        dying: createDyingApi() }),
+        dying: createDyingApi(), statuses: createStatusAssignmentApi() }),
       traits: { has: hasTrait, list: traitReferences, resolveRules: resolveTraitRules,
         registerRule: registerTraitRule, unregisterRule: unregisterTraitRule },
       combat: { isCoordinator: isCombatCoordinator, changeReach: requestReachChange,

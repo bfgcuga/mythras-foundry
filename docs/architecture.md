@@ -179,8 +179,8 @@ de Fatiga únicamente ante fallo o pifia. La API pública es
 
 El compendio de macros incluye el lanzador exclusivo del DJ «Aplicación de daño
 o estados». Presenta botones y delega en las APIs públicas de daño directo,
-Ácido, Fuego, Caída, Fatiga grupal, Asfixia/Ahogamiento, Desangrándose o
-Agonizando; no duplica ninguna regla de resolución.
+Ácido, Fuego, Caída, Fatiga grupal, Asfixia/Ahogamiento, Desangrándose,
+Agonizando o el gestor de estados; no duplica ninguna regla de resolución.
 
 El daño directo vive en `scripts/rules/direct-damage.js` y no mantiene estado.
 Acepta una cantidad fija o una fórmula evaluada independientemente por cada
@@ -189,6 +189,13 @@ localización seleccionada; alternativamente resuelve una sola zona mediante
 publica una tarjeta agrupada y delega las consecuencias de heridas en el mismo
 flujo que Ácido, Fuego y Caída. Su API es
 `game.mythrasFoundry.hazards.damage`.
+
+El gestor de estados `game.mythrasFoundry.conditions.statuses` consume directamente
+`MYTHRAS_STATUS_EFFECTS`, muestra la explicación localizada de cada entrada y permite
+duración manual, por turnos propios o por asaltos. Los estados con configuración propia
+delegan en su flujo especializado. Todo estado nuevo debe registrarse en ese catálogo y
+añadir `MYTHRASF.Status.Description.<id>` en ambos idiomas; de este modo queda incorporado
+automáticamente al gestor y al macro «Aplicación de daño o estados».
 
 La Fatiga periódica de combate comparte la cola bloqueante de preparación del
 asalto. Cada combatiente conserva en sus flags un contador idempotente de asaltos
@@ -308,7 +315,10 @@ tracker solo avanza cuando la tarjeta queda cerrada.
 representa el asalto y `flags.mythras-foundry.turnEconomy.cycle` los recorridos
 adicionales de iniciativa mientras alguien conserve PA. El máximo efectivo se
 obtiene del resolvedor compartido de condiciones; `Defeated` lo fuerza a cero.
-La iniciativa publicada combina `1d10 + iniciativa`; cuando dos resultados
+La iniciativa publicada combina `1d10 + iniciativa`. La tirada original se conserva en el
+combatiente y, si la opción mundial correspondiente está activa, el total se recalcula con la
+iniciativa efectiva cuando cambian Fatiga, heridas, armadura o estados. Una transacción de
+combate abierta aplaza el cambio hasta cerrarse. Cuando dos resultados
 coinciden, añade un d100 secundario en la fracción para garantizar un orden
 total. La fracción solo se presenta en el tracker para grupos empatados. Las
 tiradas individuales crean una tarjeta de chat y las selecciones múltiples del

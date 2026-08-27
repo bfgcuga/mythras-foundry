@@ -313,6 +313,53 @@
   background: transparent;
 }
 
+.status-assignment-window { max-width: min(92vw, 58rem); }
+.status-assignment-window .window-content,
+.status-assignment-window .window-content > form { min-height: 0; }
+.mythras-foundry .status-assignment-dialog {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.65rem;
+}
+.mythras-foundry .status-assignment-catalog {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  min-height: 12rem;
+  max-height: 25rem;
+  overflow-y: auto;
+  gap: 0.45rem;
+}
+.mythras-foundry .status-assignment-card {
+  display: grid;
+  grid-template-columns: 1rem 2rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.45rem;
+  border: 1px solid var(--mythras-border);
+}
+.mythras-foundry .status-assignment-card:has(input:checked) {
+  border-color: var(--mythras-accent);
+  box-shadow: inset 0 0 0 1px var(--mythras-accent);
+}
+.mythras-foundry .status-assignment-card img { width: 2rem; height: 2rem; border: 0; }
+.mythras-foundry .status-assignment-card span { display: grid; min-width: 0; gap: 0.2rem; }
+.mythras-foundry .status-assignment-card small { overflow-wrap: anywhere; }
+.mythras-foundry .status-assignment-card em {
+  color: var(--mythras-accent);
+  font-size: var(--mythras-font-size-auxiliary);
+}
+.mythras-foundry .status-assignment-dialog fieldset:not(.status-assignment-catalog) {
+  display: grid;
+  gap: 0.45rem;
+}
+.mythras-foundry .status-assignment-configured { margin: 0; }
+@media (max-width: 700px) {
+  .mythras-foundry .status-assignment-catalog { grid-template-columns: minmax(0, 1fr); }
+}
+
 .mythras-foundry .character-sheet-content,
 .mythras-foundry .item-sheet-content {
   display: flex;

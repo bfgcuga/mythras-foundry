@@ -92,6 +92,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - En celdas de tabla con altura disponible, priorizar texto multilínea mediante `overflow-wrap` y `white-space: normal`. Si el contenido variable aún desborda, puede aplicarse ajuste progresivo de fuente con un mínimo legible; no truncar con elipsis por defecto cuando la fila admite varias líneas.
 - Encabezados y valores de una tabla deben compartir exactamente la misma cuadrícula y alineación. Los iconos auxiliares se posicionan fuera del flujo cuando puedan desplazar visualmente el dato principal de su columna.
 - En listas y tablas de inventario, la acción de eliminar ocupa siempre la última columna y queda alineada al extremo derecho, independientemente de las columnas opcionales del tipo de Item.
+- Todo estado nuevo se registra en el catálogo canónico `MYTHRAS_STATUS_EFFECTS` y añade su explicación `MYTHRASF.Status.Description.<id>` en español e inglés. El gestor y los macros de asignación de estados consumen ese catálogo; no se mantienen listas paralelas.
 
 ## Publicación de versiones
 

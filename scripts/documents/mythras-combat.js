@@ -1,7 +1,8 @@
 import { effectiveActionPointMaximum, combatantActionPointState } from "../rules/action-points.js";
 import { composedInitiative, nextCombatPosition, splitComposedInitiative,
-  TURN_ECONOMY_SCHEMA_VERSION, uniqueActorEntries } from "../rules/combat-turns.js";
-import { getActionPointRules } from "../settings.js";
+  dynamicInitiativePrimary, TURN_ECONOMY_SCHEMA_VERSION,
+  uniqueActorEntries } from "../rules/combat-turns.js";
+import { getActionPointRules, getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { resolveActorConditions } from "../rules/actor-conditions.js";
 import { advanceActorTurnConditions, expireRoundConditions,
   bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
@@ -58,6 +59,33 @@ export async function synchronizeCombatantActionPoints(combatant) {
     && !hasPendingExchange(combatant)) await combat.nextTurn();
 }
 
+function storedInitiativeRollTotal(stored) {
+  const explicit = Number(stored?.rollTotal);
+  if (Number.isFinite(explicit)) return explicit;
+  const serialized = Number(stored?.primaryRoll?.total ?? stored?.primaryRoll?._total);
+  return Number.isFinite(serialized) ? serialized : null;
+}
+
+export async function synchronizeCombatantInitiative(combatant) {
+  if (!isCombatCoordinator() || !combatant?.actor || combatant.initiative == null
+    || !getSystemSetting(SETTING_KEYS.dynamicCombatInitiative)) return false;
+  if (hasPendingExchange(combatant)) return false;
+  const stored = combatant.getFlag(SCOPE, "initiative");
+  const rollTotal = storedInitiativeRollTotal(stored);
+  if (rollTotal == null) return false;
+  const maximum = effectiveActionPointMaximum(combatant.actor, getActionPointRules());
+  const base = combatant.actor.system.baseAttributes ?? combatant.actor.system.attributes ?? {};
+  const effective = maximum === 0 ? 0 : Number(resolveActorConditions(combatant.actor,
+    { baseAttributes: base }).attributes.initiative ?? 0);
+  const primary = dynamicInitiativePrimary(rollTotal, effective);
+  if (primary == null || Number(stored.primary) === primary) return false;
+  await combatant.update({ initiative: composedInitiative(primary, stored.tieBreak,
+    stored.collision), [`flags.${SCOPE}.initiative`]: { ...stored, primary, rollTotal,
+    effectiveInitiative: effective } }, { mythrasTieBreak: true });
+  await combatant.parent?.ensureInitiativeTieBreaks?.();
+  return true;
+}
+
 export class MythrasCombat extends Combat {
   get mythrasTurnEconomy() {
     return this.getFlag(SCOPE, FLAG) ?? { schemaVersion: TURN_ECONOMY_SCHEMA_VERSION,
@@ -87,6 +115,7 @@ export class MythrasCombat extends Combat {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Tracker.PendingExchange"));
       return this;
     }
+    if (this.combatant) await synchronizeCombatantInitiative(this.combatant);
     const economy = this.mythrasTurnEconomy;
     if (economy.transitioning) return this;
     const history = [...(economy.conditionHistory ?? [])];
@@ -220,6 +249,8 @@ export class MythrasCombat extends Combat {
           [`flags.${SCOPE}.initiative`]: { primary, tieBreak, collision,
             surprisePenaltyApplied: candidate.combatant.actor?.statuses?.has?.("surprised") ?? false,
             primaryRoll: replacement?.primaryRoll?.toJSON() ?? candidate.stored?.primaryRoll,
+            rollTotal: replacement?.raw ?? candidate.stored?.rollTotal,
+            effectiveInitiative: replacement?.bonus ?? candidate.stored?.effectiveInitiative,
             tieBreakRoll: tieRoll?.toJSON() ?? null } });
         if (replacement) Object.assign(replacement, { tieBreak: tied ? tieBreak : null,
           tieRoll, total: primary });
@@ -273,7 +304,8 @@ export class MythrasCombat extends Combat {
         used.add(tieBreak);
         updates.push({ _id: candidate.entry.id,
           initiative: composedInitiative(primary, tieBreak, collision),
-          [`flags.${SCOPE}.initiative`]: { primary, tieBreak, collision } });
+          [`flags.${SCOPE}.initiative`]: { ...(candidate.stored ?? candidate.data),
+            primary, tieBreak, collision } });
       }
     }
     if (updates.length) await this.updateEmbeddedDocuments("Combatant", updates,

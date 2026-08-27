@@ -1,4 +1,4 @@
-import { advanceActorTurnDuration, expiresAtRoundEnd, timedConditionSource,
+import { advanceActorTurnDuration, advanceRoundDuration, expiresAtRoundEnd, timedConditionSource,
   TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { composedInitiative, splitComposedInitiative } from "./combat-turns.js";
 
@@ -37,10 +37,17 @@ export async function expireRoundConditions(combat, history = []) {
     const actor = combatant.actor; if (!actor) continue;
     const effects = timedEffects(actor).filter((effect) => expiresAtRoundEnd(flag(effect), combat.uuid));
     if (!effects.length) continue;
-    history.push(...effects.map((effect) => ({ effectId: effect.id, key: flag(effect).key,
-      expiredAt: Date.now(), phase: "endRound" })));
+    const deletes = [];
     for (const effect of effects) {
       const condition = flag(effect);
+      const result = advanceRoundDuration(condition, combat.uuid);
+      if (result.action === "update") {
+        await effect.update({ [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]:
+          result.condition });
+        continue;
+      }
+      history.push({ effectId: effect.id, key: condition.key,
+        expiredAt: Date.now(), phase: "endRound" });
       if (condition.key === "surprised" && condition.initiativeAdjusted) {
         const entry = combat.combatants.get(condition.combatantId);
         if (entry?.initiative != null) {
@@ -53,8 +60,9 @@ export async function expireRoundConditions(combat, history = []) {
           { mythrasTieBreak: true });
         }
       }
+      deletes.push(effect.id);
     }
-    await actor.deleteEmbeddedDocuments("ActiveEffect", effects.map((effect) => effect.id));
+    if (deletes.length) await actor.deleteEmbeddedDocuments("ActiveEffect", deletes);
   }
   return history;
 }

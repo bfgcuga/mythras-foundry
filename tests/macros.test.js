@@ -81,8 +81,18 @@ test("el compendio incluye un lanzador común de peligros y fatiga", () => {
   assert.match(macro.command, /hazards\?\.suffocation\?\.open/);
   assert.match(macro.command, /conditions\?\.dying\?\.open/);
   assert.match(macro.command, /conditions\?\.exsanguination\?\.open/);
+  assert.match(macro.command, /conditions\?\.statuses\?\.open/);
   assert.equal(macro.name, "Aplicación de daño o estados");
-  assert.equal(macro.flags["mythras-foundry"].macroVersion, 3);
+  assert.equal(macro.flags["mythras-foundry"].macroVersion, 4);
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
+test("el compendio incluye una macro GM para asignar estados", () => {
+  const macro = MACRO_SOURCES.find((source) => source.buildKey === "assign-status");
+  assert.ok(macro);
+  assert.match(macro.command, /game\.user\.isGM/);
+  assert.match(macro.command, /conditions\?\.statuses\?\.open/);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
 });

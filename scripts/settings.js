@@ -10,6 +10,7 @@ export const SETTING_KEYS = Object.freeze({
   socialClassMethod: "socialClassMethod",
   detailedReach: "detailedReach",
   passiveBlockContiguity: "passiveBlockContiguity",
+  dynamicCombatInitiative: "dynamicCombatInitiative",
   showNpcCombatFatigueChecks: "showNpcCombatFatigueChecks",
   silhouetteOrientation: "silhouetteOrientation",
   catalogSources: "catalogSources",
@@ -145,6 +146,15 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       name: "MYTHRASF.Settings.PassiveBlockContiguity.Name",
       hint: "MYTHRASF.Settings.PassiveBlockContiguity.Hint",
       scope: "world", config: true, type: Boolean, default: false,
+      requiresReload: false
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.dynamicCombatInitiative,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.Combat.DynamicInitiative.Name",
+      hint: "MYTHRASF.Settings.Combat.DynamicInitiative.Hint",
+      scope: "world", config: true, type: Boolean, default: true,
       requiresReload: false
     })
   }),

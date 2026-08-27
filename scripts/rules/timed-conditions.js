@@ -6,7 +6,7 @@ export const TIMED_CONDITION_SCOPE = "mythras-foundry";
 
 export function timedConditionSource({ key, statusId = key, source = {}, combat = null,
   duration = {}, locationId = "", capabilities = {}, metadata = {} } = {}) {
-  const remaining = duration.unit === "actorTurn"
+  const remaining = ["actorTurn", "round"].includes(duration.unit)
     ? Math.max(1, Math.ceil(Number(duration.remaining ?? duration.value ?? 1))) : null;
   return Object.freeze({ schemaVersion: TIMED_CONDITION_SCHEMA_VERSION, key, statusId,
     sourceUuid: source.uuid ?? "", messageUuid: source.messageUuid ?? "",
@@ -32,6 +32,13 @@ export function advanceActorTurnDuration(condition) {
 export function expiresAtRoundEnd(condition, combatUuid) {
   return condition?.unit === "round" && condition.phase === "endRound"
     && (!condition.combatUuid || condition.combatUuid === combatUuid);
+}
+
+export function advanceRoundDuration(condition, combatUuid) {
+  if (!expiresAtRoundEnd(condition, combatUuid)) return { action: "keep", condition };
+  const remaining = Math.max(0, Number(condition.remaining ?? 1) - 1);
+  return remaining === 0 ? { action: "expire", condition: { ...condition, remaining: 0 } }
+    : { action: "update", condition: { ...condition, remaining } };
 }
 
 export function fatigueLossForResult(result, dieTotal = 1) {

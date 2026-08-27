@@ -55,19 +55,24 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
   { id: STUNNED_TORSO_STATUS_ID, name: "MYTHRASF.Status.StunnedTorso",
     img: "icons/svg/daze.svg", canAttack: false, canTakeProactiveTurn: false },
   { id: EXSANGUINATING_STATUS_ID, name: "MYTHRASF.Status.Exsanguinating",
-    img: "icons/svg/blood.svg", roundAutomation: "automatic" },
+    img: "icons/svg/blood.svg", roundAutomation: "automatic",
+    assignment: "exsanguination" },
   { id: SILENCED_STATUS_ID, name: "MYTHRASF.Status.Silenced",
     img: "icons/svg/silenced.svg" },
   { id: CROUCHED_BEHIND_SHIELD_STATUS_ID, name: "MYTHRASF.Status.CrouchedBehindShield",
     img: "icons/svg/shield.svg" },
-  { id: ACID_SPLASH_STATUS_ID, name: "MYTHRASF.Status.AcidSplash", img: "icons/svg/acid.svg" },
-  { id: ACID_IMMERSION_STATUS_ID, name: "MYTHRASF.Status.AcidImmersion", img: "icons/svg/acid.svg" },
-  { id: BURNING_STATUS_ID, name: "MYTHRASF.Status.Burning", img: "icons/svg/fire.svg" },
+  { id: ACID_SPLASH_STATUS_ID, name: "MYTHRASF.Status.AcidSplash", img: "icons/svg/acid.svg",
+    assignment: "acid" },
+  { id: ACID_IMMERSION_STATUS_ID, name: "MYTHRASF.Status.AcidImmersion", img: "icons/svg/acid.svg",
+    assignment: "acid" },
+  { id: BURNING_STATUS_ID, name: "MYTHRASF.Status.Burning", img: "icons/svg/fire.svg",
+    assignment: "fire" },
   { id: SUFFOCATING_STATUS_ID, name: "MYTHRASF.Status.Suffocating",
-    img: "systems/mythras-foundry/assets/icons/suffocation.svg" },
+    img: "systems/mythras-foundry/assets/icons/suffocation.svg", assignment: "suffocation" },
   { id: DYING_STATUS_ID, name: "MYTHRASF.Status.Dying", img: "icons/svg/skull.svg",
-    canAttack: false, canTakeProactiveTurn: false }
-]);
+    canAttack: false, canTakeProactiveTurn: false, assignment: "dying" }
+].map((status) => Object.freeze({ assignment: "timed", ...status,
+  description: `MYTHRASF.Status.Description.${status.id}` })));
 
 export function activeStatusRules(statuses = new Set()) {
   return MYTHRAS_STATUS_EFFECTS.filter((status) => statuses.has(status.id));

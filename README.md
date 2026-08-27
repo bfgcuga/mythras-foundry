@@ -5,6 +5,8 @@ mantiene ciclos internos mientras queden puntos de acción. Ataques, paradas y
 evasiones consumen un PA; los participantes agotados o derrotados se omiten y
 los PA se restauran al comenzar un asalto y al terminar el combate. Las tiradas
 de iniciativa se publican en el chat, agrupadas cuando el tracker lanza varias.
+Una opción mundial activa por defecto conserva el d10 original y actualiza el
+total del tracker cuando cambian las penalizaciones de iniciativa.
 Solo los empates usan un d100 secundario porque las consecuencias del sistema
 se aplican secuencialmente, en vez de simular actuaciones simultáneas.
 
@@ -113,8 +115,9 @@ El sistema incluye actualmente:
   tokens no enlazados generados de forma independiente mediante fórmulas;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
 - macro lanzadora de DJ «Aplicación de daño o estados», con botones para daño
-  directo, Ácido, Fuego, Caída, Fatiga, Ahogamiento/Asfixia, Desangrándose y
-  Agonizando;
+  directo, Ácido, Fuego, Caída, Fatiga, Ahogamiento/Asfixia, Desangrándose,
+  Agonizando y un gestor reescalable que explica y asigna todos los estados registrados, con
+  duración manual, por turnos propios o por asaltos cuando corresponde;
 - macro puntual de DJ para aplicar una cantidad fija o una fórmula de daño a
   varias localizaciones elegidas o a una aleatoria; aplica directamente a PG,
   ignora armadura y ejecuta las consecuencias compartidas de heridas;
@@ -212,6 +215,7 @@ game.mythrasFoundry.hazards.fall.open(); // Solo DJ; aplicación puntual.
 game.mythrasFoundry.hazards.suffocation.open(); // Solo DJ; inicia el contador.
 game.mythrasFoundry.fatigueChecks.open(); // Solo DJ; solicitud grupal en chat.
 game.mythrasFoundry.conditions.exsanguination.open(); // Solo DJ; aplica el estado.
+game.mythrasFoundry.conditions.statuses.open(); // Solo DJ; catálogo y asignación de estados.
 game.mythrasFoundry.conditions.dying.open(); // Solo DJ; aplica Agonizando.
 ```
 

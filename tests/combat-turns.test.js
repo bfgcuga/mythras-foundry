@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composedInitiative, nextCombatPosition, splitComposedInitiative,
+import { composedInitiative, dynamicInitiativePrimary, nextCombatPosition, splitComposedInitiative,
   uniqueActorEntries } from "../scripts/rules/combat-turns.js";
+
+test("recalcula la iniciativa conservando el resultado original del d10", () => {
+  assert.equal(dynamicInitiativePrimary(7, 11), 18);
+  assert.equal(dynamicInitiativePrimary(7, 9), 16);
+  assert.equal(dynamicInitiativePrimary(undefined, 9), null);
+});
 
 test("la iniciativa compuesta conserva el orden principal y el desempate", () => {
   assert.equal(composedInitiative(17, 83), 17.083);

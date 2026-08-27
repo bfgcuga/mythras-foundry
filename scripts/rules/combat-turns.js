@@ -10,6 +10,13 @@ export function splitComposedInitiative(value) {
   return { primary, tieBreak: Math.round(((Number(value) || 0) - primary) * 1000) };
 }
 
+export function dynamicInitiativePrimary(rollTotal, effectiveInitiative) {
+  const roll = Number(rollTotal);
+  const bonus = Number(effectiveInitiative);
+  if (!Number.isFinite(roll) || !Number.isFinite(bonus)) return null;
+  return roll + bonus;
+}
+
 export function nextCombatPosition({ turns, currentIndex = -1, round = 0, cycle = 1 }) {
   const entries = Array.from(turns ?? []);
   if (!entries.length) return { transition: "empty", round, cycle, turn: null, skipped: [] };

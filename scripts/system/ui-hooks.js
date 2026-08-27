@@ -7,7 +7,8 @@ import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { effectiveActionPointMaximum } from "../rules/action-points.js";
 import { getActionPointRules } from "../settings.js";
 import { isCombatCoordinator, restoreCombatActors,
-  synchronizeCombatantActionPoints } from "../documents/mythras-combat.js";
+  synchronizeCombatantActionPoints,
+  synchronizeCombatantInitiative } from "../documents/mythras-combat.js";
 import { activateRoundConsequenceCard,
   registerRoundConsequenceSocket } from "../rules/round-consequences.js";
 import { initializeSurpriseEffect } from "../rules/timed-condition-runtime.js";
@@ -55,6 +56,11 @@ export function registerUiHooks() {
     registerFatigueCheckSocket();
     if (isCombatCoordinator()) {
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
+      for (const combat of game.combats.filter((entry) => entry.started)) {
+        for (const combatant of combat.combatants) {
+          await synchronizeCombatantInitiative(combatant);
+        }
+      }
     }
   });
   Hooks.on("renderApplicationV2", (application, element) => activateApplicationUi(element));
@@ -145,11 +151,14 @@ export function registerUiHooks() {
     for (const combatant of combat.combatants) combatant.actor?.sheet?.render?.();
   });
   Hooks.on("updateActor", async (actor, changed) => {
-    if (!isCombatCoordinator() || !foundry.utils.hasProperty(changed,
-      "system.resources.actionPoints.value")) return;
+    if (!isCombatCoordinator()) return;
     for (const combat of game.combats.filter((entry) => entry.started)) {
       const combatant = combat.combatants.find((entry) => entry.actor?.uuid === actor.uuid);
-      if (combatant) await synchronizeCombatantActionPoints(combatant);
+      if (!combatant) continue;
+      if (foundry.utils.hasProperty(changed, "system.resources.actionPoints.value")) {
+        await synchronizeCombatantActionPoints(combatant);
+      }
+      await synchronizeCombatantInitiative(combatant);
     }
   });
   Hooks.on("deleteCombat", async (combat) => restoreCombatActors(combat));
@@ -162,7 +171,10 @@ export function registerUiHooks() {
     if (!isCombatCoordinator() || actor?.documentName !== "Actor") return;
     for (const combat of game.combats.filter((entry) => entry.started)) {
       const combatant = combat.combatants.find((entry) => entry.actor?.uuid === actor.uuid);
-      if (combatant) await synchronizeCombatantActionPoints(combatant);
+      if (combatant) {
+        await synchronizeCombatantActionPoints(combatant);
+        await synchronizeCombatantInitiative(combatant);
+      }
     }
   };
   Hooks.on("createActiveEffect", async (effect) => {
@@ -173,4 +185,15 @@ export function registerUiHooks() {
   });
   Hooks.on("updateActiveEffect", syncEffectActor);
   Hooks.on("deleteActiveEffect", syncEffectActor);
+  const syncItemActor = async (item) => {
+    const actor = item.parent;
+    if (!isCombatCoordinator() || actor?.documentName !== "Actor") return;
+    for (const combat of game.combats.filter((entry) => entry.started)) {
+      const combatant = combat.combatants.find((entry) => entry.actor?.uuid === actor.uuid);
+      if (combatant) await synchronizeCombatantInitiative(combatant);
+    }
+  };
+  Hooks.on("createItem", syncItemActor);
+  Hooks.on("updateItem", syncItemActor);
+  Hooks.on("deleteItem", syncItemActor);
 }

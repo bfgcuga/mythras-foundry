@@ -82,11 +82,12 @@ const launchers = {
   fatigue: game.mythrasFoundry?.fatigueChecks?.open,
   drowning: game.mythrasFoundry?.hazards?.suffocation?.open,
   exsanguination: game.mythrasFoundry?.conditions?.exsanguination?.open,
-  dying: game.mythrasFoundry?.conditions?.dying?.open
+  dying: game.mythrasFoundry?.conditions?.dying?.open,
+  statuses: game.mythrasFoundry?.conditions?.statuses?.open
 };
 const icons = { damage: "fa-heart-crack", acid: "fa-flask", fire: "fa-fire",
   fall: "fa-person-falling", fatigue: "fa-person-running", drowning: "fa-lungs",
-  exsanguination: "fa-droplet", dying: "fa-skull" };
+  exsanguination: "fa-droplet", dying: "fa-skull", statuses: "fa-person-circle-plus" };
 const options = Object.keys(launchers).map((choice) => \`<button type="button"
   class="mythras-launcher-button" data-launcher-choice="\${choice}"
   title="\${game.i18n.localize(\`MYTHRASF.HazardLauncher.Option.\${choice}\`)}"
@@ -135,7 +136,22 @@ export const MACRO_SOURCES = [{
   type: "script",
   img: "icons/svg/hazard.svg",
   command: HAZARD_LAUNCHER_COMMAND,
-  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 3 } }
+  flags: { "mythras-foundry": { macroKey: "open-hazard-launcher", macroVersion: 4 } }
+}, {
+  buildKey: "assign-status",
+  name: "Asignar estado",
+  type: "script",
+  img: "icons/svg/aura.svg",
+  command: `
+if (!game.user.isGM) {
+  ui.notifications.warn(game.i18n.localize("MYTHRASF.StatusManager.GMOnly"));
+  return;
+}
+const open = game.mythrasFoundry?.conditions?.statuses?.open;
+if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.StatusManager.Unavailable"));
+else await open();
+`,
+  flags: { "mythras-foundry": { macroKey: "assign-status", macroVersion: 1 } }
 }, {
   buildKey: "apply-direct-damage",
   name: "Aplicar daño",

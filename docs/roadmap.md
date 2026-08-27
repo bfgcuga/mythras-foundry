@@ -60,6 +60,9 @@ terminadas se describen en `README.md` y las decisiones técnicas vigentes en
   generales, alcance y tiempo mundial. Las duraciones por turno y asalto,
   Sangrando, Desangrándose, Agonizando, Ahogándose, Sorpresa y las consecuencias temporales
   de heridas y efectos de combate ya están integradas con el tracker.
+- El catálogo canónico dispone de un macro reescalable para consultar, explicar y
+  asignar todos los estados a personajes y PNJ, con duraciones manuales, por turno
+  propio o por asalto y delegación en los flujos especializados.
 - Revisar conjuntamente el catálogo propio de estados y los estados nativos de
   Foundry antes de reducir los iconos disponibles en el HUD. Identificar qué
   estados equivalentes deben fusionarse, qué integraciones nativas resultan

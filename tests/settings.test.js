@@ -53,6 +53,11 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
     ({ key }) => key === SETTING_KEYS.passiveBlockContiguity);
   assert.equal(passiveBlockContiguity.options.default, false);
   assert.equal(passiveBlockContiguity.options.requiresReload, false);
+  const dynamicCombatInitiative = registrations.find(
+    ({ key }) => key === SETTING_KEYS.dynamicCombatInitiative);
+  assert.equal(dynamicCombatInitiative.options.default, true);
+  assert.equal(dynamicCombatInitiative.options.scope, "world");
+  assert.equal(dynamicCombatInitiative.options.requiresReload, false);
   const showNpcCombatFatigueChecks = registrations.find(
     ({ key }) => key === SETTING_KEYS.showNpcCombatFatigueChecks);
   assert.equal(showNpcCombatFatigueChecks.options.default, false);
