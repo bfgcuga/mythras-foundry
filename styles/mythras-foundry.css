@@ -313,6 +313,24 @@
   background: transparent;
 }
 
+.mythras-chat-card .combat-check-entry {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgb(61 57 51 / 25%);
+}
+.mythras-chat-card .combat-check-entry:last-child { border-bottom: 0; }
+.mythras-chat-card .combat-check-entry > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.mythras-chat-card .combat-check-help { flex: 0 0 auto; }
+.mythras-chat-card .combat-check-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mythras-chat-card .combat-check-consequence { align-items: start; }
+.mythras-chat-card .combat-check-consequence strong { text-align: right; }
+
 .status-assignment-window { max-width: min(92vw, 58rem); }
 .status-assignment-window .window-content,
 .status-assignment-window .window-content > form { min-height: 0; }

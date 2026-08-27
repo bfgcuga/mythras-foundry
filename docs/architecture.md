@@ -325,6 +325,13 @@ tiradas individuales crean una tarjeta de chat y las selecciones múltiples del
 tracker comparten una tarjeta agregada. Esta sustitución deliberada de la
 simultaneidad permite aplicar de forma segura las transacciones secuenciales.
 
+Las pruebas enfrentadas provocadas por heridas graves y críticas se conservan dentro de
+`combat.effects.checks`. Cada entrada de herida identifica gravedad, localización y clase
+anatómica. Su tarjeta presenta por separado el d100 y grado de Aguante, la tirada original
+opuesta, el resultado de la oposición y la consecuencia aplicable. El `Roll` serializado se
+añade al mensaje al resolver la prueba; la explicación extensa se abre desde la ayuda
+contextual de la propia entrada.
+
 Las acciones generales se definen en `scripts/rules/combat-actions.js`, que no
 depende de Foundry y calcula disponibilidad, movimiento, cargas, Afianzarse y
 prioridad de interrupción. El controlador persiste su estado en

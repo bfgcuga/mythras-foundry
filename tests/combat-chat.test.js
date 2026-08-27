@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { preferredCombatCoordinator, validateCombatResponse } from "../scripts/rules/combat-chat.js";
+import { preferredCombatCoordinator, validateCombatResponse,
+  woundCheckOutcomeKey } from "../scripts/rules/combat-chat.js";
 
 test("el primer DJ activo coordina y el autor es el respaldo", () => {
   const users = [{ id: "z", active: true, isGM: true }, { id: "a", active: true, isGM: true },
@@ -15,6 +16,17 @@ test("paradas y daño se incorporan como Roll al mensaje interactivo", () => {
   assert.match(source, /appendSerializedRolls\(message, request\.defense\.serializedRoll\)/);
   assert.match(source, /request\.alternateRoll\?\.serializedRoll, request\.serializedLocationRoll/);
   assert.match(source, /rolls: appendSerializedRolls\(message, request\.serializedRoll\)/);
+  assert.match(source, /appendSerializedRolls\(message, request\.resolution\?\.serializedRoll\)/);
+});
+
+test("las pruebas de heridas distinguen oposición y consecuencia anatómica", () => {
+  const resolution = { winner: "right" };
+  assert.equal(woundCheckOutcomeKey({ source: "wound", woundSeverity: "serious",
+    locationKind: { extremity: true, leg: true }, resolution }), "seriousFailedLeg");
+  assert.equal(woundCheckOutcomeKey({ source: "wound", woundSeverity: "major",
+    locationKind: { extremity: false }, resolution: { winner: "left" } }),
+  "majorResistedBody");
+  assert.equal(woundCheckOutcomeKey({ source: "effect", resolution }), null);
 });
 
 test("una tirada sin localización cierra el daño sin reasignarlo", () => {

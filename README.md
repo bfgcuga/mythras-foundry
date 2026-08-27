@@ -99,7 +99,9 @@ El sistema incluye actualmente:
   modificadores compatibles y ordena las tiradas de Aguante de efectos antes
   que las derivadas de heridas; el daño muestra por separado la fórmula del
   arma, el bonificador, los resultados evaluados, el total y el d20 de
-  localización;
+  localización. Las pruebas causadas por heridas muestran motivo, habilidad,
+  d100, objetivo, ataque enfrentado, resultado y consecuencia; una ayuda
+  contextual mantiene fuera de la tarjeta la explicación extensa;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
   y conflictos de equipación;
 - inventario jerárquico por persona y propiedades, contenedores, monedas,
