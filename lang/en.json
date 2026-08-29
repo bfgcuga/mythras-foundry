@@ -1001,6 +1001,7 @@
   "MYTHRASF.Combat.Status.awaitingDefense": "Awaiting defense",
   "MYTHRASF.Combat.Status.resolved": "Resolved",
   "MYTHRASF.Combat.Status.cancelled": "Cancelled",
+  "MYTHRASF.Combat.CancelledNotice": "Action cancelled; its effects have not been applied",
   "MYTHRASF.Combat.NoAvailableTargets": "There are no visible tokens available as defenders.",
   "MYTHRASF.Combat.TargetUnavailable": "The selected defender is no longer available.",
   "MYTHRASF.Combat.EvadeMissing": "The defender does not have the Evade skill.",

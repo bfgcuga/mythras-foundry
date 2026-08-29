@@ -321,7 +321,10 @@ de armadura y PG, pero solo el DJ o el propietario defensor puede confirmar la
 aplicación. Los cambios concurrentes convierten la propuesta en obsoleta y
 obligan a recalcularla. La transacción enlaza además el combatiente, asalto,
 ciclo y revisión del turno: el ataque y las defensas activas gastan un PA y el
-tracker solo avanza cuando la tarjeta queda cerrada.
+tracker solo avanza cuando la tarjeta queda confirmada. Mientras no se haya
+aplicado daño, un estado o un cambio táctico al blanco, la transacción puede
+cancelarse: `scripts/rules/combat-cancellation.js` decide esa frontera,
+`combat-chat.js` restituye los PA gastados y el turno permanece en su posición.
 
 `MythrasCombat` extiende el documento nativo de Foundry. `Combat.round`
 representa el asalto y `flags.mythras-foundry.turnEconomy.cycle` los recorridos
@@ -462,7 +465,7 @@ permanente, pero ni activa visualmente la casilla de inutilizada ni incorpora la
 localización a la consulta de tiradas salvo que `system.disabled` también esté
 marcado.
 
-La transacción de combate usa el esquema 7 e intercala `awaitingEffects` entre
+La transacción de combate usa el esquema 8 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias; esa
 selección bloquea la suerte de ataque y defensa. Cuando no existen huecos, la
@@ -484,7 +487,9 @@ persistido del intercambio ni las exportaciones públicas de `combat-chat.js`:
   las comprobaciones derivadas de efectos y heridas;
 - `wound-consequences.js` produce y ejecuta el plan anatómico común;
 - `combat-chat-renderer.js` transforma el estado en HTML y prepara la ayuda
-  visual, sin modificar documentos ni el intercambio;
+  visual, sin modificar documentos ni el intercambio; los resultados de dado,
+  dificultades, objetivos efectivos y heridas reutilizan las clases cromáticas
+  compartidas con las tiradas de habilidad y las hojas;
 - `combat-chat-runtime.js` valida y enruta las acciones recibidas por socket;
 - `combat-chat.js` conserva la fachada compatible y coordina las operaciones
   Foundry entre esos servicios.

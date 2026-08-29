@@ -102,7 +102,12 @@ El sistema incluye actualmente:
   arma, el bonificador, los resultados evaluados, el total y el d20 de
   localización. Las pruebas causadas por heridas muestran motivo, habilidad,
   d100, objetivo, ataque enfrentado, resultado y consecuencia; una ayuda
-  contextual mantiene fuera de la tarjeta la explicación extensa;
+  contextual mantiene fuera de la tarjeta la explicación extensa. El DJ puede
+  cancelar el intercambio hasta aplicar daño o un estado: se restituyen los PA
+  de ataque y defensa, no avanza el tracker y la tarjeta deja constancia de que
+  no se aplicaron sus efectos. Ataque y defensa reutilizan los colores de las
+  tiradas de habilidad para éxito, crítico, fallo y pifia; dificultad, objetivo
+  efectivo y gravedad de la herida usan también sus tonos semánticos compartidos;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
   y conflictos de equipación;
 - inventario jerárquico por persona y propiedades, contenedores, monedas,

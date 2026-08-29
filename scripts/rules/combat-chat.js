@@ -38,6 +38,7 @@ import { damageLocationChoices, prepareDamageChecks } from "./combat-damage.js";
 import { exchangeTerminal, preferredCombatCoordinator, validateCombatResponse
 } from "./combat-exchange-state.js";
 import { registerCombatSocketRuntime } from "./combat-chat-runtime.js";
+import { combatCanBeCancelled } from "./combat-cancellation.js";
 
 export { renderCombatExchange, woundCheckOutcomeKey } from "./combat-chat-renderer.js";
 export { preferredCombatCoordinator, validateCombatResponse } from "./combat-exchange-state.js";
@@ -92,7 +93,8 @@ async function spendActionPoint(actor) {
 }
 
 async function advanceCombatTurnForExchange(message, combat) {
-  if (!combat.turnEconomy || combat.turnEconomy.turnAdvanced || !exchangeTerminal(combat)) return;
+  if (!combat.turnEconomy || combat.turnEconomy.turnAdvanced || !exchangeTerminal(combat)
+    || combatCanBeCancelled(combat)) return;
   const tracker = game.combats.get(combat.turnEconomy.combatId);
   if (!tracker?.started || tracker.combatant?.id !== combat.turnEconomy.combatantId
     || Number(tracker.round) !== Number(combat.turnEconomy.round)) return;
@@ -728,6 +730,7 @@ async function addManagedStatus(combat, effect, { key, statusId, turns = null,
     duration: { unit, phase, value: turns,
       skipCurrentTurn: unit === "actorTurn" && tracker?.combatant?.actor?.uuid === actor.uuid },
     locationId, capabilities, metadata });
+  combat.consequencesApplied = true;
   return true;
 }
 
@@ -752,6 +755,7 @@ async function applyImmediateEffectConsequences(combat, message) {
         effect.key === "cerrar-distancia" ? "shorter" : effect.key === "abrir-distancia"
           ? "longer" : "neutral", { reason: `effect:${effect.key}`,
           status: effect.key === "retirada" ? "disengaged" : "engaged" });
+      combat.consequencesApplied = true;
       effect.status = "resolved";
     }
   }
@@ -773,10 +777,28 @@ async function applyImmediateEffectConsequences(combat, message) {
   }
 }
 
-async function cancelCombat(message, current) {
-  if (!game.user.isGM || !["awaitingDefense", "awaitingEffects"].includes(current.status)) return;
+async function refundExchangeActionPoints(combat) {
+  const economy = combat.turnEconomy;
+  if (economy?.attackSpent) {
+    const attacker = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+    if (attacker) await attacker.update({ "system.resources.actionPoints.value":
+      currentActionPoints(attacker) + 1 });
+    economy.attackSpent = false;
+    economy.attackRefunded = true;
+  }
+  if (economy?.defenseSpent) {
+    const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+    if (defender) await defender.update({ "system.resources.actionPoints.value":
+      currentActionPoints(defender) + 1 });
+    economy.defenseSpent = false;
+    economy.defenseRefunded = true;
+  }
+}
+
+async function cancelCombat(message, current, suppliedReason = "") {
+  if (!game.user.isGM || !combatCanBeCancelled(current)) return;
   const combat = foundry.utils.deepClone(current);
-  if (current.status === "awaitingEffects") {
+  if (!suppliedReason && current.status === "awaitingEffects") {
     const result = await foundry.applications.api.DialogV2.wait({
       window: { title: localize("MYTHRASF.Contest.Cancel") },
       content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.CombatEffect.Reason"))}</span><textarea name="reason" required></textarea></label></div>`,
@@ -788,9 +810,11 @@ async function cancelCombat(message, current) {
     combat.cancelReason = result;
     combat.cancelledBy = game.user.id;
   }
+  if (suppliedReason) combat.cancelReason = suppliedReason;
+  combat.cancelledBy ??= game.user.id;
+  await refundExchangeActionPoints(combat);
   combat.status = "cancelled"; combat.revision += 1;
   await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
 }
 
 async function closeCombatExchange(message, current) {
@@ -818,14 +842,7 @@ async function closeCombatExchange(message, current) {
     { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false
   });
   if (!reason) return;
-  const combat = foundry.utils.deepClone(current);
-  combat.status = "cancelled";
-  combat.cancelReason = reason;
-  combat.cancelledBy = game.user.id;
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
+  await cancelCombat(message, current, reason);
 }
 
 async function resolveCombatConsequence(message, current, index) {

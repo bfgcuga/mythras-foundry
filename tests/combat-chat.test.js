@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { preferredCombatCoordinator, validateCombatResponse,
   woundCheckOutcomeKey } from "../scripts/rules/combat-chat.js";
+import { difficultyTone, targetTone } from "../scripts/rules/combat-chat-renderer.js";
 
 test("el primer DJ activo coordina y el autor es el respaldo", () => {
   const users = [{ id: "z", active: true, isGM: true }, { id: "a", active: true, isGM: true },
@@ -53,4 +54,18 @@ test("la respuesta de combate rechaza estado, revision, propiedad y tipo invalid
     { actor: { testUserPermission: () => false }, user }), "ownership");
   assert.equal(validateCombatResponse(combat, { ...valid, defense: { type: "block" } },
     { actor, user }), "invalid");
+});
+
+test("la tarjeta clasifica dificultad y objetivo con los colores compartidos", () => {
+  assert.equal(difficultyTone("easy"), "bonus");
+  assert.equal(difficultyTone("standard"), "neutral");
+  assert.equal(difficultyTone("hard"), "penalty");
+  assert.equal(targetTone(75, 60), "bonus");
+  assert.equal(targetTone(45, 60), "penalty");
+  assert.equal(targetTone(60, 60), "neutral");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(renderer, /mythras-chat-result--[\s\S]*combat-roll-outcome/);
+  assert.match(renderer, /combat-wound-outcome wound-/);
+  assert.match(renderer, /skill-roll-target--\$\{targetTone/);
 });

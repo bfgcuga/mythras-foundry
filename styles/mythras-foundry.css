@@ -183,6 +183,14 @@
   font-weight: 700;
 }
 .chat-message .mythras-chat-result-block { display: grid; gap: 0.2rem; }
+.chat-message .combat-roll-outcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.35rem;
+  border: 1px solid var(--mythras-border, #9c8766);
+  border-radius: 0.35rem;
+}
 .chat-message .mythras-chat-result--success { background: #c8d5c3; }
 .chat-message .mythras-chat-result--failure { background: #ddc9c4; }
 .chat-message .mythras-chat-result--critical {
@@ -2618,6 +2626,14 @@
 .mythras-foundry .wound-minor { color: var(--mythras-wound-healthy); background-color: color-mix(in srgb, var(--mythras-wound-minor) 35%, transparent) !important; }
 .mythras-foundry .wound-serious { color: #5f4a00; background-color: color-mix(in srgb, var(--mythras-wound-serious) 55%, transparent) !important; }
 .mythras-foundry .wound-major { color: #fff; background-color: var(--mythras-wound-major) !important; }
+.chat-message .combat-wound-outcome {
+  padding: 0.08rem 0.3rem;
+  border-radius: 0.25rem;
+}
+.chat-message .wound-healthy { color: var(--mythras-wound-healthy); }
+.chat-message .wound-minor { color: var(--mythras-wound-healthy); background-color: color-mix(in srgb, var(--mythras-wound-minor) 35%, transparent) !important; }
+.chat-message .wound-serious { color: #5f4a00; background-color: color-mix(in srgb, var(--mythras-wound-serious) 55%, transparent) !important; }
+.chat-message .wound-major { color: #fff; background-color: var(--mythras-wound-major) !important; }
 .mythras-foundry .location-current--over-maximum { color: var(--mythras-over-maximum) !important; font-weight: 700; }
 .mythras-foundry .combat-wound-legend [class^="wound-"] { padding: 0.08rem 0.3rem; border-radius: 0.25rem; }
 
