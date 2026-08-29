@@ -1,5 +1,5 @@
 import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
-import { combineDifficulties, fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
+import { fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { difficultyTarget } from "../rules/combat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
 import { findWeaponMode, weaponModes } from "../rules/weapon-modes.js";
@@ -19,6 +19,7 @@ import { penaltySummary } from "../rules/penalty-summary.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
 import { askWoundRollImpact } from "../ui/wound-roll-dialog.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
+import { resolveSkillRollConditions } from "../rules/skill-roll-resolution.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 import { prepareHitLocationTable } from "../ui/hit-location-table.js";
 import { InventorySheetController, prepareInventoryView } from "../ui/inventory-sheet.js";
@@ -360,80 +361,17 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
-    const locations = this.actor.items.filter((candidate) => candidate.type === "hitLocation");
-    const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
-    const currentWound = worstWoundLevel(locations);
-    const modifiers = [];
-    let difficulty = "standard";
-    if (currentFatigue.skillDifficulty !== "standard") {
-      difficulty = combineDifficulties(difficulty, currentFatigue.skillDifficulty);
-      modifiers.push({
-        source: game.i18n.format("MYTHRASF.SkillRoll.FatigueSource", {
-          level: game.i18n.localize(`MYTHRASF.Fatigue.Level.${currentFatigue.key}`)
-        }),
-        effect: game.i18n.localize(`MYTHRASF.Difficulty.${currentFatigue.skillDifficulty}`),
-        type: "penalty"
-      });
-    }
-    if (currentWound === "major") {
-      const woundDifficulty = fatigueLevel("incapacitated").skillDifficulty;
-      difficulty = combineDifficulties(difficulty, woundDifficulty);
-      modifiers.push({
-        source: game.i18n.localize("MYTHRASF.Wound.major"),
-        effect: game.i18n.localize(`MYTHRASF.Difficulty.${woundDifficulty}`),
-        type: "penalty"
-      });
-    }
-    const beforeStatusPenalty = difficulty;
-    difficulty = combineDifficulties(
-      difficulty, this.actor.system.conditionLevel?.skillDifficulty ?? "standard"
-    );
-    if (difficulty !== beforeStatusPenalty) {
-      modifiers.push({
-        source: game.i18n.localize("MYTHRASF.Status.IncapacitatedManual"),
-        effect: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`),
-        type: "penalty"
-      });
-    }
-    for (const status of activeSkillStatusPenalties(this.actor.statuses)) {
-      difficulty = combineDifficulties(difficulty, status.skillDifficulty);
-      modifiers.push({
-        source: game.i18n.localize(status.name),
-        effect: game.i18n.localize(`MYTHRASF.Difficulty.${status.skillDifficulty}`),
-        type: "penalty"
-      });
-    }
-    const physical = skillUsesStrengthOrDexterity(item);
-    const load = this.#loadState();
-    if (physical && load.difficultySteps > 0) modifiers.push({
-      source: game.i18n.localize("MYTHRASF.SkillRoll.EncumbranceSource"),
-      effect: game.i18n.localize(`MYTHRASF.Encumbrance.Penalty.${load.key}`),
-      type: "penalty"
-    });
-    difficulty = this.#conditionResolution({ physical }).difficulty;
-    difficulty = await this.#applySeriousWoundPenalty(difficulty, physical);
-    if (this._lastWoundRollImpact?.seriousPenalty) {
-      modifiers.push({
-        source: game.i18n.localize("MYTHRASF.Wound.serious"),
-        effect: game.i18n.localize("MYTHRASF.SkillRoll.OneDifficultyStep"),
-        type: "penalty"
-      });
-    }
-    if (this._lastWoundRollImpact?.unusableMember) modifiers.push({
-      source: game.i18n.localize("MYTHRASF.Wound.UnusableMember"),
-      effect: game.i18n.localize("MYTHRASF.Fatigue.NoActivity"), type: "penalty"
-    });
-    await item?.rollSkill({ difficulty, modifiers });
+    if (!item) return;
+    const woundImpact = await askWoundRollImpact(this.actor);
+    const { difficulty, modifiers } = resolveSkillRollConditions(this.actor, item,
+      { woundImpact, loadState: this.#loadState() });
+    await item.rollSkill({ difficulty, modifiers });
   }
 
   async #rollPassion(event) {
     event.preventDefault();
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     await this.actor.items.get(itemId)?.rollPassion();
-  }
-
-  async #applySeriousWoundPenalty(difficulty, physical = false) {
-    return this.#resolveSituationalDifficulty(difficulty, physical);
   }
 
   #conditionResolution({ baseDifficulty = "standard", physical = false,
@@ -450,7 +388,6 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #resolveSituationalDifficulty(baseDifficulty, physical = false) {
     const impact = await askWoundRollImpact(this.actor);
-    this._lastWoundRollImpact = impact;
     if (impact.unusableMember) return "impossible";
     return this.#conditionResolution({ baseDifficulty, physical,
       situational: impact.seriousPenalty }).difficulty;

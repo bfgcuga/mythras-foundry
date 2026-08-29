@@ -4,6 +4,29 @@ Este documento reúne únicamente trabajo futuro confirmado. Las funcionalidades
 terminadas se describen en `README.md` y las decisiones técnicas vigentes en
 `docs/architecture.md`.
 
+## Refactorizaciones técnicas confirmadas
+
+Estas tareas no cambian por sí mismas las reglas funcionales descritas en
+`docs/architecture.md`. Su objetivo es eliminar duplicaciones y límites de
+responsabilidad que actualmente facilitan que dos flujos equivalentes terminen
+aplicando reglas distintas. Deben abordarse con pruebas de caracterización que
+preserven el comportamiento vigente antes de mover responsabilidades.
+
+### Completar la división del coordinador de combate
+
+- Estado actual: el estado y sus validaciones, el renderizado, el enrutamiento de
+  sockets, la preparación de comprobaciones de daño y las consecuencias de
+  heridas ya viven respectivamente en `combat-exchange-state.js`,
+  `combat-chat-renderer.js`, `combat-chat-runtime.js`, `combat-damage.js` y
+  `wound-consequences.js`. `combat-chat.js` mantiene las exportaciones anteriores
+  como fachada.
+- Trabajo restante: extraer de la fachada la aplicación documental completa de
+  daño y la ejecución inmediata de efectos de combate. Ambas todavía coordinan
+  demasiadas mutaciones de Actor, Item y mensaje dentro del mismo módulo.
+- Finalización: cada servicio recibe dependencias Foundry explícitas, las
+  transiciones de daño y efectos tienen pruebas propias y `combat-chat.js` se
+  limita a componer servicios, activar la tarjeta y exponer la API compatible.
+
 ## Reglas y automatización
 
 ### Integración de tiradas con combate

@@ -31,9 +31,13 @@ test("las pruebas de heridas distinguen oposición y consecuencia anatómica", (
 
 test("una tirada sin localización cierra el daño sin reasignarlo", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  const state = fs.readFileSync(new URL("../scripts/rules/combat-exchange-state.js",
+    import.meta.url), "utf8");
   assert.match(source, /combat\.damage\.status = "missedLocation"/);
-  assert.match(source, /MYTHRASF\.Combat\.NoHitLocation/);
-  assert.match(source, /"unavailable", "applied", "missedLocation"/);
+  assert.match(renderer, /MYTHRASF\.Combat\.NoHitLocation/);
+  assert.match(state, /"unavailable", "applied", "missedLocation"/);
   assert.match(source, /permanentWound: entry\.permanentWound/);
 });
 

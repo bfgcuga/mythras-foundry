@@ -112,7 +112,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 
 El repositorio debe actuar como la memoria persistente del proyecto. No depender de conversaciones anteriores para conocer decisiones, convenciones, estado o próximos pasos.
 
-La arquitectura, las capas del repositorio y sus fuentes de verdad se documentan en `docs/architecture.md`. El estado funcional, los comandos de desarrollo y la API pública se resumen en `README.md`.
+La arquitectura, las capas del repositorio y sus fuentes de verdad se documentan en `docs/architecture.md`. El estado funcional, los comandos de desarrollo y la API pública se resumen en `README.md`. El trabajo futuro confirmado, incluida la deuda técnica y las refactorizaciones pendientes, se mantiene en `docs/roadmap.md`.
 
 Al finalizar cada tarea, evaluar siempre si la implementación ha cambiado información que deba quedar disponible para futuras sesiones de trabajo.
 
@@ -159,6 +159,8 @@ Antes de modificar código:
 1. Leer este `AGENTS.md`.
 2. Inspeccionar el estado actual del código relacionado con la tarea.
 3. Consultar únicamente la documentación necesaria.
+   Si la tarea afecta a una zona con refactorización pendiente, consultar también
+   `docs/roadmap.md` para preservar el alcance y las causas ya identificadas.
 4. No asumir que una conversación anterior refleja el estado actual del repositorio.
 5. Limitar la inspección al área relevante siempre que sea posible, evitando recorrer innecesariamente todo el proyecto.
 

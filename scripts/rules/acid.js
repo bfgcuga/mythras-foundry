@@ -1,13 +1,14 @@
 import { armorCoversLocation } from "./armor.js";
-import { findHitLocation, woundLevel, woundLocationKind } from "./hit-locations.js";
+import { findHitLocation, woundLevel } from "./hit-locations.js";
 import { applyTimedCondition, timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
-import { classifyContestRoll } from "./contest-rolls.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
-import { recordAbilityFumble } from "./skills.js";
-import { applyDying, criticalWoundOutcome } from "./dying.js";
-import { applyDeath } from "./death.js";
+import { applyHazardWoundConsequences, hazardWoundConsequenceRows
+} from "./wound-consequences.js";
+
+export { applyHazardWoundConsequences, hazardWoundConsequenceRows
+} from "./wound-consequences.js";
 
 export const ACID_SPLASH_STATUS_ID = "acidSplash";
 export const ACID_IMMERSION_STATUS_ID = "acidImmersion";
@@ -18,19 +19,6 @@ export const ACID_CONCENTRATIONS = Object.freeze({
 });
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
-
-export function hazardWoundConsequenceRows(consequence) {
-  if (!consequence) return "";
-  const endurance = consequence.enduranceRoll ? `<div class="mythras-chat-row"><span>${escape(
-    game.i18n.localize("MYTHRASF.Suffocation.Endurance"))} (1d100)</span><strong><span class="mythras-chat-roll-value">${Number(
-    consequence.enduranceRoll.total)}</span> / ${Number(consequence.enduranceTarget)} — ${escape(
-    game.i18n.localize(`MYTHRASF.RollResult.${consequence.enduranceResult}`))}</strong></div>` : "";
-  const outcome = consequence.outcome ? `<div class="mythras-chat-row"><span>${escape(
-    game.i18n.localize("MYTHRASF.Dying.Outcome"))}</span><strong>${escape(
-    consequence.outcome === "dead" ? game.i18n.localize("MYTHRASF.Dying.OutcomeDead")
-      : game.i18n.format("MYTHRASF.Dying.OutcomeDying", { rounds: consequence.rounds }))}</strong></div>` : "";
-  return endurance + outcome;
-}
 
 export function acidDamageResult({ damage, armorPoints = 0, hitPoints = 0 } = {}) {
   const rolled = Math.max(0, Math.floor(Number(damage) || 0));
@@ -112,59 +100,6 @@ async function createAcidChat(actor, token, condition, results) {
       ${rows}
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.Duration"))}</span><strong>${escape(duration)}</strong></div></section>`
   });
-}
-
-export async function applyHazardWoundConsequences(actor, location, before, after,
-  { sourceStatus = "MYTHRASF.Status.Acid" } = {}) {
-  if (before === after || !["serious", "major"].includes(after)) return null;
-  if (after === "serious") {
-    const duration = await rollFormula("1d3");
-    await applyTimedCondition(actor, { name: game.i18n.localize("MYTHRASF.Status.Stunned"),
-      img: "icons/svg/daze.svg", key: "stunned", statusId: "stunned",
-      source: { name: game.i18n.localize(sourceStatus) }, locationId: location.id,
-      duration: { unit: "actorTurn", value: duration.total } });
-    return { wound: "serious" };
-  }
-  const existing = timedEffects(actor).some((effect) => acidCondition(effect)?.key === "majorWound"
-    && acidCondition(effect)?.locationId === location.id);
-  if (existing) return null;
-  const { extremity } = woundLocationKind(location);
-  const sourceName = game.i18n.localize(sourceStatus);
-  if (extremity) {
-    await applyTimedCondition(actor, { name: game.i18n.localize("MYTHRASF.Status.Prone"),
-      img: "icons/svg/falling.svg", key: "prone", statusId: "prone",
-      source: { name: sourceName }, locationId: location.id, duration: { unit: "manual" } });
-    const plan = criticalWoundOutcome({ extremity: true,
-      healingRate: actor.system.attributes?.healingRate });
-    const dying = await applyDying(actor, { rounds: plan.rounds, mode: plan.mode,
-      locationId: location.id, sourceName });
-    return { wound: "major", outcome: dying ? "dying" : "dead",
-      rounds: dying?.remaining ?? 0 };
-  }
-  const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
-  let enduranceRoll = null; let enduranceResult = "failure";
-  if (skill) {
-    enduranceRoll = await evaluateAnimatedRoll("1d100",
-      { speaker: ChatMessage.getSpeaker({ actor }) });
-    enduranceResult = classifyContestRoll(enduranceRoll.total, Number(skill.system.total ?? 0));
-    await recordAbilityFumble(skill, enduranceResult);
-  }
-  const plan = criticalWoundOutcome({ enduranceSucceeded:
-    ["success", "critical"].includes(enduranceResult),
-  healingRate: actor.system.attributes?.healingRate });
-  if (plan.outcome === "dying") {
-    await applyTimedCondition(actor, { name: game.i18n.localize("MYTHRASF.Status.Unconscious"),
-      img: "icons/svg/unconscious.svg", key: "unconscious", statusId: "unconscious",
-      source: { name: sourceName }, locationId: location.id, duration: { unit: "manual" } });
-    const dying = await applyDying(actor, { rounds: plan.rounds, mode: plan.mode,
-      locationId: location.id, sourceName });
-    return { wound: "major", outcome: dying ? "dying" : "dead",
-      rounds: dying?.remaining ?? 0,
-      enduranceRoll, enduranceTarget: Number(skill?.system.total ?? 0), enduranceResult };
-  }
-  await applyDeath(actor);
-  return { wound: "major", outcome: "dead", enduranceRoll,
-    enduranceTarget: Number(skill?.system.total ?? 0), enduranceResult };
 }
 
 export async function applyAcidDamage(actor, condition, { token = null } = {}) {

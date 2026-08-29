@@ -1,4 +1,5 @@
-import { applyHazardWoundConsequences, hazardWoundConsequenceRows } from "./acid.js";
+import { applyHazardWoundConsequences, hazardWoundConsequenceRows
+} from "./wound-consequences.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 import { findHitLocation, woundLevel } from "./hit-locations.js";

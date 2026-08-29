@@ -22,6 +22,9 @@ verdad que deben consultarse antes de cambiar modelos, reglas o compendios.
 - `scripts/system/`: composición del ciclo de vida de Foundry. El registro de
   documentos, hojas y API vive en `registration.js`; los hooks transversales de
   interfaz viven en `ui-hooks.js`.
+- `scripts/migrations/`: transformaciones idempotentes de datos heredados,
+  agrupadas por actores, objetos de combate y contenido. `index.js` conserva el
+  único orden de ejecución de las migraciones de mundo.
 - `scripts/ui/`: adaptadores de presentación reutilizables, incluido el registro
   declarativo de eventos de las hojas.
 - `templates/`, `styles/` y `lang/`: presentación Handlebars, tema compartido y
@@ -47,7 +50,9 @@ Durante `init` registra:
 Los hooks posteriores aplican límites de recursos, preparan actores nuevos,
 materializan fórmulas de PNJ no enlazados y ejecutan migraciones idempotentes. Las
 migraciones de mundo se reservan al primer GM activo para evitar escrituras
-duplicadas.
+duplicadas. El hook `ready` del entrypoint solo comprueba ese GM e invoca
+`runWorldMigrations`; las inicializaciones idempotentes de un Actor recién
+creado pasan por el mismo coordinador.
 
 ## Modelos y cálculos derivados
 
@@ -63,6 +68,12 @@ valores calculados no deben duplicarse en los esquemas o plantillas:
 - `scripts/rules/actor-conditions.js` es el adaptador común que reúne esas fuentes
   desde un Actor ya preparado. Character, PNJ, hojas y límites de recursos deben
   consumirlo en lugar de reconstruir por separado carga, heridas o estados;
+- `scripts/rules/skill-roll-resolution.js` adapta esa instantánea a las tiradas
+  de habilidad. Character y PNJ solicitan primero al jugador la incidencia de
+  heridas graves o localizaciones inutilizadas y entregan la decisión al mismo
+  resolvedor, que devuelve en una sola operación la dificultad impuesta y el
+  desglose localizado de fatiga, heridas, estados y carga. La dificultad elegida
+  en el diálogo permanece separada y se combina allí una única vez;
 - los descriptores son datos derivados transitorios y no se persisten en Actor.
   El resultado común contiene condición, atributos efectivos, variantes de
   dificultad, capacidades y el desglose trazable consumido por hojas, tiradas y
@@ -427,6 +438,15 @@ herida continúa derivándose de los PG y no dispone de un estado duplicado. En
 un brazo, soltar el objeto sostenido se comunica únicamente como resultado en
 el chat y no crea una consecuencia pendiente ni modifica el inventario.
 
+`scripts/rules/wound-consequences.js` es la fuente común para las consecuencias
+anatómicas de Herida Grave y Crítica. Produce un plan puro a partir de gravedad,
+clase de localización y éxito o fallo de Aguante; combate y peligros ejecutan
+ese mismo plan. La forma de resolver Aguante depende del origen: el daño de un
+ataque mantiene la oposición de Aguante contra la tirada de ataque, mientras
+que ácido, fuego, caídas y daño directo, al no disponer de tirada de ataque,
+realizan una tirada simple de `1d100` contra Aguante. Esta tirada simple se
+aplica tanto a heridas graves como críticas y en cualquier localización.
+
 La condición lisiada se deriva exclusivamente de `system.permanentWound` y no
 implica por sí misma inutilización. Una Herida Crítica marca la lesión
 permanente, pero ni activa visualmente la casilla de inutilizada ni incorpora la
@@ -445,6 +465,20 @@ reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera e
 compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item
 Empalar. Los efectos no modelados se conservan como resoluciones guiadas y
 confirmadas, sin inventar geometría, turnos ni estados persistentes.
+
+La tarjeta interactiva se divide por responsabilidades sin alterar el esquema
+persistido del intercambio ni las exportaciones públicas de `combat-chat.js`:
+
+- `combat-exchange-state.js` contiene selección del coordinador, validación de
+  respuestas y detección del estado terminal;
+- `combat-damage.js` controla las opciones de localización y prepara, en orden,
+  las comprobaciones derivadas de efectos y heridas;
+- `wound-consequences.js` produce y ejecuta el plan anatómico común;
+- `combat-chat-renderer.js` transforma el estado en HTML y prepara la ayuda
+  visual, sin modificar documentos ni el intercambio;
+- `combat-chat-runtime.js` valida y enruta las acciones recibidas por socket;
+- `combat-chat.js` conserva la fachada compatible y coordina las operaciones
+  Foundry entre esos servicios.
 
 Los modos `ranged` y `siege` añaden a la transacción una instantánea `ranged`
 con metros declarados, banda, TAM, fuentes de dificultad, potencia efectiva,
