@@ -90,9 +90,24 @@ export function woundLevel(current, maximum) {
   return "major";
 }
 
+export function isLocationDisabled(location) {
+  const system = location?.system ?? location ?? {};
+  return Boolean(system.disabled);
+}
+
+export function isLocationCrippled(location) {
+  const system = location?.system ?? location ?? {};
+  return Number(system.permanentWound?.severity ?? 0) > 0;
+}
+
+export function locationWoundState(location) {
+  const system = location?.system ?? location ?? {};
+  return woundLevel(system.currentHitPoints, system.maxHitPoints);
+}
+
 export function recoversDisabledLocation(location, nextHitPoints) {
   const system = location?.system ?? location ?? {};
-  return Boolean(system.disabled)
+  return isLocationDisabled(location)
     && Number(nextHitPoints) > Number(system.currentHitPoints ?? 0)
     && woundLevel(nextHitPoints, system.maxHitPoints) === "minor";
 }
@@ -100,8 +115,7 @@ export function recoversDisabledLocation(location, nextHitPoints) {
 export function worstWoundLevel(locations) {
   const severity = { healthy: 0, minor: 1, serious: 2, major: 3 };
   return (locations ?? []).reduce((worst, location) => {
-    const system = location?.system ?? location ?? {};
-    const level = woundLevel(system.currentHitPoints, system.maxHitPoints);
+    const level = locationWoundState(location);
     return severity[level] > severity[worst] ? level : worst;
   }, "healthy");
 }
@@ -113,10 +127,7 @@ export function woundPenaltyKey(level) {
 }
 
 export function hasSeriousWound(locations) {
-  return (locations ?? []).some((location) => {
-    const system = location?.system ?? location ?? {};
-    return woundLevel(system.currentHitPoints, system.maxHitPoints) === "serious";
-  });
+  return (locations ?? []).some((location) => locationWoundState(location) === "serious");
 }
 
 export function findHitLocation(locations, roll) {

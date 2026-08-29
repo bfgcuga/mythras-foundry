@@ -19,6 +19,9 @@ import {
   findHitLocation,
   humanHitLocationData,
   hasSeriousWound,
+  isLocationCrippled,
+  isLocationDisabled,
+  locationWoundState,
   permanentWoundLostHitResults,
   permanentWoundMaximum,
   permanentWoundSeverity,
@@ -29,6 +32,29 @@ import {
   woundPenaltyKey,
   worstWoundLevel
 } from "../scripts/rules/hit-locations.js";
+
+test("el modelo semántico mantiene inutilizada, lisiada y herida independientes", () => {
+  const location = {
+    system: {
+      currentHitPoints: 0,
+      maxHitPoints: 6,
+      disabled: true,
+      permanentWound: { severity: 0 }
+    },
+    statuses: new Set(["stunnedLocation"])
+  };
+
+  assert.equal(isLocationDisabled(location), true);
+  assert.equal(isLocationCrippled(location), false);
+  assert.equal(locationWoundState(location), "serious");
+
+  location.system.disabled = false;
+  location.system.permanentWound.severity = 2;
+  location.system.currentHitPoints = 6;
+  assert.equal(isLocationDisabled(location), false);
+  assert.equal(isLocationCrippled(location), true);
+  assert.equal(locationWoundState(location), "healthy");
+});
 
 test("las consecuencias de heridas reconocen brazos y piernas por anatomía canónica", () => {
   const locations = humanHitLocationData({ constitution: 10, size: 10 });

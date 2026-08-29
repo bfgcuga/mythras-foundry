@@ -1,12 +1,11 @@
-import { woundLevel } from "../rules/hit-locations.js";
+import { isLocationDisabled, locationWoundState } from "../rules/hit-locations.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
 export function woundRollRisks(actor) {
   const locations = actor?.items?.filter((item) => item.type === "hitLocation") ?? [];
-  const serious = locations.filter((location) =>
-    woundLevel(location.system.currentHitPoints, location.system.maxHitPoints) === "serious");
-  const unusable = locations.filter((location) => location.system.disabled);
+  const serious = locations.filter((location) => locationWoundState(location) === "serious");
+  const unusable = locations.filter(isLocationDisabled);
   return Object.freeze({ serious, unusable });
 }
 

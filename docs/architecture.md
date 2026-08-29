@@ -433,6 +433,15 @@ vincula a la recuperación de puntos de golpe. Cuando la curación eleva los PG
 de una localización inutilizada hasta el estado de Herida Leve, la misma
 actualización desmarca `system.disabled`.
 
+Las consultas de ese modelo se realizan mediante los ayudantes puros de
+`scripts/rules/hit-locations.js`: `isLocationDisabled(location)` representa
+exclusivamente la casilla de inutilización, `isLocationCrippled(location)`
+representa exclusivamente una lesión permanente con gravedad positiva y
+`locationWoundState(location)` deriva `healthy`, `minor`, `serious` o
+`major` de los PG actuales y máximos. Las vistas no consultan directamente los
+campos persistentes para reconstruir esos conceptos. `stunnedLocation` sigue
+siendo un efecto de combate independiente y no forma parte de estos ayudantes.
+
 Al producirse una Herida Grave se aplica Aturdido durante `1d3` turnos. La
 herida continúa derivándose de los PG y no dispone de un estado duplicado. En
 un brazo, soltar el objeto sostenido se comunica únicamente como resultado en

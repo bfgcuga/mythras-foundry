@@ -1,4 +1,5 @@
-import { humanArmorFactors, woundLevel } from "../rules/hit-locations.js";
+import { humanArmorFactors, isLocationCrippled, isLocationDisabled,
+  locationWoundState } from "../rules/hit-locations.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "../rules/timed-conditions.js";
 import { activateDelayedTooltips } from "./tooltips.js";
@@ -35,7 +36,7 @@ function tooltip(actor, location, armors) {
   const system = location.system;
   const natural = Math.max(0, Number(system.armorPoints ?? 0));
   const worn = wornArmorPoints(location, armors);
-  const level = woundLevel(system.currentHitPoints, system.maxHitPoints);
+  const level = locationWoundState(location);
   const conditions = linkedConditions(actor, location);
   return [location.name,
     game.i18n.format("MYTHRASF.Silhouette.HitPoints", { current: system.currentHitPoints,
@@ -43,8 +44,8 @@ function tooltip(actor, location, armors) {
     game.i18n.format("MYTHRASF.Silhouette.Armor", { natural, worn,
       total: totalArmorPoints(location, armors) }),
     game.i18n.format("MYTHRASF.Silhouette.Wound", { wound: game.i18n.localize(`MYTHRASF.Wound.${level}`) }),
-    system.disabled ? game.i18n.localize("MYTHRASF.HitLocation.Disabled") : "",
-    Number(system.permanentWound?.severity ?? 0) > 0
+    isLocationDisabled(location) ? game.i18n.localize("MYTHRASF.HitLocation.Disabled") : "",
+    isLocationCrippled(location)
       ? game.i18n.localize("MYTHRASF.HitLocation.Crippled") : "",
     conditions.length ? conditions.join(", ") : ""].filter(Boolean).join(" · ");
 }
@@ -73,9 +74,8 @@ export async function renderBodySilhouette(actor, root) {
       region.dataset.mythrasTooltip = game.i18n.localize("MYTHRASF.Silhouette.Unbound");
       continue;
     }
-    const level = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
-    const crippledWithoutWound = level === "healthy"
-      && Number(location.system.permanentWound?.severity ?? 0) > 0;
+    const level = locationWoundState(location);
+    const crippledWithoutWound = level === "healthy" && isLocationCrippled(location);
     region.classList.add(crippledWithoutWound ? "body-location--crippled"
       : `body-location--${level}`);
     const label = tooltip(actor, location, armors);

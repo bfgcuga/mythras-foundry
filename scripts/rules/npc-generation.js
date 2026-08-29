@@ -86,7 +86,7 @@ async function materializeItem(item, evaluateFormula, failures) {
       integer: true, evaluateFormula, failures,
       apply: (value) => { system.maxHitPoints = value; } });
     system.currentHitPoints = Number(system.maxHitPoints ?? 0);
-    if (item.type === "hitLocation" && Number(system.permanentWound?.severity ?? 0) > 0) {
+    if (item.type === "hitLocation" && isLocationCrippled(item)) {
       const original = Number(system.maxHitPoints);
       const severity = Number(system.permanentWound.severity);
       const effective = permanentWoundMaximum(original, severity);
@@ -127,4 +127,5 @@ function clone(value) {
     ? globalThis.structuredClone(value)
     : JSON.parse(JSON.stringify(value));
 }
-import { permanentWoundMaximum, permanentWoundLostHitResults } from "./hit-locations.js";
+import { isLocationCrippled, permanentWoundMaximum,
+  permanentWoundLostHitResults } from "./hit-locations.js";

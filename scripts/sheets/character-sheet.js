@@ -73,7 +73,7 @@ import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, fatigueLevel,
   FATIGUE_LEVELS } from "../rules/fatigue.js";
-import { worstWoundLevel,
+import { isLocationCrippled, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
@@ -344,8 +344,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         handsRequired: weaponHandsRequired(item) })),
       armor,
       hitLocations,
-      permanentWounds: hitLocations.filter((item) =>
-        Number(item.system.permanentWound?.severity ?? 0) > 0).map((item) => ({
+      permanentWounds: hitLocations.filter(isLocationCrippled).map((item) => ({
         item, ...item.system.permanentWound
       })),
       canRemovePermanentWounds: this.isEditable && Boolean(game.user?.isGM),
@@ -2594,8 +2593,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable || !game.user?.isGM) return;
     const location = this.actor.items.get(
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
-    if (location?.type !== "hitLocation"
-      || Number(location.system.permanentWound?.severity ?? 0) <= 0) return;
+    if (location?.type !== "hitLocation" || !isLocationCrippled(location)) return;
     const confirmed = await DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.PermanentWound.Remove") },
       content: `<p>${game.i18n.format("MYTHRASF.PermanentWound.RemoveConfirm", {

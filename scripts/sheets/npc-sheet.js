@@ -8,7 +8,8 @@ import { nextNumberedItemName } from "../rules/item-names.js";
 import { armorFitsWearer, armorInitiativePenalty } from "../rules/armor.js";
 import { NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { regenerateNpcActor } from "../rules/npc-token.js";
-import { worstWoundLevel, woundPenaltyKey } from "../rules/hit-locations.js";
+import { isLocationCrippled, worstWoundLevel,
+  woundPenaltyKey } from "../rules/hit-locations.js";
 import { activeSkillStatusPenalties, activeStatusRules,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
@@ -189,8 +190,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       activeStatusControls,
       hasActiveStatusControls: activeStatusControls.length > 0,
       hitLocationTable,
-      permanentWounds: hitLocations.filter((item) =>
-        Number(item.system.permanentWound?.severity ?? 0) > 0).map((item) => ({
+      permanentWounds: hitLocations.filter(isLocationCrippled).map((item) => ({
         item, ...item.system.permanentWound
       })),
       fatigueRows: FATIGUE_LEVELS.map((level) => ({ ...level,

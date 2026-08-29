@@ -1,5 +1,7 @@
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combatantForActor, tacticalState } from "../rules/engagement-runtime.js";
+import { isLocationCrippled, isLocationDisabled,
+  locationWoundState } from "../rules/hit-locations.js";
 
 export function prepareHitLocationTable({ actor, armor = [], combat = null,
   armorPointLabel = "PA" } = {}) {
@@ -23,9 +25,9 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
           label: `${piece.name} (${Number(piece.system.armorPoints ?? 0)} ${armorPointLabel})` })),
       equippedArmorId: equippedArmor.find((piece) =>
         (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
-      showDisabledControl: item.system.woundLevel === "serious",
-      disabled: Boolean(item.system.disabled),
-      crippled: Number(item.system.permanentWound?.severity ?? 0) > 0,
+      showDisabledControl: locationWoundState(item) === "serious",
+      disabled: isLocationDisabled(item),
+      crippled: isLocationCrippled(item),
       overMaximum: Number(item.system.currentHitPoints) > Number(item.system.maxHitPoints),
       permanentWound: item.system.permanentWound,
       maximumDisplay: {
