@@ -4,7 +4,7 @@ import { engagementId, engagementRestriction, initialReachPosition, reachDiffere
   relationSituationReach, shiftedWeaponSize } from "../scripts/rules/engagements.js";
 import { contiguousLocationIds, isNaturalWeaponMode, passiveBlockCapacity,
   validatePassiveBlock } from "../scripts/rules/passive-block.js";
-import { passiveBlockEntries } from "../scripts/rules/round-consequences.js";
+import { passiveBlockEntries, renderRoundConsequences } from "../scripts/rules/round-consequences.js";
 
 test("las relaciones usan una identidad estable y el alcance largo con dos grados", () => {
   assert.equal(engagementId("b", "a"), "a::b");
@@ -92,6 +92,35 @@ test("el bloqueo pasivo propone primero el escudo sin ocultar otras armas", () =
   const [entry] = passiveBlockEntries({ combatants: [{ id: "fighter", actor,
     isDefeated: false }] });
   assert.deepEqual(entry.choices.map((choice) => choice.weaponId), ["shield", "sword"]);
+});
+
+test("la tarjeta de inicio agrupa fatiga y distribuye el bloqueo sin estados redundantes", () => {
+  const previousFoundry = globalThis.foundry;
+  const previousGame = globalThis.game;
+  globalThis.foundry = { utils: { escapeHTML: (value) => String(value) } };
+  globalThis.game = { i18n: {
+    localize: (key) => key,
+    format: (key, data) => `${key}:${Object.values(data).join(",")}`
+  } };
+  try {
+    const content = renderRoundConsequences({ round: 3, queue: [
+      { id: "fatigue", key: "combatFatigue", actorName: "Hodei", status: "resolved",
+        resolution: { rawRoll: 86, target: 60, result: "failure", loss: 1 } },
+      { id: "block", key: "passiveBlock", actorName: "Vikingo de nombre largo",
+        status: "resolved", locations: [{ id: "head", name: "Cabeza" }],
+        resolution: { weaponName: "Escudo vikingo", locationIds: ["head"] } }
+    ] });
+    assert.match(content, /<legend>MYTHRASF\.Status\.CombatFatigue<\/legend>/);
+    assert.match(content, /mythras-chat-result--failure/);
+    assert.match(content, /data-round-action="luck"/);
+    assert.match(content, /mythras-round-block-weapon">Escudo vikingo/);
+    assert.match(content, /mythras-round-block-locations/);
+    assert.doesNotMatch(content, /MYTHRASF\.RoundConsequence\.resolved/);
+    assert.doesNotMatch(content, /MYTHRASF\.PassiveBlock\.Declared/);
+  } finally {
+    globalThis.foundry = previousFoundry;
+    globalThis.game = previousGame;
+  }
 });
 
 test("las localizaciones humanas forman una red anatómica y no el orden del d20", () => {

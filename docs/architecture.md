@@ -288,6 +288,12 @@ repetidas veces sobre su último dado mientras dispongan de puntos. El historial
 permanece en la tarjeta; en las tiradas enfrentadas cada cambio vuelve a resolver
 la comparación completa. En ambos casos sólo pueden gastar suerte los personajes
 participantes que pertenecen al grupo activo.
+Las tiradas de Fatiga de combate de la cola de asalto siguen la misma distinción:
+el propietario repite o invierte su propio d100, mientras un miembro del grupo
+activo puede gastar Suerte para obligar a repetir el d100 de un rival. Cada cambio
+reclasifica la tirada y recalcula su pérdida de Fatiga; si la Fatiga del Actor ya
+cambió por otra causa, la tirada deja de admitir Suerte para no revertir efectos
+posteriores.
 `scripts/rules/skills.js` centraliza además el registro persistente de pifias:
 toda pifia de una habilidad o estilo de combate marca `system.fumbled`, incluidas
 las respuestas interactivas y las repeticiones por Suerte.

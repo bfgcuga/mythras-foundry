@@ -19,10 +19,39 @@ import { prepareSuffocationEntry } from "./suffocation.js";
 import { advanceCombatFatigue, COMBAT_FATIGUE_FLAG, COMBAT_FATIGUE_SCOPE,
   combatFatigueInterval, combatFatigueLoss } from "./combat-fatigue.js";
 import { prepareDyingEntry } from "./dying.js";
+import { invertD100 } from "./skill-roll.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
+const actorIdentity = (actor) => actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
+
+async function roundConsequenceActor(entry) {
+  if (!entry?.actorUuid) return null;
+  const document = await fromUuid(entry.actorUuid).catch(() => null);
+  return document?.actor ?? document;
+}
+
+async function roundFatigueLuckContext(user, state, entryId, { requirePoints = true } = {}) {
+  const entry = state?.queue?.find((candidate) => candidate.id === entryId
+    && candidate.key === "combatFatigue" && candidate.resolution?.rawRoll != null);
+  const rolledActor = await roundConsequenceActor(entry);
+  if (!entry || !rolledActor || !user) return { ownRoll: false, spenders: [] };
+  const partyIds = new Set(game.mythrasFoundry?.party?.getActiveParty?.()?.memberIds ?? []);
+  const entries = state.queue.filter((candidate) => candidate.key === "combatFatigue");
+  const actors = (await Promise.all(entries.map(roundConsequenceActor))).filter(Boolean);
+  const seen = new Set();
+  const eligible = actors.filter((actor) => {
+    const identity = actorIdentity(actor);
+    if (!identity || seen.has(identity) || !partyIds.has(identity)) return false;
+    seen.add(identity);
+    return (!requirePoints || Number(actor.system.resources?.luckPoints?.value ?? 0) > 0)
+      && (user.isGM || actor.isOwner);
+  });
+  const ownRoll = eligible.find((actor) => actorIdentity(actor) === actorIdentity(rolledActor));
+  return ownRoll ? { ownRoll: true, spenders: [ownRoll] }
+    : { ownRoll: false, spenders: eligible };
+}
 
 export function periodicConditionEntries(combat) {
   const entries = [];
@@ -208,7 +237,7 @@ export async function prepareCombatEndFatigue(combat) {
 }
 
 export function renderRoundConsequences(state) {
-  const rows = state.queue.filter((entry) => !["passiveBlock", "burning", "acidReview"].includes(entry.key)).map((entry) => `<div class="mythras-chat-row"><span>${escape(
+  const rows = state.queue.filter((entry) => !["passiveBlock", "burning", "acidReview", "combatFatigue"].includes(entry.key)).map((entry) => `<div class="mythras-chat-row"><span>${escape(
     game.i18n.localize(`MYTHRASF.Status.${entry.key === "exsanguinating" ? "Exsanguinating"
       : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
         ? "PassiveBlock" : entry.key === "suffocating" ? "Suffocating"
@@ -224,19 +253,32 @@ export function renderRoundConsequences(state) {
             : game.i18n.format("MYTHRASF.Dying.RoundsRemainingValue", {
               remaining: entry.resolution.remaining }))}</span>`
             : `<span>${entry.resolution.rawRoll != null ? `${escape(game.i18n.localize("MYTHRASF.Suffocation.Endurance"))}: <strong class="mythras-chat-roll-value">${Number(entry.resolution.rawRoll)}</strong> / ${Number(entry.resolution.target)} — ${escape(game.i18n.localize(`MYTHRASF.RollResult.${entry.resolution.result}`))}; ` : ""}${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>` : ""}</div>`).join("");
+  const fatigueRows = state.queue.filter((entry) => entry.key === "combatFatigue").map((entry) => {
+    const actions = entry.status === "pending"
+      ? `<div class="mythras-round-entry-actions"><button type="button" data-round-action="roll" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.Roll"))}</button><button type="button" data-round-action="manual" data-entry-id="${escape(entry.id)}" data-gm-only>${escape(game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual"))}</button></div>` : "";
+    const roll = entry.resolution?.rawRoll != null
+      ? `<strong class="combat-roll-outcome mythras-chat-result--${escape(entry.resolution.result)}"><span class="mythras-chat-roll-value">${Number(entry.resolution.rawRoll)}</span> ${escape(game.i18n.localize(`MYTHRASF.RollResult.${entry.resolution.result}`))}</strong>` : "";
+    const luck = entry.resolution?.rawRoll != null
+      ? `<button type="button" class="sheet-icon-button mythras-chat-luck-button" data-round-action="luck" data-entry-id="${escape(entry.id)}" title="${escape(game.i18n.localize("MYTHRASF.Luck.Use"))}" aria-label="${escape(game.i18n.localize("MYTHRASF.Luck.Use"))}"><i class="fas fa-clover" aria-hidden="true"></i></button>` : "";
+    const luckHistory = (entry.resolution?.luckHistory ?? []).map((attempt) =>
+      `<small class="mythras-chat-luck-spent">${Number(attempt.value)} — ${escape(game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: attempt.spenderName }))}</small>`).join("");
+    const resolution = entry.resolution
+      ? `<div class="mythras-round-fatigue-result">${entry.resolution.rawRoll != null ? `<span>${escape(game.i18n.localize("MYTHRASF.Suffocation.Endurance"))}: ${Number(entry.resolution.target)}</span><span class="mythras-round-fatigue-roll">${roll}${luck}</span>${luckHistory}` : ""}<span>${escape(game.i18n.format("MYTHRASF.RoundConsequence.Fatigue", { loss: entry.resolution.loss ?? 0 }))}</span>${entry.resolution.note ? `<span>${escape(entry.resolution.note)}</span>` : ""}</div>` : "";
+    return `<div class="mythras-round-fatigue-entry"><strong class="mythras-round-actor-name">${escape(entry.actorName)}</strong>${actions}${resolution}</div>`;
+  }).join("");
+  const fatiguePanel = fatigueRows ? `<fieldset class="mythras-round-fatigue-panel"><legend>${escape(game.i18n.localize("MYTHRASF.Status.CombatFatigue"))}</legend>${fatigueRows}</fieldset>` : "";
   const blocks = state.queue.filter((entry) => entry.key === "passiveBlock").map((entry) => {
-    const status = entry.status === "pending" ? game.i18n.localize("MYTHRASF.PassiveBlock.Pending")
-      : entry.resolution?.waived ? game.i18n.localize("MYTHRASF.PassiveBlock.Passed")
-        : game.i18n.localize("MYTHRASF.PassiveBlock.Declared");
     const locationNames = (entry.resolution?.locationIds ?? []).map((id) =>
       entry.locations.find((location) => location.id === id)?.name).filter(Boolean);
-    const detail = entry.resolution && !entry.resolution.waived
-      ? ` — ${entry.resolution.weaponName}: ${locationNames.join(", ")}` : "";
     const actions = entry.status === "pending"
-      ? `<button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button>` : "";
-    return `<div class="mythras-chat-row"><span>${escape(entry.actorName)}</span><strong>${escape(status + detail)}</strong>${actions}</div>`;
+      ? `<div class="mythras-round-entry-actions"><button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button></div>` : "";
+    const resolution = entry.resolution
+      ? entry.resolution.waived
+        ? `<strong class="mythras-round-block-status">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Passed"))}</strong>`
+        : `<strong class="mythras-round-block-weapon">${escape(entry.resolution.weaponName)}</strong><div class="mythras-round-block-locations"><span>${escape(game.i18n.localize("MYTHRASF.RoundConsequence.Locations"))}</span><strong>${escape(locationNames.join(", "))}</strong></div>` : "";
+    return `<div class="mythras-round-block-entry"><strong class="mythras-round-actor-name">${escape(entry.actorName)}</strong>${actions}${resolution}</div>`;
   }).join("");
-  const blockPanel = blocks ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Status.PassiveBlock"))}</legend>${blocks}</fieldset>` : "";
+  const blockPanel = blocks ? `<fieldset class="mythras-round-block-panel"><legend>${escape(game.i18n.localize("MYTHRASF.Status.PassiveBlock"))}</legend>${blocks}</fieldset>` : "";
   const fires = state.queue.filter((entry) => entry.key === "burning").map((entry) => {
     const resolution = entry.resolution?.action
       ? game.i18n.localize(`MYTHRASF.Fire.Round.${entry.resolution.action}`)
@@ -256,7 +298,7 @@ export function renderRoundConsequences(state) {
     return `<div class="mythras-chat-row"><span>${escape(entry.actorName)} — ${escape(exposure)}</span><strong>${escape(resolution)}</strong>${actions}</div>`;
   }).join("");
   const acidPanel = acids ? `<fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Status.Acid"))}</legend>${acids}</fieldset>` : "";
-  return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}${acidPanel}${firePanel}${blockPanel}</section>`;
+  return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}${fatiguePanel}${acidPanel}${firePanel}${blockPanel}</section>`;
 }
 
 async function requestAcidResolution(message, state, entryId, action) {
@@ -331,6 +373,88 @@ async function requestResolution(message, state, entryId, manual) {
     revision: state.revision, entryId, userId: game.user.id, resolution };
   if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyResolution(message, request);
   else game.socket.emit(SOCKET, request);
+}
+
+async function requestRoundFatigueLuck(message, state, entryId) {
+  const entry = state.queue.find((candidate) => candidate.id === entryId
+    && candidate.key === "combatFatigue");
+  const rolledActor = await roundConsequenceActor(entry);
+  const context = await roundFatigueLuckContext(game.user, state, entryId);
+  if (!entry || !rolledActor || !context.spenders.length) {
+    return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.None"));
+  }
+  if (rolledActor.system.fatigueLevel !== entry.resolution.after) {
+    return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.FatigueChanged"));
+  }
+  const spenderControl = context.spenders.length === 1
+    ? `<div class="luck-spender-fixed"><span>${escape(game.i18n.localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(actorDisplayName(context.spenders[0]))} (${Number(context.spenders[0].system.resources?.luckPoints?.value ?? 0)})</strong><input type="hidden" name="luckActorUuid" value="${escape(context.spenders[0].uuid)}"></div>`
+    : `<label><span>${escape(game.i18n.localize("MYTHRASF.Luck.Spender"))}</span><select name="luckActorUuid">${context.spenders.map((actor) => `<option value="${escape(actor.uuid)}">${escape(actorDisplayName(actor))} (${Number(actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label>`;
+  const choice = await foundry.applications.api.DialogV2.wait({
+    window: { title: game.i18n.localize("MYTHRASF.Luck.Title") },
+    content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><p>${escape(game.i18n.localize(context.ownRoll ? "MYTHRASF.Luck.Confirm" : "MYTHRASF.Luck.ForceRerollConfirm"))}</p>${spenderControl}</div>`,
+    buttons: [{ action: "reroll", label: game.i18n.localize(context.ownRoll
+      ? "MYTHRASF.Luck.Reroll" : "MYTHRASF.Luck.ForceReroll"), icon: "fas fa-dice-d20",
+    callback: (event, button) => ({ mode: "reroll",
+      luckActorUuid: button.form.elements.luckActorUuid.value }) },
+    ...(context.ownRoll ? [{ action: "invert", label: game.i18n.localize("MYTHRASF.Luck.Invert"),
+      icon: "fas fa-arrow-right-arrow-left", callback: (event, button) => ({ mode: "invert",
+        luckActorUuid: button.form.elements.luckActorUuid.value }) }] : []),
+    { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
+    rejectClose: false
+  });
+  if (!choice) return;
+  const luckActor = await fromUuid(choice.luckActorUuid).catch(() => null);
+  const spender = luckActor?.actor ?? luckActor;
+  const points = Number(spender?.system.resources?.luckPoints?.value ?? 0);
+  if (!spender || !context.spenders.some((actor) => actor.uuid === spender.uuid) || points < 1) {
+    return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.None"));
+  }
+  const roll = choice.mode === "reroll" ? await evaluateAnimatedRoll("1d100") : null;
+  const request = { action: "roundConsequenceLuck", messageId: message.id,
+    revision: state.revision, entryId, userId: game.user.id, luckActorUuid: spender.uuid,
+    rawRoll: roll?.total ?? invertD100(entry.resolution.rawRoll),
+    serializedRoll: roll?.toJSON?.() ?? null };
+  if (game.user.isGM || spender.isOwner) {
+    await spender.update({ "system.resources.luckPoints.value": points - 1 });
+    request.luckAlreadySpent = true;
+  }
+  if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyRoundFatigueLuck(message, request);
+  else game.socket.emit(SOCKET, request);
+}
+
+async function applyRoundFatigueLuck(message, request) {
+  const state = foundry.utils.deepClone(message.getFlag(SCOPE, "roundConsequences"));
+  const entry = state?.queue?.find((candidate) => candidate.id === request.entryId
+    && candidate.key === "combatFatigue" && candidate.resolution?.rawRoll != null);
+  if (!entry || Number(request.revision) !== Number(state.revision)) return;
+  const actor = await roundConsequenceActor(entry);
+  const luckDocument = await fromUuid(request.luckActorUuid).catch(() => null);
+  const luckActor = luckDocument?.actor ?? luckDocument;
+  const user = game.users.get(request.userId);
+  const context = await roundFatigueLuckContext(user, state, entry.id, { requirePoints: false });
+  if (!actor || !luckActor || !user
+    || !context.spenders.some((candidate) => candidate.uuid === luckActor.uuid)
+    || actor.system.fatigueLevel !== entry.resolution.after) return;
+  if (!request.luckAlreadySpent) {
+    const points = Number(luckActor.system.resources?.luckPoints?.value ?? 0);
+    if (points < 1) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.None"));
+    await luckActor.update({ "system.resources.luckPoints.value": points - 1 });
+  }
+  const result = classifyContestRoll(Number(request.rawRoll), Number(entry.resolution.target));
+  const loss = combatFatigueLoss(result);
+  const after = worsenFatigueLevel(entry.resolution.before, loss);
+  if (after !== actor.system.fatigueLevel) await actor.update({ "system.fatigueLevel": after });
+  const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
+  await recordAbilityFumble(skill, result);
+  entry.resolution = { ...entry.resolution,
+    luckHistory: [...(entry.resolution.luckHistory ?? []), {
+      value: entry.resolution.rawRoll, spenderName: actorDisplayName(luckActor) }],
+    rawRoll: Number(request.rawRoll), serializedRoll: request.serializedRoll,
+    result, loss, after };
+  state.revision += 1;
+  await message.update({ content: renderRoundConsequences(state),
+    rolls: appendSerializedRolls(message, request.serializedRoll),
+    [`flags.${SCOPE}.roundConsequences`]: state });
 }
 
 async function requestPassiveBlock(message, state, entryId, waive = false) {
@@ -577,9 +701,15 @@ export function activateRoundConsequenceCard(message, html) {
     if (!entry) continue;
     fromUuid(entry.actorUuid).then((actor) => { button.hidden = !game.user.isGM && !actor?.isOwner; });
   }
+  for (const button of card.querySelectorAll("[data-round-action='luck']")) {
+    roundFatigueLuckContext(game.user, state, button.dataset.entryId, { requirePoints: false })
+      .then((context) => { button.hidden = !context.spenders.length; });
+  }
   card.addEventListener("click", (event) => {
     const button = event.target.closest("[data-round-action]"); if (!button) return;
-    if (["block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
+    if (button.dataset.roundAction === "luck") requestRoundFatigueLuck(message, state,
+      button.dataset.entryId);
+    else if (["block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
       state, button.dataset.entryId, button.dataset.roundAction === "waive");
     else if (button.dataset.roundAction.startsWith("fire-")) requestBurningResolution(message,
       state, button.dataset.entryId, button.dataset.roundAction.slice(5));
@@ -591,8 +721,12 @@ export function activateRoundConsequenceCard(message, html) {
 
 export function registerRoundConsequenceSocket() {
   game.socket.on(SOCKET, async (request) => {
-    if (request?.action !== "roundConsequence" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
-    const message = game.messages.get(request.messageId); if (message) await applyResolution(message, request);
+    if (!["roundConsequence", "roundConsequenceLuck"].includes(request?.action)
+      || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;
+    const message = game.messages.get(request.messageId);
+    if (!message) return;
+    if (request.action === "roundConsequenceLuck") await applyRoundFatigueLuck(message, request);
+    else await applyResolution(message, request);
   });
   game.socket.on(SOCKET, async (request) => {
     if (request?.action !== "roundPassiveBlock" || !game.mythrasFoundry?.combat?.isCoordinator?.()) return;

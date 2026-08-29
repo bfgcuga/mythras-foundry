@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import { advanceCombatFatigue, combatFatigueInterval,
   combatFatigueLoss } from "../scripts/rules/combat-fatigue.js";
@@ -45,4 +46,13 @@ test("la tirada periódica solo pierde un nivel al fallar", () => {
   assert.equal(combatFatigueLoss("success"), 0);
   assert.equal(combatFatigueLoss("failure"), 1);
   assert.equal(combatFatigueLoss("fumble"), 1);
+});
+
+test("la Suerte de fatiga distingue tirada propia y rival y recalcula la pérdida", () => {
+  const source = readFileSync(new URL("../scripts/rules/round-consequences.js", import.meta.url),
+    "utf8");
+  assert.match(source, /context\.ownRoll \? "MYTHRASF\.Luck\.Confirm" : "MYTHRASF\.Luck\.ForceRerollConfirm"/);
+  assert.match(source, /\.\.\.\(context\.ownRoll \? \[\{ action: "invert"/);
+  assert.match(source, /const loss = combatFatigueLoss\(result\)/);
+  assert.match(source, /worsenFatigueLevel\(entry\.resolution\.before, loss\)/);
 });
