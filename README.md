@@ -69,8 +69,9 @@ El sistema incluye actualmente:
   vinculada por datos
   canónicos a sus localizaciones de golpe;
 - antes de cada tirada física, personaje y PNJ permiten decidir si una Herida
-  Grave aumenta su dificultad y si una localización inutilizada o lisiada hace
-  imposible esa acción concreta;
+  Grave aumenta su dificultad y si una localización marcada como inutilizada
+  hace imposible esa acción concreta; una lesión permanente no participa en
+  esta consulta salvo que la localización esté además inutilizada;
   las Heridas Críticas consolidan además una lesión permanente por localización,
   reducen sus PG máximos y pueden anular resultados de la tirada de impacto;
 - habilidades y tiradas porcentuales configurables por dificultad, tiradas
@@ -159,8 +160,10 @@ La implementación usa Mythras básico revisado como perfil predeterminado. Los
 Puntos de Acción conservan sus dos modos válidos: un valor fijo —2 por defecto—
 o el cálculo a partir de INT y DES.
 
-El trabajo futuro confirmado, sus dependencias y las decisiones todavía
-abiertas se mantienen en [`docs/roadmap.md`](docs/roadmap.md).
+Los próximos pasos ordenados se mantienen en
+[`docs/roadmap.md`](docs/roadmap.md). El trabajo confirmado todavía sin
+prioridad y las decisiones abiertas se mantienen en
+[`docs/pending.md`](docs/pending.md).
 
 ## Compendios
 

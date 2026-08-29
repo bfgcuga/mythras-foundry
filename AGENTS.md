@@ -112,9 +112,14 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 
 El repositorio debe actuar como la memoria persistente del proyecto. No depender de conversaciones anteriores para conocer decisiones, convenciones, estado o próximos pasos.
 
-La arquitectura, las capas del repositorio y sus fuentes de verdad se documentan en `docs/architecture.md`. El estado funcional, los comandos de desarrollo y la API pública se resumen en `README.md`. El trabajo futuro confirmado, incluida la deuda técnica y las refactorizaciones pendientes, se mantiene en `docs/roadmap.md`.
+La arquitectura, las capas del repositorio y sus fuentes de verdad se documentan en `docs/architecture.md`. El estado funcional, los comandos de desarrollo y la API pública se resumen en `README.md`. Los próximos pasos ordenados se mantienen en `docs/roadmap.md`; el trabajo confirmado todavía sin prioridad, las decisiones abiertas y la deuda técnica no priorizada se mantienen en `docs/pending.md`.
 
-Al finalizar cada tarea, evaluar siempre si la implementación ha cambiado información que deba quedar disponible para futuras sesiones de trabajo.
+Al finalizar cada tarea es obligatorio revisar la documentación afectada y
+corregirla en el mismo cambio. No se considera terminada una tarea si
+`README.md`, `docs/architecture.md`, `docs/roadmap.md`,
+`docs/pending.md` o cualquier documento técnico aplicable describe un estado
+anterior, presenta como pendiente algo ya terminado u omite una decisión
+necesaria para futuras sesiones.
 
 ## Actualización de AGENTS.md
 
@@ -147,7 +152,9 @@ Por ejemplo:
 
 - arquitectura y decisiones técnicas → documentación de arquitectura;
 - modelo de datos → documentación del modelo de datos;
-- funcionalidades terminadas, estado y próximos pasos → roadmap o documento de estado;
+- funcionalidades terminadas y estado actual → `README.md`;
+- próximos pasos ordenados → `docs/roadmap.md`;
+- trabajo sin prioridad, decisiones abiertas y deuda técnica → `docs/pending.md`;
 - procedimientos específicos → documentación técnica correspondiente.
 
 Si esos documentos no existen y la información será importante para futuras sesiones, valorar crear un archivo apropiado dentro de `docs/`.
@@ -159,8 +166,9 @@ Antes de modificar código:
 1. Leer este `AGENTS.md`.
 2. Inspeccionar el estado actual del código relacionado con la tarea.
 3. Consultar únicamente la documentación necesaria.
-   Si la tarea afecta a una zona con refactorización pendiente, consultar también
-   `docs/roadmap.md` para preservar el alcance y las causas ya identificadas.
+   Si la tarea afecta a trabajo futuro o deuda técnica, consultar también
+   `docs/roadmap.md` y `docs/pending.md` para preservar el alcance, el orden y
+   las causas ya identificadas.
 4. No asumir que una conversación anterior refleja el estado actual del repositorio.
 5. Limitar la inspección al área relevante siempre que sea posible, evitando recorrer innecesariamente todo el proyecto.
 
@@ -174,8 +182,10 @@ Antes de considerar una tarea terminada, comprobar:
 - [ ] Se han realizado las pruebas o comprobaciones relevantes disponibles.
 - [ ] Se ha revisado el diff para evitar cambios accidentales o no relacionados.
 - [ ] Se ha evaluado si `AGENTS.md` necesita actualización.
-- [ ] Se ha evaluado si alguna documentación técnica necesita actualización.
-- [ ] Se ha actualizado el roadmap o documento de estado si ha cambiado el progreso del proyecto.
+- [ ] Se ha revisado y corregido la documentación técnica afectada.
+- [ ] Se ha actualizado `README.md` o `docs/architecture.md` si cambió el estado vigente.
+- [ ] Se ha actualizado `docs/roadmap.md` si cambió el orden de próximos pasos.
+- [ ] Se ha actualizado `docs/pending.md` si cambió el trabajo sin prioridad, las decisiones abiertas o la deuda técnica.
 - [ ] Se ha eliminado o corregido información que haya quedado obsoleta.
 - [ ] La documentación describe el estado actual, no una intención anterior ya superada.
 
