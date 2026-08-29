@@ -1,5 +1,4 @@
 import { woundLevel } from "../rules/hit-locations.js";
-import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "../rules/timed-conditions.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
@@ -7,19 +6,11 @@ export function woundRollRisks(actor) {
   const locations = actor?.items?.filter((item) => item.type === "hitLocation") ?? [];
   const serious = locations.filter((location) =>
     woundLevel(location.system.currentHitPoints, location.system.maxHitPoints) === "serious");
-  const timedIds = new Set(Array.from(actor?.effects ?? []).flatMap((effect) => {
-    if (effect.disabled) return [];
-    const condition = effect.getFlag?.(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-    return condition?.locationId && condition?.untilPositiveHitPoints
-      ? [condition.locationId] : [];
-  }));
-  const unusable = locations.filter((location) => location.system.disabled
-    || Number(location.system.permanentWound?.severity ?? 0) > 0 || timedIds.has(location.id));
+  const unusable = locations.filter((location) => location.system.disabled);
   return Object.freeze({ serious, unusable });
 }
 
-export async function askWoundRollImpact(actor, { physical = false } = {}) {
-  if (!physical) return Object.freeze({ seriousPenalty: false, unusableMember: false });
+export async function askWoundRollImpact(actor) {
   const risks = woundRollRisks(actor);
   if (!risks.serious.length && !risks.unusable.length) {
     return Object.freeze({ seriousPenalty: false, unusableMember: false });

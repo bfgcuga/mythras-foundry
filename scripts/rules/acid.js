@@ -117,17 +117,17 @@ async function createAcidChat(actor, token, condition, results) {
 export async function applyHazardWoundConsequences(actor, location, before, after,
   { sourceStatus = "MYTHRASF.Status.Acid" } = {}) {
   if (before === after || !["serious", "major"].includes(after)) return null;
-  const existing = timedEffects(actor).some((effect) => acidCondition(effect)?.key === after + "Wound"
-    && acidCondition(effect)?.locationId === location.id);
-  if (existing) return null;
   if (after === "serious") {
     const duration = await rollFormula("1d3");
-    await applyTimedCondition(actor, { name: game.i18n.localize("MYTHRASF.Status.SeriousWound"),
-      img: "icons/svg/blood.svg", key: "seriousWound", statusId: "seriousWound",
+    await applyTimedCondition(actor, { name: game.i18n.localize("MYTHRASF.Status.Stunned"),
+      img: "icons/svg/daze.svg", key: "stunned", statusId: "stunned",
       source: { name: game.i18n.localize(sourceStatus) }, locationId: location.id,
       duration: { unit: "actorTurn", value: duration.total } });
     return { wound: "serious" };
   }
+  const existing = timedEffects(actor).some((effect) => acidCondition(effect)?.key === "majorWound"
+    && acidCondition(effect)?.locationId === location.id);
+  if (existing) return null;
   const { extremity } = woundLocationKind(location);
   const sourceName = game.i18n.localize(sourceStatus);
   if (extremity) {

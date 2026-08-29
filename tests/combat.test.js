@@ -23,6 +23,7 @@ import {
   permanentWoundMaximum,
   permanentWoundSeverity,
   permanentWoundState,
+  recoversDisabledLocation,
   woundLevel,
   woundLocationKind,
   woundPenaltyKey,
@@ -145,6 +146,15 @@ test("los umbrales de herida usan los PV máximos", () => {
   assert.equal(woundLevel(0, 4), "serious");
   assert.equal(woundLevel(-3, 4), "serious");
   assert.equal(woundLevel(-4, 4), "major");
+});
+
+test("la curación hasta herida leve recupera una localización inutilizada", () => {
+  const location = { system: { currentHitPoints: 0, maxHitPoints: 5, disabled: true } };
+  assert.equal(recoversDisabledLocation(location, 1), true);
+  assert.equal(recoversDisabledLocation(location, 0), false);
+  assert.equal(recoversDisabledLocation(location, -1), false);
+  assert.equal(recoversDisabledLocation(location, 5), false);
+  assert.equal(recoversDisabledLocation({ system: { ...location.system, disabled: false } }, 1), false);
 });
 
 test("el estado general usa la herida más grave de todas las localizaciones", () => {

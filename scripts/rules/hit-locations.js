@@ -90,6 +90,13 @@ export function woundLevel(current, maximum) {
   return "major";
 }
 
+export function recoversDisabledLocation(location, nextHitPoints) {
+  const system = location?.system ?? location ?? {};
+  return Boolean(system.disabled)
+    && Number(nextHitPoints) > Number(system.currentHitPoints ?? 0)
+    && woundLevel(nextHitPoints, system.maxHitPoints) === "minor";
+}
+
 export function worstWoundLevel(locations) {
   const severity = { healthy: 0, minor: 1, serious: 2, major: 3 };
   return (locations ?? []).reduce((worst, location) => {

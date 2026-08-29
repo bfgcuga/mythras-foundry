@@ -4,7 +4,7 @@ import { DEFAULT_HOME_DATA, equipmentIcon } from "./data/equipment.js";
 import { actorIncapacitatedState, syncIncapacitatedStatus
 } from "./documents/mythras-actor.js";
 import { calculateLocationHitPoints, humanArmorFactors, humanHitLocationData,
-  permanentWoundState, worstWoundLevel } from "./rules/hit-locations.js";
+  permanentWoundState, recoversDisabledLocation, worstWoundLevel } from "./rules/hit-locations.js";
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "./rules/combat.js";
 import { mergeWeaponProfiles } from "./rules/combat-style-weapons.js";
 import { calculateDerivedAttributes } from "./rules/derived-attributes.js";
@@ -27,7 +27,6 @@ import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "./rules/incapacitated.js";
 import { registerSystemInitialization } from "./system/registration.js";
 import { registerUiHooks } from "./system/ui-hooks.js";
-import { removeRecoveredLocationConditions } from "./rules/timed-condition-runtime.js";
 import { clearAim } from "./rules/ranged-actions.js";
 import { parseRangeProfile } from "./rules/ranged-combat.js";
 import { resolveActorConditions } from "./rules/actor-conditions.js";
@@ -46,6 +45,15 @@ Hooks.on("createActiveEffect", (effect, options, userId) => {
   if (userId === game.user.id && isCombatActor(actor) && !resolveActorConditions(actor, {
     baseAttributes: actor.system.baseAttributes ?? actor.system.attributes ?? {}
   }).capabilities.canAttack) clearAim(actor);
+});
+
+Hooks.on("preUpdateItem", (item, changed) => {
+  if (item.type !== "hitLocation"
+    || !foundry.utils.hasProperty(changed, "system.currentHitPoints")) return;
+  const nextHitPoints = foundry.utils.getProperty(changed, "system.currentHitPoints");
+  if (recoversDisabledLocation(item, nextHitPoints)) {
+    foundry.utils.setProperty(changed, "system.disabled", false);
+  }
 });
 
 Hooks.once("setup", () => {
@@ -141,7 +149,6 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
     await actor.update({ "system.resources.actionPoints.value": maximum });
   }
   await syncIncapacitatedStatus(actor);
-  await removeRecoveredLocationConditions(actor, item);
 });
 
 Hooks.on("preCreateItem", (item, data) => {

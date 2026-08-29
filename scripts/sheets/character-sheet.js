@@ -766,7 +766,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #resolveSituationalDifficulty(baseDifficulty, physical = false) {
-    const impact = await askWoundRollImpact(this.actor, { physical });
+    const impact = await askWoundRollImpact(this.actor);
     this._lastWoundRollImpact = impact;
     if (impact.unusableMember) return "impossible";
     return this.#conditionResolution({ baseDifficulty, physical,

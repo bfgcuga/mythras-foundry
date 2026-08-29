@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activeSkillStatusPenalties, applyStatusAttributes, BLINDED_STATUS_ID,
+import { activeSkillStatusPenalties, actorCapabilities, applyStatusAttributes, BLINDED_STATUS_ID,
   ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, BLEEDING_STATUS_ID,
   BURNING_STATUS_ID, canActorAttack, DROWNING_STATUS_ID, DYING_STATUS_ID,
   MYTHRAS_STATUS_EFFECTS,
@@ -25,6 +25,13 @@ test("aturdido e inconsciente impiden atacar, pero los demás estados no", () =>
   assert.equal(canActorAttack(new Set([STUNNED_STATUS_ID])), false);
   assert.equal(canActorAttack(new Set([UNCONSCIOUS_STATUS_ID])), false);
   assert.equal(canActorAttack(new Set([BLEEDING_STATUS_ID])), true);
+});
+
+test("inconsciente impide atacar y defenderse, mientras aturdido permite defenderse", () => {
+  assert.deepEqual(actorCapabilities(new Set([UNCONSCIOUS_STATUS_ID])), {
+    canAttack: false, canDefend: false, canTakeProactiveTurn: false
+  });
+  assert.equal(actorCapabilities(new Set([STUNNED_STATUS_ID])).canDefend, true);
 });
 
 test("sangrando y ahogándose exigen resistencia por asalto", () => {

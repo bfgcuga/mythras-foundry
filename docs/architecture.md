@@ -108,7 +108,8 @@ mínima antes de aplicar incrementos por grados.
 Los estados manuales adicionales se resuelven en el mismo módulo. Inconsciente
 establece la dificultad Imposible —objetivo cero— y transforma a cero los
 atributos derivados efectivos sin modificar sus valores base. Aturdido e
-Inconsciente impiden iniciar ataques, pero Aturdido no impide las defensas.
+Inconsciente impiden iniciar ataques; Inconsciente también impide defenderse,
+mientras Aturdido permite las defensas.
 Los estados temporales administrados son `ActiveEffect` con
 `flags.mythras-foundry.timedCondition`. Los turnos se descuentan únicamente al
 terminar el turno propio; las duraciones de asalto vencen en `mythrasRoundEnd`
@@ -405,11 +406,32 @@ anatomías recurre a categoría y clase de PG estructuradas. La amputación es u
 decisión permanente editada exclusivamente desde la hoja de la localización;
 las listas de combate solo la muestran cuando está activa.
 
-La dependencia narrativa entre una tirada física y una localización no se
-deduce automáticamente. Antes de cada tirada física, la hoja consulta por
-separado si usa una zona con Herida Grave —un grado adicional— y si depende de
-una zona inutilizada o amputada —tirada imposible—. Las tiradas no físicas no
-abren esta consulta.
+La dependencia narrativa entre una tirada y una localización no se deduce
+automáticamente. Antes de cada tirada, si existen localizaciones afectadas, la
+hoja consulta por separado si usa una zona con Herida Grave —un grado
+adicional— y si depende de una zona marcada como inutilizada —tirada
+imposible—.
+La consulta no clasifica la tirada como física o no física: esa decisión queda
+siempre en manos del jugador o del DJ.
+
+La inutilización de una localización se conserva en `system.disabled`. Una
+Herida Grave que inutiliza una extremidad marca ese campo y la consulta de
+tiradas lo consume directamente. `stunnedLocation` pertenece exclusivamente al
+efecto de combate «Aturdir Localización» y no representa inutilización ni se
+vincula a la recuperación de puntos de golpe. Cuando la curación eleva los PG
+de una localización inutilizada hasta el estado de Herida Leve, la misma
+actualización desmarca `system.disabled`.
+
+Al producirse una Herida Grave se aplica Aturdido durante `1d3` turnos. La
+herida continúa derivándose de los PG y no dispone de un estado duplicado. En
+un brazo, soltar el objeto sostenido se comunica únicamente como resultado en
+el chat y no crea una consecuencia pendiente ni modifica el inventario.
+
+La condición lisiada se deriva exclusivamente de `system.permanentWound` y no
+implica por sí misma inutilización. Una Herida Crítica marca la lesión
+permanente, pero ni activa visualmente la casilla de inutilizada ni incorpora la
+localización a la consulta de tiradas salvo que `system.disabled` también esté
+marcado.
 
 La transacción de combate usa el esquema 7 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;

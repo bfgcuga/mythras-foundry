@@ -45,7 +45,7 @@ test("el preparador común resuelve estados, armadura y bloqueo pasivo", () => {
   assert.equal(table.hasNaturalArmor, true);
   assert.deepEqual({ disabled: table.rows[0].disabled, crippled: table.rows[0].crippled,
     passiveBlocked: table.rows[0].passiveBlocked, totalArmor: table.rows[0].totalArmor },
-  { disabled: true, crippled: true, passiveBlocked: true, totalArmor: 5 });
+  { disabled: false, crippled: true, passiveBlocked: true, totalArmor: 5 });
   assert.equal(table.rows[0].overMaximum, true);
   assert.equal(table.rows[0].armorOptions[0].label, "Cota (4 PA)");
 });

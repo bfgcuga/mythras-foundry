@@ -6,7 +6,7 @@ import { timedConditionSource, TIMED_CONDITION_FLAG,
 import { MYTHRAS_STATUS_EFFECTS } from "./statuses.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
-const locationStatuses = new Set(["seriousWound", "stunnedLocation", "stunnedTorso"]);
+const locationStatuses = new Set(["stunnedLocation", "stunnedTorso"]);
 
 export function statusAssignmentCatalog() {
   return Object.freeze([

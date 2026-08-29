@@ -1448,16 +1448,12 @@ async function applyWoundConsequences(combat, defender, location) {
   if (wound === "serious") {
     const duration = await evaluateAnimatedRoll("1d3",
       { speaker: ChatMessage.getSpeaker({ actor: defender }) });
-    await addManagedStatus(combat, pseudoEffect, { key: "seriousWound",
-      statusId: "seriousWound", turns: duration.total, locationId: location.id });
+    await addManagedStatus(combat, pseudoEffect, { key: "stunned",
+      statusId: "stunned", turns: duration.total, locationId: location.id });
     if (failed && extremity) {
-      await addManagedStatus(combat, pseudoEffect, { key: "stunnedLocation",
-        statusId: "stunnedLocation", unit: "manual", locationId: location.id,
-        metadata: { untilPositiveHitPoints: true } });
+      await location.update({ "system.disabled": true });
       if (leg) await addManagedStatus(combat, pseudoEffect, { key: "prone",
         statusId: "prone", unit: "manual", locationId: location.id });
-      else combat.consequences = [...(combat.consequences ?? []), { key: "dropHeldItem",
-        status: "pending", locationId: location.id, requiresConfirmation: true }];
     }
     if (failed && !extremity) await addManagedStatus(combat, pseudoEffect, {
       key: "unconscious", statusId: "unconscious", unit: "manual", locationId: location.id,

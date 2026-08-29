@@ -30,8 +30,8 @@ El sistema incluye actualmente:
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
-  Inconsciente reduce habilidades y atributos efectivos a cero, y Aturdido
-  impide atacar. Sangrando y Ahogándose abren tiradas de Aguante al comenzar
+  Inconsciente reduce habilidades y atributos efectivos a cero e impide atacar
+  y defenderse, mientras Aturdido impide atacar. Sangrando y Ahogándose abren tiradas de Aguante al comenzar
   cada asalto, mientras Desangrándose pierde Fatiga automáticamente;
   Sorprendido modifica iniciativa, defensa, acciones ofensivas y el primer
   efecto de combate, con vencimiento al final del asalto;

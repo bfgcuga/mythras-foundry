@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { woundRollRisks } from "../scripts/ui/wound-roll-dialog.js";
+import { askWoundRollImpact, woundRollRisks } from "../scripts/ui/wound-roll-dialog.js";
 import { silhouetteRegionId } from "../scripts/ui/body-silhouette.js";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -115,8 +115,45 @@ test("las consecuencias narrativas distinguen herida grave y miembro inutilizabl
       permanentWound: { severity: 0 } } },
   { id: "leg", type: "hitLocation", name: "Pierna",
     system: { currentHitPoints: 5, maxHitPoints: 5, disabled: false,
-      permanentWound: { severity: 3 } } }];
-  const risks = woundRollRisks({ items: locations, effects: [] });
+      permanentWound: { severity: 3 } } },
+  { id: "other-arm", type: "hitLocation", name: "Otro brazo",
+    system: { currentHitPoints: 5, maxHitPoints: 5, disabled: true,
+      permanentWound: { severity: 0 } } }];
+  const risks = woundRollRisks({ items: locations });
   assert.deepEqual(risks.serious.map((item) => item.id), ["arm"]);
-  assert.deepEqual(risks.unusable.map((item) => item.id), ["leg"]);
+  assert.deepEqual(risks.unusable.map((item) => item.id), ["other-arm"]);
+});
+
+test("la consulta de heridas no descarta tiradas mediante una clasificación física", async () => {
+  const previousFoundry = globalThis.foundry;
+  const previousGame = globalThis.game;
+  let opened = false;
+  globalThis.foundry = { utils: { escapeHTML: String }, applications: { api: { DialogV2: {
+    wait: async () => { opened = true; return { seriousPenalty: true, unusableMember: false }; }
+  } } } };
+  globalThis.game = { i18n: { format: (key, data) => `${key}:${data.location}`,
+    localize: (key) => key } };
+  try {
+    const actor = { items: [{ id: "arm", type: "hitLocation", name: "Brazo",
+      system: { currentHitPoints: 0, maxHitPoints: 5, disabled: false,
+        permanentWound: { severity: 0 } } }], effects: [] };
+    const impact = await askWoundRollImpact(actor, { physical: false });
+    assert.equal(opened, true);
+    assert.equal(impact.seriousPenalty, true);
+  } finally {
+    globalThis.foundry = previousFoundry;
+    globalThis.game = previousGame;
+  }
+});
+
+test("una herida grave inutiliza la localización sin reutilizar Aturdir Localización", async () => {
+  const [combat, dialog, runtime] = await Promise.all([
+    read("scripts/rules/combat-chat.js"), read("scripts/ui/wound-roll-dialog.js"),
+    read("scripts/rules/timed-condition-runtime.js")]);
+  assert.match(combat, /if \(failed && extremity\) \{\s*await location\.update\(\{ "system\.disabled": true \}\)/);
+  assert.doesNotMatch(combat, /untilPositiveHitPoints/);
+  assert.doesNotMatch(dialog, /untilPositiveHitPoints|timedIds/);
+  assert.doesNotMatch(runtime, /untilPositiveHitPoints|removeRecoveredLocationConditions/);
+  assert.match(combat, /key: "stunned",\s*statusId: "stunned", turns: duration\.total/);
+  assert.doesNotMatch(combat, /key: "dropHeldItem"|statusId: "seriousWound"/);
 });

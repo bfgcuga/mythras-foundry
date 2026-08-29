@@ -123,12 +123,3 @@ export function timedAttackRestriction(actor, { weaponType, targetActorUuid } = 
   }
   return null;
 }
-
-export async function removeRecoveredLocationConditions(actor, location) {
-  if (!actor || Number(location?.system?.currentHitPoints ?? 0) <= 0) return;
-  const effects = timedEffects(actor).filter((effect) => {
-    const condition = flag(effect);
-    return condition.locationId === location.id && condition.untilPositiveHitPoints;
-  });
-  if (effects.length) await actor.deleteEmbeddedDocuments("ActiveEffect", effects.map((effect) => effect.id));
-}

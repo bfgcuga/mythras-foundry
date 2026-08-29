@@ -11,7 +11,6 @@ export const SURPRISED_OFFENSIVE_STATUS_ID = "surprisedOffensive";
 export const PRESSED_STATUS_ID = "pressed";
 export const OFF_BALANCE_STATUS_ID = "offBalance";
 export const SUPPRESSED_STATUS_ID = "suppressed";
-export const SERIOUS_WOUND_STATUS_ID = "seriousWound";
 export const STUNNED_LOCATION_STATUS_ID = "stunnedLocation";
 export const EXSANGUINATING_STATUS_ID = "exsanguinating";
 export const SILENCED_STATUS_ID = "silenced";
@@ -30,7 +29,7 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
     img: "icons/svg/falling.svg", skillDifficulty: "formidable" },
   { id: UNCONSCIOUS_STATUS_ID, name: "MYTHRASF.Status.Unconscious",
     img: "icons/svg/unconscious.svg", skillDifficulty: "impossible", zeroAttributes: true,
-    canAttack: false },
+    canAttack: false, canDefend: false, canTakeProactiveTurn: false },
   { id: STUNNED_STATUS_ID, name: "MYTHRASF.Status.Stunned",
     img: "icons/svg/daze.svg", canAttack: false },
   { id: BLEEDING_STATUS_ID, name: "MYTHRASF.Status.Bleeding",
@@ -48,8 +47,6 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
     img: "icons/svg/falling.svg", canAttack: false },
   { id: SUPPRESSED_STATUS_ID, name: "MYTHRASF.Status.Suppressed",
     img: "icons/svg/target.svg" },
-  { id: SERIOUS_WOUND_STATUS_ID, name: "MYTHRASF.Status.SeriousWound",
-    img: "icons/svg/blood.svg", canAttack: false },
   { id: STUNNED_LOCATION_STATUS_ID, name: "MYTHRASF.Status.StunnedLocation",
     img: "icons/svg/daze.svg" },
   { id: STUNNED_TORSO_STATUS_ID, name: "MYTHRASF.Status.StunnedTorso",

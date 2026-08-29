@@ -24,7 +24,7 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
       equippedArmorId: equippedArmor.find((piece) =>
         (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
       showDisabledControl: item.system.woundLevel === "serious",
-      disabled: item.system.woundLevel === "major" || Boolean(item.system.disabled),
+      disabled: Boolean(item.system.disabled),
       crippled: Number(item.system.permanentWound?.severity ?? 0) > 0,
       overMaximum: Number(item.system.currentHitPoints) > Number(item.system.maxHitPoints),
       permanentWound: item.system.permanentWound,
