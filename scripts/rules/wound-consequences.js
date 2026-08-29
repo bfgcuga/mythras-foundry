@@ -24,8 +24,7 @@ export function woundConsequencePlan({ wound, locationKind = {}, enduranceSuccee
   }
   if (wound === "major") {
     if (extremity) {
-      actions.push(Object.freeze({ type: "prone" }),
-        Object.freeze({ type: "destroyedExtremity" }));
+      actions.push(Object.freeze({ type: "prone" }));
       const dying = criticalWoundOutcome({ extremity: true, healingRate });
       actions.push(Object.freeze({ type: "dying", ...dying }));
       if (enduranceSucceeded === false) actions.push(Object.freeze({ type: "unconscious" }));

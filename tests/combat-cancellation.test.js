@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { combatCanBeCancelled } from "../scripts/rules/combat-cancellation.js";
+import { exchangeTerminal, resolvePendingExchangeSteps
+} from "../scripts/rules/combat-exchange-state.js";
 
 test("el ataque puede cancelarse hasta aplicar una consecuencia", () => {
   for (const status of ["awaitingDefense", "awaitingEffects", "resolved"]) {
@@ -22,5 +24,25 @@ test("cancelar restituye ambos PA y no solicita avanzar el tracker", () => {
   const cancelBody = source.slice(source.indexOf("async function cancelCombat"),
     source.indexOf("async function closeCombatExchange"));
   assert.doesNotMatch(cancelBody, /advanceCombatTurnForExchange/);
-  assert.match(source, /await cancelCombat\(message, current, reason\)/);
+});
+
+test("el cierre forzado resuelve los pasos pendientes sin cancelar daño aplicado", () => {
+  const combat = { status: "resolved", damage: { status: "applied" },
+    effects: { checks: [{ status: "pending" }], selections: [{ status: "resolved" }] },
+    consequences: [{ key: "manualStep", status: "pending" }] };
+
+  resolvePendingExchangeSteps(combat, { note: "Decisión del DJ", userId: "gm", resolvedAt: 10 });
+
+  assert.equal(combat.effects.checks[0].status, "resolved");
+  assert.equal(combat.effects.checks[0].resolution.manual, true);
+  assert.equal(combat.consequences[0].status, "resolved");
+  assert.equal(combat.consequences[0].note, "Decisión del DJ");
+  assert.equal(exchangeTerminal(combat), true);
+});
+
+test("una herida crítica de extremidad terminada no necesita consecuencia narrativa", () => {
+  const combat = { status: "resolved", damage: { status: "applied" },
+    effects: { checks: [{ status: "resolved" }], selections: [{ status: "resolved" }] },
+    consequences: [] };
+  assert.equal(exchangeTerminal(combat), true);
 });

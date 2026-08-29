@@ -69,3 +69,12 @@ test("la tarjeta clasifica dificultad y objetivo con los colores compartidos", (
   assert.match(renderer, /combat-wound-outcome wound-/);
   assert.match(renderer, /skill-roll-target--\$\{targetTone/);
 });
+
+test("la prueba de herida crítica ofrece reducirla mediante Suerte", () => {
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(renderer, /data-combat-action="wound-luck"/);
+  assert.match(source, /action: "combatWoundLuck"/);
+  assert.match(source, /"system\.resources\.luckPoints\.value": points - 1/);
+});

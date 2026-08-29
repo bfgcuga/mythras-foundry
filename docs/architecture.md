@@ -481,8 +481,25 @@ defensiva. `scripts/rules/combat-effects.js`
 contiene únicamente metadatos de ejecución, filtros y ayudantes puros. El texto
 reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera el
 compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item
-Empalar. Los efectos no modelados se conservan como resoluciones guiadas y
+Empalar. Los efectos automáticos condicionados a causar daño, como Empalar,
+quedan resueltos al confirmar que existe daño penetrante; solo los efectos
+guiados permanecen pendientes y preceden a las comprobaciones de heridas. Los
+efectos no modelados se conservan como resoluciones guiadas y
 confirmadas, sin inventar geometría, turnos ni estados persistentes.
+Una Herida Crítica en una extremidad registra directamente el daño, la lesión
+permanente y sus estados mecánicos; no crea una confirmación narrativa
+pendiente. Si no queda otra resolución guiada, el intercambio se considera
+terminado y avanza automáticamente tras aplicar el daño.
+Mientras la prueba de Aguante de una Herida Crítica siga pendiente, el
+propietario de la víctima o el DJ puede gastar uno de sus puntos de Suerte para
+reducirla a Herida Grave. La propuesta eleva los PG de la localización a
+`1 - PG máximos`, el primer valor del intervalo Grave, vuelve a preparar la
+prueba de Aguante con esa gravedad y aplica después únicamente sus
+consecuencias. Cambiar la localización o repetir el daño invalida esta reducción.
+«Cerrar intercambio y avanzar» permite al DJ resolver conjuntamente cualquier
+paso todavía pendiente —con una nota opcional— sin deshacer el daño ni tratar
+el intercambio como cancelado; una resolución manual individual tampoco exige
+una nota para poder completarse.
 
 La tarjeta interactiva se divide por responsabilidades sin alterar el esquema
 persistido del intercambio ni las exportaciones públicas de `combat-chat.js`:

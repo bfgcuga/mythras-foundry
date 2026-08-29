@@ -75,11 +75,18 @@ function combatCheckHtml(check, combat) {
     title="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"
     aria-label="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"><i class="fas fa-question"
     aria-hidden="true"></i></button>`;
+  const woundLuck = wound && severity === "major"
+    && !(combat.effects?.selections ?? []).some((effect) => effect.status === "pending")
+    ? `<button type="button" class="sheet-icon-button mythras-chat-luck-button"
+      data-combat-action="wound-luck" data-check-id="${escape(check.id)}"
+      title="${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}"
+      aria-label="${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}"><i class="fas fa-clover"
+      aria-hidden="true"></i></button>` : "";
   if (check.status === "pending") return `<article class="combat-check-entry"><header><strong>${escape(
     title)}</strong>${help}</header><div class="mythras-chat-row"><span>${escape(localize(
       "MYTHRASF.Combat.CheckReasonLabel"))}</span><span>${escape(reason)}</span></div><div class="mythras-chat-row"><span>${escape(
       localize("MYTHRASF.Combat.CheckTest"))}</span><strong>${escape(wound
-        ? localize("MYTHRASF.Combat.WoundCheck.Test") : check.label)}</strong></div><div class="combat-check-actions"><button type="button" data-combat-action="resolve-check" data-check-id="${escape(
+        ? localize("MYTHRASF.Combat.WoundCheck.Test") : check.label)}</strong>${woundLuck}</div><div class="combat-check-actions"><button type="button" data-combat-action="resolve-check" data-check-id="${escape(
       check.id)}" title="${escape(localize("MYTHRASF.Combat.CheckRoll"))}">${escape(localize(
         "MYTHRASF.Combat.CheckRoll"))}</button><button type="button" data-combat-action="resolve-check-manual" data-check-id="${escape(
       check.id)}" title="${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}">${escape(localize(
@@ -172,6 +179,9 @@ export function renderCombatExchange(combat) {
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Cover"))}</span><strong>${escape(damage.cover.source)}: −${damage.cover.absorbed}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Armor"))}</span>`);
     if (damage.alternateRoll) damageHtml = damageHtml.replace("</fieldset>",
       `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.ImpaleDiscarded"))}</span><strong class="mythras-chat-roll-value">${damage.alternateRoll.rawRoll}</strong></div></fieldset>`);
+    if (damage.woundLuck) damageHtml = damageHtml.replace("</fieldset>",
+      `<div class="mythras-chat-row"><span>${escape(localize(
+        "MYTHRASF.Combat.WoundCheck.LuckSpent"))}</span><strong>−1</strong></div></fieldset>`);
   }
   const selectedEffects = (combat.effects?.selections ?? []).map((effect) => effect.waived
     ? `<li>${escape(localize("MYTHRASF.CombatEffect.Waive"))}</li>`

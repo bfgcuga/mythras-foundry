@@ -22,3 +22,23 @@ export function exchangeTerminal(combat) {
   if ((combat.consequences ?? []).some((entry) => entry.status === "pending")) return false;
   return ["unavailable", "applied", "missedLocation"].includes(combat.damage?.status);
 }
+
+export function resolvePendingExchangeSteps(combat, { note = "", userId = "",
+  resolvedAt = Date.now() } = {}) {
+  const manualResolution = { manual: true, note: String(note), userId, resolvedAt };
+  for (const check of combat?.effects?.checks ?? []) {
+    if (check.status !== "pending") continue;
+    check.status = "resolved";
+    check.resolution = { ...manualResolution };
+  }
+  for (const effect of combat?.effects?.selections ?? []) {
+    if (effect.status !== "pending") continue;
+    effect.status = "resolved";
+    effect.resolution = { ...manualResolution };
+  }
+  for (const consequence of combat?.consequences ?? []) {
+    if (consequence.status !== "pending") continue;
+    Object.assign(consequence, { status: "resolved", note: String(note), userId, resolvedAt });
+  }
+  return combat;
+}

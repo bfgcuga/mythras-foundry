@@ -20,7 +20,7 @@ test("una herida crítica comparte las consecuencias de extremidad y zona vital"
   const extremity = woundConsequencePlan({ wound: "major",
     locationKind: { extremity: true }, enduranceSucceeded: false, healingRate: 2 });
   assert.deepEqual(actionTypes(extremity),
-    ["prone", "destroyedExtremity", "dying", "unconscious"]);
+    ["prone", "dying", "unconscious"]);
   assert.equal(extremity.actions.find((action) => action.type === "dying").rounds, 120);
 
   const resistedBody = woundConsequencePlan({ wound: "major",

@@ -26,3 +26,13 @@ test("un cliente que no coordina no ejecuta la mutación", async () => {
   await listener({ action: "combatDamage", messageId: "message" });
   assert.equal(called, false);
 });
+
+test("el runtime enruta el gasto de suerte de una herida crítica", async () => {
+  let listener = null; let called = false;
+  const message = { getFlag: () => ({ authorUserId: "author" }) };
+  registerCombatSocketRuntime({ socket: { on: (channel, callback) => { listener = callback; } },
+    messages: new Map([["message", message]]), users: [], currentUserId: "gm",
+    coordinator: () => "gm", handlers: { combatWoundLuck: () => { called = true; } } });
+  await listener({ action: "combatWoundLuck", messageId: "message" });
+  assert.equal(called, true);
+});

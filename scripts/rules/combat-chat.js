@@ -34,8 +34,10 @@ import { executeWoundConsequencePlan, woundConsequencePlan
 import { applyDeath } from "./death.js";
 import { openCombatCheckHelp, renderCombatExchange,
   woundCheckOutcomeKey } from "./combat-chat-renderer.js";
-import { damageLocationChoices, prepareDamageChecks } from "./combat-damage.js";
-import { exchangeTerminal, preferredCombatCoordinator, validateCombatResponse
+import { damageLocationChoices, majorWoundLuckAdjustment,
+  prepareDamageChecks } from "./combat-damage.js";
+import { exchangeTerminal, preferredCombatCoordinator, resolvePendingExchangeSteps,
+  validateCombatResponse
 } from "./combat-exchange-state.js";
 import { registerCombatSocketRuntime } from "./combat-chat-runtime.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
@@ -834,15 +836,18 @@ async function closeCombatExchange(message, current) {
     }
     return;
   }
-  const reason = await foundry.applications.api.DialogV2.wait({
+  const resolution = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.Tracker.CloseExchange") },
-    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.CombatEffect.Reason"))}</span><textarea name="reason" required></textarea></label></div>`,
+    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.CombatEffect.Reason"))}</span><textarea name="reason"></textarea></label></div>`,
     buttons: [{ action: "close", label: localize("MYTHRASF.Tracker.CloseExchange"),
-      callback: (event, button) => button.form.elements.reason.value.trim() },
-    { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false
+      callback: (event, button) => ({ note: button.form.elements.reason.value.trim() }) },
+    { action: "cancel", label: localize("MYTHRASF.Cancel"), callback: () => null }],
+    rejectClose: false
   });
-  if (!reason) return;
-  await cancelCombat(message, current, reason);
+  if (!resolution) return;
+  const combat = foundry.utils.deepClone(current);
+  resolvePendingExchangeSteps(combat, { note: resolution.note, userId: game.user.id });
+  return closeCombatExchange(message, combat);
 }
 
 async function resolveCombatConsequence(message, current, index) {
@@ -852,10 +857,10 @@ async function resolveCombatConsequence(message, current, index) {
   if (!consequence || consequence.status !== "pending") return;
   const note = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.CombatEffect.ResolveManual") },
-    content: `<div class="mythras-foundry mythras-dialog"><textarea name="note" required></textarea></div>`,
+    content: `<div class="mythras-foundry mythras-dialog"><textarea name="note"></textarea></div>`,
     buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.ResolveManual"),
       callback: (event, button) => button.form.elements.note.value.trim() }], rejectClose: false });
-  if (!note) return;
+  if (note == null) return;
   Object.assign(consequence, { status: "resolved", note, userId: game.user.id,
     resolvedAt: Date.now() });
   combat.revision += 1;
@@ -1084,6 +1089,7 @@ async function applyDamageLuck(message, request) {
   combat.damage.resultExpression = request.resultExpression;
   combat.damage.rollExpression = request.rollExpression;
   combat.damage.serializedRoll = request.serializedRoll;
+  delete combat.damage.woundLuck;
   combat.effects.checks = [];
   for (const effect of combat.effects.selections ?? []) {
     if (effect.requiresWound) effect.status = "conditional";
@@ -1134,11 +1140,22 @@ async function refreshDamageProposal(combat, requestedLocationId = null) {
   calculation.cover = cover ? { source: cover.source, protection: coverProtection,
     absorbed: Math.min(coverProtection, calculation.afterParry) } : null;
   const before = Number(location.system.currentHitPoints ?? 0);
-  const after = before - calculation.penetratingDamage;
+  let after = before - calculation.penetratingDamage;
   if (!selectedEffectCount(combat.effects?.selections ?? [], "bash")) {
     calculation.push = { triggered: false, excess: 0, distance: 0 };
   }
-  const resulting = weaponTarget ? "healthy" : woundLevel(after, location.system.maxHitPoints);
+  let resulting = weaponTarget ? "healthy" : woundLevel(after, location.system.maxHitPoints);
+  if (!weaponTarget && combat.damage.woundLuck?.locationId === location.id
+    && resulting === "major") {
+    const adjustment = majorWoundLuckAdjustment({ beforeHitPoints: before,
+      maxHitPoints: location.system.maxHitPoints,
+      penetratingDamage: calculation.penetratingDamage });
+    if (adjustment) {
+      calculation.penetratingDamage = adjustment.penetratingDamage;
+      after = adjustment.afterHitPoints;
+      resulting = adjustment.resultingWound;
+    }
+  }
   prepareDamageChecks(combat, { location, resultingWound: resulting,
     penetratingDamage: calculation.penetratingDamage, weaponTarget });
   Object.assign(combat.damage, calculation, { status: "proposed", locationId: location.id,
@@ -1208,6 +1225,65 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
   if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
     await applyCombatCheck(message, request);
   } else game.socket.emit(SOCKET, request);
+}
+
+async function requestWoundLuck(message, combat, checkId) {
+  const check = (combat.effects?.checks ?? []).find((entry) => entry.id === checkId);
+  const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
+  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  if (!check || check.id !== firstPending?.id || check.status !== "pending"
+    || check.source !== "wound" || check.woundSeverity !== "major" || !defender
+    || (combat.effects?.selections ?? []).some((effect) => effect.status === "pending")
+    || (!game.user.isGM && !defender.isOwner)) return;
+  if (Number(defender.system.resources?.luckPoints?.value ?? 0) < 1) {
+    return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  }
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.Luck.Title") },
+    content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize(
+      "MYTHRASF.Combat.WoundCheck.LuckConfirm"))}</p></div>`,
+    yes: { label: localize("MYTHRASF.Combat.WoundCheck.Luck") },
+    no: { label: localize("MYTHRASF.Cancel") }
+  });
+  if (!confirmed) return;
+  const request = { action: "combatWoundLuck", messageId: message.id,
+    revision: combat.revision, userId: game.user.id, checkId };
+  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
+    await applyWoundLuck(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+async function applyWoundLuck(message, request) {
+  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
+  if (!combat || Number(request.revision) !== Number(combat.revision)
+    || combat.damage?.status !== "proposed") return;
+  const check = (combat.effects?.checks ?? []).find((entry) => entry.id === request.checkId);
+  const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
+  if (!check || check.id !== firstPending?.id || check.status !== "pending"
+    || check.source !== "wound" || check.woundSeverity !== "major"
+    || (combat.effects?.selections ?? []).some((effect) => effect.status === "pending")) return;
+  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  const user = game.users.get(request.userId);
+  const location = defender?.items.get(check.locationId);
+  if (!defender || !location || !user
+    || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) return;
+  const points = Number(defender.system.resources?.luckPoints?.value ?? 0);
+  if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  const adjustment = majorWoundLuckAdjustment({
+    beforeHitPoints: combat.damage.beforeHitPoints,
+    maxHitPoints: combat.damage.maxHitPoints,
+    penetratingDamage: combat.damage.penetratingDamage
+  });
+  if (!adjustment
+    || Number(location.system.currentHitPoints) !== Number(combat.damage.beforeHitPoints)) return;
+  await defender.update({ "system.resources.luckPoints.value": points - 1 });
+  Object.assign(combat.damage, adjustment, { woundLuck: { userId: user.id,
+    spentAt: Date.now(), locationId: location.id } });
+  prepareDamageChecks(combat, { location, resultingWound: "serious",
+    penetratingDamage: adjustment.penetratingDamage });
+  combat.revision += 1;
+  await message.update({ content: renderCombatExchange(combat),
+    [`flags.${FLAG_SCOPE}.combat`]: combat });
 }
 
 async function requestResolveEffect(message, combat, slot) {
@@ -1340,6 +1416,7 @@ async function applyProposedDamage(message, request) {
   if (!defender || !user || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) return;
   if (!damageLocationChoices(combat).some((location) => location.id === request.locationId)) return;
   if (request.locationId !== combat.damage.locationId) {
+    delete combat.damage.woundLuck;
     combat.effects.checks = [];
     for (const effect of combat.effects.selections ?? []) {
       if (effect.requiresWound) effect.status = "conditional";
@@ -1438,10 +1515,6 @@ async function applyWoundConsequences(combat, defender, location) {
     unconscious: (action) => addManagedStatus(combat, pseudoEffect, { key: "unconscious",
       statusId: "unconscious", unit: "manual", locationId: location.id,
       metadata: action.durationNote ? { durationNote: action.durationNote } : undefined }),
-    destroyedExtremity: () => {
-      combat.consequences = [...(combat.consequences ?? []), { key: "destroyedExtremity",
-        status: "pending", locationId: location.id, requiresConfirmation: true }];
-    },
     dying: (action) => applyDying(defender, { rounds: action.rounds, mode: action.mode,
       locationId: location.id, sourceName: location.name }),
     death: () => applyDeath(defender)
@@ -1502,6 +1575,7 @@ export function activateCombatCard(message, html) {
       if (check) return openCombatCheckHelp(check, combat);
     }
     if (action === "resolve-check") return requestCombatCheck(message, combat, button.dataset.checkId);
+    if (action === "wound-luck") return requestWoundLuck(message, combat, button.dataset.checkId);
     if (action === "resolve-check-manual") return requestCombatCheck(message, combat,
       button.dataset.checkId, true);
     if (action === "resolve-effect") return requestResolveEffect(message, combat,
@@ -1519,7 +1593,8 @@ export function registerCombatSocket() {
       combatDefense: applyCombatDefense, combatLuck: applyCombatLuck,
       combatEffects: applyCombatEffects, combatDamage: applyCombatDamage,
       combatDamageLuck: applyDamageLuck, combatApplyDamage: applyProposedDamage,
-      combatCheck: applyCombatCheck, combatResolveEffect: applyResolvedEffect
+      combatCheck: applyCombatCheck, combatWoundLuck: applyWoundLuck,
+      combatResolveEffect: applyResolvedEffect
     }
   });
 }

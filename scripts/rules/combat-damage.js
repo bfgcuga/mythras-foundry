@@ -10,13 +10,30 @@ export function damageLocationChoices(combat) {
   return locations.filter((location) => location.id === combat.damage?.locationId);
 }
 
+export function majorWoundLuckAdjustment({ beforeHitPoints, maxHitPoints,
+  penetratingDamage } = {}) {
+  const maximum = Math.max(1, Number(maxHitPoints) || 1);
+  const before = Number(beforeHitPoints) || 0;
+  const seriousHitPoints = 1 - maximum;
+  const reducedDamage = Math.max(0, before - seriousHitPoints);
+  if (reducedDamage >= Number(penetratingDamage) || before - Number(penetratingDamage) > -maximum) {
+    return null;
+  }
+  return Object.freeze({ afterHitPoints: seriousHitPoints,
+    penetratingDamage: reducedDamage, resultingWound: "serious" });
+}
+
 export function prepareDamageChecks(combat, { location, resultingWound,
   penetratingDamage, weaponTarget = false } = {}) {
   const previousChecks = new Map((combat.effects?.checks ?? []).map((check) => [check.id, check]));
   const checks = [];
   (weaponTarget ? [] : combat.effects?.selections ?? []).forEach((effect, order) => {
-    if (effect.requiresWound) effect.status = penetratingDamage > 0
-      ? effect.status === "resolved" ? "resolved" : "pending" : "notActivated";
+    if (effect.requiresWound) {
+      const guided = !effect.ruleKey || effect.ruleKey === "guided";
+      const activatedStatus = guided && effect.status !== "resolved"
+        ? "pending" : "resolved";
+      effect.status = penetratingDamage > 0 ? activatedStatus : "notActivated";
+    }
     const checkId = `effect-${effect.side ?? combat.effects.winner}-${effect.slot}`;
     if (effect.endurance && penetratingDamage > 0) checks.push({
       id: checkId, source: "effect", order, effectKey: effect.key,
