@@ -87,3 +87,14 @@ test("la suerte de combate permite elegir pagador y limita la tirada ajena a rep
   assert.match(source, /\(!ownRoll && request\.mode !== "reroll"\)/);
   assert.match(source, /spender\.actor\.update\(\{ "system\.resources\.luckPoints\.value": points - 1 \}\)/);
 });
+
+test("el fallo de Aguante en un brazo resuelve en la tarjeta qué objeto se suelta", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(source, /function heldItemChoices[\s\S]*item\.system\.equipped/);
+  assert.match(source, /applyWoundConsequences\(combat, defender, location,[\s\S]*afterEndurance: true/);
+  assert.match(source, /applyDropHeldItem[\s\S]*"system\.equipped": false/);
+  assert.match(renderer, /data-combat-action="drop-held-item"/);
+  assert.match(renderer, /data-drop-held-item/);
+});

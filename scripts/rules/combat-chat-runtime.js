@@ -1,6 +1,7 @@
 const COMBAT_SOCKET_ACTIONS = Object.freeze([
   "combatDefense", "combatLuck", "combatEffects", "combatDamage", "combatDamageLuck",
-  "combatApplyDamage", "combatCheck", "combatWoundLuck", "combatResolveEffect"
+  "combatApplyDamage", "combatCheck", "combatWoundLuck", "combatResolveEffect",
+  "combatDropHeldItem"
 ]);
 
 export function registerCombatSocketRuntime({ socket, messages, users, currentUserId,

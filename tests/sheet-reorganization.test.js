@@ -157,5 +157,6 @@ test("una herida grave inutiliza la localización sin reutilizar Aturdir Localiz
   assert.doesNotMatch(dialog, /untilPositiveHitPoints|timedIds/);
   assert.doesNotMatch(runtime, /untilPositiveHitPoints|removeRecoveredLocationConditions/);
   assert.match(wounds, /type: "stunned", durationFormula: "1d3"/);
-  assert.doesNotMatch(combat, /key: "dropHeldItem"|statusId: "seriousWound"/);
+  assert.match(combat, /key: "dropHeldItem"[\s\S]*itemChoices: choices/);
+  assert.doesNotMatch(combat, /statusId: "seriousWound"/);
 });

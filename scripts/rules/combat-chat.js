@@ -869,6 +869,43 @@ async function resolveCombatConsequence(message, current, index) {
   await advanceCombatTurnForExchange(message, combat);
 }
 
+async function requestDropHeldItem(message, current, index, itemId) {
+  const consequence = current.consequences?.[Number(index)];
+  if (!consequence || consequence.key !== "dropHeldItem" || consequence.status !== "pending") return;
+  const entry = sideEntry(current, consequence.actorSide ?? "defender");
+  const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
+  if (!actor || (!game.user.isGM && !actor.isOwner)) return;
+  const request = { action: "combatDropHeldItem", messageId: message.id,
+    revision: current.revision, userId: game.user.id, consequenceIndex: Number(index),
+    itemId: String(itemId ?? "") };
+  if (preferredCombatCoordinator(game.users, current.authorUserId) === game.user.id) {
+    await applyDropHeldItem(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+async function applyDropHeldItem(message, request) {
+  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
+  if (!combat || Number(request.revision) !== Number(combat.revision)) return;
+  const consequence = combat.consequences?.[Number(request.consequenceIndex)];
+  if (!consequence || consequence.key !== "dropHeldItem" || consequence.status !== "pending") return;
+  const entry = sideEntry(combat, consequence.actorSide ?? "defender");
+  const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
+  const user = game.users.get(request.userId);
+  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
+  const itemId = String(request.itemId ?? "");
+  const choice = (consequence.itemChoices ?? []).find((item) => item.id === itemId);
+  if (itemId && !choice) return;
+  const item = itemId ? actor.items.get(itemId) : null;
+  if (itemId && (!item || item.type !== "weapon")) return;
+  if (item?.system.equipped) await item.update({ "system.equipped": false });
+  Object.assign(consequence, { status: "resolved", itemId,
+    itemName: choice?.name ?? "", resolvedBy: user.id, resolvedAt: Date.now() });
+  combat.revision += 1;
+  await message.update({ content: renderCombatExchange(combat),
+    [`flags.${FLAG_SCOPE}.combat`]: combat });
+  await advanceCombatTurnForExchange(message, combat);
+}
+
 async function spendCombatLuck(message, current, side) {
   if (!combatRollLuckAllowed(current)) return;
   const entry = side === "attacker" ? current.attacker : current.defender;
@@ -1388,7 +1425,11 @@ async function applyCombatCheck(message, request) {
     .some((effect) => effect.status === "pending")) return;
   check.status = "resolved";
   check.resolution = { ...request.resolution, userId: user.id, resolvedAt: Date.now() };
-  await applyCheckConsequence(combat, check, defender);
+  if (check.source === "wound" && combat.damage?.status === "applied") {
+    const location = defender.items.get(check.locationId);
+    if (location) await applyWoundConsequences(combat, defender, location,
+      { afterEndurance: true });
+  } else await applyCheckConsequence(combat, check, defender);
   combat.revision += 1;
   await message.update({ content: renderCombatExchange(combat),
     rolls: appendSerializedRolls(message, request.resolution?.serializedRoll),
@@ -1523,23 +1564,39 @@ async function applyProposedDamage(message, request) {
   await advanceCombatTurnForExchange(message, combat);
 }
 
-async function applyWoundConsequences(combat, defender, location) {
+function heldItemChoices(actor) {
+  return actor.items.filter((item) => {
+    if (item.type !== "weapon" || !item.system.equipped) return false;
+    const mode = findWeaponMode(item, item.system.activeModeKey);
+    return Number(mode?.handsRequired ?? 1) > 0;
+  }).map((item) => ({ id: item.id, name: item.name, img: item.img ?? "" }));
+}
+
+async function applyWoundConsequences(combat, defender, location,
+  { afterEndurance = false } = {}) {
   const wound = combat.damage.resultingWound;
   if (!['serious', 'major'].includes(wound)) return;
   const pseudoEffect = { side: "attacker", target: "opponent", slot: -1,
     key: `wound-${wound}` };
-  const { extremity, leg } = woundLocationKind(location);
+  const { extremity, arm, leg } = woundLocationKind(location);
   const check = (combat.effects?.checks ?? []).find((entry) => entry.source === "wound"
     && entry.id === `wound-${location.id}`);
-  const failed = check?.resolution?.manual ? null : check?.resolution?.winner !== "left";
-  if (failed == null) combat.consequences = [...(combat.consequences ?? []), {
+  const enduranceSucceeded = check?.status === "resolved" && !check.resolution?.manual
+    ? check.resolution?.winner === "left" : null;
+  if (check?.resolution?.manual) combat.consequences = [...(combat.consequences ?? []), {
     key: "manualWoundOutcome", status: "pending", locationId: location.id,
     requiresConfirmation: true }];
-  const plan = woundConsequencePlan({ wound, locationKind: { extremity, leg },
-    enduranceSucceeded: failed == null ? null : !failed,
+  const plan = woundConsequencePlan({ wound, locationKind: { extremity, arm, leg },
+    enduranceSucceeded,
     healingRate: defender.system.attributes?.healingRate,
     penetratingDamage: combat.damage.penetratingDamage });
-  await executeWoundConsequencePlan(plan, {
+  const baselineTypes = new Set(woundConsequencePlan({ wound,
+    locationKind: { extremity, arm, leg },
+    enduranceSucceeded: null, healingRate: defender.system.attributes?.healingRate,
+    penetratingDamage: combat.damage.penetratingDamage }).actions.map((action) => action.type));
+  const executablePlan = afterEndurance ? { ...plan,
+    actions: plan.actions.filter((action) => !baselineTypes.has(action.type)) } : plan;
+  await executeWoundConsequencePlan(executablePlan, {
     stunned: async (action) => {
       const duration = await evaluateAnimatedRoll(action.durationFormula,
         { speaker: ChatMessage.getSpeaker({ actor: defender }) });
@@ -1547,6 +1604,12 @@ async function applyWoundConsequences(combat, defender, location) {
         statusId: "stunned", turns: duration.total, locationId: location.id });
     },
     disableLocation: () => location.update({ "system.disabled": true }),
+    dropHeldItem: () => {
+      const choices = heldItemChoices(defender);
+      combat.consequences = [...(combat.consequences ?? []), {
+        key: "dropHeldItem", status: "pending", actorSide: "defender",
+        locationId: location.id, locationName: location.name, itemChoices: choices }];
+    },
     prone: () => addManagedStatus(combat, pseudoEffect, { key: "prone",
       statusId: "prone", unit: "manual", locationId: location.id }),
     unconscious: (action) => addManagedStatus(combat, pseudoEffect, { key: "unconscious",
@@ -1579,6 +1642,12 @@ export function activateCombatCard(message, html) {
   card.querySelectorAll("[data-combat-action='resolve-check-manual']").forEach((button) => {
     button.hidden = !game.user.isGM;
   });
+  card.querySelectorAll("[data-combat-action='drop-held-item']").forEach(async (button) => {
+    const consequence = combat.consequences?.[Number(button.dataset.consequenceIndex)];
+    const entry = sideEntry(combat, consequence?.actorSide ?? "defender");
+    const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
+    button.hidden = !game.user.isGM && !actor?.isOwner;
+  });
   card.querySelectorAll("[data-gm-only]").forEach((button) => { button.hidden = !game.user.isGM; });
   card.querySelectorAll("[data-combat-action='resolve-effect']").forEach(async (button) => {
     const effect = (combat.effects?.selections ?? []).find((entry) =>
@@ -1600,6 +1669,9 @@ export function activateCombatCard(message, html) {
     if (action === "close-exchange") return closeCombatExchange(message, combat);
     if (action === "resolve-consequence") return resolveCombatConsequence(message, combat,
       button.dataset.consequenceIndex);
+    if (action === "drop-held-item") return requestDropHeldItem(message, combat,
+      button.dataset.consequenceIndex, card.querySelector(
+        `[data-drop-held-item="${button.dataset.consequenceIndex}"]`)?.value);
     if (action === "luck" && button.dataset.side === "damage") return requestDamageLuck(message, combat);
     if (action === "luck") return spendCombatLuck(message, combat, button.dataset.side);
     if (action === "choose-effects") return chooseCombatEffects(message, combat);
@@ -1631,7 +1703,7 @@ export function registerCombatSocket() {
       combatEffects: applyCombatEffects, combatDamage: applyCombatDamage,
       combatDamageLuck: applyDamageLuck, combatApplyDamage: applyProposedDamage,
       combatCheck: applyCombatCheck, combatWoundLuck: applyWoundLuck,
-      combatResolveEffect: applyResolvedEffect
+      combatResolveEffect: applyResolvedEffect, combatDropHeldItem: applyDropHeldItem
     }
   });
 }

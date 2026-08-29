@@ -36,3 +36,13 @@ test("el runtime enruta el gasto de suerte de una herida crítica", async () => 
   await listener({ action: "combatWoundLuck", messageId: "message" });
   assert.equal(called, true);
 });
+
+test("el runtime enruta la elección del objeto soltado", async () => {
+  let called = false;
+  const socket = { on: (channel, callback) => { socket.callback = callback; } };
+  registerCombatSocketRuntime({ socket, messages: new Map([["m", {
+    getFlag: () => ({ authorUserId: "author" }) }]]), users: [], currentUserId: "gm",
+  coordinator: () => "gm", handlers: { combatDropHeldItem: () => { called = true; } } });
+  await socket.callback({ action: "combatDropHeldItem", messageId: "m" });
+  assert.equal(called, true);
+});

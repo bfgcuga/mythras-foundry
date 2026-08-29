@@ -458,8 +458,13 @@ siendo un efecto de combate independiente y no forma parte de estos ayudantes.
 
 Al producirse una Herida Grave se aplica Aturdido durante `1d3` turnos. La
 herida continúa derivándose de los PG y no dispone de un estado duplicado. En
-un brazo, soltar el objeto sostenido se comunica únicamente como resultado en
-el chat y no crea una consecuencia pendiente ni modifica el inventario.
+un brazo, fallar Aguante crea en la misma tarjeta una consecuencia guiada para
+identificar qué objeto estaba sostenido en esa mano. El selector ofrece todas
+las armas y escudos empuñados, además de «Ningún objeto», porque el sistema no
+presupone lateralidad ni orden de equipación. Al confirmarla, el objeto elegido
+cambia a no equipado, permanece en el inventario y el intercambio puede cerrar.
+Las consecuencias inmediatas se aplican al confirmar el daño; las que dependen
+de Aguante esperan a que su prueba se resuelva.
 
 `scripts/rules/wound-consequences.js` es la fuente común para las consecuencias
 anatómicas de Herida Grave y Crítica. Produce un plan puro a partir de gravedad,

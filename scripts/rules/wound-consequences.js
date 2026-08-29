@@ -10,12 +10,13 @@ const successResults = new Set(["success", "critical"]);
 
 export function woundConsequencePlan({ wound, locationKind = {}, enduranceSucceeded = null,
   healingRate = 1, penetratingDamage = 0 } = {}) {
-  const { extremity = false, leg = false } = locationKind;
+  const { extremity = false, arm = false, leg = false } = locationKind;
   const actions = [];
   if (wound === "serious") {
     actions.push(Object.freeze({ type: "stunned", durationFormula: "1d3" }));
     if (enduranceSucceeded === false && extremity) {
       actions.push(Object.freeze({ type: "disableLocation" }));
+      if (arm) actions.push(Object.freeze({ type: "dropHeldItem" }));
       if (leg) actions.push(Object.freeze({ type: "prone" }));
     }
     if (enduranceSucceeded === false && !extremity) actions.push(Object.freeze({

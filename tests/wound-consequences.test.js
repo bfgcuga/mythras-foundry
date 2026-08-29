@@ -14,6 +14,9 @@ test("una herida grave siempre aturde y el fallo decide la consecuencia anatómi
   ["stunned", "unconscious"]);
   assert.deepEqual(actionTypes(woundConsequencePlan({ wound: "serious",
     locationKind: { extremity: true }, enduranceSucceeded: true })), ["stunned"]);
+  assert.deepEqual(actionTypes(woundConsequencePlan({ wound: "serious",
+    locationKind: { extremity: true, arm: true }, enduranceSucceeded: false })),
+  ["stunned", "disableLocation", "dropHeldItem"]);
 });
 
 test("una herida crítica comparte las consecuencias de extremidad y zona vital", () => {

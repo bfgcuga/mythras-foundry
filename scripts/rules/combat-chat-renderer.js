@@ -122,6 +122,26 @@ function combatCheckHtml(check, combat) {
       "MYTHRASF.Combat.CheckConsequence"))}</span><strong>${escape(outcome)}</strong></div></article>`;
 }
 
+function combatConsequenceHtml(entry, index) {
+  const label = escape(localize(`MYTHRASF.Combat.Consequence.${entry.key}`));
+  if (entry.key === "dropHeldItem") {
+    if (entry.status === "resolved") {
+      const item = entry.itemName || localize("MYTHRASF.Combat.DropHeldItem.None");
+      return `<div class="mythras-chat-row"><span>${label}</span><strong>${escape(item)}</strong></div>`;
+    }
+    const choices = (entry.itemChoices ?? []).map((item) =>
+      `<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("");
+    return `<div class="combat-drop-held-item"><p>${escape(game.i18n.format(
+      "MYTHRASF.Combat.DropHeldItem.Prompt", { location: entry.locationName ?? "—" }))}</p>
+      <label><span>${label}</span><select data-drop-held-item="${index}"><option value="">${escape(
+        localize("MYTHRASF.Combat.DropHeldItem.None"))}</option>${choices}</select></label>
+      <button type="button" data-combat-action="drop-held-item" data-consequence-index="${index}"
+        title="${escape(localize("MYTHRASF.Combat.DropHeldItem.Confirm"))}">${escape(localize(
+          "MYTHRASF.Combat.DropHeldItem.Confirm"))}</button></div>`;
+  }
+  return `<div class="mythras-chat-row"><span>${label}</span><strong>${escape(entry.status)}</strong>${entry.status === "pending" ? `<button type="button" data-combat-action="resolve-consequence" data-consequence-index="${index}" data-gm-only>${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : ""}</div>`;
+}
+
 export async function openCombatCheckHelp(check, combat) {
   const severity = check.woundSeverity ?? check.label;
   const outcomeKey = woundCheckOutcomeKey(check, combat);
@@ -190,7 +210,7 @@ export function renderCombatExchange(combat) {
     ? `<fieldset class="combat-effects-panel"><legend>${escape(localize("MYTHRASF.CombatEffect.Pending"))}</legend><button type="button" data-combat-action="choose-effects" title="${escape(localize("MYTHRASF.CombatEffect.Select"))}">${escape(localize("MYTHRASF.CombatEffect.Select"))}</button></fieldset>`
     : selectedEffects ? `<fieldset class="combat-effects-panel"><legend>${escape(localize("MYTHRASF.CombatEffect.Selected"))}</legend><ol>${selectedEffects}</ol></fieldset>` : "";
   const checksHtml = (combat.effects?.checks ?? []).length ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.Checks"))}</legend>${combat.effects.checks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : "";
-  const consequencesHtml = (combat.consequences ?? []).length ? `<fieldset><legend>${escape(localize("MYTHRASF.Combat.Consequences"))}</legend>${combat.consequences.map((entry, index) => `<div class="mythras-chat-row"><span>${escape(localize(`MYTHRASF.Combat.Consequence.${entry.key}`))}</span><strong>${escape(entry.status)}</strong>${entry.status === "pending" ? `<button type="button" data-combat-action="resolve-consequence" data-consequence-index="${index}" data-gm-only>${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : ""}</div>`).join("")}</fieldset>` : "";
+  const consequencesHtml = (combat.consequences ?? []).length ? `<fieldset><legend>${escape(localize("MYTHRASF.Combat.Consequences"))}</legend>${combat.consequences.map(combatConsequenceHtml).join("")}</fieldset>` : "";
   const tracker = combat.turnEconomy ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Tracker.Position"))}</span><strong>${escape(game.i18n.format("MYTHRASF.Tracker.RoundCycle", { round: combat.turnEconomy.round, cycle: combat.turnEconomy.cycle }))}</strong></div>` : "";
   const close = combat.turnEconomy && !combat.turnEconomy.turnAdvanced
     ? `<button type="button" data-combat-action="close-exchange" data-gm-only title="${escape(localize("MYTHRASF.Tracker.CloseExchange"))}">${escape(localize("MYTHRASF.Tracker.CloseExchange"))}</button>` : "";
