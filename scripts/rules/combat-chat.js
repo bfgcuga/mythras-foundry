@@ -94,9 +94,9 @@ async function spendActionPoint(actor) {
   return true;
 }
 
-async function advanceCombatTurnForExchange(message, combat) {
+async function advanceCombatTurnForExchange(message, combat, { force = false } = {}) {
   if (!combat.turnEconomy || combat.turnEconomy.turnAdvanced || !exchangeTerminal(combat)
-    || combatCanBeCancelled(combat)) return;
+    || (!force && combatCanBeCancelled(combat))) return;
   const tracker = game.combats.get(combat.turnEconomy.combatId);
   if (!tracker?.started || tracker.combatant?.id !== combat.turnEconomy.combatantId
     || Number(tracker.round) !== Number(combat.turnEconomy.round)) return;
@@ -826,7 +826,7 @@ async function closeCombatExchange(message, current) {
     const tracker = game.combats.get(combat.turnEconomy.combatId);
     if (tracker?.started && tracker.combatant?.id === combat.turnEconomy.combatantId
       && Number(tracker.round) === Number(combat.turnEconomy.round)) {
-      await advanceCombatTurnForExchange(message, combat);
+      await advanceCombatTurnForExchange(message, combat, { force: true });
     } else {
       combat.turnEconomy.turnAdvanced = true;
       combat.turnEconomy.advancedAt = Date.now();
@@ -872,23 +872,47 @@ async function resolveCombatConsequence(message, current, index) {
 async function spendCombatLuck(message, current, side) {
   if (!combatRollLuckAllowed(current)) return;
   const entry = side === "attacker" ? current.attacker : current.defender;
-  const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
-  if (!actor || (!game.user.isGM && !actor.isOwner) || Number(actor.system.resources?.luckPoints?.value ?? 0) < 1)
-    return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
   if (side === "defender" && !entry.defense?.rawRoll) return;
+  const participants = await Promise.all(["attacker", "defender"].map(async (participantSide) => {
+    const participant = participantSide === "attacker" ? current.attacker : current.defender;
+    return { side: participantSide,
+      actor: await combatActor(participant.tokenUuid, participant.actorUuid) };
+  }));
+  const spenders = participants.filter(({ actor }) => actor
+    && (game.user.isGM || actor.isOwner)
+    && Number(actor.system.resources?.luckPoints?.value ?? 0) > 0);
+  if (!spenders.length) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
   const currentRoll = side === "attacker" ? entry.rawRoll : entry.defense.rawRoll;
   const { DialogV2 } = foundry.applications.api;
+  let spender = spenders[0];
+  if (spenders.length > 1) {
+    const luckSide = await DialogV2.wait({ window: { title: localize("MYTHRASF.Luck.Title") },
+      content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><label><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><select name="luckSide">${spenders.map((candidate) => `<option value="${candidate.side}">${escape(actorDisplayName(candidate.actor))} (${Number(candidate.actor.system.resources?.luckPoints?.value ?? 0)})</option>`).join("")}</select></label></div>`,
+      buttons: [{ action: "confirm", label: localize("MYTHRASF.Confirm"), icon: "fas fa-check",
+        default: true, callback: (event, button) => button.form.elements.luckSide.value },
+      { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
+      rejectClose: false });
+    if (!luckSide) return;
+    spender = spenders.find((candidate) => candidate.side === luckSide);
+    if (!spender) return;
+  }
+  const ownRoll = spender.side === side;
   const choice = await DialogV2.wait({ window: { title: localize("MYTHRASF.Luck.Title") },
-    content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize("MYTHRASF.Luck.Confirm"))}</p></div>`,
-    buttons: [{ action: "reroll", label: localize("MYTHRASF.Luck.Reroll"), icon: "fas fa-dice-d20" },
-      { action: "invert", label: localize("MYTHRASF.Luck.Invert"), icon: "fas fa-arrow-right-arrow-left" },
+    content: `<div class="mythras-foundry mythras-dialog luck-spend-dialog"><div class="luck-spender-fixed"><span>${escape(localize("MYTHRASF.Luck.Spender"))}</span><strong>${escape(actorDisplayName(spender.actor))} (${Number(spender.actor.system.resources?.luckPoints?.value ?? 0)})</strong></div><p>${escape(localize(ownRoll ? "MYTHRASF.Luck.Confirm" : "MYTHRASF.Luck.ForceRerollConfirm"))}</p></div>`,
+    buttons: [{ action: "reroll", label: localize(ownRoll
+      ? "MYTHRASF.Luck.Reroll" : "MYTHRASF.Luck.ForceReroll"), icon: "fas fa-dice-d20" },
+      ...(ownRoll ? [{ action: "invert", label: localize("MYTHRASF.Luck.Invert"),
+        icon: "fas fa-arrow-right-arrow-left" }] : []),
       { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
   if (!choice) return;
   const roll = choice === "reroll" ? await new Roll("1d100").evaluate() : null;
   const rawRoll = roll?.total ?? invertD100(currentRoll);
-  await actor.update({ "system.resources.luckPoints.value": Number(actor.system.resources.luckPoints.value) - 1 });
+  const points = Number(spender.actor.system.resources?.luckPoints?.value ?? 0);
+  if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  await spender.actor.update({ "system.resources.luckPoints.value": points - 1 });
   const request = { action: "combatLuck", messageId: message.id, revision: current.revision,
-    userId: game.user.id, side, rawRoll, serializedRoll: roll?.toJSON?.() ?? null,
+    userId: game.user.id, side, mode: choice, luckSide: spender.side,
+    rawRoll, serializedRoll: roll?.toJSON?.() ?? null,
     luckAlreadySpent: true };
   if (preferredCombatCoordinator(game.users, current.authorUserId) === game.user.id) await applyCombatLuck(message, request);
   else game.socket.emit(SOCKET, request);
@@ -901,16 +925,29 @@ async function applyCombatLuck(message, request) {
     || !["attacker", "defender"].includes(request.side)) return;
   const entry = request.side === "attacker" ? combat.attacker : combat.defender;
   const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
+  const spenderEntries = await Promise.all(["attacker", "defender"].map(async (side) => {
+    const participant = side === "attacker" ? combat.attacker : combat.defender;
+    return { side, actor: await combatActor(participant.tokenUuid, participant.actorUuid) };
+  }));
+  const spender = spenderEntries.find((candidate) => candidate.side === request.luckSide);
   const user = game.users.get(request.userId);
-  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
+  const ownRoll = spender?.side === request.side;
+  if (!actor || !spender?.actor || !user
+    || (!user.isGM && !spender.actor.testUserPermission(user, "OWNER"))
+    || !["reroll", "invert"].includes(request.mode)
+    || (!ownRoll && request.mode !== "reroll")) return;
   if (request.side === "defender" && !entry.defense?.rawRoll) return;
   if (!request.luckAlreadySpent) {
-    const points = Number(actor.system.resources?.luckPoints?.value ?? 0);
+    const points = Number(spender.actor.system.resources?.luckPoints?.value ?? 0);
     if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-    await actor.update({ "system.resources.luckPoints.value": points - 1 });
+    await spender.actor.update({ "system.resources.luckPoints.value": points - 1 });
   }
   const currentRoll = request.side === "attacker" ? entry.rawRoll : entry.defense.rawRoll;
   entry.luckHistory = [...(entry.luckHistory ?? []), currentRoll];
+  entry.luckSpendHistory = [...(entry.luckSpendHistory ?? []), {
+    value: currentRoll, spenderId: spender.actor.id, spenderUuid: spender.actor.uuid,
+    spenderName: actorDisplayName(spender.actor),
+    mode: request.mode }];
   if (request.side === "attacker") entry.rawRoll = Number(request.rawRoll);
   else entry.defense.rawRoll = Number(request.rawRoll);
   const ability = request.side === "attacker" ? actor.items.get(entry.styleId)

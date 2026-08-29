@@ -313,6 +313,11 @@ reducción por el mayor porcentaje superior a 100; una defensa tardía conserva
 la clasificación ya obtenida por el ataque. `scripts/rules/combat-chat.js`
 coordina por socket la respuesta de Parar, Evadir o no defenderse, valida
 revisión y propiedad y permite modificar ambos dados mediante suerte.
+En esas tiradas, el diálogo enumera los participantes controlables con puntos
+disponibles y registra cuál paga. El propietario del dado puede repetirlo o
+invertir sus cifras; el rival solo puede gastar Suerte para obligar a repetirlo.
+El coordinador vuelve a validar pagador, propiedad, modo y saldo antes de
+aceptar la modificación.
 Antes de consumir PA, puntería o munición, el ataque reúne el blanco, las
 declaraciones, las circunstancias a distancia y los ajustes porcentuales en un
 único diálogo sin la configuración de concurso. Los grados favorables y
@@ -498,8 +503,11 @@ prueba de Aguante con esa gravedad y aplica después únicamente sus
 consecuencias. Cambiar la localización o repetir el daño invalida esta reducción.
 «Cerrar intercambio y avanzar» permite al DJ resolver conjuntamente cualquier
 paso todavía pendiente —con una nota opcional— sin deshacer el daño ni tratar
-el intercambio como cancelado; una resolución manual individual tampoco exige
-una nota para poder completarse.
+el intercambio como cancelado. En un intercambio terminal que aún admite
+cancelación, como el fallo simultáneo de ataque y defensa, el cierre explícito
+confirma el resultado y avanza el tracker; el avance automático espera para
+conservar la oportunidad de corregirlo mediante Cancelar. Una resolución manual
+individual tampoco exige una nota para poder completarse.
 
 La tarjeta interactiva se divide por responsabilidades sin alterar el esquema
 persistido del intercambio ni las exportaciones públicas de `combat-chat.js`:

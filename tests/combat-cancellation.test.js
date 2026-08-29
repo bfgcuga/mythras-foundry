@@ -26,6 +26,12 @@ test("cancelar restituye ambos PA y no solicita avanzar el tracker", () => {
   assert.doesNotMatch(cancelBody, /advanceCombatTurnForExchange/);
 });
 
+test("cerrar un intercambio terminal avanza aunque todavía pueda cancelarse", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(source, /advanceCombatTurnForExchange\(message, combat, \{ force: true \}\)/);
+  assert.match(source, /\(!force && combatCanBeCancelled\(combat\)\)/);
+});
+
 test("el cierre forzado resuelve los pasos pendientes sin cancelar daño aplicado", () => {
   const combat = { status: "resolved", damage: { status: "applied" },
     effects: { checks: [{ status: "pending" }], selections: [{ status: "resolved" }] },

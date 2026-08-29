@@ -78,3 +78,12 @@ test("la prueba de herida crítica ofrece reducirla mediante Suerte", () => {
   assert.match(source, /action: "combatWoundLuck"/);
   assert.match(source, /"system\.resources\.luckPoints\.value": points - 1/);
 });
+
+test("la suerte de combate permite elegir pagador y limita la tirada ajena a repetir", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(source, /spenders\.length > 1[\s\S]*name="luckSide"/);
+  assert.match(source, /const ownRoll = spender\.side === side/);
+  assert.match(source, /ownRoll \? \[\{ action: "invert"/);
+  assert.match(source, /\(!ownRoll && request\.mode !== "reroll"\)/);
+  assert.match(source, /spender\.actor\.update\(\{ "system\.resources\.luckPoints\.value": points - 1 \}\)/);
+});
