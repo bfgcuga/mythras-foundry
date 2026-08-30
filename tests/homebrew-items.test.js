@@ -72,6 +72,16 @@ test("crea localizaciones y armaduras con valores operativos", () => {
   assert.equal(armor.system.material, "leather");
 });
 
+test("crea efectos homebrew con restricciones canónicas utilizables", () => {
+  const effect = buildHomebrewItem("combatEffect", { name: "Ataque lunar",
+    offensive: "on", weaponRestriction: "ranged", rollRestriction: "attackerCritical" });
+  assert.equal(effect.system.weaponRestriction, "ranged");
+  assert.equal(effect.system.rollRestriction, "attackerCritical");
+  assert.equal(effect.system.ruleKey, "guided");
+  assert.throws(() => buildHomebrewItem("combatEffect", { name: "Inválido",
+    weaponRestriction: "Armas de luna" }), /invalid-combat-effect-restriction/);
+});
+
 test("culturas y profesiones exigen reglas JSON con forma de objeto", () => {
   assert.equal(buildHomebrewItem("culture", { name: "Insular", rules: "{}" })
     .system.key, "insular");

@@ -157,8 +157,8 @@
           {{#if isCombatEffect}}
             <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="offensive"> <span>{{localize "MYTHRASF.CombatEffect.Offensive"}}</span></label>
             <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="defensive"> <span>{{localize "MYTHRASF.CombatEffect.Defensive"}}</span></label>
-            <label><span>{{localize "MYTHRASF.CombatEffect.WeaponRestriction"}}</span><input name="weaponRestriction"></label>
-            <label><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><input name="rollRestriction"></label>
+            <label><span>{{localize "MYTHRASF.CombatEffect.WeaponRestriction"}}</span><select name="weaponRestriction">{{selectOptions combatEffectWeaponRestrictions labelAttr="label" valueAttr="value"}}</select></label>
+            <label><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><select name="rollRestriction">{{selectOptions combatEffectRollRestrictions labelAttr="label" valueAttr="value"}}</select></label>
             <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="stackable"> <span>{{localize "MYTHRASF.CombatEffect.Stackable"}}</span></label>
           {{/if}}
 

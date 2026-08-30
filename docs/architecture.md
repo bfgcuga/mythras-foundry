@@ -127,7 +127,9 @@ terminar el turno propio; las duraciones de asalto vencen en `mythrasRoundEnd`
 y los plazos en minutos u horas permanecen manuales. Las fuentes son
 independientes, por lo que retirar una no elimina otros bloqueos equivalentes.
 Sangrando y Ahogándose crean una cola de Aguante antes del primer turno del
-asalto; Desangrándose crea una única entrada automática por Actor y pierde un
+asalto. Esas tiradas resuelven su objetivo efectivo en el momento de lanzar los
+dados mediante `resolveSkillRollConditions`, por lo que incorporan la Fatiga,
+heridas y estados vigentes. Desangrándose crea una única entrada automática por Actor y pierde un
 nivel de Fatiga, sin tirada, durante esa misma preparación. Su efecto manual
 permanece hasta retirarlo y fuera de combate no avanza. Sorprendido bloquea la
 defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
@@ -214,7 +216,8 @@ asalto. Cada combatiente conserva en sus flags un contador idempotente de asalto
 completados y vence cada `ceil(CON / 5)` asaltos. Al avanzar, se resuelve durante
 la preparación del asalto siguiente; al terminar el combate se liquida el último
 asalto antes de cerrarlo. Los personajes solicitan Aguante a sus propietarios;
-los PNJ resuelven la misma tirada en el coordinador y solo publican el resultado
+los PNJ resuelven la misma tirada en el coordinador. Ambas rutas calculan el
+objetivo con `roundEnduranceTarget` y el resolvedor común de condiciones, y solo publican el resultado
 si pierden un nivel, salvo que el ajuste mundial
 `showNpcCombatFatigueChecks` habilite el flujo completo. Éxito y crítico no
 causan pérdida; fallo y pifia incrementan la Fatiga en un nivel.
@@ -491,11 +494,22 @@ defensiva. `scripts/rules/combat-effects.js`
 contiene únicamente metadatos de ejecución, filtros y ayudantes puros. El texto
 reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera el
 compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item
-Empalar. Los efectos automáticos condicionados a causar daño, como Empalar,
-quedan resueltos al confirmar que existe daño penetrante; solo los efectos
+Empalar. La fuente oficial de esas entradas es `Mythras básico revisado`. Las
+restricciones persistidas usan exclusivamente identificadores estables e
+independientes del idioma. El constructor del compendio rechaza cualquier valor
+fuera de los catálogos cerrados; la hoja y el creador homebrew solo ofrecen los
+valores canónicos admitidos. La ejecución consume la regla, fase y booleanos
+técnicos persistidos en cada Item. Los efectos automáticos
+condicionados a causar daño, como Empalar, quedan resueltos al confirmar que
+existe daño penetrante; solo los efectos
 guiados permanecen pendientes y preceden a las comprobaciones de heridas. Los
 efectos no modelados se conservan como resoluciones guiadas y
 confirmadas, sin inventar geometría, turnos ni estados persistentes.
+La selección de combate combina el compendio oficial con todos los compendios
+de Items configurados en `catalogSources`, toma únicamente documentos
+`combatEffect` con clave y permite que una fuente homebrew posterior sustituya
+una clave oficial de forma determinista. Las restricciones cerradas definen el
+esquema funcional del Item, no limitan el compendio del que puede proceder.
 Una Herida Crítica en una extremidad registra directamente el daño, la lesión
 permanente y sus estados mecánicos; no crea una confirmación narrativa
 pendiente. Si no queda otra resolución guiada, el intercambio se considera

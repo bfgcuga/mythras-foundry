@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { combatEffectEligible, combatEffectRule, combatEffectSlug, combatEffectSlotsBySide,
-  maximizeDamageFormula,
+import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
+  combatEffectEligible, combatEffectRule, combatEffectSlug, combatEffectSlotsBySide,
+  maximizeDamageFormula, mergeCombatEffectDocuments,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
 
 const source = JSON.parse(readFileSync(
@@ -35,6 +36,26 @@ test("el catálogo canónico contiene 44 efectos y la tabla completa de empalami
   assert.equal(source.tabla_empalamiento.columnas.length, 6);
   assert.equal(source.tabla_empalamiento.filas.length, 5);
   assert.match(source.tabla_empalamiento.regla_adicional, /\+10 TAM/);
+  assert.equal(source.fuente, "Mythras básico revisado");
+});
+
+test("el catálogo solo conserva restricciones canónicas y rechaza texto libre", () => {
+  assert.ok(source.efectos_combate.every((entry) =>
+    COMBAT_EFFECT_WEAPON_RESTRICTIONS.includes(entry.tipo_arma_especifica ?? "")
+    && COMBAT_EFFECT_ROLL_RESTRICTIONS.includes(entry.tirada_especifica ?? "")));
+  assert.equal(combatEffectEligible({ offensive: true, defensive: false,
+    weaponRestriction: "Armas perforantes", rollRestriction: "" }, {
+    winner: "attacker", weaponMode: { weaponType: "melee", impalingSize: "M" }
+  }), false);
+});
+
+test("los efectos homebrew se combinan con los oficiales y pueden sustituir una clave", () => {
+  const official = { uuid: "official", type: "combatEffect", system: { key: "custom" } };
+  const homebrew = { uuid: "homebrew", type: "combatEffect", system: { key: "custom" } };
+  const extra = { uuid: "extra", type: "combatEffect", system: { key: "extra" } };
+  const ignored = { uuid: "weapon", type: "weapon", system: { key: "weapon" } };
+  assert.deepEqual(mergeCombatEffectDocuments([[official], [homebrew, extra, ignored]])
+    .map((entry) => entry.uuid), ["homebrew", "extra"]);
 });
 
 test("la elegibilidad respeta lado, crítico y capacidades estructuradas del arma", () => {
@@ -101,5 +122,25 @@ test("la hoja de Empalar usa una tabla semántica y el compendio nace del JSON c
   assert.match(template, /<th scope="col">/);
   assert.match(template, /<th scope="row">/);
   assert.match(builder, /data\/mythras_efectos_combate\.json/);
+  assert.match(builder, /source: MYTHRAS_REVISED_SOURCE/);
+  assert.match(builder, /COMBAT_EFFECT_WEAPON_RESTRICTIONS\.includes/);
   assert.match(model, /export class CombatEffectData/);
+});
+
+test("la hoja de efecto es editable, restringe sus valores y usa booleanos visuales", () => {
+  const template = readFileSync(new URL("../templates/item/item-sheet.hbs", import.meta.url), "utf8");
+  const sheet = readFileSync(new URL("../scripts/sheets/item-sheet.js", import.meta.url), "utf8");
+  const combat = readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(template, /name="system\.source"/);
+  assert.match(template, /name="system\.description"/);
+  assert.match(template, /name="system\.weaponRestriction">{{selectOptions/);
+  assert.match(template, /name="system\.rollRestriction">{{selectOptions/);
+  for (const field of ["offensive", "defensive", "stackable", "requiresWound", "endurance"]) {
+    assert.match(template, new RegExp(`type="checkbox"[^>]*sheet-state-box[^>]*name="system\\.${field}"`));
+  }
+  assert.match(sheet, /this\.item\.type === "combatEffect"[\s\S]*?width: 780, height: 640/);
+  assert.match(combat, /ruleKey: item\.system\.ruleKey/);
+  assert.match(combat, /requiresWound: Boolean\(item\.system\.requiresWound\)/);
+  assert.match(combat, /SETTING_KEYS\.catalogSources/);
+  assert.match(combat, /mergeCombatEffectDocuments\(groups\)/);
 });

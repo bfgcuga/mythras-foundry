@@ -6,6 +6,16 @@ export const COMBAT_EFFECT_STAGES = Object.freeze([
   "afterPenetration", "afterEffect", "woundChecks"
 ]);
 
+export const COMBAT_EFFECT_WEAPON_RESTRICTIONS = Object.freeze([
+  "", "unarmed", "ranged", "trapping", "bludgeoning", "cutting", "siegeOrRanged",
+  "small", "piercing", "shieldOrBludgeoning", "axeOrTwoHanded"
+]);
+
+export const COMBAT_EFFECT_ROLL_RESTRICTIONS = Object.freeze([
+  "", "attackerCritical", "defenderCritical", "attackerFumble", "opponentFumble",
+  "winnerCritical", "seeDescription"
+]);
+
 export const COMBAT_EFFECT_RULES = Object.freeze({
   "abrir-distancia": { ruleKey: "guided", stage: "afterEffect", target: "self" },
   alzarse: { ruleKey: "guided", stage: "afterEffect", target: "self" },
@@ -32,6 +42,10 @@ export const COMBAT_EFFECT_RULES = Object.freeze({
     endurance: true }
 });
 
+export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
+  ...new Set(["guided", ...Object.values(COMBAT_EFFECT_RULES).map((rule) => rule.ruleKey)])
+]);
+
 export function combatEffectSlug(value) {
   return normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -41,46 +55,56 @@ export function combatEffectRule(effect) {
     ?? { ruleKey: "guided", stage: "afterEffect", target: "opponent" };
 }
 
+export function mergeCombatEffectDocuments(documentGroups = []) {
+  const byKey = new Map();
+  for (const document of documentGroups.flat()) {
+    const key = String(document?.system?.key ?? "").trim();
+    if (document?.type === "combatEffect" && key) byKey.set(key, document);
+  }
+  return [...byKey.values()];
+}
+
 function effectNames(mode = {}) {
   return new Set(String(mode.effects ?? "").split(/[,;\n]/).map(normalize).filter(Boolean));
 }
 
 function matchesWeaponRestriction(restriction, context) {
-  const wanted = normalize(restriction);
+  const wanted = String(restriction ?? "").trim();
   if (!wanted) return true;
+  if (!COMBAT_EFFECT_WEAPON_RESTRICTIONS.includes(wanted)) return false;
   const mode = context.weaponMode ?? {};
   const type = normalize(mode.weaponType);
   const size = normalize(mode.size);
   const names = effectNames(mode);
   const has = (name) => names.has(normalize(name));
-  if (wanted === "pelea") return type === "melee" && context.unarmed === true;
-  if (wanted.includes("distancia")) return ["ranged", "siege"].includes(type);
-  if (wanted.includes("asedio")) return type === "siege" || ["ranged", "siege"].includes(type);
-  if (wanted.includes("escudo") && wanted.includes("contundentes")) {
+  if (wanted === "unarmed") return type === "melee" && context.unarmed === true;
+  if (wanted === "ranged") return ["ranged", "siege"].includes(type);
+  if (wanted === "siegeOrRanged") return ["ranged", "siege"].includes(type);
+  if (wanted === "shieldOrBludgeoning") {
     return type === "shield" || has("Golpetazo") || has("Aturdir Localización");
   }
-  if (wanted.includes("escudo")) return type === "shield";
-  if (wanted.includes("pequenas")) return ["p", "small"].includes(size);
-  if (wanted.includes("perforantes")) return Boolean(mode.impalingSize) || has("Empalar");
-  if (wanted.includes("cortantes")) return has("Desangrar");
-  if (wanted.includes("atrapadoras")) return has("Enredar");
-  if (wanted.includes("contundentes")) return has("Golpetazo") || has("Aturdir Localización");
-  if (wanted.includes("hachas") || wanted.includes("dos manos")) {
+  if (wanted === "small") return ["p", "small"].includes(size);
+  if (wanted === "piercing") return Boolean(mode.impalingSize) || has("Empalar");
+  if (wanted === "cutting") return has("Desangrar");
+  if (wanted === "trapping") return has("Enredar");
+  if (wanted === "bludgeoning") return has("Golpetazo") || has("Aturdir Localización");
+  if (wanted === "axeOrTwoHanded") {
     return Number(mode.handsRequired) === 2 || has("Hender Armadura");
   }
   return false;
 }
 
 function matchesRollRestriction(restriction, context) {
-  const wanted = normalize(restriction);
-  if (!wanted || wanted === "ver descripcion") return true;
+  const wanted = String(restriction ?? "").trim();
+  if (!wanted || wanted === "seeDescription") return true;
+  if (!COMBAT_EFFECT_ROLL_RESTRICTIONS.includes(wanted)) return false;
   const own = context.winner === "attacker" ? context.attackResult : context.defenseResult;
   const opponent = context.winner === "attacker" ? context.defenseResult : context.attackResult;
-  if (wanted.includes("critico del atacante")) return context.attackResult === "critical";
-  if (wanted.includes("critico del defensor")) return context.defenseResult === "critical";
-  if (wanted.includes("pifia del atacante")) return context.attackResult === "fumble";
-  if (wanted.includes("pifia del oponente")) return opponent === "fumble";
-  if (wanted.includes("solo critico")) return own === "critical";
+  if (wanted === "attackerCritical") return context.attackResult === "critical";
+  if (wanted === "defenderCritical") return context.defenseResult === "critical";
+  if (wanted === "attackerFumble") return context.attackResult === "fumble";
+  if (wanted === "opponentFumble") return opponent === "fumble";
+  if (wanted === "winnerCritical") return own === "critical";
   return true;
 }
 

@@ -6,6 +6,8 @@ import { HOMEBREW_ITEM_TYPES, buildHomebrewItem, homebrewPackName }
   from "../rules/homebrew-items.js";
 import { getSystemSetting, setSystemSetting, SETTING_KEYS } from "../settings.js";
 import { normalizeCatalogConfig } from "../rules/catalog.js";
+import { COMBAT_EFFECT_ROLL_RESTRICTIONS,
+  COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "../rules/combat-effects.js";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const FilePickerClass = foundry.applications.apps.FilePicker?.implementation
@@ -77,6 +79,12 @@ export class HomebrewItemCreator extends HandlebarsApplicationMixin(ApplicationV
       isHitLocation: selectedType === "hitLocation",
       isTrait: selectedType === "trait",
       isCombatEffect: selectedType === "combatEffect",
+      combatEffectWeaponRestrictions: COMBAT_EFFECT_WEAPON_RESTRICTIONS.map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.CombatEffect.WeaponRestrictionChoice.${value || "none"}`)
+      })),
+      combatEffectRollRestrictions: COMBAT_EFFECT_ROLL_RESTRICTIONS.map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.CombatEffect.RollRestrictionChoice.${value || "none"}`)
+      })),
       characteristics: CHARACTERISTIC_KEYS.map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Characteristic.${value}`) })),
       skillCategories: ["basic", "professional"].map((value) => ({ value,

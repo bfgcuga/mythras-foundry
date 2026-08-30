@@ -20,6 +20,8 @@ import { advanceCombatFatigue, COMBAT_FATIGUE_FLAG, COMBAT_FATIGUE_SCOPE,
   combatFatigueInterval, combatFatigueLoss } from "./combat-fatigue.js";
 import { prepareDyingEntry } from "./dying.js";
 import { invertD100 } from "./skill-roll.js";
+import { difficultyTarget } from "./combat.js";
+import { resolveSkillRollConditions } from "./skill-roll-resolution.js";
 
 const SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -126,6 +128,14 @@ export async function applyFatigueLoss(actor, loss) {
   return { before, after, loss };
 }
 
+export function roundEnduranceTarget(actor, skill) {
+  const baseTarget = Number(skill?.system?.total ?? 0);
+  const conditions = resolveSkillRollConditions(actor, skill);
+  return Object.freeze({ baseTarget, difficulty: conditions.difficulty,
+    target: difficultyTarget(baseTarget, conditions.difficulty),
+    modifiers: conditions.modifiers });
+}
+
 async function prepareCombatFatigueEntries(combat, previous, completedRound) {
   const entries = [];
   const showNpcChecks = Boolean(getSystemSetting(SETTING_KEYS.showNpcCombatFatigueChecks));
@@ -161,13 +171,14 @@ async function prepareCombatFatigueEntries(combat, previous, completedRound) {
     const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
     if (!skill) continue;
     const roll = await new Roll("1d100").evaluate();
-    const target = Number(skill.system.total ?? 0);
+    const endurance = roundEnduranceTarget(actor, skill);
+    const target = endurance.target;
     const result = classifyContestRoll(roll.total, target);
     await recordAbilityFumble(skill, result);
     const loss = combatFatigueLoss(result);
     const fatigue = await applyFatigueLoss(actor, loss);
     entry.status = "resolved";
-    entry.resolution = { target, rawRoll: roll.total, serializedRoll: roll.toJSON(), result,
+    entry.resolution = { ...endurance, rawRoll: roll.total, serializedRoll: roll.toJSON(), result,
       loss, before: fatigue.before, after: fatigue.after };
     await combatant.setFlag(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG, {
       ...advanced.state, resolvedRound: completedRound, resolution: entry.resolution
@@ -356,13 +367,14 @@ async function requestResolution(message, state, entryId, manual) {
     const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
     if (!skill) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SourceMissing"));
     const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
-    const result = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
+    const endurance = roundEnduranceTarget(actor, skill);
+    const result = classifyContestRoll(roll.total, endurance.target);
     await recordAbilityFumble(skill, result);
     const lossRoll = entry.key !== "combatFatigue" && result === "failure" ? await evaluateAnimatedRoll("1d2",
       { speaker: ChatMessage.getSpeaker({ actor }) })
       : entry.key !== "combatFatigue" && result === "fumble" ? await evaluateAnimatedRoll("1d3",
         { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
-    resolution = { manual: false, target: Number(skill.system.total ?? 0), rawRoll: roll.total,
+    resolution = { manual: false, ...endurance, rawRoll: roll.total,
       serializedRoll: roll.toJSON(), result,
       loss: entry.key === "combatFatigue" ? combatFatigueLoss(result)
         : fatigueLossForResult(result, lossRoll?.total ?? 1),

@@ -9,9 +9,11 @@ import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { combatEffectRule, combatEffectSlotsBySide, eligibleCombatEffects, maximizeDamageFormula,
-  opposedEffectWinner, selectedEffectCount, validateEffectSelections } from "./combat-effects.js";
+  mergeCombatEffectDocuments, opposedEffectWinner, selectedEffectCount,
+  validateEffectSelections } from "./combat-effects.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
-import { getActionPointRules } from "../settings.js";
+import { getActionPointRules, getSystemSetting, SETTING_KEYS } from "../settings.js";
+import { normalizeCatalogConfig } from "./catalog.js";
 import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
@@ -109,18 +111,29 @@ async function advanceCombatTurnForExchange(message, combat, { force = false } =
 }
 
 async function combatEffectDocuments() {
-  const pack = game.packs.get(`${FLAG_SCOPE}.combat-effects`);
-  if (!pack) return [];
-  return pack.getDocuments();
+  const configured = normalizeCatalogConfig(getSystemSetting(SETTING_KEYS.catalogSources));
+  const packIds = [`${FLAG_SCOPE}.combat-effects`, ...configured.packIds];
+  const groups = await Promise.all(packIds.map(async (packId) => {
+    const pack = game.packs.get(packId);
+    return pack ? pack.getDocuments() : [];
+  }));
+  return mergeCombatEffectDocuments(groups);
 }
 
-const effectView = (item) => ({
-  uuid: item.uuid, key: item.system.key, name: item.name,
-  offensive: item.system.offensive, defensive: item.system.defensive,
-  weaponRestriction: item.system.weaponRestriction, rollRestriction: item.system.rollRestriction,
-  stackable: item.system.stackable, description: item.system.description,
-  ...combatEffectRule({ key: item.system.key })
-});
+const effectView = (item) => {
+  const defaults = combatEffectRule({ key: item.system.key });
+  return {
+    uuid: item.uuid, key: item.system.key, name: item.name,
+    offensive: item.system.offensive, defensive: item.system.defensive,
+    weaponRestriction: item.system.weaponRestriction, rollRestriction: item.system.rollRestriction,
+    stackable: item.system.stackable, description: item.system.description,
+    ...defaults,
+    ruleKey: item.system.ruleKey,
+    stage: item.system.stage,
+    requiresWound: Boolean(item.system.requiresWound),
+    endurance: Boolean(item.system.endurance)
+  };
+};
 
 function effectContext(combat, side = combat.effects?.pendingSide ?? combat.resolution?.winner) {
   return { winner: side,

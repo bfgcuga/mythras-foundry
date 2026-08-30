@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { advanceCombatFatigue, combatFatigueInterval,
   combatFatigueLoss } from "../scripts/rules/combat-fatigue.js";
+import { roundEnduranceTarget } from "../scripts/rules/round-consequences.js";
 
 test("calcula el intervalo de fatiga de combate redondeando CON hacia arriba", () => {
   assert.equal(combatFatigueInterval(1), 1);
@@ -48,11 +49,28 @@ test("la tirada periódica solo pierde un nivel al fallar", () => {
   assert.equal(combatFatigueLoss("fumble"), 1);
 });
 
+test("Aguante periódico aplica fatiga y las demás condiciones de habilidad", () => {
+  globalThis.game = { i18n: { localize: (key) => key,
+    format: (key) => key } };
+  const skill = { type: "skill", system: { slug: "aguante", total: 75,
+    characteristic1: "constitution", characteristic2: "constitution" } };
+  const actor = { items: [skill], statuses: new Set(),
+    system: { fatigueLevel: "winded", strength: 10 }, getFlag: () => false };
+  assert.deepEqual({ ...roundEnduranceTarget(actor, skill), modifiers: undefined }, {
+    baseTarget: 75, difficulty: "hard", target: 50, modifiers: undefined
+  });
+  actor.statuses.add("blinded");
+  assert.deepEqual({ ...roundEnduranceTarget(actor, skill), modifiers: undefined }, {
+    baseTarget: 75, difficulty: "herculean", target: 15, modifiers: undefined
+  });
+});
+
 test("la Suerte de fatiga distingue tirada propia y rival y recalcula la pérdida", () => {
   const source = readFileSync(new URL("../scripts/rules/round-consequences.js", import.meta.url),
     "utf8");
   assert.match(source, /context\.ownRoll \? "MYTHRASF\.Luck\.Confirm" : "MYTHRASF\.Luck\.ForceRerollConfirm"/);
   assert.match(source, /\.\.\.\(context\.ownRoll \? \[\{ action: "invert"/);
   assert.match(source, /const loss = combatFatigueLoss\(result\)/);
+  assert.match(source, /const endurance = roundEnduranceTarget\(actor, skill\)/);
   assert.match(source, /worsenFatigueLevel\(entry\.resolution\.before, loss\)/);
 });

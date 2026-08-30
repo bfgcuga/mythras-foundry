@@ -15,6 +15,8 @@ import { ARMOR_MATERIAL_MODIFIERS, ARMOR_REFERENCE_LOCATIONS, armorPieceTypeForL
 import { inventoryCarried } from "../rules/inventory.js";
 import { TRAIT_TYPES, mergeTraitReferences, removeTraitReference, traitReference,
   traitSlug } from "../rules/traits.js";
+import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_RULE_KEYS, COMBAT_EFFECT_STAGES,
+  COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "../rules/combat-effects.js";
 
 async function prepareTraitReferences(references = []) {
   return Promise.all(references.map(async (reference, referenceIndex) => {
@@ -241,6 +243,18 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isHitLocation: this.item.type === "hitLocation",
       isTrait: this.item.type === "trait",
       isCombatEffect: this.item.type === "combatEffect",
+      combatEffectWeaponRestriction: this.item.system.weaponRestriction,
+      combatEffectRollRestriction: this.item.system.rollRestriction,
+      combatEffectWeaponRestrictionChoices: COMBAT_EFFECT_WEAPON_RESTRICTIONS.map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.CombatEffect.WeaponRestrictionChoice.${value || "none"}`)
+      })),
+      combatEffectRollRestrictionChoices: COMBAT_EFFECT_ROLL_RESTRICTIONS.map((value) => ({
+        value, label: game.i18n.localize(`MYTHRASF.CombatEffect.RollRestrictionChoice.${value || "none"}`)
+      })),
+      combatEffectRuleChoices: COMBAT_EFFECT_RULE_KEYS.map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.CombatEffect.Rule.${value}`) })),
+      combatEffectStageChoices: COMBAT_EFFECT_STAGES.map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.CombatEffect.Stage.${value}`) })),
       traitTypeChoices: TRAIT_TYPES.map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Trait.Type.${value}`) })),
       weaponLocationChoices: this.item.type === "weapon" && this.item.actor
@@ -333,6 +347,11 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (this.item.type === "weapon" && !this._weaponDefaultSizeApplied) {
       this._weaponDefaultSizeApplied = true;
       this.setPosition({ width: 960, height: 560 });
+    }
+
+    if (this.item.type === "combatEffect" && !this._combatEffectDefaultSizeApplied) {
+      this._combatEffectDefaultSizeApplied = true;
+      this.setPosition({ width: 780, height: 640 });
     }
 
     this.element.querySelector("[data-action='view-item-image']")

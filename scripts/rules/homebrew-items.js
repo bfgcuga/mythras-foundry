@@ -1,3 +1,6 @@
+import { COMBAT_EFFECT_ROLL_RESTRICTIONS,
+  COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "./combat-effects.js";
+
 export const HOMEBREW_ITEM_TYPES = Object.freeze([
   "equipment", "weapon", "armor", "skill", "combatStyle",
   "trait", "combatEffect", "culture", "profession", "passion", "hitLocation"
@@ -128,14 +131,21 @@ export function buildHomebrewItem(type, fields = {}) {
     } };
   }
 
-  if (type === "combatEffect") return { ...common, system: {
-    key: homebrewSlug(fields.key || name), source, description,
-    offensive: checked(fields.offensive), defensive: checked(fields.defensive),
-    weaponRestriction: String(fields.weaponRestriction ?? ""),
-    rollRestriction: String(fields.rollRestriction ?? ""), stackable: checked(fields.stackable),
-    ruleKey: "guided", stage: "afterEffect", requiresWound: checked(fields.requiresWound),
-    endurance: checked(fields.endurance), tableColumns: [], tableRows: [], tableNote: ""
-  } };
+  if (type === "combatEffect") {
+    const weaponRestriction = String(fields.weaponRestriction ?? "");
+    const rollRestriction = String(fields.rollRestriction ?? "");
+    if (!COMBAT_EFFECT_WEAPON_RESTRICTIONS.includes(weaponRestriction)
+      || !COMBAT_EFFECT_ROLL_RESTRICTIONS.includes(rollRestriction)) {
+      throw new Error("invalid-combat-effect-restriction");
+    }
+    return { ...common, system: {
+      key: homebrewSlug(fields.key || name), source, description,
+      offensive: checked(fields.offensive), defensive: checked(fields.defensive),
+      weaponRestriction, rollRestriction, stackable: checked(fields.stackable),
+      ruleKey: "guided", stage: "afterEffect", requiresWound: checked(fields.requiresWound),
+      endurance: checked(fields.endurance), tableColumns: [], tableRows: [], tableNote: ""
+    } };
+  }
 
   return { ...common, system: {
     key: homebrewSlug(fields.key || name), source, description,

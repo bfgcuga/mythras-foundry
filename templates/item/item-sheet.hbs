@@ -1,4 +1,4 @@
-<div class="item-sheet-content {{#if isWeapon}}weapon-item-sheet{{/if}} {{#if isCombatStyle}}combat-style-item-sheet{{/if}}">
+<div class="item-sheet-content {{#if isWeapon}}weapon-item-sheet{{/if}} {{#if isCombatStyle}}combat-style-item-sheet{{/if}} {{#if isCombatEffect}}combat-effect-item-sheet{{/if}}">
   <header class="sheet-header {{#if isWeapon}}weapon-sheet-header{{/if}}">
     <span class="item-image-frame"><img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
       {{#if isWeapon}}<button type="button" class="sheet-icon-button item-image-view" data-action="view-item-image" aria-label="{{localize "MYTHRASF.Item.ViewImage"}}" title="{{localize "MYTHRASF.Item.ViewImage"}}"><i class="fas fa-expand" aria-hidden="true"></i></button>{{/if}}
@@ -346,13 +346,26 @@
 
   {{#if isCombatEffect}}
     <fieldset class="combat-effect-sheet-summary"><legend>{{localize "MYTHRASF.CombatEffect.Configuration"}}</legend>
-      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.Item.Source"}}</span><strong>{{item.system.source}}</strong></div>
-      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.Side"}}</span><strong>{{#if item.system.offensive}}{{localize "MYTHRASF.CombatEffect.Offensive"}}{{/if}}{{#if item.system.defensive}} {{localize "MYTHRASF.CombatEffect.Defensive"}}{{/if}}</strong></div>
-      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.WeaponRestriction"}}</span><strong>{{#if item.system.weaponRestriction}}{{item.system.weaponRestriction}}{{else}}—{{/if}}</strong></div>
-      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><strong>{{#if item.system.rollRestriction}}{{item.system.rollRestriction}}{{else}}—{{/if}}</strong></div>
-      <div class="mythras-chat-row"><span>{{localize "MYTHRASF.CombatEffect.Stackable"}}</span><strong>{{#if item.system.stackable}}{{localize "MYTHRASF.Yes"}}{{else}}{{localize "MYTHRASF.No"}}{{/if}}</strong></div>
+      <label class="combat-effect-wide-field"><span>{{localize "MYTHRASF.Item.Source"}}</span><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}"></label>
+      <div class="combat-effect-state-group" role="group" aria-label="{{localize "MYTHRASF.CombatEffect.Side"}}">
+        <span>{{localize "MYTHRASF.CombatEffect.Side"}}</span>
+        <label><input type="checkbox" class="sheet-state-box" name="system.offensive" {{checked item.system.offensive}}> {{localize "MYTHRASF.CombatEffect.Offensive"}}</label>
+        <label><input type="checkbox" class="sheet-state-box" name="system.defensive" {{checked item.system.defensive}}> {{localize "MYTHRASF.CombatEffect.Defensive"}}</label>
+      </div>
+      <label><span>{{localize "MYTHRASF.CombatEffect.WeaponRestriction"}}</span><select class="sheet-field-editable" name="system.weaponRestriction">{{selectOptions combatEffectWeaponRestrictionChoices selected=combatEffectWeaponRestriction labelAttr="label" valueAttr="value"}}</select></label>
+      <label><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><select class="sheet-field-editable" name="system.rollRestriction">{{selectOptions combatEffectRollRestrictionChoices selected=combatEffectRollRestriction labelAttr="label" valueAttr="value"}}</select></label>
+      <label class="combat-effect-checkbox"><input type="checkbox" class="sheet-state-box" name="system.stackable" {{checked item.system.stackable}}> <span>{{localize "MYTHRASF.CombatEffect.Stackable"}}</span></label>
     </fieldset>
-    <fieldset class="combat-effect-sheet-description"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><div class="sheet-field-readonly combat-effect-description">{{{item.system.description}}}</div></fieldset>
+    <fieldset class="combat-effect-sheet-description"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable combat-effect-description" name="system.description">{{item.system.description}}</textarea></fieldset>
+    <details class="combat-effect-advanced"><summary>{{localize "MYTHRASF.CombatEffect.Advanced"}}</summary>
+      <fieldset><legend>{{localize "MYTHRASF.CombatEffect.Execution"}}</legend>
+        <label><span>{{localize "MYTHRASF.CombatEffect.Key"}}</span><input class="sheet-field-readonly" value="{{item.system.key}}" readonly></label>
+        <label><span>{{localize "MYTHRASF.CombatEffect.RuleKey"}}</span><select class="sheet-field-editable" name="system.ruleKey">{{selectOptions combatEffectRuleChoices selected=item.system.ruleKey labelAttr="label" valueAttr="value"}}</select></label>
+        <label><span>{{localize "MYTHRASF.CombatEffect.StageLabel"}}</span><select class="sheet-field-editable" name="system.stage">{{selectOptions combatEffectStageChoices selected=item.system.stage labelAttr="label" valueAttr="value"}}</select></label>
+        <label class="combat-effect-checkbox"><input type="checkbox" class="sheet-state-box" name="system.requiresWound" {{checked item.system.requiresWound}}> <span>{{localize "MYTHRASF.CombatEffect.RequiresWound"}}</span></label>
+        <label class="combat-effect-checkbox"><input type="checkbox" class="sheet-state-box" name="system.endurance" {{checked item.system.endurance}}> <span>{{localize "MYTHRASF.CombatEffect.Endurance"}}</span></label>
+      </fieldset>
+    </details>
     {{#if item.system.tableColumns.length}}<fieldset class="combat-effect-table-panel"><legend>{{localize "MYTHRASF.CombatEffect.ImpalingTable"}}</legend>
       <table class="combat-effect-table"><thead><tr>{{#each item.system.tableColumns as |column|}}<th scope="col">{{column}}</th>{{/each}}</tr></thead>
       <tbody>{{#each item.system.tableRows as |row|}}<tr>{{#each row as |cell|}}{{#if @first}}<th scope="row">{{cell}}</th>{{else}}<td>{{cell}}</td>{{/if}}{{/each}}</tr>{{/each}}</tbody></table>

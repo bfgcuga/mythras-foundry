@@ -2994,7 +2994,37 @@
 .combat-effect-table th,
 .combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
-.combat-effect-description { white-space: normal; line-height: 1.45; }
+.mythras-foundry .combat-effect-item-sheet { min-width: 700px; }
+.mythras-foundry .combat-effect-sheet-summary,
+.mythras-foundry .combat-effect-advanced fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.55rem 0.8rem;
+}
+.mythras-foundry .combat-effect-sheet-summary > label:not(.combat-effect-checkbox),
+.mythras-foundry .combat-effect-advanced fieldset > label:not(.combat-effect-checkbox) {
+  display: grid;
+  gap: 0.25rem;
+}
+.mythras-foundry .combat-effect-wide-field,
+.mythras-foundry .combat-effect-state-group { grid-column: 1 / -1; }
+.mythras-foundry .combat-effect-state-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
+.mythras-foundry .combat-effect-state-group > span { min-width: 7rem; font-weight: 700; }
+.mythras-foundry .combat-effect-state-group label,
+.mythras-foundry .combat-effect-checkbox { display: flex; align-items: center; gap: 0.4rem; }
+.mythras-foundry .combat-effect-checkbox { min-height: var(--form-field-height); }
+.mythras-foundry .combat-effect-sheet-description textarea { width: 100%; min-height: 11rem; resize: vertical; }
+.mythras-foundry .combat-effect-description { white-space: normal; line-height: 1.45; }
+.mythras-foundry .combat-effect-advanced summary { cursor: pointer; font-weight: 700; }
+.mythras-foundry .combat-effect-advanced fieldset { margin-top: 0.55rem; }
+@media (max-width: 720px) {
+  .mythras-foundry .combat-effect-item-sheet { min-width: 0; }
+  .mythras-foundry .combat-effect-sheet-summary,
+  .mythras-foundry .combat-effect-advanced fieldset { grid-template-columns: minmax(0, 1fr); }
+  .mythras-foundry .combat-effect-wide-field,
+  .mythras-foundry .combat-effect-state-group { grid-column: auto; }
+}
 .mythras-foundry.tactical-overview-menu table {
   width: 100%;
   border-collapse: collapse;

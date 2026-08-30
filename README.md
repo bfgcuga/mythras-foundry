@@ -32,7 +32,8 @@ El sistema incluye actualmente:
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
   Inconsciente reduce habilidades y atributos efectivos a cero e impide atacar
   y defenderse, mientras Aturdido impide atacar. Sangrando y Ahogándose abren tiradas de Aguante al comenzar
-  cada asalto, mientras Desangrándose pierde Fatiga automáticamente;
+  cada asalto aplicando Fatiga, heridas y estados mediante el resolvedor común
+  de habilidades, mientras Desangrándose pierde Fatiga automáticamente;
   Sorprendido modifica iniciativa, defensa, acciones ofensivas y el primer
   efecto de combate, con vencimiento al final del asalto;
 - alcance detallado opcional mediante relaciones tácticas por pareja de
@@ -98,8 +99,11 @@ El sistema incluye actualmente:
   del daño, el ganador selecciona o renuncia a sus efectos de combate; la
   tarjeta filtra los 44 efectos por lado, tirada y arma, automatiza los
   modificadores compatibles y ordena las tiradas de Aguante de efectos antes
-  que las derivadas de heridas; el daño muestra por separado la fórmula del
-  arma, el bonificador, los resultados evaluados, el total y el d20 de
+  que las derivadas de heridas. El compendio procede de *Mythras básico
+  revisado*; cada efecto dispone de una hoja ancha y editable con selectores
+  cerrados para restricciones de arma y tirada, casillas para sus estados
+  booleanos y una sección avanzada para la ejecución. El daño muestra por
+  separado la fórmula del arma, el bonificador, los resultados evaluados, el total y el d20 de
   localización. Las pruebas causadas por heridas muestran motivo, habilidad,
   d100, objetivo, ataque enfrentado, resultado y consecuencia; una ayuda
   contextual mantiene fuera de la tarjeta la explicación extensa. El DJ puede
@@ -107,7 +111,10 @@ El sistema incluye actualmente:
   de ataque y defensa, no avanza el tracker y la tarjeta deja constancia de que
   no se aplicaron sus efectos. Ataque y defensa reutilizan los colores de las
   tiradas de habilidad para éxito, crítico, fallo y pifia; dificultad, objetivo
-  efectivo y gravedad de la herida usan también sus tonos semánticos compartidos;
+  efectivo y gravedad de la herida usan también sus tonos semánticos compartidos.
+  La selección incorpora asimismo los efectos procedentes de los compendios
+  homebrew configurados por el mundo, que pueden añadir claves o sustituir
+  deliberadamente una oficial;
 - armaduras por piezas, materiales y localizaciones, con comprobación de ajuste
   y conflictos de equipación;
 - inventario jerárquico por persona y propiedades, contenedores, monedas,
@@ -139,8 +146,9 @@ El sistema incluye actualmente:
   el chat y pérdida automática de un nivel al fallar;
 - Fatiga periódica en combate cada `ceil(CON / 5)` asaltos completados: los personajes
   resuelven Aguante al finalizar el asalto —o desde la preparación bloqueante
-  del siguiente— y los PNJ tiran
-  automáticamente; por defecto solo se publican los PNJ que incrementan su
+  del siguiente— y los PNJ tiran automáticamente. Ambas rutas aplican las
+  dificultades vigentes de Aguante por Fatiga, heridas y estados; por defecto
+  solo se publican los PNJ que incrementan su
   Fatiga, con una opción mundial para mostrar todas sus tiradas;
 - macro de DJ para ácido débil, fuerte o concentrado, con salpicaduras de
   duración limitada e inmersiones persistentes; ambos estados crean una

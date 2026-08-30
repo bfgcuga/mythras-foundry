@@ -18,7 +18,9 @@ import { SOCIAL_CLASS_TABLE_SOURCES } from "../data/social-classes.js";
 import { FAMILY_TABLE_SOURCES } from "../data/family-tables.js";
 import { BACKGROUND_EVENT_TABLE_SOURCES } from "../data/background-events.js";
 import { COMBAT_STYLE_SOURCES } from "../data/combat-styles.js";
-import { combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
+import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
+  combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
+import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
 import { deterministicPackId } from "./pack-ids.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
@@ -30,6 +32,12 @@ const COMBAT_EFFECT_SOURCES = combatEffectsDocument.efectos_combate.map((entry) 
   const buildKey = combatEffectSlug(entry.nombre);
   const rule = combatEffectRule({ key: buildKey });
   const table = entry.nombre === "Empalar" ? combatEffectsDocument.tabla_empalamiento : null;
+  const weaponRestriction = entry.tipo_arma_especifica ?? "";
+  const rollRestriction = entry.tirada_especifica ?? "";
+  if (!COMBAT_EFFECT_WEAPON_RESTRICTIONS.includes(weaponRestriction)
+    || !COMBAT_EFFECT_ROLL_RESTRICTIONS.includes(rollRestriction)) {
+    throw new Error(`Restricción inválida en el efecto de combate ${entry.nombre}.`);
+  }
   return {
     buildKey,
     name: entry.nombre,
@@ -37,11 +45,11 @@ const COMBAT_EFFECT_SOURCES = combatEffectsDocument.efectos_combate.map((entry) 
     img: "icons/svg/combat.svg",
     system: {
       key: buildKey,
-      source: combatEffectsDocument.fuente,
+      source: MYTHRAS_REVISED_SOURCE,
       offensive: Boolean(entry.ofensivo),
       defensive: Boolean(entry.defensivo),
-      weaponRestriction: entry.tipo_arma_especifica ?? "",
-      rollRestriction: entry.tirada_especifica ?? "",
+      weaponRestriction,
+      rollRestriction,
       stackable: Boolean(entry.apilable),
       ruleKey: rule.ruleKey,
       stage: rule.stage,
