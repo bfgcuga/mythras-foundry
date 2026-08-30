@@ -1406,6 +1406,7 @@
   "MYTHRASF.Combat.WoundCheck.Detected": "La herida y sus consecuencias se detallan en la sección de pruebas.",
   "MYTHRASF.Combat.WoundCheck.PendingOutcome": "La consecuencia se mostrará cuando se resuelva la prueba.",
   "MYTHRASF.Combat.WoundCheck.Luck": "Gastar suerte para reducir a Herida Grave",
+  "MYTHRASF.Combat.WoundCheck.ApplyDamageFirst": "Aplica el daño antes de tirar la prueba.",
   "MYTHRASF.Combat.WoundCheck.LuckConfirm": "Gasta un punto de suerte para elevar los PG de la localización hasta el mínimo de Herida Grave. La prueba de Aguante y las consecuencias pasarán a ser las de una Herida Grave.",
   "MYTHRASF.Combat.WoundCheck.LuckSpent": "Suerte gastada para reducir la herida",
   "MYTHRASF.Combat.WoundCheck.Help": "{actor} ha sufrido una {wound} en {location}. Se enfrenta Aguante a la tirada original del ataque: no basta con obtener un éxito, también debe ganar la oposición. Consecuencia: {consequence}",

@@ -77,6 +77,17 @@ test("la prueba de herida crítica ofrece reducirla mediante Suerte", () => {
   assert.match(renderer, /data-combat-action="wound-luck"/);
   assert.match(source, /action: "combatWoundLuck"/);
   assert.match(source, /"system\.resources\.luckPoints\.value": points - 1/);
+  assert.match(renderer, /combat-wound-luck-button/);
+  assert.doesNotMatch(renderer, /resolve-check-manual/);
+});
+
+test("el daño precede a la prueba de Aguante de la herida", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(source, /check\.source === "wound" && combat\.damage\?\.status !== "applied"/);
+  assert.match(source, /check\.status === "pending" && check\.source !== "wound"/);
+  assert.match(renderer, /MYTHRASF\.Combat\.WoundCheck\.ApplyDamageFirst/);
 });
 
 test("la suerte de combate permite elegir pagador y limita la tirada ajena a repetir", () => {

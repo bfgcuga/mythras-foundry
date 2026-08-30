@@ -6,6 +6,10 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Combate y automatización
 
+- Revisar todas las apariciones de «Resolver manualmente» en los flujos
+  interactivos y determinar, caso por caso, si deben eliminarse para evitar
+  cierres accidentales o bloqueos cuando la resolución reglamentaria exige una
+  tirada.
 - Ampliar las consecuencias persistentes de efectos que todavía dependen de
   geometría o decisiones narrativas, incluidos Alcance, Cambiar Alcance,
   Retirada, Bloqueo Pasivo y fuentes liberables.

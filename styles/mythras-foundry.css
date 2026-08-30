@@ -376,6 +376,16 @@
 }
 .mythras-chat-card .combat-check-help { flex: 0 0 auto; }
 .mythras-chat-card .combat-check-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mythras-chat-card .combat-check-detail { display: grid; gap: 0.1rem; }
+.mythras-chat-card .combat-check-detail > strong,
+.mythras-chat-card .combat-check-detail > span { text-align: left; }
+.mythras-chat-card .combat-wound-luck-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+}
 .mythras-chat-card .combat-check-consequence { align-items: start; }
 .mythras-chat-card .combat-check-consequence strong { text-align: right; }
 

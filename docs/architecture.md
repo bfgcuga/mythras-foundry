@@ -520,6 +520,10 @@ reducirla a Herida Grave. La propuesta eleva los PG de la localización a
 `1 - PG máximos`, el primer valor del intervalo Grave, vuelve a preparar la
 prueba de Aguante con esa gravedad y aplica después únicamente sus
 consecuencias. Cambiar la localización o repetir el daño invalida esta reducción.
+El daño se aplica antes de habilitar la prueba de Aguante de la herida: primero
+se consolidan los PG y las consecuencias inmediatas y después se resuelven las
+consecuencias dependientes de la oposición. El gasto de Suerte permanece antes
+de aplicar el daño porque modifica tanto su cantidad como la gravedad resultante.
 «Cerrar intercambio y avanzar» permite al DJ resolver conjuntamente cualquier
 paso todavía pendiente —con una nota opcional— sin deshacer el daño ni tratar
 el intercambio como cancelado. En un intercambio terminal que aún admite

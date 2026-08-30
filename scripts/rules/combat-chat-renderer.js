@@ -75,22 +75,22 @@ function combatCheckHtml(check, combat) {
     title="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"
     aria-label="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"><i class="fas fa-question"
     aria-hidden="true"></i></button>`;
-  const woundLuck = wound && severity === "major"
+  const woundLuck = wound && severity === "major" && combat.damage?.status === "proposed"
     && !(combat.effects?.selections ?? []).some((effect) => effect.status === "pending")
-    ? `<button type="button" class="sheet-icon-button mythras-chat-luck-button"
+    ? `<button type="button" class="combat-wound-luck-button"
       data-combat-action="wound-luck" data-check-id="${escape(check.id)}"
       title="${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}"
       aria-label="${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}"><i class="fas fa-clover"
-      aria-hidden="true"></i></button>` : "";
+      aria-hidden="true"></i><span>${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}</span></button>` : "";
+  const woundDamageApplied = !wound || combat.damage?.status === "applied";
   if (check.status === "pending") return `<article class="combat-check-entry"><header><strong>${escape(
-    title)}</strong>${help}</header><div class="mythras-chat-row"><span>${escape(localize(
-      "MYTHRASF.Combat.CheckReasonLabel"))}</span><span>${escape(reason)}</span></div><div class="mythras-chat-row"><span>${escape(
-      localize("MYTHRASF.Combat.CheckTest"))}</span><strong>${escape(wound
-        ? localize("MYTHRASF.Combat.WoundCheck.Test") : check.label)}</strong>${woundLuck}</div><div class="combat-check-actions"><button type="button" data-combat-action="resolve-check" data-check-id="${escape(
+    title)}</strong>${help}</header><div class="combat-check-detail"><strong>${escape(localize(
+      "MYTHRASF.Combat.CheckReasonLabel"))}</strong><span>${escape(reason)}</span></div><div class="combat-check-detail"><strong>${escape(
+      localize("MYTHRASF.Combat.CheckTest"))}</strong><span>${escape(wound
+        ? localize("MYTHRASF.Combat.WoundCheck.Test") : check.label)}</span></div>${woundLuck}<div class="combat-check-actions">${woundDamageApplied ? `<button type="button" data-combat-action="resolve-check" data-check-id="${escape(
       check.id)}" title="${escape(localize("MYTHRASF.Combat.CheckRoll"))}">${escape(localize(
-        "MYTHRASF.Combat.CheckRoll"))}</button><button type="button" data-combat-action="resolve-check-manual" data-check-id="${escape(
-      check.id)}" title="${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}">${escape(localize(
-        "MYTHRASF.CombatEffect.ResolveManual"))}</button></div></article>`;
+        "MYTHRASF.Combat.CheckRoll"))}</button>` : `<small>${escape(localize(
+        "MYTHRASF.Combat.WoundCheck.ApplyDamageFirst"))}</small>`}</div></article>`;
   if (check.resolution?.manual) return `<article class="combat-check-entry"><header><strong>${escape(
     title)}</strong>${help}</header><div class="mythras-chat-row"><span>${escape(localize(
       "MYTHRASF.Combat.CheckOutcomeLabel"))}</span><strong>${escape(localize(
@@ -154,6 +154,7 @@ export async function openCombatCheckHelp(check, combat) {
     }) : game.i18n.format("MYTHRASF.Combat.CheckHelpEffect", { effect: check.label });
   await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.Combat.CheckHelp") },
+    position: { width: 480 },
     content: `<div class="mythras-foundry mythras-dialog"><p>${escape(content)}</p></div>`,
     buttons: [{ action: "close", label: localize("MYTHRASF.Close"), icon: "fas fa-times" }],
     rejectClose: false
