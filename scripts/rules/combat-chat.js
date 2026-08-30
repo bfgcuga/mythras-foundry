@@ -18,7 +18,7 @@ import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { consumePassiveBlock, coverFor, ensureEngagement, passiveBlockFor,
-  relationFor, setRelationPosition, validateReachAttack } from "./engagement-runtime.js";
+  relationFor, setRelationPosition, tacticalState, validateReachAttack } from "./engagement-runtime.js";
 import { engagementId, engagementRestriction } from "./engagements.js";
 import { ammunitionState, applyLongRangeDamage, canFireAmmunition, consumeAmmunition,
   isAccidentalMeleeHit, parseRangeProfile, rangedAttackProfile, reducePowerCategory
@@ -475,6 +475,16 @@ function parryChoices(actor, combatData = null) {
   return [...new Map(choices.map((choice) => [choice.value, choice])).values()];
 }
 
+export function preferredParryChoice(choices, passiveBlock) {
+  if (passiveBlock?.status !== "active") return choices[0] ?? null;
+  return choices.find((choice) => choice.weaponId !== passiveBlock.weaponId)
+    ?? choices[0] ?? null;
+}
+
+export function selectedParryChoice(choices, selected) {
+  return choices.find((choice) => choice.value === selected) ?? null;
+}
+
 async function defenseConfiguration(actor, type, combatData = null) {
   if (type === "none") return { type: "none" };
   if (type === "cover") {
@@ -495,18 +505,31 @@ async function defenseConfiguration(actor, type, combatData = null) {
   }
   const choices = parryChoices(actor, combatData);
   if (!choices.length) return ui.notifications.warn(localize("MYTHRASF.Combat.NoParryAvailable"));
+  const tracker = combatData?.turnEconomy ? game.combats.get(combatData.turnEconomy.combatId) : null;
+  const declaredBlock = tracker && Number(tracker.round) === Number(combatData?.turnEconomy?.round)
+    ? tacticalState(tracker).passiveBlocks?.[combatData.turnEconomy.defenderCombatantId] : null;
+  const passiveBlock = Number(declaredBlock?.round) === Number(tracker?.round) ? declaredBlock : null;
+  const preferred = preferredParryChoice(choices, passiveBlock);
   const { DialogV2 } = foundry.applications.api;
   const selected = await DialogV2.wait({ window: { title: localize("MYTHRASF.Combat.ChooseParry") },
-    content: `<div class="mythras-foundry mythras-dialog combat-defense-dialog"><fieldset><legend>${escape(localize("MYTHRASF.Combat.Parry"))}</legend><label><span>${escape(localize("MYTHRASF.Combat.WeaponAndStyle"))}</span><select name="choice">${choices.map((choice) => `<option value="${escape(choice.value)}">${escape(choice.modeName)} — ${escape(choice.styleName)} (${choice.target}%)</option>`).join("")}</select></label></fieldset></div>`,
+    content: `<div class="mythras-foundry mythras-dialog combat-defense-dialog"><fieldset><legend>${escape(localize("MYTHRASF.Combat.Parry"))}</legend><label><span>${escape(localize("MYTHRASF.Combat.WeaponAndStyle"))}</span><select name="choice">${choices.map((choice) => `<option value="${escape(choice.value)}" ${choice.value === preferred?.value ? "selected" : ""}>${escape(choice.modeName)} — ${escape(choice.styleName)} (${choice.target}%)</option>`).join("")}</select></label></fieldset></div>`,
     buttons: [{ action: "roll", label: localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20", default: true,
       callback: (event, button) => button.form.elements.choice.value },
-    { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }], rejectClose: false });
-  return selected ? { type, ...choices.find((choice) => choice.value === selected) } : null;
+    { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times",
+      callback: () => null }], rejectClose: false });
+  const choice = selectedParryChoice(choices, selected);
+  return choice ? { type, ...choice } : null;
 }
 
 async function respondToAttack(message, combat, type) {
   const actor = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
   if (!actor || (!game.user.isGM && !actor.isOwner)) return;
+  if (["parry", "evade"].includes(type) && combat.turnEconomy
+    && !combat.turnEconomy.defenseSpent
+    && (effectiveActionPointMaximum(actor, getActionPointRules()) < 1
+      || currentActionPoints(actor) < 1)) {
+    return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
+  }
   if (type !== "none" && !resolveActorConditions(actor, { baseAttributes:
     actor.system.baseAttributes ?? actor.system.attributes ?? {} }).capabilities.canDefend) {
     return ui.notifications.warn(localize("MYTHRASF.Status.CannotDefend"));
@@ -1301,6 +1324,46 @@ async function requestCombatCheck(message, combat, checkId) {
   } else game.socket.emit(SOCKET, request);
 }
 
+async function requestCombatCheckLuck(message, combat, checkId) {
+  const check = (combat.effects?.checks ?? []).find((entry) => entry.id === checkId);
+  const actorEntry = check ? sideEntry(combat, check.actorSide ?? "defender") : null;
+  const actor = actorEntry ? await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid) : null;
+  if (!check || check.source !== "wound" || check.status !== "rolled"
+    || check.resolution?.automaticFailure || !actor
+    || (!game.user.isGM && !actor.isOwner)) return;
+  const points = Number(actor.system.resources?.luckPoints?.value ?? 0);
+  if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.Luck.Title") },
+    content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize(
+      "MYTHRASF.Combat.WoundCheck.LuckRerollConfirm"))}</p></div>`,
+    yes: { label: localize("MYTHRASF.Combat.WoundCheck.LuckReroll") },
+    no: { label: localize("MYTHRASF.Cancel") }
+  });
+  if (!confirmed) return;
+  const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+  const target = Number(check.resolution.target ?? 0);
+  const result = classifyContestRoll(roll.total, target);
+  const skill = actor.items.get(check.resolution.abilityId);
+  if (skill) await recordAbilityFumble(skill, result);
+  const opposed = check.resolution.opposed;
+  const resolution = { ...check.resolution, rawRoll: roll.total, serializedRoll: roll.toJSON(),
+    result, winner: opposedEffectWinner({ result, rawRoll: roll.total, target }, opposed) };
+  const request = { action: "combatCheck", messageId: message.id, revision: combat.revision,
+    userId: game.user.id, checkId, reroll: true, resolution };
+  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
+    await applyCombatCheck(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+async function requestConfirmCombatCheck(message, combat, checkId) {
+  const request = { action: "combatCheck", messageId: message.id, revision: combat.revision,
+    userId: game.user.id, checkId, finalize: true };
+  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
+    await applyCombatCheck(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
 async function requestWoundLuck(message, combat, checkId) {
   const check = (combat.effects?.checks ?? []).find((entry) => entry.id === checkId);
   const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
@@ -1419,17 +1482,32 @@ async function applyCombatCheck(message, request) {
   if (!defender || !user || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) return;
   const check = (combat.effects?.checks ?? []).find((entry) => entry.id === request.checkId);
   const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
-  if (!check || check.status !== "pending" || firstPending?.id !== check.id
+  if (!check || (request.finalize || request.reroll
+    ? check.status !== "rolled" : check.status !== "pending" || firstPending?.id !== check.id)
     || (request.resolution?.manual && !user.isGM)) return;
   if (check.source === "wound" && (combat.effects?.selections ?? [])
     .some((effect) => effect.status === "pending")) return;
-  check.status = "resolved";
-  check.resolution = { ...request.resolution, userId: user.id, resolvedAt: Date.now() };
-  if (check.source === "wound" && combat.damage?.status === "applied") {
+  if (request.reroll) {
+    if (check.source !== "wound" || check.resolution?.automaticFailure) return;
+    const points = Number(defender.system.resources?.luckPoints?.value ?? 0);
+    if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+    await defender.update({ "system.resources.luckPoints.value": points - 1 });
+    check.resolution = { ...request.resolution,
+      luckHistory: [...(check.resolution?.luckHistory ?? []), {
+        rawRoll: check.resolution?.rawRoll, spenderName: actorDisplayName(defender) }],
+      userId: user.id, rolledAt: Date.now() };
+  } else if (request.finalize) {
+    check.status = "resolved";
+    check.resolution = { ...check.resolution, userId: user.id, resolvedAt: Date.now() };
+  } else {
+    check.status = check.source === "wound" ? "rolled" : "resolved";
+    check.resolution = { ...request.resolution, userId: user.id, rolledAt: Date.now() };
+  }
+  if (request.finalize && check.source === "wound" && combat.damage?.status === "applied") {
     const location = defender.items.get(check.locationId);
     if (location) await applyWoundConsequences(combat, defender, location,
       { afterEndurance: true });
-  } else await applyCheckConsequence(combat, check, defender);
+  } else if (check.source !== "wound" && !request.reroll) await applyCheckConsequence(combat, check, defender);
   combat.revision += 1;
   await message.update({ content: renderCombatExchange(combat),
     rolls: appendSerializedRolls(message, request.resolution?.serializedRoll),
@@ -1633,7 +1711,24 @@ export function activateCombatCard(message, html) {
   const combat = message.getFlag?.(FLAG_SCOPE, "combat");
   if (!card || !combat || combat.schemaVersion !== SCHEMA_VERSION || card.dataset.combatActive) return;
   card.dataset.combatActive = "true";
-  combatActor(combat.defender.tokenUuid, combat.defender.actorUuid).then((actor) => card.querySelectorAll("[data-combat-action='parry'],[data-combat-action='evade'],[data-combat-action='cover'],[data-combat-action='none']").forEach((button) => { button.hidden = !game.user.isGM && !actor?.isOwner; }));
+  combatActor(combat.defender.tokenUuid, combat.defender.actorUuid).then((actor) => {
+    const lacksActionPoints = Boolean(combat.turnEconomy && !combat.turnEconomy.defenseSpent
+      && actor && (effectiveActionPointMaximum(actor, getActionPointRules()) < 1
+        || currentActionPoints(actor) < 1));
+    card.querySelectorAll("[data-combat-action='parry'],[data-combat-action='evade'],[data-combat-action='cover'],[data-combat-action='none']").forEach((button) => {
+      const lacksPermission = !game.user.isGM && !actor?.isOwner;
+      button.hidden = lacksPermission || (lacksActionPoints
+        && ["parry", "evade"].includes(button.dataset.combatAction));
+    });
+    if (lacksActionPoints) {
+      const noDefense = card.querySelector("[data-combat-action='none']");
+      if (noDefense) {
+        const label = localize("MYTHRASF.Combat.NoActionPoints");
+        noDefense.textContent = label;
+        noDefense.title = label;
+      }
+    }
+  });
   const pendingEffectSide = combat.effects?.pendingSide ?? combat.effects?.winner;
   const winnerEntry = pendingEffectSide === "attacker" ? combat.attacker : combat.defender;
   combatActor(winnerEntry?.tokenUuid, winnerEntry?.actorUuid).then((actor) =>
@@ -1682,6 +1777,9 @@ export function activateCombatCard(message, html) {
       if (check) return openCombatCheckHelp(check, combat);
     }
     if (action === "resolve-check") return requestCombatCheck(message, combat, button.dataset.checkId);
+    if (action === "check-luck") return requestCombatCheckLuck(message, combat, button.dataset.checkId);
+    if (action === "confirm-check") return requestConfirmCombatCheck(message, combat,
+      button.dataset.checkId);
     if (action === "wound-luck") return requestWoundLuck(message, combat, button.dataset.checkId);
     if (action === "resolve-effect") return requestResolveEffect(message, combat,
       button.dataset.effectSlot);

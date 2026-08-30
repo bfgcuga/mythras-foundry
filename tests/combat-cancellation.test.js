@@ -52,3 +52,14 @@ test("una herida crítica de extremidad terminada no necesita consecuencia narra
     consequences: [] };
   assert.equal(exchangeTerminal(combat), true);
 });
+
+test("una tirada de herida provisional impide cerrar hasta aceptar su resultado", () => {
+  const combat = { status: "resolved", damage: { status: "applied" },
+    effects: { checks: [{ status: "rolled", resolution: { rawRoll: 42 } }], selections: [] },
+    consequences: [] };
+  assert.equal(exchangeTerminal(combat), false);
+  resolvePendingExchangeSteps(combat, { userId: "gm", resolvedAt: 10 });
+  assert.equal(combat.effects.checks[0].status, "resolved");
+  assert.equal(combat.effects.checks[0].resolution.rawRoll, 42);
+  assert.equal(combat.effects.checks[0].resolution.manual, undefined);
+});

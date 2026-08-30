@@ -94,6 +94,40 @@ test("el bloqueo pasivo propone primero el escudo sin ocultar otras armas", () =
   assert.deepEqual(entry.choices.map((choice) => choice.weaponId), ["shield", "sword"]);
 });
 
+test("el bloqueo pasivo reutiliza la declaración del asalto anterior", () => {
+  const shield = { id: "shield", name: "Escudo", type: "weapon", system: { equipped: true,
+    activeModeKey: "shield", modes: [{ key: "shield", name: "Escudo", weaponType: "shield",
+      size: "L", handsRequired: 1, grip: "1 mano",
+      traitRefs: [{ key: "bloqueo-pasivo",
+        parameters: [{ key: "locations", value: 2 }] }] }] } };
+  const locations = ["chest", "arm"].map((id, index) => ({ id, name: id, type: "hitLocation",
+    system: { rangeStart: index + 1, category: id } }));
+  const actor = { uuid: "Actor.fighter", name: "Combatiente", items: [shield, ...locations] };
+  const previous = { round: 2, weaponId: "shield", modeKey: "shield",
+    locationIds: ["chest", "arm"], crouched: true };
+  const combat = { round: 3, combatants: [{ id: "fighter", actor, isDefeated: false }],
+    getFlag: () => ({ passiveBlocks: { fighter: previous } }) };
+
+  const [entry] = passiveBlockEntries(combat);
+  assert.deepEqual(entry.previousSelection, { weapon: "shield:shield", weaponId: "shield",
+    modeKey: "shield", locationIds: ["chest", "arm"], crouched: true });
+  const previousFoundry = globalThis.foundry;
+  const previousGame = globalThis.game;
+  globalThis.foundry = { utils: { escapeHTML: (value) => String(value) } };
+  globalThis.game = { i18n: { localize: (key) => key,
+    format: (key, data) => `${key}:${Object.values(data).join(",")}` } };
+  try {
+    const content = renderRoundConsequences({ round: 3, queue: [entry] });
+    assert.match(content, /data-round-action="repeat-block"/);
+  } finally {
+    globalThis.foundry = previousFoundry;
+    globalThis.game = previousGame;
+  }
+
+  combat.round = 4;
+  assert.equal(passiveBlockEntries(combat)[0].previousSelection, null);
+});
+
 test("la tarjeta de inicio agrupa fatiga y distribuye el bloqueo sin estados redundantes", () => {
   const previousFoundry = globalThis.foundry;
   const previousGame = globalThis.game;

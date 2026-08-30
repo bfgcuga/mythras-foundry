@@ -17,7 +17,7 @@ export function validateCombatResponse(combat, request, { actor, user }) {
 export function exchangeTerminal(combat) {
   if (combat.status === "cancelled") return true;
   if (combat.status !== "resolved") return false;
-  if ((combat.effects?.checks ?? []).some((entry) => entry.status === "pending")) return false;
+  if ((combat.effects?.checks ?? []).some((entry) => entry.status !== "resolved")) return false;
   if ((combat.effects?.selections ?? []).some((entry) => entry.status === "pending")) return false;
   if ((combat.consequences ?? []).some((entry) => entry.status === "pending")) return false;
   return ["unavailable", "applied", "missedLocation"].includes(combat.damage?.status);
@@ -27,6 +27,11 @@ export function resolvePendingExchangeSteps(combat, { note = "", userId = "",
   resolvedAt = Date.now() } = {}) {
   const manualResolution = { manual: true, note: String(note), userId, resolvedAt };
   for (const check of combat?.effects?.checks ?? []) {
+    if (check.status === "rolled") {
+      check.status = "resolved";
+      check.resolution = { ...check.resolution, userId, resolvedAt };
+      continue;
+    }
     if (check.status !== "pending") continue;
     check.status = "resolved";
     check.resolution = { ...manualResolution };

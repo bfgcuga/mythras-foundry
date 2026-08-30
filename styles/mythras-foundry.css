@@ -386,8 +386,7 @@
   gap: 0.35rem;
   width: 100%;
 }
-.mythras-chat-card .combat-check-consequence { align-items: start; }
-.mythras-chat-card .combat-check-consequence strong { text-align: right; }
+.mythras-chat-card .combat-check-consequence { margin-top: 0.1rem; }
 
 .status-assignment-window { max-width: min(92vw, 58rem); }
 .status-assignment-window .window-content,

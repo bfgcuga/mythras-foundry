@@ -240,6 +240,19 @@ jugadores conserva esos controles deshabilitados.
 Desde esa misma vista el DJ puede cancelar o reactivar una declaración de
 Bloqueo Pasivo y volver a abrir su selector para corregir arma, localizaciones
 y postura; estas operaciones sincronizan el efecto temporal de agacharse.
+La preparación de cada asalto posterior reutiliza como valores iniciales el arma,
+las localizaciones y la postura de la declaración inmediatamente anterior si
+siguen disponibles. La misma instantánea habilita una repetición directa; el
+coordinador vuelve a validarla con las reglas actuales antes de persistirla.
+Mientras una declaración permanece activa, el selector de Parar conserva todas
+las opciones, pero preselecciona una alternativa al arma que mantiene el bloqueo
+si el defensor empuña otra arma válida.
+Cancelar ese selector no crea una defensa ni altera el intercambio: la tarjeta
+permanece a la espera para que el defensor elija de nuevo entre sus respuestas.
+La disponibilidad de PA se comprueba también en el cliente antes de configurar
+la defensa. Sin PA se ocultan Parar y Evadir, se mantiene cualquier respuesta
+pasiva válida y «No defenderse» se presenta como «Sin puntos de acción»; el
+coordinador conserva después la validación autoritativa antes de gastar el PA.
 
 La comprobación automática de contigüidad del Bloqueo Pasivo es un ajuste de
 mundo desactivado por defecto, porque las anatomías extrañas pueden requerir el
@@ -524,6 +537,11 @@ El daño se aplica antes de habilitar la prueba de Aguante de la herida: primero
 se consolidan los PG y las consecuencias inmediatas y después se resuelven las
 consecuencias dependientes de la oposición. El gasto de Suerte permanece antes
 de aplicar el daño porque modifica tanto su cantidad como la gravedad resultante.
+El resultado de Aguante de una Herida Grave o Crítica queda provisional antes
+de ejecutar sus consecuencias. Su propietario puede gastar Suerte para repetirlo
+o aceptarlo; únicamente la aceptación consolida las consecuencias anatómicas.
+La tarjeta presenta la etiqueta «Consecuencia:» sobre su explicación para que
+el texto operativo disponga del ancho completo del panel.
 «Cerrar intercambio y avanzar» permite al DJ resolver conjuntamente cualquier
 paso todavía pendiente —con una nota opcional— sin deshacer el daño ni tratar
 el intercambio como cancelado. En un intercambio terminal que aún admite

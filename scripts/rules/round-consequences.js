@@ -76,6 +76,7 @@ export function periodicConditionEntries(combat) {
 
 export function passiveBlockEntries(combat) {
   const entries = [];
+  const previousBlocks = tacticalState(combat).passiveBlocks ?? {};
   for (const combatant of combat?.combatants ?? []) {
     const actor = combatant.actor; if (!actor || combatant.isDefeated) continue;
     const prepared = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
@@ -90,9 +91,20 @@ export function passiveBlockEntries(combat) {
         .sort((left, right) => Number(right.weaponType === "shield")
           - Number(left.weaponType === "shield"));
     if (!choices.length) continue;
+    const previous = previousBlocks[combatant.id];
+    const previousChoice = choices.find((choice) => choice.weaponId === previous?.weaponId
+      && choice.modeKey === previous?.modeKey);
+    const locationIds = (previous?.locationIds ?? []).filter((id) =>
+      actor.items.get?.(id)?.type === "hitLocation"
+      || actor.items.some?.((item) => item.id === id && item.type === "hitLocation"));
+    const previousSelection = Number(combat.round) > 1
+      && Number(previous?.round) === Number(combat.round) - 1 && previousChoice
+      && locationIds.length === previous.locationIds?.length
+      ? { weapon: `${previous.weaponId}:${previous.modeKey}`, weaponId: previous.weaponId,
+        modeKey: previous.modeKey, locationIds, crouched: Boolean(previous.crouched) } : null;
     entries.push({ id: `${combatant.id}:passive-block`, combatantId: combatant.id,
       actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "passiveBlock",
-      automatic: false, status: "pending",
+      automatic: false, status: "pending", previousSelection,
       choices, locations: actor.items.filter((item) => item.type === "hitLocation")
         .sort((a, b) => Number(a.system.rangeStart) - Number(b.system.rangeStart))
         .map((item) => ({ id: item.id, name: item.name, rangeStart: item.system.rangeStart,
@@ -282,7 +294,7 @@ export function renderRoundConsequences(state) {
     const locationNames = (entry.resolution?.locationIds ?? []).map((id) =>
       entry.locations.find((location) => location.id === id)?.name).filter(Boolean);
     const actions = entry.status === "pending"
-      ? `<div class="mythras-round-entry-actions"><button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button></div>` : "";
+      ? `<div class="mythras-round-entry-actions"><button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button>${entry.previousSelection ? `<button type="button" data-round-action="repeat-block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Repeat"))}</button>` : ""}<button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button></div>` : "";
     const resolution = entry.resolution
       ? entry.resolution.waived
         ? `<strong class="mythras-round-block-status">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Passed"))}</strong>`
@@ -469,23 +481,35 @@ async function applyRoundFatigueLuck(message, request) {
     [`flags.${SCOPE}.roundConsequences`]: state });
 }
 
-async function requestPassiveBlock(message, state, entryId, waive = false) {
+async function requestPassiveBlock(message, state, entryId, { waive = false, repeat = false } = {}) {
   const entry = state.queue.find((candidate) => candidate.id === entryId);
   const actor = entry ? await fromUuid(entry.actorUuid).catch(() => null) : null;
   if (!entry || entry.key !== "passiveBlock" || (!game.user.isGM && !actor?.isOwner)) return;
-  let resolution = { waived: true };
+  let resolution = repeat && entry.previousSelection
+    ? { waived: false, ...entry.previousSelection } : { waived: true };
+  if (repeat && !entry.previousSelection) return;
   if (!waive) {
-    const weaponOptions = entry.choices.map((choice) => `<option value="${escape(`${choice.weaponId}:${choice.modeKey}`)}">${escape(choice.weaponName)} (${choice.capacity})</option>`).join("");
-    const locations = entry.locations.map((location) => `<label><input type="checkbox" name="location" value="${escape(location.id)}"> ${escape(location.name)}</label>`).join("");
+    if (repeat) return sendPassiveBlockRequest(message, state, entryId, resolution);
+    const defaults = entry.previousSelection;
+    const weaponOptions = entry.choices.map((choice) => {
+      const value = `${choice.weaponId}:${choice.modeKey}`;
+      return `<option value="${escape(value)}" ${value === defaults?.weapon ? "selected" : ""}>${escape(choice.weaponName)} (${choice.capacity})</option>`;
+    }).join("");
+    const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${defaults?.locationIds.includes(location.id) ? "checked" : ""}> ${escape(location.name)}</label>`).join("");
     resolution = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Declare") },
-      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" name="crouched"> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
-      buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.CombatEffect.Confirm"),
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" class="sheet-state-box" name="crouched" ${defaults?.crouched ? "checked" : ""}> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
+      buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.PassiveBlock.Accept"),
         callback: (event, button) => ({ waived: false, weapon: button.form.elements.weapon.value,
           locationIds: Array.from(button.form.querySelectorAll("input[name='location']:checked")).map((control) => control.value),
-          crouched: button.form.elements.crouched.checked }) }], rejectClose: false });
+          crouched: button.form.elements.crouched.checked }) },
+      { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false });
     if (!resolution) return;
   }
+  return sendPassiveBlockRequest(message, state, entryId, resolution);
+}
+
+async function sendPassiveBlockRequest(message, state, entryId, resolution) {
   const request = { action: "roundPassiveBlock", messageId: message.id, revision: state.revision,
     entryId, userId: game.user.id, resolution };
   if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyPassiveBlock(message, request);
@@ -506,7 +530,7 @@ export async function openPassiveBlockDeclaration(actor) {
     && candidate.key === "passiveBlock" && candidate.status === "pending");
   if (!message || !entry) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.PassiveBlock.NoPendingDeclaration"));
-  return requestPassiveBlock(message, state, entry.id, false);
+  return requestPassiveBlock(message, state, entry.id);
 }
 
 export async function openPassiveBlockCorrection(combat, combatantId) {
@@ -523,10 +547,11 @@ export async function openPassiveBlockCorrection(combat, combatantId) {
   const resolution = await foundry.applications.api.DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Modify") },
     content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" class="sheet-state-box" name="crouched" ${current.crouched ? "checked" : ""}> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
-    buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.CombatEffect.Confirm"),
+    buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.PassiveBlock.Accept"),
       callback: (event, button) => ({ weapon: button.form.elements.weapon.value,
         locationIds: Array.from(button.form.querySelectorAll("input[name='location']:checked"),
-          (control) => control.value), crouched: button.form.elements.crouched.checked }) }],
+          (control) => control.value), crouched: button.form.elements.crouched.checked }) },
+    { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }],
     rejectClose: false
   });
   if (!resolution) return false;
@@ -721,8 +746,9 @@ export function activateRoundConsequenceCard(message, html) {
     const button = event.target.closest("[data-round-action]"); if (!button) return;
     if (button.dataset.roundAction === "luck") requestRoundFatigueLuck(message, state,
       button.dataset.entryId);
-    else if (["block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
-      state, button.dataset.entryId, button.dataset.roundAction === "waive");
+    else if (["block", "repeat-block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
+      state, button.dataset.entryId, { waive: button.dataset.roundAction === "waive",
+        repeat: button.dataset.roundAction === "repeat-block" });
     else if (button.dataset.roundAction.startsWith("fire-")) requestBurningResolution(message,
       state, button.dataset.entryId, button.dataset.roundAction.slice(5));
     else if (button.dataset.roundAction.startsWith("acid-")) requestAcidResolution(message,

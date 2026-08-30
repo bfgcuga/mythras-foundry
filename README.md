@@ -46,7 +46,12 @@ El sistema incluye actualmente:
   por combatiente, opción de agacharse tras el escudo y cancelación al atacar o
   parar con el arma; al combatir con arma y escudo, el ataque propone primero
   el arma y el Bloqueo Pasivo propone primero el escudo, conservando ambas
-  alternativas; las tablas de localizaciones de personaje y PNJ muestran
+  alternativas; desde el segundo asalto se preselecciona la declaración anterior
+  y puede repetirse directamente si arma y localizaciones siguen disponibles;
+  al parar se preselecciona otra arma válida para conservar el bloqueo si existe;
+  sin PA, Parar y Evadir se retiran antes de abrir sus diálogos y la tarjeta
+  identifica directamente que no quedan puntos de acción;
+  las tablas de localizaciones de personaje y PNJ muestran
   además qué zonas conserva protegidas;
 - combate a distancia con distancia manual, bandas y penalización por TAM y
   circunstancias; Apuntar, Recargar, munición numérica opcional, cobertura

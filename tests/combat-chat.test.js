@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { preferredCombatCoordinator, validateCombatResponse,
+  preferredParryChoice, selectedParryChoice,
   woundCheckOutcomeKey } from "../scripts/rules/combat-chat.js";
 import { difficultyTone, targetTone } from "../scripts/rules/combat-chat-renderer.js";
 
@@ -20,6 +21,31 @@ test("paradas y daño se incorporan como Roll al mensaje interactivo", () => {
   assert.match(source, /appendSerializedRolls\(message, request\.resolution\?\.serializedRoll\)/);
 });
 
+test("la parada prefiere el arma que no mantiene el bloqueo pasivo", () => {
+  const choices = [{ value: "shield", weaponId: "shield" },
+    { value: "sword", weaponId: "sword" }];
+  assert.equal(preferredParryChoice(choices, { status: "active", weaponId: "shield" }).value,
+    "sword");
+  assert.equal(preferredParryChoice(choices, { status: "consumed", weaponId: "shield" }).value,
+    "shield");
+  assert.equal(preferredParryChoice([choices[0]],
+    { status: "active", weaponId: "shield" }).value, "shield");
+});
+
+test("cancelar el selector de parada no produce una defensa parcial", () => {
+  const choices = [{ value: "sword", weaponId: "sword" }];
+  assert.equal(selectedParryChoice(choices, "sword"), choices[0]);
+  assert.equal(selectedParryChoice(choices, "cancel"), null);
+  assert.equal(selectedParryChoice(choices, null), null);
+});
+
+test("la tarjeta descarta parar y evadir antes del diálogo si no quedan PA", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(source, /\["parry", "evade"\]\.includes\(type\)[\s\S]*currentActionPoints\(actor\) < 1/);
+  assert.match(source, /lacksActionPoints[\s\S]*\["parry", "evade"\]\.includes\(button\.dataset\.combatAction\)/);
+  assert.match(source, /MYTHRASF\.Combat\.NoActionPoints/);
+});
+
 test("las pruebas de heridas distinguen oposición y consecuencia anatómica", () => {
   const resolution = { winner: "right" };
   assert.equal(woundCheckOutcomeKey({ source: "wound", woundSeverity: "serious",
@@ -28,6 +54,10 @@ test("las pruebas de heridas distinguen oposición y consecuencia anatómica", (
     locationKind: { extremity: false }, resolution: { winner: "left" } }),
   "majorResistedBody");
   assert.equal(woundCheckOutcomeKey({ source: "effect", resolution }), null);
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(renderer, /combat-check-detail combat-check-consequence/);
+  assert.doesNotMatch(renderer, /mythras-chat-row combat-check-consequence/);
 });
 
 test("una tirada sin localización cierra el daño sin reasignarlo", () => {
@@ -88,6 +118,17 @@ test("el daño precede a la prueba de Aguante de la herida", () => {
   assert.match(source, /check\.source === "wound" && combat\.damage\?\.status !== "applied"/);
   assert.match(source, /check\.status === "pending" && check\.source !== "wound"/);
   assert.match(renderer, /MYTHRASF\.Combat\.WoundCheck\.ApplyDamageFirst/);
+});
+
+test("las heridas graves y críticas permiten Suerte antes de aplicar consecuencias", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(source, /check\.source === "wound" \? "rolled" : "resolved"/);
+  assert.match(source, /request\.finalize && check\.source === "wound"/);
+  assert.match(source, /"system\.resources\.luckPoints\.value": points - 1/);
+  assert.match(renderer, /data-combat-action="check-luck"/);
+  assert.match(renderer, /data-combat-action="confirm-check"/);
 });
 
 test("la suerte de combate permite elegir pagador y limita la tirada ajena a repetir", () => {

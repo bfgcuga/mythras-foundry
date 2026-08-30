@@ -110,16 +110,19 @@ function combatCheckHtml(check, combat) {
       "MYTHRASF.Suffocation.Endurance"))} (1d100 / ${Number(resolution.target ?? 0)}%)</span><strong><span
       class="mythras-chat-roll-value">${Number(resolution.rawRoll ?? 0)}</span> ${escape(resultLabel(
         resolution.result))}</strong></div>`;
+  const pendingDecision = check.status === "rolled" ? `<div class="combat-check-actions"><button type="button" class="sheet-icon-button mythras-chat-luck-button" data-combat-action="check-luck" data-check-id="${escape(check.id)}" title="${escape(localize("MYTHRASF.Combat.WoundCheck.LuckReroll"))}" aria-label="${escape(localize("MYTHRASF.Combat.WoundCheck.LuckReroll"))}"><i class="fas fa-clover" aria-hidden="true"></i></button><button type="button" data-combat-action="confirm-check" data-check-id="${escape(check.id)}" title="${escape(localize("MYTHRASF.Combat.WoundCheck.ConfirmResult"))}">${escape(localize("MYTHRASF.Combat.WoundCheck.ConfirmResult"))}</button></div>` : "";
+  const luckHistory = (resolution.luckHistory ?? []).map((attempt) => `<small class="mythras-chat-luck-spent">${Number(attempt.rawRoll)} — ${escape(game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: attempt.spenderName }))}</small>`).join("");
   return `<article class="combat-check-entry"><header><strong>${escape(title)}</strong>${help}</header>
     ${abilityRoll}
+    ${luckHistory}
     <div class="mythras-chat-row"><span>${escape(localize(
       "MYTHRASF.Combat.WoundCheck.OpposedAttack"))}</span><strong><span class="mythras-chat-roll-value">${Number(
         opposed.rawRoll ?? 0)}</span> ${escape(resultLabel(opposed.result))}</strong></div>
     <div class="mythras-chat-total"><span>${escape(localize(
       "MYTHRASF.Combat.CheckOutcomeLabel"))}</span><strong>${escape(localize(
         `MYTHRASF.Combat.CheckOutcome.${resisted ? "resisted" : "failed"}`))}</strong></div>
-    <div class="mythras-chat-row combat-check-consequence"><span>${escape(localize(
-      "MYTHRASF.Combat.CheckConsequence"))}</span><strong>${escape(outcome)}</strong></div></article>`;
+    <div class="combat-check-detail combat-check-consequence"><strong>${escape(localize(
+      "MYTHRASF.Combat.CheckConsequence"))}:</strong><span>${escape(outcome)}</span></div>${pendingDecision}</article>`;
 }
 
 function combatConsequenceHtml(entry, index) {
