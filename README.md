@@ -225,10 +225,19 @@ se describen en [docs/architecture.md](docs/architecture.md).
 
 ## API para macros y módulos
 
+El Gamemaster puede mantener Shift mientras pulsa cualquier botón de tirada del
+sistema para introducir el resultado de cada dado físico. Los valores se validan
+contra las caras del dado y el `Roll` resultante se presenta y almacena exactamente
+igual que una tirada normal. El gesto no queda activo para acciones posteriores y
+no está disponible para jugadores.
+
 El sistema publica `game.mythrasFoundry` durante `init`:
 
 ```js
 const party = game.mythrasFoundry.party.getActiveMembers();
+const roll = await game.mythrasFoundry.dice.roll("1d100", { manual: true });
+const animated = await game.mythrasFoundry.dice.animatedRoll("2d6+1", { manual: true });
+const manual = game.mythrasFoundry.dice.isManualGesture(event);
 game.mythrasFoundry.shop.open({ actorUuid: actor.uuid });
 game.mythrasFoundry.homebrew.open(); // Solo DJ.
 game.mythrasFoundry.hazards.damage.open(); // Solo DJ; daño localizado puntual.

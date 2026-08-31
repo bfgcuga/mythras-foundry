@@ -4,6 +4,7 @@ import { classifyContestRoll, resolveConfiguredContest, resolveContest } from ".
 import { appendSerializedRolls } from "./dice-animation.js";
 import { recordAbilityFumble } from "./skills.js";
 import { actorDisplayName, actorSpeaker, tokenDisplayName } from "./document-names.js";
+import { evaluateSystemRoll } from "./system-roll.js";
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
@@ -334,14 +335,16 @@ export function activateContestCard(message, html) {
   card.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-contest-action]");
     if (!button) return;
-    if (button.dataset.contestAction === "respond") return respond(message, contest, button.dataset.participantId);
-    if (button.dataset.contestAction === "luck") return spendContestLuck(message, contest, button.dataset.participantId);
+    if (button.dataset.contestAction === "respond") return respond(message, contest,
+      button.dataset.participantId, event.shiftKey);
+    if (button.dataset.contestAction === "luck") return spendContestLuck(message, contest,
+      button.dataset.participantId, event.shiftKey);
     if (!game.user.isGM) return;
     await gmAction(message, contest, button.dataset.contestAction, button.dataset.participantId);
   });
 }
 
-async function respond(message, contest, id) {
+async function respond(message, contest, id, manual = false) {
   const participant = contest.participants.find((entry) => entry.id === id);
   const actor = contestActor(participant);
   if (!actor || (!game.user.isGM && !actor.isOwner)) return;
@@ -353,21 +356,21 @@ async function respond(message, contest, id) {
     : await openContestResponseDialog(actor, participant.abilityId, participant.config?.difficulty,
       { specialName: participant.abilityName, specialTarget: participant.target });
   if (!config) return;
-  const roll = await new Roll("1d100").evaluate();
+  const roll = await evaluateSystemRoll("1d100", { manual });
   const request = { action: "contestResponse", messageId: message.id, revision: contest.revision,
     participantId: id, userId: game.user.id, config, rawRoll: roll.total, serializedRoll: roll.toJSON() };
   if (preferredContestCoordinator(game.users, contest.authorUserId) === game.user.id) await applyContestResponse(message, request);
   else game.socket.emit(SOCKET, request);
 }
 
-async function spendContestLuck(message, contest, id) {
+async function spendContestLuck(message, contest, id, manual = false) {
   if (pendingLuckMessages.has(message.id)) return;
   pendingLuckMessages.add(message.id);
-  try { return await spendContestLuckUnlocked(message, contest, id); }
+  try { return await spendContestLuckUnlocked(message, contest, id, manual); }
   finally { pendingLuckMessages.delete(message.id); }
 }
 
-async function spendContestLuckUnlocked(message, contest, id) {
+async function spendContestLuckUnlocked(message, contest, id, manual = false) {
   const participant = contest.participants.find((entry) => entry.id === id);
   const rolledActor = contestActor(participant);
   const currentRoll = contestRollForParticipant(contest, id);
@@ -390,7 +393,7 @@ async function spendContestLuckUnlocked(message, contest, id) {
   const luckActor = contestActor(luckParticipant) ?? game.actors.get(choice.luckActorId);
   const points = Number(luckActor?.system.resources?.luckPoints?.value ?? 0);
   if (!luckActor || !spenders.some((actor) => actorIdentity(actor) === choice.luckActorId) || points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-  const roll = choice.mode === "reroll" ? await new Roll("1d100").evaluate() : null;
+  const roll = choice.mode === "reroll" ? await evaluateSystemRoll("1d100", { manual }) : null;
   const request = { action: "contestLuck", messageId: message.id, revision: contest.revision,
     participantId: id, userId: game.user.id, luckActorId: actorIdentity(luckActor),
     rawRoll: roll?.total ?? invertD100(currentRoll),

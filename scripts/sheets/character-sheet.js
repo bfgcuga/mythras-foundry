@@ -80,6 +80,7 @@ import { penaltySummary } from "../rules/penalty-summary.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { resolveSkillRollConditions } from "../rules/skill-roll-resolution.js";
 import { evaluateAnimatedRoll } from "../rules/dice-animation.js";
+import { evaluateSystemRoll } from "../rules/system-roll.js";
 import { rollSpecial } from "../rules/special-roll.js";
 import { INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
@@ -430,7 +431,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-location-hp-delta]", "click", (event) => this.#adjustLocationHitPoints(event)],
       ["[data-location-armor]", "change", (event) => this.#updateLocationArmor(event)],
       ["[data-action='roll-skill']", "click", (event) => this.#rollSkill(event)],
-      ["[data-action='roll-special']", "click", () => rollSpecial(this.actor)],
+      ["[data-action='roll-special']", "click", (event) => rollSpecial(this.actor,
+        { manual: event.shiftKey })],
       ["[data-action='improve-skill']", "click", (event) => this.#improveSkill(event)],
       ["[data-action='roll-passion']", "click", (event) => this.#rollPassion(event)],
       ["[data-passion-adjust]", "click", (event) => this.#adjustPassion(event)],
@@ -845,8 +847,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const update = { "system.generationMethod": method };
 
     for (const [key, formula] of Object.entries(formulas)) {
-      const roll = await evaluateAnimatedRoll(formula,
-        { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
+      const roll = await evaluateAnimatedRoll(formula, { manual: event.shiftKey });
       update[`system.${key}`] = roll.total;
     }
 
@@ -1795,22 +1796,20 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
-  async #rollStartingMoney(draft) {
-    const roll = await evaluateAnimatedRoll("4d6",
-      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
+  async #rollStartingMoney(draft, manual = false) {
+    const roll = await evaluateAnimatedRoll("4d6", { manual });
     draft.startingMoneyDice = Number(roll.total);
     draft.startingMoney = calculateStartingMoney(
       draft.cultureKey, draft.socialClassKey, draft.startingMoneyDice
     );
   }
 
-  async #assignRandomSocialClass(draft) {
-    const roll = await evaluateAnimatedRoll("1d100",
-      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
+  async #assignRandomSocialClass(draft, manual = false) {
+    const roll = await evaluateAnimatedRoll("1d100", { manual });
     const socialClass = resolveSocialClass(draft.cultureKey, roll.total);
     draft.socialClassRoll = Number(roll.total);
     draft.socialClassKey = socialClass?.key ?? "";
-    if (socialClass) await this.#rollStartingMoney(draft);
+    if (socialClass) await this.#rollStartingMoney(draft, manual);
   }
 
   async #selectSocialClass(event) {
@@ -1829,9 +1828,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (getSocialClassMethod() === SOCIAL_CLASS_METHODS.random) {
-      await this.#assignRandomSocialClass(draft);
+      await this.#assignRandomSocialClass(draft, event.shiftKey);
     } else if (draft.socialClassKey) {
-      await this.#rollStartingMoney(draft);
+      await this.#rollStartingMoney(draft, event.shiftKey);
     }
     await this.#saveBackgroundDraft(draft);
   }
@@ -1862,8 +1861,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const category = getAgeCategory(draft.ageCategory);
     if (!category) return;
-    const roll = await evaluateAnimatedRoll(category.ageFormula,
-      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) });
+    const roll = await evaluateAnimatedRoll(category.ageFormula, { manual: event.shiftKey });
     draft.age = Number(roll.total);
     await this.#saveBackgroundDraft(draft);
   }
@@ -1908,7 +1906,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (draft.stage !== "family" || draft.familyRolls.entries[key]) return;
     const language = game.i18n.lang;
     const roll = async (formula) => Number((await evaluateAnimatedRoll(formula,
-      { speaker: ChatMessage.getSpeaker({ actor: this.actor }) })).total ?? 0);
+      { manual: event.shiftKey })).total ?? 0);
     const percentile = await roll("1d100");
     let resolved;
     if (key === "marriage") {
@@ -2628,7 +2626,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const woundImpact = await askWoundRollImpact(this.actor);
     const { difficulty, modifiers } = resolveSkillRollConditions(this.actor, item,
       { woundImpact, loadState: this.#loadState() });
-    await item.rollSkill({ difficulty, defaultDifficulty, modifiers });
+    await item.rollSkill({ difficulty, defaultDifficulty, modifiers, manual: event.shiftKey });
   }
 
   async #improveSkill(event) {
@@ -2662,12 +2660,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     button.disabled = true;
     this._experienceImprovementPending = true;
     try {
-      const checkRoll = await new Roll("1d100").evaluate();
+      const checkRoll = await evaluateSystemRoll("1d100", { manual: event.shiftKey });
       const checkTotal = Number(checkRoll.total);
       const intelligence = Number(this.actor.system.intelligence ?? 0);
       const skillTotal = Number(item.system.total ?? 0);
       const checkSucceeded = checkTotal + intelligence >= skillTotal;
-      const improvementRoll = checkSucceeded ? await new Roll("1d4").evaluate() : null;
+      const improvementRoll = checkSucceeded
+        ? await evaluateSystemRoll("1d4", { manual: event.shiftKey }) : null;
       const result = resolveExperienceImprovement({
         skillTotal,
         intelligence,
@@ -2723,7 +2722,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #rollPassion(event) {
     event.preventDefault();
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
-    await this.actor.items.get(itemId)?.rollPassion();
+    await this.actor.items.get(itemId)?.rollPassion({ manual: event.shiftKey });
   }
 
   async #adjustPassion(event) {

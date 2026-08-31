@@ -51,13 +51,12 @@ export async function executeWoundConsequencePlan(plan, handlers = {}) {
   return results;
 }
 
-export async function rollSimpleWoundEndurance(actor) {
+export async function rollSimpleWoundEndurance(actor, { manual = false } = {}) {
   const skill = actor?.items?.find((item) => item.type === "skill"
     && item.system.slug === "aguante");
   if (!skill) return Object.freeze({ succeeded: false, roll: null, target: 0,
     result: "failure" });
-  const roll = await evaluateAnimatedRoll("1d100",
-    { speaker: ChatMessage.getSpeaker({ actor }) });
+  const roll = await evaluateAnimatedRoll("1d100", { manual });
   const target = Number(skill.system.total ?? 0);
   const result = classifyContestRoll(roll.total, target);
   await recordAbilityFumble(skill, result);
@@ -80,17 +79,17 @@ export function hazardWoundConsequenceRows(consequence) {
 }
 
 export async function applyHazardWoundConsequences(actor, location, before, after,
-  { sourceStatus = "MYTHRASF.Status.Acid" } = {}) {
+  { sourceStatus = "MYTHRASF.Status.Acid", manual = false } = {}) {
   if (before === after || !["serious", "major"].includes(after)) return null;
   const sourceName = game.i18n.localize(sourceStatus);
-  const endurance = await rollSimpleWoundEndurance(actor);
+  const endurance = await rollSimpleWoundEndurance(actor, { manual });
   const plan = woundConsequencePlan({ wound: after, locationKind: woundLocationKind(location),
     enduranceSucceeded: endurance.succeeded,
     healingRate: actor.system.attributes?.healingRate });
   let outcome = null; let rounds = 0;
   await executeWoundConsequencePlan(plan, {
     stunned: async (action) => {
-      const duration = await evaluateAnimatedRoll(action.durationFormula);
+      const duration = await evaluateAnimatedRoll(action.durationFormula, { manual });
       return applyTimedCondition(actor, { name: game.i18n.localize("MYTHRASF.Status.Stunned"),
         img: "icons/svg/daze.svg", key: "stunned", statusId: "stunned",
         source: { name: sourceName }, locationId: location.id,

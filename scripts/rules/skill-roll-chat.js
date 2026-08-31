@@ -13,16 +13,16 @@ export async function activateSkillRollCard(message, html) {
   const actor = data?.actorUuid ? await fromUuid(data.actorUuid) : null;
   button.hidden = !canUseSimpleRollLuck(actor);
   button.dataset.listenerAttached = "true";
-  button.addEventListener("click", async () => {
+  button.addEventListener("click", async (event) => {
     if (pendingLuckMessages.has(message.id)) return;
     pendingLuckMessages.add(message.id);
     button.disabled = true;
-    try { await spendLuck(message); }
+    try { await spendLuck(message, event.shiftKey); }
     finally { pendingLuckMessages.delete(message.id); button.disabled = false; }
   });
 }
 
-async function spendLuck(message) {
+async function spendLuck(message, manual = false) {
   const data = message.getFlag("mythras-foundry", "skillRoll");
   const actor = data?.actorUuid ? await fromUuid(data.actorUuid) : null;
   if (!canUseSimpleRollLuck(actor)) return;
@@ -42,7 +42,7 @@ async function spendLuck(message) {
   const previous = [...(data.rolls ?? [])];
   const current = previous.at(-1);
   const roll = choice === "reroll" ? await evaluateAnimatedRoll("1d100",
-    { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
+    { manual }) : null;
   const value = choice === "reroll" ? roll.total : invertD100(current);
   const result = classifyRoll(value, data.target, data.criticalTarget);
   await recordAbilityFumble(actor?.items.get(data.itemId), result);

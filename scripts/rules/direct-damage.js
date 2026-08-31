@@ -59,7 +59,7 @@ async function createDirectDamageChat(actor, token, configuration, results) {
           "MYTHRASF.DirectDamage.ArmorIgnored"))}</strong></div>${rows}</section>` });
 }
 
-export async function applyDirectDamage(actor, configuration, { token = null } = {}) {
+export async function applyDirectDamage(actor, configuration, { token = null, manual = false } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
   const normalized = normalizeDirectDamageConfiguration(configuration);
   if (normalized.mode === "formula" && !validFormula(normalized.formula)) {
@@ -72,7 +72,7 @@ export async function applyDirectDamage(actor, configuration, { token = null } =
     .filter((item) => item?.type === "hitLocation");
   let locationRoll = null;
   if (normalized.randomLocation) {
-    locationRoll = await evaluateAnimatedRoll("1d20", { speaker: actorSpeaker(actor, token) });
+    locationRoll = await evaluateAnimatedRoll("1d20", { manual });
     locations = [findHitLocation(available, locationRoll.total)].filter(Boolean);
   }
   if (!locations.length || (!normalized.randomLocation
@@ -83,7 +83,7 @@ export async function applyDirectDamage(actor, configuration, { token = null } =
   const results = [];
   for (const location of locations) {
     const damageRoll = normalized.mode === "formula"
-      ? await evaluateAnimatedRoll(normalized.formula, { speaker: actorSpeaker(actor, token) }) : null;
+      ? await evaluateAnimatedRoll(normalized.formula, { manual }) : null;
     const woundBefore = woundLevel(location.system.currentHitPoints,
       location.system.maxHitPoints);
     const result = directDamageResult(damageRoll?.total ?? normalized.amount,
@@ -91,7 +91,7 @@ export async function applyDirectDamage(actor, configuration, { token = null } =
     await location.update({ "system.currentHitPoints": result.hitPointsAfter });
     const woundAfter = woundLevel(result.hitPointsAfter, location.system.maxHitPoints);
     const woundConsequence = await applyHazardWoundConsequences(actor, location,
-      woundBefore, woundAfter, { sourceStatus: "MYTHRASF.DirectDamage.Source" });
+      woundBefore, woundAfter, { sourceStatus: "MYTHRASF.DirectDamage.Source", manual });
     results.push({ location, locationRoll, damageRoll, ...result, woundBefore, woundAfter,
       woundConsequence });
   }
@@ -103,7 +103,8 @@ export async function applyDirectDamage(actor, configuration, { token = null } =
       enduranceRoll: woundConsequence.enduranceRoll?.toJSON?.() ?? null } : null })) };
 }
 
-export async function openDirectDamageDialog({ actor = null, token = null } = {}) {
+export async function openDirectDamageDialog({ actor = null, token = null,
+  manual = game.mythrasFoundry?.dice?.isManualGesture?.() ?? false } = {}) {
   if (!game.user.isGM) {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.DirectDamage.GMOnly")); return null;
   }
@@ -167,7 +168,7 @@ export async function openDirectDamageDialog({ actor = null, token = null } = {}
   if (normalized.mode === "formula" && !validFormula(normalized.formula)) {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.DirectDamage.InvalidFormula")); return null;
   }
-  return applyDirectDamage(actor, normalized, { token });
+  return applyDirectDamage(actor, normalized, { token, manual });
 }
 
 export function createDirectDamageApi() {

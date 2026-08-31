@@ -1741,5 +1741,10 @@
   "MYTHRASF.PermanentWound.LegacyDescription": "Crippled limb recorded before migration.",
   "MYTHRASF.PermanentWound.Suggested.extremity": "{location}: permanent mutilation of severity {severity}.",
   "MYTHRASF.PermanentWound.Suggested.other": "{location}: permanent wound of severity {severity}.",
-  "MYTHRASF.Combat.NoHitLocation": "No hit location was struck; the attack causes no damage."
+  "MYTHRASF.Combat.NoHitLocation": "No hit location was struck; the attack causes no damage.",
+  "MYTHRASF.ManualRoll.Title": "Choose die results",
+  "MYTHRASF.ManualRoll.Formula": "Formula: {formula}",
+  "MYTHRASF.ManualRoll.DieLabel": "Die {die} (d{faces})",
+  "MYTHRASF.ManualRoll.Accept": "Accept",
+  "MYTHRASF.ManualRoll.Invalid": "Enter a valid whole number for every die."
 }

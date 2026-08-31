@@ -12,7 +12,9 @@ test("character and NPC skill tabs expose the Special roll", () => {
   assert.match(character, /group=basicSkillGroup[\s\S]*?showSpecialRoll=true/);
   assert.match(skillOverview, /\{\{#if showSpecialRoll\}\}[\s\S]*data-action="roll-special"[\s\S]*\{\{\/if\}\}[\s\S]*<\/fieldset>/);
   assert.doesNotMatch(character, /paper-skill-actions[\s\S]*<section class="paper-skill-columns/);
-  for (const sheet of [characterSheet, npcSheet]) assert.match(sheet, /rollSpecial\(this\.actor\)/);
+  for (const sheet of [characterSheet, npcSheet]) {
+    assert.match(sheet, /rollSpecial\(this\.actor,[\s\S]*manual: event\.shiftKey/);
+  }
 });
 
 test("Special rolls accept a name and percentage and can enter a contest", () => {

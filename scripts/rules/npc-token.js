@@ -2,11 +2,11 @@ import { materializeNpc, NpcGenerationError, shouldGenerateNpcToken } from "./np
 
 import { evaluateAnimatedRoll } from "./dice-animation.js";
 
-export async function evaluateNpcFormula(formula) {
+export async function evaluateNpcFormula(formula, { manual = false } = {}) {
   if (typeof Roll.validate === "function" && !Roll.validate(formula)) {
     throw new Error(game.i18n.localize("MYTHRASF.Npc.InvalidFormula"));
   }
-  const roll = await evaluateAnimatedRoll(formula);
+  const roll = await evaluateAnimatedRoll(formula, { manual });
   return roll.total;
 }
 
@@ -27,12 +27,13 @@ export async function prepareNpcToken(token) {
   }
 }
 
-export async function regenerateNpcActor(actor, { notify = true } = {}) {
+export async function regenerateNpcActor(actor, { notify = true, manual = false } = {}) {
   if (!game.user.isGM || actor?.type !== "npc" || !actor.isToken || actor.token?.isLinked) {
     return false;
   }
   try {
-    const generated = await materializeNpc(actor.toObject(), evaluateNpcFormula);
+    const generated = await materializeNpc(actor.toObject(),
+      (formula) => evaluateNpcFormula(formula, { manual }));
     generated.system.generatedInstance = true;
     await actor.update({ system: generated.system });
     const updates = generated.items.map((item) => ({ ...item, _id: item._id ?? item.id }));

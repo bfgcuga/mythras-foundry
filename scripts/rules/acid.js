@@ -4,6 +4,7 @@ import { applyTimedCondition, timedEffects } from "./timed-condition-runtime.js"
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
+import { evaluateSystemRoll } from "./system-roll.js";
 import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
 
@@ -69,8 +70,8 @@ function concentrationLabel(key) {
   return game.i18n.localize(`MYTHRASF.Acid.Concentration.${key}`);
 }
 
-async function rollFormula(formula) {
-  const roll = await new Roll(formula).evaluate();
+async function rollFormula(formula, manual = false) {
+  const roll = await evaluateSystemRoll(formula, { manual });
   return { roll, total: Number(roll.total) };
 }
 
@@ -102,7 +103,7 @@ async function createAcidChat(actor, token, condition, results) {
   });
 }
 
-export async function applyAcidDamage(actor, condition, { token = null } = {}) {
+export async function applyAcidDamage(actor, condition, { token = null, manual = false } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
   const normalized = normalizeAcidConfiguration(condition);
   const available = actor.items.filter((item) => item.type === "hitLocation")
@@ -111,7 +112,7 @@ export async function applyAcidDamage(actor, condition, { token = null } = {}) {
     .filter(Boolean);
   let randomRoll = null;
   if (normalized.randomLocation) {
-    const rolled = await rollFormula("1d20");
+    const rolled = await rollFormula("1d20", manual);
     randomRoll = rolled.roll; locations = [findHitLocation(available, rolled.total)].filter(Boolean);
   }
   if (!locations.length || (!normalized.randomLocation
@@ -121,7 +122,7 @@ export async function applyAcidDamage(actor, condition, { token = null } = {}) {
   const results = [];
   for (const location of locations) {
     const layer = acidArmorLayer(location, actor.items.filter((item) => item.type === "armor"));
-    const damage = await rollFormula(normalized.damageFormula);
+    const damage = await rollFormula(normalized.damageFormula, manual);
     const woundBefore = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
     const result = acidDamageResult({ damage: damage.total, armorPoints: layer?.armorPoints,
       hitPoints: location.system.currentHitPoints });
@@ -133,7 +134,7 @@ export async function applyAcidDamage(actor, condition, { token = null } = {}) {
     if (result.penetrating > 0) await location.update({ "system.currentHitPoints": result.hitPointsAfter });
     const woundAfter = woundLevel(result.hitPointsAfter, location.system.maxHitPoints);
     const woundConsequence = await applyHazardWoundConsequences(actor, location,
-      woundBefore, woundAfter);
+      woundBefore, woundAfter, { manual });
     const armorName = layer?.kind === "natural"
       ? game.i18n.localize("MYTHRASF.Acid.NaturalArmor") : layer?.item?.name;
     results.push({ location, armorName, layerKind: layer?.kind ?? "none",
@@ -155,12 +156,12 @@ async function activeCombatForActor(actor) {
     && combat.combatants.some((entry) => entry.actor?.uuid === actor.uuid)) ?? null;
 }
 
-export async function applyAcidExposure(actor, configuration, { token = null } = {}) {
+export async function applyAcidExposure(actor, configuration, { token = null, manual = false } = {}) {
   const normalized = normalizeAcidConfiguration(configuration);
   const profile = ACID_CONCENTRATIONS[normalized.concentration];
   if (!profile) throw new Error("Invalid acid concentration");
   const durationRoll = normalized.exposure === "splash"
-    ? await rollFormula(profile.durationFormula) : null;
+    ? await rollFormula(profile.durationFormula, manual) : null;
   const duration = acidExposureDuration({ exposure: normalized.exposure,
     rolledDuration: durationRoll?.total });
   const combat = await activeCombatForActor(actor);
@@ -169,7 +170,7 @@ export async function applyAcidExposure(actor, configuration, { token = null } =
     durationFormula: profile.durationFormula, locationIds: normalized.locationIds,
     randomLocation: normalized.randomLocation,
     applicationsRemaining: duration.applicationsRemaining, totalApplications: duration.totalApplications };
-  const result = await applyAcidDamage(actor, condition, { token });
+  const result = await applyAcidDamage(actor, condition, { token, manual });
   if (!result) return null;
   const statusId = normalized.exposure === "immersion"
     ? ACID_IMMERSION_STATUS_ID : ACID_SPLASH_STATUS_ID;
@@ -214,7 +215,8 @@ export async function removeAcidEffect(actor, effectId) {
 }
 
 export async function openAcidDialog({ actor = null, token = null, defaults = null,
-  deferApply = false, fixedExposure = false } = {}) {
+  deferApply = false, fixedExposure = false,
+  manual = game.mythrasFoundry?.dice?.isManualGesture?.() ?? false } = {}) {
   if (!game.user.isGM) {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Acid.GMOnly")); return null;
   }
@@ -264,7 +266,7 @@ export async function openAcidDialog({ actor = null, token = null, defaults = nu
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Acid.SelectLocations")); return null;
   }
   return deferApply ? { action: "apply", ...configuration }
-    : applyAcidExposure(actor, configuration, { token });
+    : applyAcidExposure(actor, configuration, { token, manual });
 }
 
 export function createHazardsApi() {

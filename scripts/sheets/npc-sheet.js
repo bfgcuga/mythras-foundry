@@ -217,7 +217,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelector("[data-action='view-portrait']")
       ?.addEventListener("click", () => this.#viewPortrait());
     this.element.querySelector("[data-action='regenerate-npc']")
-      ?.addEventListener("click", () => this.#regenerate());
+      ?.addEventListener("click", (event) => this.#regenerate(event));
     this.element.querySelectorAll("[data-action='create-item']").forEach((button) =>
       button.addEventListener("click", (event) => this.#createItem(event)));
     this.element.querySelectorAll("[data-action='edit-item']").forEach((button) =>
@@ -227,7 +227,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollSkill(event)));
     this.element.querySelector("[data-action='roll-special']")
-      ?.addEventListener("click", () => rollSpecial(this.actor));
+      ?.addEventListener("click", (event) => rollSpecial(this.actor,
+        { manual: event.shiftKey }));
     this.element.querySelectorAll("[data-action='roll-passion']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollPassion(event)));
     const changeReach = this.element.querySelector("[data-action='change-reach']");
@@ -292,14 +293,14 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       window: { title: this.actor.name } }).render(true);
   }
 
-  async #regenerate() {
+  async #regenerate(event) {
     if (!game.user.isGM || !this.actor.isToken || this.actor.token?.isLinked) return;
     const confirmed = await DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.Npc.Regenerate") },
       content: `<p>${game.i18n.localize("MYTHRASF.Npc.RegenerateWarning")}</p>`
     });
     if (!confirmed) return;
-    await regenerateNpcActor(this.actor);
+    await regenerateNpcActor(this.actor, { manual: event.shiftKey });
   }
 
   async #createItem(event, forcedType = "") {
@@ -365,13 +366,13 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const woundImpact = await askWoundRollImpact(this.actor);
     const { difficulty, modifiers } = resolveSkillRollConditions(this.actor, item,
       { woundImpact, loadState: this.#loadState() });
-    await item.rollSkill({ difficulty, modifiers });
+    await item.rollSkill({ difficulty, modifiers, manual: event.shiftKey });
   }
 
   async #rollPassion(event) {
     event.preventDefault();
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
-    await this.actor.items.get(itemId)?.rollPassion();
+    await this.actor.items.get(itemId)?.rollPassion({ manual: event.shiftKey });
   }
 
   #conditionResolution({ baseDifficulty = "standard", physical = false,

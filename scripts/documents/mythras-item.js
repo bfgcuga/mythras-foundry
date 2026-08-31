@@ -5,6 +5,7 @@ import { openSkillRollDialog } from "../apps/skill-roll-dialog.js";
 import { createContestMessage } from "../rules/contest-chat.js";
 import { recordAbilityFumble } from "../rules/skills.js";
 import { actorDisplayName, actorSpeaker } from "../rules/document-names.js";
+import { evaluateSystemRoll } from "../rules/system-roll.js";
 
 export class MythrasItem extends Item {
   prepareDerivedData() {
@@ -40,7 +41,7 @@ export class MythrasItem extends Item {
   }
 
   async rollSkill({ difficulty = "standard", defaultDifficulty = "standard",
-    modifiers = [] } = {}) {
+    modifiers = [], manual = false } = {}) {
     if (!["skill", "combatStyle"].includes(this.type)) return;
     const configured = await openSkillRollDialog(this, {
       imposedDifficulty: difficulty,
@@ -60,11 +61,12 @@ export class MythrasItem extends Item {
     const interactive = configured.contest?.resolutionMode !== "difficulty"
       || configured.contest?.sides?.initiator?.mode !== "individual";
     if (interactive) {
-      const initialRoll = configured.contest.sides.initiator.mode === "individual" ? await new Roll("1d100").evaluate() : null;
+      const initialRoll = configured.contest.sides.initiator.mode === "individual"
+        ? await evaluateSystemRoll("1d100", { manual }) : null;
       await createContestMessage(this, configured, initialRoll);
       return;
     }
-    const roll = await new Roll("1d100").evaluate();
+    const roll = await evaluateSystemRoll("1d100", { manual });
     const result = classifyRoll(roll.total, targets.target, targets.criticalTarget);
     const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
     const adjustment = [["Limited", limitedSkill], ["Reinforced", reinforcedSkill]]
@@ -99,20 +101,21 @@ export class MythrasItem extends Item {
     await recordAbilityFumble(this, result);
   }
 
-  async rollPassion() {
+  async rollPassion({ manual = false } = {}) {
     if (this.type !== "passion") return;
     const configured = await openSkillRollDialog(this);
     if (!configured) return;
     const interactive = configured.contest?.resolutionMode !== "difficulty"
       || configured.contest?.sides?.initiator?.mode !== "individual";
     if (interactive) {
-      const initialRoll = configured.contest.sides.initiator.mode === "individual" ? await new Roll("1d100").evaluate() : null;
+      const initialRoll = configured.contest.sides.initiator.mode === "individual"
+        ? await evaluateSystemRoll("1d100", { manual }) : null;
       await createContestMessage(this, configured, initialRoll);
       return;
     }
     const target = configured.targets.target;
     const criticalTarget = Math.max(1, Math.ceil(target / 10));
-    const roll = await new Roll("1d100").evaluate();
+    const roll = await evaluateSystemRoll("1d100", { manual });
     const result = classifyRoll(roll.total, target, criticalTarget);
     const ranges = rollThresholdRanges(target, criticalTarget);
     const messageData = {

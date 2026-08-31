@@ -278,11 +278,20 @@ Las tiradas de habilidad se resuelven en `scripts/rules/skill-roll.js`; el
 diálogo de ajustes, el documento de Item y la interacción de suerte de la tarjeta
 consumen esos mismos objetivos y umbrales para no duplicar reglas.
 
-Toda tirada visible se evalúa con `Roll` de Foundry. Las que crean un mensaje
+Toda tirada visible iniciada por un control del sistema pasa por
+`scripts/rules/system-roll.js`. El servicio evalúa con `Roll` de Foundry y, solo
+para el Gamemaster que activa el control con Shift, construye el mismo `Roll`
+evaluado a partir de un valor validado para cada dado físico. El gesto se captura
+en el control y se transmite como dato efímero; no existe un modo persistente ni
+se guarda una marca que diferencie el resultado. Las tiradas automáticas sin un
+control propio permanecen aleatorias.
+
+Las tiradas que crean un mensaje
 nuevo incluyen el objeto en `ChatMessage.rolls`; las que actualizan una tarjeta
 existente o no generan mensaje usan `scripts/rules/dice-animation.js`. Este
 puente conserva el modo de tirada y emite la animación sincronizada cuando Dice
-So Nice está activo, sin convertir el módulo en una dependencia obligatoria.
+So Nice está activo, incluidos los resultados elegidos si su API los admite, sin
+convertir el módulo en una dependencia obligatoria.
 
 Las tiradas interactivas se modelan en `scripts/rules/contest-rolls.js`. Este
 módulo puro conserva el dado bruto separado de su clasificación, aplica la

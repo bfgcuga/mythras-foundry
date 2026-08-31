@@ -1741,5 +1741,10 @@
   "MYTHRASF.PermanentWound.LegacyDescription": "Extremidad lisiada registrada antes de la migración.",
   "MYTHRASF.PermanentWound.Suggested.extremity": "{location}: mutilación permanente de gravedad {severity}.",
   "MYTHRASF.PermanentWound.Suggested.other": "{location}: lesión permanente de gravedad {severity}.",
-  "MYTHRASF.Combat.NoHitLocation": "Ninguna localización impactada; el ataque no causa daño."
+  "MYTHRASF.Combat.NoHitLocation": "Ninguna localización impactada; el ataque no causa daño.",
+  "MYTHRASF.ManualRoll.Title": "Elegir resultados de los dados",
+  "MYTHRASF.ManualRoll.Formula": "Fórmula: {formula}",
+  "MYTHRASF.ManualRoll.DieLabel": "Dado {die} (d{faces})",
+  "MYTHRASF.ManualRoll.Accept": "Aceptar",
+  "MYTHRASF.ManualRoll.Invalid": "Introduce un número entero válido para cada dado."
 }

@@ -109,11 +109,11 @@ await foundry.applications.api.DialogV2.wait({
   }],
   render: (event, dialog) => {
     for (const button of dialog.element.querySelectorAll("[data-launcher-choice]")) {
-      button.addEventListener("click", async () => {
+      button.addEventListener("click", async (event) => {
         const open = launchers[button.dataset.launcherChoice];
         await dialog.close();
         if (!open) ui.notifications.error(game.i18n.localize("MYTHRASF.HazardLauncher.Unavailable"));
-        else await open();
+        else await open({ manual: event.shiftKey });
       });
     }
   },

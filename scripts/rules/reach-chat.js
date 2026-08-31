@@ -13,6 +13,7 @@ import { difficultyTarget, resolveWeaponStyle } from "./combat.js";
 import { createResolvedReactionAttack } from "./combat-chat.js";
 import { recordAbilityFumble } from "./skills.js";
 import { actorDisplayName, tokenDisplayName } from "./document-names.js";
+import { evaluateSystemRoll } from "./system-roll.js";
 
 const SCOPE = "mythras-foundry"; const SOCKET = "system.mythras-foundry";
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
@@ -38,7 +39,7 @@ function render(state) {
   return `<section class="mythras-reach-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.localize("MYTHRASF.Reach.Change"))}</div><div class="mythras-chat-row"><span>${escape(state.actorName)}</span><strong>${escape(state.targetName)}</strong></div><div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Reach.IntentLabel"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Reach.Intent.${state.intent}`))}</strong></div>${buttons}${result}</section>`;
 }
 
-export async function requestReachChange(actor) {
+export async function requestReachChange(actor, { manual = false } = {}) {
   if (!detailedReachEnabled()) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Reach.Disabled"));
   if (pendingActors.has(actor.uuid)) return;
@@ -62,7 +63,7 @@ export async function requestReachChange(actor) {
   const target = combat.combatants.get(result.targetId); const [weaponId, modeKey] = result.weapon.split(":");
   const weapon = actor.items.get(weaponId); const mode = findWeaponMode(weapon, modeKey);
   const relation = await ensureEngagement(combat, actor, target.actor, weapon, mode);
-  const skill = evade(actor); const roll = await new Roll("1d100").evaluate();
+  const skill = evade(actor); const roll = await evaluateSystemRoll("1d100", { manual });
   const evadeResult = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
   await recordAbilityFumble(skill, evadeResult);
   const state = { schemaVersion: 1, revision: 0, status: "awaitingResponse", combatId: combat.id,
@@ -78,14 +79,14 @@ export async function requestReachChange(actor) {
   } finally { pendingActors.delete(actor.uuid); }
 }
 
-async function respond(message, state, type) {
+async function respond(message, state, type, manual = false) {
   const combat = game.combats.get(state.combatId); const target = combat?.combatants.get(state.targetCombatantId);
   const actor = target?.actor; if (!actor || (!game.user.isGM && !actor.isOwner)) return;
   let response = { type };
   if (type !== "none") {
     if (type === "evade") {
       const skill = evade(actor); if (!skill) return;
-      const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+      const roll = await evaluateAnimatedRoll("1d100", { manual });
       const result = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
       await recordAbilityFumble(skill, result);
       response = { type, target: Number(skill.system.total ?? 0), rawRoll: roll.total, result };
@@ -96,7 +97,7 @@ async function respond(message, state, type) {
         system: selected.mode }, styles, selectedStyleId: selected.mode.preferredCombatStyleId,
       familiarity: selected.mode.familiarity });
       const targetValue = difficultyTarget(resolved.target, resolved.difficulty);
-      const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+      const roll = await evaluateAnimatedRoll("1d100", { manual });
       const result = classifyContestRoll(roll.total, targetValue);
       await recordAbilityFumble(resolved.style, result);
       response = { type, weaponId: selected.weapon.id, modeKey: selected.mode.key,
@@ -143,7 +144,7 @@ export function activateReachCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0]; const card = root?.querySelector?.(".mythras-reach-card") ?? root;
   const state = message.getFlag?.(SCOPE, "reachChange"); if (!card?.classList?.contains("mythras-reach-card") || !state) return;
   card.addEventListener("click", (event) => { const button = event.target.closest("[data-reach-action]");
-    if (button) respond(message, state, button.dataset.reachAction); });
+    if (button) respond(message, state, button.dataset.reachAction, event.shiftKey); });
 }
 export function registerReachSocket() { game.socket.on(SOCKET, async (request) => {
   if (request?.action !== "reachResponse" || !coordinator()) return;

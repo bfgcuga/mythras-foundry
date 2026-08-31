@@ -102,8 +102,8 @@ export class CombatSheetController {
       "declare-cover": "declareCover", "aim-ranged": "aim", "reload-ranged": "reload"
     };
     for (const [action, method] of Object.entries(tacticalActions)) {
-      this.element.querySelector(`[data-action='${action}']`)?.addEventListener("click", () =>
-        game.mythrasFoundry?.combat?.[method]?.(this.actor));
+      this.element.querySelector(`[data-action='${action}']`)?.addEventListener("click", (event) =>
+        game.mythrasFoundry?.combat?.[method]?.(this.actor, { manual: event.shiftKey }));
     }
     this.element.querySelector("[data-action='tactical-overview']")?.addEventListener("click", () =>
       game.mythrasFoundry?.combat?.openTacticalOverview?.());
@@ -168,6 +168,6 @@ export class CombatSheetController {
       game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
     const targets = Array.from(game.user.targets ?? []);
     await createAttackMessage({ actor: this.actor, weapon, mode, resolution,
-      target: targets.length === 1 ? targets[0] : null });
+      target: targets.length === 1 ? targets[0] : null, manual: event.shiftKey });
   }
 }

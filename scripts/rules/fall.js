@@ -2,6 +2,7 @@ import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
 import { findHitLocation, woundLevel } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
+import { evaluateSystemRoll } from "./system-roll.js";
 
 export const COMBAT_ROUND_SECONDS = 5;
 
@@ -68,11 +69,11 @@ function validFormula(formula) {
   } catch { return false; }
 }
 
-async function randomLocations(locations, count) {
+async function randomLocations(locations, count, manual = false) {
   const selected = []; const rolls = [];
   const wanted = Math.min(Math.max(0, Math.floor(Number(count) || 0)), locations.length);
   while (selected.length < wanted) {
-    const roll = await new Roll("1d20").evaluate(); rolls.push(roll);
+    const roll = await evaluateSystemRoll("1d20", { manual }); rolls.push(roll);
     const location = findHitLocation(locations, Number(roll.total));
     if (location && !selected.some((entry) => entry.id === location.id)) selected.push(location);
     if (rolls.length > 100) break;
@@ -109,7 +110,7 @@ async function createFallChat(actor, token, configuration, results, locationRoll
       ${configuration.dangerousSurface ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurface"))}</span><strong>${escape(configuration.dangerousSurfaceFormula)}</strong></div>` : ""}</section>` });
 }
 
-export async function applyFallDamage(actor, configuration, { token = null } = {}) {
+export async function applyFallDamage(actor, configuration, { token = null, manual = false } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
   const calculated = calculateFall({ ...configuration, actorSize: actor.system.size });
   const formula = String(configuration.formula ?? calculated.formula).trim() || calculated.formula;
@@ -127,13 +128,13 @@ export async function applyFallDamage(actor, configuration, { token = null } = {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Fall.InvalidLocations")); return null;
   }
   const { selected, rolls: locationRolls } = formula === "0"
-    ? { selected: [], rolls: [] } : await randomLocations(locations, locationCount);
+    ? { selected: [], rolls: [] } : await randomLocations(locations, locationCount, manual);
   const results = [];
   for (const location of selected) {
-    const roll = await new Roll(formula).evaluate();
+    const roll = await evaluateSystemRoll(formula, { manual });
     const fallDamage = Math.max(0, Math.floor(Number(roll.total) || 0));
     const dangerousRoll = calculated.dangerousSurface
-      ? await new Roll(dangerousSurfaceFormula).evaluate() : null;
+      ? await evaluateSystemRoll(dangerousSurfaceFormula, { manual }) : null;
     const dangerousDamage = Math.max(0, Math.floor(Number(dangerousRoll?.total) || 0));
     const damage = combinedFallDamage(fallDamage, dangerousDamage);
     const before = Number(location.system.currentHitPoints) || 0;
@@ -142,7 +143,7 @@ export async function applyFallDamage(actor, configuration, { token = null } = {
     await location.update({ "system.currentHitPoints": after });
     const woundAfter = woundLevel(after, location.system.maxHitPoints);
     const woundConsequence = await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
-      { sourceStatus: "MYTHRASF.Fall.ChatTitle" });
+      { sourceStatus: "MYTHRASF.Fall.ChatTitle", manual });
     results.push({ location, roll, damage, fallDamage, dangerousRoll, dangerousDamage,
       before, after, woundBefore, woundAfter, woundConsequence });
   }
@@ -156,7 +157,8 @@ export async function applyFallDamage(actor, configuration, { token = null } = {
   locationRolls: locationRolls.map((roll) => roll.toJSON()) };
 }
 
-export async function openFallDialog({ actor = null, token = null } = {}) {
+export async function openFallDialog({ actor = null, token = null,
+  manual = game.mythrasFoundry?.dice?.isManualGesture?.() ?? false } = {}) {
   if (!game.user.isGM) {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Fall.GMOnly")); return null;
   }
@@ -211,7 +213,7 @@ export async function openFallDialog({ actor = null, token = null } = {}) {
     }, rejectClose: false
   });
   if (!result || typeof result !== "object") return null;
-  return applyFallDamage(actor, result, { token });
+  return applyFallDamage(actor, result, { token, manual });
 }
 
 export function createFallApi() {

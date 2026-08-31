@@ -2,6 +2,7 @@ import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
 import { woundLevel } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
+import { evaluateSystemRoll } from "./system-roll.js";
 
 export const BURNING_STATUS_ID = "burning";
 export const FIRE_FLAG = "fire";
@@ -95,7 +96,7 @@ async function createFireChat(actor, token, configuration, results) {
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Status.Burning"))}</span><strong>${escape(game.i18n.localize(configuration.keepBurning ? "MYTHRASF.Yes" : "MYTHRASF.No"))}</strong></div></section>` });
 }
 
-export async function applyFireDamage(actor, configuration, { token = null } = {}) {
+export async function applyFireDamage(actor, configuration, { token = null, manual = false } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
   const normalized = normalizeFireConfiguration(configuration);
   if (!validFormula(normalized.formula)) {
@@ -108,13 +109,13 @@ export async function applyFireDamage(actor, configuration, { token = null } = {
   }
   const results = [];
   for (const location of locations) {
-    const roll = await new Roll(normalized.formula).evaluate();
+    const roll = await evaluateSystemRoll(normalized.formula, { manual });
     const woundBefore = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
     const damage = fireDamageResult(roll.total, location.system.currentHitPoints);
     await location.update({ "system.currentHitPoints": damage.hitPointsAfter });
     const woundAfter = woundLevel(damage.hitPointsAfter, location.system.maxHitPoints);
     const woundConsequence = await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
-      { sourceStatus: "MYTHRASF.Status.Burning" });
+      { sourceStatus: "MYTHRASF.Status.Burning", manual });
     results.push({ location, roll, ...damage, woundBefore, woundAfter, woundConsequence });
   }
   if (normalized.keepBurning) await setBurning(actor, normalized);
@@ -131,7 +132,7 @@ function locationGuidance(intensity) {
 }
 
 export async function openFireDialog({ actor = null, token = null, defaults = null,
-  deferApply = false } = {}) {
+  deferApply = false, manual = game.mythrasFoundry?.dice?.isManualGesture?.() ?? false } = {}) {
   if (!game.user.isGM) {
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Fire.GMOnly")); return null;
   }
@@ -189,7 +190,7 @@ export async function openFireDialog({ actor = null, token = null, defaults = nu
     ui.notifications.warn(game.i18n.localize("MYTHRASF.Fire.InvalidFormula")); return null;
   }
   return deferApply ? { action: "apply", ...configuration }
-    : applyFireDamage(actor, configuration, { token });
+    : applyFireDamage(actor, configuration, { token, manual });
 }
 
 export function createFireApi() {

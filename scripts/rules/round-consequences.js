@@ -324,7 +324,7 @@ export function renderRoundConsequences(state) {
   return `<section class="mythras-round-card mythras-chat-card"><div class="mythras-chat-title">${escape(game.i18n.format("MYTHRASF.RoundConsequence.Title", { round: state.round }))}</div>${rows}${fatiguePanel}${acidPanel}${firePanel}${blockPanel}</section>`;
 }
 
-async function requestAcidResolution(message, state, entryId, action) {
+async function requestAcidResolution(message, state, entryId, action, manual = false) {
   if (!game.user.isGM) return;
   const entry = state.queue.find((candidate) => candidate.id === entryId
     && candidate.key === "acidReview");
@@ -338,12 +338,12 @@ async function requestAcidResolution(message, state, entryId, action) {
     if (!resolution) return;
   }
   const request = { action: "roundAcid", messageId: message.id, revision: state.revision,
-    entryId, userId: game.user.id, resolution };
+    entryId, userId: game.user.id, resolution, manual };
   if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyAcidResolution(message, request);
   else game.socket.emit(SOCKET, request);
 }
 
-async function requestBurningResolution(message, state, entryId, action) {
+async function requestBurningResolution(message, state, entryId, action, manual = false) {
   if (!game.user.isGM) return;
   const entry = state.queue.find((candidate) => candidate.id === entryId && candidate.key === "burning");
   const combat = game.combats.get(state.combatId);
@@ -356,17 +356,17 @@ async function requestBurningResolution(message, state, entryId, action) {
     if (!resolution) return;
   }
   const request = { action: "roundFire", messageId: message.id, revision: state.revision,
-    entryId, userId: game.user.id, resolution };
+    entryId, userId: game.user.id, resolution, manual };
   if (game.mythrasFoundry?.combat?.isCoordinator?.()) await applyBurningResolution(message, request);
   else game.socket.emit(SOCKET, request);
 }
 
-async function requestResolution(message, state, entryId, manual) {
+async function requestResolution(message, state, entryId, forceManual, manualRoll = false) {
   const entry = state.queue.find((candidate) => candidate.id === entryId);
   const actor = entry ? await fromUuid(entry.actorUuid).catch(() => null) : null;
-  if (!entry || (!actor && !manual) || (!game.user.isGM && !actor?.isOwner)) return;
+  if (!entry || (!actor && !forceManual) || (!game.user.isGM && !actor?.isOwner)) return;
   let resolution;
-  if (manual) {
+  if (forceManual) {
     if (!game.user.isGM) return;
     resolution = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize("MYTHRASF.CombatEffect.ResolveManual") },
@@ -378,14 +378,14 @@ async function requestResolution(message, state, entryId, manual) {
   } else {
     const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "aguante");
     if (!skill) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Combat.SourceMissing"));
-    const roll = await evaluateAnimatedRoll("1d100", { speaker: ChatMessage.getSpeaker({ actor }) });
+    const roll = await evaluateAnimatedRoll("1d100", { manual: manualRoll });
     const endurance = roundEnduranceTarget(actor, skill);
     const result = classifyContestRoll(roll.total, endurance.target);
     await recordAbilityFumble(skill, result);
     const lossRoll = entry.key !== "combatFatigue" && result === "failure" ? await evaluateAnimatedRoll("1d2",
-      { speaker: ChatMessage.getSpeaker({ actor }) })
+      { manual: manualRoll })
       : entry.key !== "combatFatigue" && result === "fumble" ? await evaluateAnimatedRoll("1d3",
-        { speaker: ChatMessage.getSpeaker({ actor }) }) : null;
+        { manual: manualRoll }) : null;
     resolution = { manual: false, ...endurance, rawRoll: roll.total,
       serializedRoll: roll.toJSON(), result,
       loss: entry.key === "combatFatigue" ? combatFatigueLoss(result)
@@ -399,7 +399,7 @@ async function requestResolution(message, state, entryId, manual) {
   else game.socket.emit(SOCKET, request);
 }
 
-async function requestRoundFatigueLuck(message, state, entryId) {
+async function requestRoundFatigueLuck(message, state, entryId, manual = false) {
   const entry = state.queue.find((candidate) => candidate.id === entryId
     && candidate.key === "combatFatigue");
   const rolledActor = await roundConsequenceActor(entry);
@@ -433,7 +433,7 @@ async function requestRoundFatigueLuck(message, state, entryId) {
   if (!spender || !context.spenders.some((actor) => actor.uuid === spender.uuid) || points < 1) {
     return ui.notifications.warn(game.i18n.localize("MYTHRASF.Luck.None"));
   }
-  const roll = choice.mode === "reroll" ? await evaluateAnimatedRoll("1d100") : null;
+  const roll = choice.mode === "reroll" ? await evaluateAnimatedRoll("1d100", { manual }) : null;
   const request = { action: "roundConsequenceLuck", messageId: message.id,
     revision: state.revision, entryId, userId: game.user.id, luckActorUuid: spender.uuid,
     rawRoll: roll?.total ?? invertD100(entry.resolution.rawRoll),
@@ -668,7 +668,8 @@ async function applyBurningResolution(message, request) {
   if (!state || !entry || entry.status !== "pending" || state.revision !== request.revision
     || !actor || !user?.isGM || !["apply", "skip", "extinguish"].includes(action)) return;
   if (action === "apply") {
-    const applied = await applyFireDamage(actor, request.resolution, { token: combatant.token });
+    const applied = await applyFireDamage(actor, request.resolution,
+      { token: combatant.token, manual: request.manual });
     if (!applied) return;
   } else if (action === "extinguish") await extinguishFire(actor);
   entry.status = "resolved"; entry.resolution = { action, userId: user.id,
@@ -700,7 +701,8 @@ async function applyAcidResolution(message, request) {
     : Math.max(0, Number(current.applicationsRemaining) - 1);
   configuration = { ...configuration, applicationsRemaining: next };
   if (action === "apply") {
-    damage = await applyAcidDamage(actor, configuration, { token: combatant.token });
+    damage = await applyAcidDamage(actor, configuration,
+      { token: combatant.token, manual: request.manual });
     if (!damage) return;
     configuration.locationIds = damage.configuration.locationIds;
     configuration.randomLocation = damage.configuration.randomLocation;
@@ -745,15 +747,16 @@ export function activateRoundConsequenceCard(message, html) {
   card.addEventListener("click", (event) => {
     const button = event.target.closest("[data-round-action]"); if (!button) return;
     if (button.dataset.roundAction === "luck") requestRoundFatigueLuck(message, state,
-      button.dataset.entryId);
+      button.dataset.entryId, event.shiftKey);
     else if (["block", "repeat-block", "waive"].includes(button.dataset.roundAction)) requestPassiveBlock(message,
       state, button.dataset.entryId, { waive: button.dataset.roundAction === "waive",
         repeat: button.dataset.roundAction === "repeat-block" });
     else if (button.dataset.roundAction.startsWith("fire-")) requestBurningResolution(message,
-      state, button.dataset.entryId, button.dataset.roundAction.slice(5));
+      state, button.dataset.entryId, button.dataset.roundAction.slice(5), event.shiftKey);
     else if (button.dataset.roundAction.startsWith("acid-")) requestAcidResolution(message,
-      state, button.dataset.entryId, button.dataset.roundAction.slice(5));
-    else requestResolution(message, state, button.dataset.entryId, button.dataset.roundAction === "manual");
+      state, button.dataset.entryId, button.dataset.roundAction.slice(5), event.shiftKey);
+    else requestResolution(message, state, button.dataset.entryId,
+      button.dataset.roundAction === "manual", event.shiftKey);
   });
 }
 

@@ -4,6 +4,7 @@ import { composedInitiative, nextCombatPosition, splitComposedInitiative,
   uniqueActorEntries } from "../rules/combat-turns.js";
 import { getActionPointRules, getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { resolveActorConditions } from "../rules/actor-conditions.js";
+import { evaluateSystemRoll, manualRollRequested } from "../rules/system-roll.js";
 import { advanceActorTurnConditions, expireRoundConditions,
   bindSurpriseEffects, revealSurprisedTurn } from "../rules/timed-condition-runtime.js";
 import { prepareCombatEndFatigue, prepareRoundConsequences }
@@ -204,6 +205,7 @@ export class MythrasCombat extends Combat {
 
   async rollInitiative(ids, { updateTurn = true, messageOptions = {} } = {}) {
     ids = typeof ids === "string" ? [ids] : Array.from(ids ?? []);
+    const manual = manualRollRequested();
     const rolled = [];
     for (const id of ids) {
       const combatant = this.combatants.get(id);
@@ -212,7 +214,7 @@ export class MythrasCombat extends Combat {
       const base = combatant.actor.system.baseAttributes ?? combatant.actor.system.attributes ?? {};
       const bonus = maximum === 0 ? 0 : Number(resolveActorConditions(combatant.actor,
         { baseAttributes: base }).attributes.initiative ?? 0);
-      const primaryRoll = await new Roll("1d10").evaluate();
+      const primaryRoll = await evaluateSystemRoll("1d10", { manual });
       const raw = Number(primaryRoll.total);
       rolled.push({ id, combatant, bonus, primaryRoll, raw, primary: raw + bonus });
     }
@@ -237,7 +239,7 @@ export class MythrasCombat extends Combat {
         let tieBreak = 0;
         if (tied) {
           let attempts = 0;
-          do { tieRoll = await new Roll("1d100").evaluate(); attempts += 1; }
+          do { tieRoll = await evaluateSystemRoll("1d100", { manual }); attempts += 1; }
           while (used.has(Number(tieRoll.total)) && attempts < 120);
           tieBreak = Number(tieRoll.total);
         }

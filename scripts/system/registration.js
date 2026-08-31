@@ -34,6 +34,7 @@ import { createExsanguinationApi } from "../rules/exsanguination.js";
 import { createDyingApi } from "../rules/dying.js";
 import { createDirectDamageApi } from "../rules/direct-damage.js";
 import { createStatusAssignmentApi } from "../rules/status-assignment.js";
+import { createDiceApi } from "../rules/system-roll.js";
 
 const PARTIALS = [
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
@@ -99,6 +100,7 @@ export function registerSystemInitialization() {
     });
     game.mythrasFoundry = {
       ...(game.mythrasFoundry ?? {}), shop: createCatalogApi(), homebrew: createHomebrewApi(),
+      dice: createDiceApi(),
       party: createPartyApi({
         getConfig: () => getSystemSetting(SETTING_KEYS.parties), getActors: () => game.actors,
         openManager: () => {

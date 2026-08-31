@@ -2,10 +2,11 @@ import { openSkillRollDialog, openSpecialRollSetup, SPECIAL_ABILITY_ID } from ".
 import { classifyRoll, renderRollLine, renderRollResult, rollThresholdRanges } from "../documents/mythras-item.js";
 import { createContestMessage } from "./contest-chat.js";
 import { actorSpeaker } from "./document-names.js";
+import { evaluateSystemRoll } from "./system-roll.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
-export async function rollSpecial(actor) {
+export async function rollSpecial(actor, { manual = false } = {}) {
   const setup = await openSpecialRollSetup(actor);
   if (!setup) return;
   const ability = { id: SPECIAL_ABILITY_ID, name: setup.name, type: "special", actor,
@@ -16,11 +17,11 @@ export async function rollSpecial(actor) {
     || configured.contest?.sides?.initiator?.mode !== "individual";
   if (interactive) {
     const initialRoll = configured.contest.sides.initiator.mode === "individual"
-      ? await new Roll("1d100").evaluate() : null;
+      ? await evaluateSystemRoll("1d100", { manual }) : null;
     return createContestMessage(ability, configured, initialRoll);
   }
   const { targets, limitedSkill, reinforcedSkill } = configured;
-  const roll = await new Roll("1d100").evaluate();
+  const roll = await evaluateSystemRoll("1d100", { manual });
   const result = classifyRoll(roll.total, targets.target, targets.criticalTarget);
   const ranges = rollThresholdRanges(targets.target, targets.criticalTarget);
   const adjustments = [["Limited", limitedSkill], ["Reinforced", reinforcedSkill]]

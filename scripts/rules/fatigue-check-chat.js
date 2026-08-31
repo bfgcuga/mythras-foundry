@@ -60,13 +60,13 @@ async function applyFatigueCheckResponse(message, request) {
     [`flags.${SCOPE}.fatigueCheck`]: state });
 }
 
-async function requestFatigueCheckRoll(message, actorUuid) {
+async function requestFatigueCheckRoll(message, actorUuid, manual = false) {
   const state = message.getFlag(SCOPE, "fatigueCheck");
   const actor = await fromUuid(actorUuid).catch(() => null);
   if (!state || !actor || (!game.user.isGM && !actor.testUserPermission(game.user, "OWNER"))) return;
   const participant = state.participants.find((entry) => entry.actorUuid === actorUuid);
   if (!participant || participant.status !== "pending") return;
-  const roll = await evaluateAnimatedRoll("1d100");
+  const roll = await evaluateAnimatedRoll("1d100", { manual });
   const request = { action: "fatigueCheckRoll", messageId: message.id,
     revision: state.revision, actorUuid, userId: game.user.id, rawRoll: Number(roll.total),
     serializedRoll: roll.toJSON() };
@@ -87,8 +87,8 @@ export function activateFatigueCheckCard(message, html) {
     fromUuid(actorUuid).then((actor) => {
       button.hidden = !game.user.isGM && !actor?.testUserPermission?.(game.user, "OWNER");
     });
-    button.addEventListener("click", () => {
-      button.disabled = true; requestFatigueCheckRoll(message, actorUuid);
+    button.addEventListener("click", (event) => {
+      button.disabled = true; requestFatigueCheckRoll(message, actorUuid, event.shiftKey);
     });
   }
 }
