@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import { MACRO_SOURCES, managedMacroUpdate } from "../scripts/data/macros.js";
 
@@ -86,6 +87,12 @@ test("el compendio incluye un lanzador común de peligros y fatiga", () => {
   assert.equal(macro.flags["mythras-foundry"].macroVersion, 4);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction(macro.command));
+});
+
+test("el lanzador presenta el título con el encabezado rojizo compartido", () => {
+  const css = readFileSync(new URL("../styles/mythras-foundry.css", import.meta.url), "utf8");
+  assert.match(css, /\.mythras-launcher-title \{[\s\S]*?background-color: var\(--mythras-header-accent\)/);
+  assert.match(css, /\.mythras-launcher-title \{[\s\S]*?color: var\(--mythras-header-ink\) !important/);
 });
 
 test("el compendio incluye una macro GM para asignar estados", () => {

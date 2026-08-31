@@ -339,6 +339,13 @@
 
 .mythras-foundry .mythras-launcher-title {
   margin: 0;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--mythras-header-line);
+  border-radius: 0.35rem;
+  background-color: var(--mythras-header-accent);
+  background-image: linear-gradient(rgb(255 255 255 / 10%), rgb(48 46 42 / 5%));
+  box-shadow: 0 2px 5px rgb(48 46 42 / 18%);
+  color: var(--mythras-header-ink) !important;
   text-align: center;
   font-size: 1.1rem;
 }
