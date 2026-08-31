@@ -566,14 +566,35 @@ persistido del intercambio ni las exportaciones públicas de `combat-chat.js`:
   respuestas y detección del estado terminal;
 - `combat-damage.js` controla las opciones de localización y prepara, en orden,
   las comprobaciones derivadas de efectos y heridas;
-- `wound-consequences.js` produce y ejecuta el plan anatómico común;
+- `combat-damage-runtime.js` verifica que la instantánea de PG y armadura siga
+  vigente, gobierna la transición `proposed` → `applying` → `applied`, restaura
+  la propuesta si falla la escritura y aplica documentalmente los PG y la lesión
+  permanente en una única operación; recibe de forma explícita la resolución de
+  documentos y usuarios, el evaluador de dados, el renderizador y los ejecutores
+  empleados por Foundry;
+- `combat-effect-runtime.js` determina el Actor afectado y ejecuta los efectos
+  inmediatos o posteriores a una prueba: estados temporales, cambios de alcance,
+  apilamiento y creación de comprobaciones pendientes. La resolución de Actor,
+  Combat, dados, condiciones y relaciones se entrega mediante dependencias
+  explícitas;
+- `combat-response-runtime.js` aplica las transiciones autoritativas de defensa,
+  elección de efectos, Suerte y blanco accidental;
+- `combat-check-runtime.js` resuelve las comprobaciones regladas y las
+  confirmaciones manuales de efectos;
+- `combat-exchange-runtime.js` gobierna avance, cierre, cancelación, reembolso
+  de PA y consecuencias pendientes;
+- `combat-resource-runtime.js` concentra las escrituras de PA, Suerte, munición
+  y consumo de Sorpresa;
+- `wound-consequences.js` produce el plan anatómico común y
+  `combat-wound-runtime.js` lo ejecuta sobre documentos y estados;
 - `combat-chat-renderer.js` transforma el estado en HTML y prepara la ayuda
   visual, sin modificar documentos ni el intercambio; los resultados de dado,
   dificultades, objetivos efectivos y heridas reutilizan las clases cromáticas
   compartidas con las tiradas de habilidad y las hojas;
 - `combat-chat-runtime.js` valida y enruta las acciones recibidas por socket;
-- `combat-chat.js` conserva la fachada compatible y coordina las operaciones
-  Foundry entre esos servicios.
+- `combat-chat.js` conserva la fachada compatible, reúne las dependencias de
+  Foundry y presenta los diálogos. No actualiza documentos directamente: delega
+  cada transición y escritura en los servicios anteriores.
 
 Los modos `ranged` y `siege` añaden a la transacción una instantánea `ranged`
 con metros declarados, banda, TAM, fuentes de dificultad, potencia efectiva,

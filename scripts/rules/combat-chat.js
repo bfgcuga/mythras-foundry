@@ -1,16 +1,14 @@
-import { combatAttackHits, damageModifierFormula, difficultyTarget, parryReduction,
-  resolveCombatExchange, resolveDamage, resolveWeaponStyle } from "./combat.js";
+import { combatAttackHits, damageModifierFormula, difficultyTarget,
+  resolveCombatExchange, resolveWeaponStyle } from "./combat.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "./weapon-modes.js";
 import { resolveActorConditions, actorLoadState } from "./actor-conditions.js";
 import { invertD100 } from "./skill-roll.js";
-import { findHitLocation, permanentWoundState, woundLevel,
-  woundLocationKind } from "./hit-locations.js";
+import { findHitLocation } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
-import { combatEffectRule, combatEffectSlotsBySide, eligibleCombatEffects, maximizeDamageFormula,
-  mergeCombatEffectDocuments, opposedEffectWinner, selectedEffectCount,
-  validateEffectSelections } from "./combat-effects.js";
+import { combatEffectRule, eligibleCombatEffects, maximizeDamageFormula,
+  mergeCombatEffectDocuments, opposedEffectWinner, selectedEffectCount } from "./combat-effects.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
 import { getActionPointRules, getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { normalizeCatalogConfig } from "./catalog.js";
@@ -18,9 +16,9 @@ import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { consumePassiveBlock, coverFor, ensureEngagement, passiveBlockFor,
-  relationFor, setRelationPosition, tacticalState, validateReachAttack } from "./engagement-runtime.js";
-import { engagementId, engagementRestriction } from "./engagements.js";
-import { ammunitionState, applyLongRangeDamage, canFireAmmunition, consumeAmmunition,
+  relationFor, tacticalState, validateReachAttack } from "./engagement-runtime.js";
+import { engagementRestriction } from "./engagements.js";
+import { ammunitionState, canFireAmmunition,
   isAccidentalMeleeHit, parseRangeProfile, rangedAttackProfile, reducePowerCategory
 } from "./ranged-combat.js";
 import { clearAim, readyAim } from "./ranged-actions.js";
@@ -32,18 +30,29 @@ import { evaluateSystemRoll } from "./system-roll.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
 import { openAttackRollDialog } from "../apps/skill-roll-dialog.js";
 import { applyDying } from "./dying.js";
-import { executeWoundConsequencePlan, woundConsequencePlan
-} from "./wound-consequences.js";
 import { applyDeath } from "./death.js";
 import { openCombatCheckHelp, renderCombatExchange,
   woundCheckOutcomeKey } from "./combat-chat-renderer.js";
-import { damageLocationChoices, majorWoundLuckAdjustment,
-  prepareDamageChecks } from "./combat-damage.js";
-import { exchangeTerminal, preferredCombatCoordinator, resolvePendingExchangeSteps,
-  validateCombatResponse
+import { exchangeTerminal, preferredCombatCoordinator, validateCombatResponse
 } from "./combat-exchange-state.js";
 import { registerCombatSocketRuntime } from "./combat-chat-runtime.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
+import { applyCombatDamageLuck, applyMajorWoundLuck, applyProposedCombatDamage,
+  applyRolledCombatDamage, refreshCombatDamageProposal } from "./combat-damage-runtime.js";
+import { addManagedCombatStatus, applyCombatEffectCheckConsequence,
+  applyImmediateCombatEffects, combatSideEntry } from "./combat-effect-runtime.js";
+import { advanceCombatExchange, applyCombatExchangeCancellation, applyDroppedCombatItem,
+  closeTerminalCombatExchange, resolveCombatExchangeConsequence, resolveCombatExchangePending
+} from "./combat-exchange-runtime.js";
+import { applyAccidentalTargetTransition, applyCombatDefenseTransition, applyCombatEffectsTransition,
+  applyCombatLuckTransition
+} from "./combat-response-runtime.js";
+import { applyCombatCheckTransition, applyManualCombatEffectResolution
+} from "./combat-check-runtime.js";
+import { consumeSurpriseEffectBonus, consumeWeaponModeAmmunition, spendActorActionPoint,
+  spendActorLuckPoint } from "./combat-resource-runtime.js";
+import { applyCombatWoundConsequences, heldCombatItemChoices
+} from "./combat-wound-runtime.js";
 
 export { renderCombatExchange, woundCheckOutcomeKey } from "./combat-chat-renderer.js";
 export { preferredCombatCoordinator, validateCombatResponse } from "./combat-exchange-state.js";
@@ -56,6 +65,11 @@ const localize = (key) => game.i18n.localize(key);
 const actorIdentity = (actor) => actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
 const tokenUuid = (token) => token?.document?.uuid ?? token?.uuid ?? "";
 const pendingAttackActors = new Set();
+
+function combatEffectRuntimeDependencies() {
+  return { resolveActor: combatActor, combatById: (id) => game.combats.get(id), localize,
+    evaluateRoll: evaluateAnimatedRoll };
+}
 
 function locationSnapshot(item) {
   return { id: item.id, name: item.name, rangeStart: item.system.rangeStart,
@@ -91,24 +105,13 @@ function combatTurnContext(actor) {
 }
 
 async function spendActionPoint(actor) {
-  const points = currentActionPoints(actor);
-  if (points < 1) return false;
-  await actor.update({ "system.resources.actionPoints.value": points - 1 });
-  return true;
+  return spendActorActionPoint(actor);
 }
 
 async function advanceCombatTurnForExchange(message, combat, { force = false } = {}) {
-  if (!combat.turnEconomy || combat.turnEconomy.turnAdvanced || !exchangeTerminal(combat)
-    || (!force && combatCanBeCancelled(combat))) return;
-  const tracker = game.combats.get(combat.turnEconomy.combatId);
-  if (!tracker?.started || tracker.combatant?.id !== combat.turnEconomy.combatantId
-    || Number(tracker.round) !== Number(combat.turnEconomy.round)) return;
-  combat.turnEconomy.turnAdvanced = true;
-  combat.turnEconomy.advancedAt = Date.now();
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await tracker.nextTurn();
+  return advanceCombatExchange(message, combat, { force,
+    combatById: (id) => game.combats.get(id), render: renderCombatExchange,
+    flagScope: FLAG_SCOPE });
 }
 
 async function combatEffectDocuments() {
@@ -345,11 +348,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   await clearAim(actor);
   let ammunition = null;
   if (ranged && mode.ammoTracking) {
-    ammunition = consumeAmmunition(mode);
-    const modes = weaponModes(weapon).map((entry) => entry.key === mode.key ? { ...entry,
-      ammoLoaded: ammunition.loaded, ammoReserve: ammunition.reserve,
-      reloadProgress: ammunition.reloadProgress } : { ...entry });
-    await weapon.update({ "system.modes": modes });
+    ammunition = await consumeWeaponModeAmmunition(weapon, mode);
   }
   if (turnEconomy) {
     turnEconomy.attackSpent = true;
@@ -567,20 +566,10 @@ async function chooseAccidentalTarget(message, combat) {
   const entry = tracker?.combatants.find((candidate) => candidate.token?.uuid === selected
     || candidate.actor?.uuid === actor.uuid);
   if (tracker && !entry) return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.participation"));
-  combat.ranged.originalDefender = { ...combat.defender };
-  combat.ranged.accidentalTarget = { tokenUuid: selected, actorUuid: actor.uuid,
-    actorName: tokenDisplayName(token), selectedBy: game.user.id, selectedAt: Date.now() };
-  combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenDisplayName(token),
-    tokenUuid: selected, defense: null, luckHistory: [], size: actor.system.size,
-    targetType: "actor", targetWeaponId: "", locations: actor.items
-      .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
-  if (combat.turnEconomy) combat.turnEconomy.defenderCombatantId = entry.id;
-  combat.attacker.target = combat.ranged.normalTarget;
-  combat.attacker.difficulty = "standard";
-  combat.attackClassification = resolveCombatExchange({ attack: { target: combat.attacker.target,
-    rawRoll: combat.attacker.rawRoll }, defense: { type: "none" } }).attack;
-  combat.status = "awaitingAccidentalDefense"; combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyAccidentalTargetTransition(message, combat, { token, entry, userId: game.user.id,
+    clone: foundry.utils.deepClone, actorIdentity, tokenIdentity: tokenUuid,
+    tokenName: tokenDisplayName, locationSnapshot, render: renderCombatExchange,
+    flagScope: FLAG_SCOPE });
 }
 
 function surpriseOpportunity(defender, rawRoll, target) {
@@ -594,69 +583,19 @@ function surpriseOpportunity(defender, rawRoll, target) {
 }
 
 async function consumeSurpriseBonus(defender, combat) {
-  if (!combat.surprise?.eligible || combat.surprise.consumed) return 0;
-  const effect = defender.effects.get(combat.surprise.effectId);
-  const condition = effect?.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-  if (!effect || condition?.bonusConsumed) return 0;
-  await effect.update({ [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]: {
-    ...condition, bonusConsumed: true } });
-  combat.surprise.consumed = true;
-  return 1;
+  return consumeSurpriseEffectBonus(defender, combat,
+    { scope: TIMED_CONDITION_SCOPE, flag: TIMED_CONDITION_FLAG });
 }
 
 async function applyCombatDefense(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  const actor = await combatActor(combat?.defender?.tokenUuid, combat?.defender?.actorUuid);
-  const invalid = combat && validateCombatResponse(combat, request, { actor, user: game.users.get(request.userId) });
-  if (!combat || invalid) return ui.notifications.warn(localize(`MYTHRASF.Combat.Rejected.${invalid ?? "state"}`));
-  if (!["none", "cover"].includes(request.defense.type) && combat.turnEconomy && !combat.turnEconomy.defenseSpent) {
-    const tracker = game.combats.get(combat.turnEconomy.combatId);
-    const defenderEntry = tracker?.combatants.get(combat.turnEconomy.defenderCombatantId);
-    if (!tracker?.started || defenderEntry?.actor?.uuid !== actor.uuid) {
-      return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.participation"));
-    }
-    if (effectiveActionPointMaximum(actor, getActionPointRules()) < 1
-      || !await spendActionPoint(actor)) {
-      return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
-    }
-    combat.turnEconomy.defenseSpent = true;
-    combat.turnEconomy.defenseSpentBy = request.userId;
-  }
-  if (request.defense.type === "parry" && combat.turnEconomy) {
-    await consumePassiveBlock(game.combats.get(combat.turnEconomy.combatId),
-      combat.turnEconomy.defenderCombatantId, request.defense.weaponId, "parry");
-  }
-  combat.defender.defense = request.defense;
-  if (request.defense.type === "evade" && !actor.statuses?.has?.("prone")) {
-    await applyTimedCondition(actor, { key: "prone", statusId: "prone",
-      name: localize("MYTHRASF.Status.Prone"), img: "icons/svg/falling.svg",
-      source: { messageUuid: message.uuid, sourceName: combat.attacker.actorName,
-        sourceActorUuid: combat.attacker.actorUuid, sourceTokenUuid: combat.attacker.tokenUuid },
-      combat: combat.turnEconomy ? game.combats.get(combat.turnEconomy.combatId) : null,
-      duration: { unit: "manual", phase: "manual" } });
-  }
-  combat.resolution = resolveCombatExchange({ predeclared: combat.predeclared,
-    attack: { target: combat.attacker.target, rawRoll: combat.attacker.rawRoll }, defense: request.defense });
-  await recordCombatResolutionFumbles(combat);
-  const surpriseSlots = await consumeSurpriseBonus(actor, combat);
-  const sideSlots = combatEffectSlotsBySide({ winner: combat.resolution.winner,
-    differential: combat.resolution.effects, surprise: surpriseSlots });
-  combat.effects = { winner: combat.resolution.winner,
-    slots: sideSlots.attacker + sideSlots.defender, sideSlots,
-    surpriseSlots,
-    selections: [], confirmed: combat.resolution.effects === 0, checks: [] };
-  const totalSlots = combat.effects.sideSlots.attacker + combat.effects.sideSlots.defender;
-  combat.effects.pendingSide = combat.effects.sideSlots.attacker ? "attacker"
-    : combat.effects.sideSlots.defender ? "defender" : null;
-  combat.effects.confirmed = totalSlots === 0;
-  combat.status = totalSlots > 0 ? "awaitingEffects" : "resolved";
-  combat.damage = { status: totalSlots > 0 ? "blocked"
-    : combatAttackHits(combat.resolution) ? "ready" : "unavailable" };
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    rolls: appendSerializedRolls(message, request.defense.serializedRoll),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
+  return applyCombatDefenseTransition(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    warn: (text) => ui.notifications.warn(text), localize,
+    combatById: (id) => game.combats.get(id), actionPointRules: getActionPointRules,
+    spendActionPoint, consumePassiveBlock, applyCondition: applyTimedCondition,
+    recordFumbles: recordCombatResolutionFumbles, consumeSurprise: consumeSurpriseBonus,
+    render: renderCombatExchange, appendRolls: appendSerializedRolls,
+    advance: advanceCombatTurnForExchange });
 }
 
 async function chooseCombatEffects(message, combat) {
@@ -702,143 +641,25 @@ async function chooseCombatEffects(message, combat) {
 }
 
 async function applyCombatEffects(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || combat.status !== "awaitingEffects"
-    || Number(request.revision) !== Number(combat.revision)) return;
-  const side = combat.effects.pendingSide ?? combat.effects.winner;
-  if (request.side !== side) return;
-  const winnerEntry = side === "attacker" ? combat.attacker : combat.defender;
-  const actor = await combatActor(winnerEntry.tokenUuid, winnerEntry.actorUuid);
-  const user = game.users.get(request.userId);
-  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
-  const catalog = (await combatEffectDocuments()).map(effectView);
-  const slots = combat.effects.sideSlots?.[side] ?? combat.effects.slots;
-  const validation = validateEffectSelections({ slots,
-    selections: request.selections, effects: catalog, context: effectContext(combat, side) });
-  if (!validation.valid) return ui.notifications.warn(localize("MYTHRASF.CombatEffect.Invalid"));
-  const catalogByKey = new Map(catalog.map((effect) => [effect.key, effect]));
-  const sideSelections = request.selections.map((selection, index) => {
-    if (selection.waived) return { slot: index, side, waived: true };
-    const effect = catalogByKey.get(selection.key);
-    return { slot: index, side, waived: false, ...effect,
-      parameters: { locationId: String(selection.parameters?.locationId ?? ""),
-        note: String(selection.parameters?.note ?? "") },
-      status: effect.requiresWound ? "conditional"
-        : effect.ruleKey === "guided" ? "pending" : "active" };
-  });
-  combat.effects.selections.push(...sideSelections);
-  combat.effects.confirmations = { ...(combat.effects.confirmations ?? {}),
-    [side]: { userId: user.id, confirmedAt: Date.now() } };
-  const nextSide = side === "attacker" && Number(combat.effects.sideSlots?.defender ?? 0) > 0
-    ? "defender" : null;
-  combat.effects.pendingSide = nextSide;
-  combat.effects.confirmed = !nextSide;
-  if (!nextSide) {
-    combat.effects.confirmedBy = user.id;
-    combat.effects.confirmedAt = Date.now();
-    await applyImmediateEffectConsequences(combat, message);
-    combat.status = "resolved";
-    combat.damage = { status: combatAttackHits(combat.resolution) ? "ready" : "unavailable" };
-  }
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
-}
-
-function sideEntry(combat, side) { return side === "attacker" ? combat.attacker : combat.defender; }
-
-function affectedSideForEffect(effect) {
-  if (effect.target === "self") return effect.side;
-  return effect.side === "attacker" ? "defender" : "attacker";
+  return applyCombatEffectsTransition(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    catalogDocuments: combatEffectDocuments, effectView, effectContext,
+    warn: (text) => ui.notifications.warn(text), localize,
+    applyImmediateEffects: applyImmediateCombatEffects,
+    immediateDependencies: combatEffectRuntimeDependencies, render: renderCombatExchange,
+    advance: advanceCombatTurnForExchange });
 }
 
 async function addManagedStatus(combat, effect, { key, statusId, turns = null,
   unit = "actorTurn", phase = "endActorTurn", locationId = "", capabilities = {},
   metadata = {} } = {}) {
-  const affectedSide = affectedSideForEffect(effect);
-  const affectedEntry = sideEntry(combat, affectedSide);
-  const sourceEntry = sideEntry(combat, effect.side);
-  const actor = await combatActor(affectedEntry.tokenUuid, affectedEntry.actorUuid);
-  const tracker = combat.turnEconomy ? game.combats.get(combat.turnEconomy.combatId) : null;
-  if (!actor) return false;
-  await applyTimedCondition(actor, { key, statusId, name: localize(`MYTHRASF.Status.${
-    statusId[0].toUpperCase()}${statusId.slice(1)}`), img: "icons/svg/daze.svg",
-    source: { messageUuid: combat.messageUuid ?? "", name: sourceEntry.actorName,
-      actorUuid: sourceEntry.actorUuid,
-      tokenUuid: sourceEntry.tokenUuid },
-    combat: tracker ? { uuid: tracker.uuid, round: tracker.round,
-      cycle: tracker.mythrasTurnEconomy?.cycle, turn: tracker.turn } : null,
-    duration: { unit, phase, value: turns,
-      skipCurrentTurn: unit === "actorTurn" && tracker?.combatant?.actor?.uuid === actor.uuid },
-    locationId, capabilities, metadata });
-  combat.consequencesApplied = true;
-  return true;
-}
-
-async function applyImmediateEffectConsequences(combat, message) {
-  combat.messageUuid = message.uuid;
-  const selections = combat.effects.selections.filter((effect) => !effect.waived);
-  for (const effect of selections) {
-    if (effect.key === "aprovechar-la-ventaja") {
-      await addManagedStatus(combat, effect, { key: "pressed", statusId: "pressed", turns: 1 });
-      effect.status = "resolved";
-    }
-    if (effect.key === "muerte-silenciosa") {
-      await addManagedStatus(combat, effect, { key: "silenced", statusId: "silenced",
-        unit: "round", phase: "endRound" }); effect.status = "resolved";
-    }
-    if (["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect.key)
-      && combat.turnEconomy) {
-      const tracker = game.combats.get(combat.turnEconomy.combatId);
-      const relationId = engagementId(combat.turnEconomy.combatantId,
-        combat.turnEconomy.defenderCombatantId);
-      await setRelationPosition(tracker, relationId,
-        effect.key === "cerrar-distancia" ? "shorter" : effect.key === "abrir-distancia"
-          ? "longer" : "neutral", { reason: `effect:${effect.key}`,
-          status: effect.key === "retirada" ? "disengaged" : "engaged" });
-      combat.consequencesApplied = true;
-      effect.status = "resolved";
-    }
-  }
-  const offBalance = selections.filter((effect) => effect.key === "desequilibrar-oponente");
-  if (offBalance.length) {
-    await addManagedStatus(combat, offBalance[0], { key: "offBalance",
-      statusId: "offBalance", turns: offBalance.length });
-    offBalance.forEach((effect) => { effect.status = "resolved"; });
-  }
-  for (const effect of selections.filter((entry) => ["cegar-oponente",
-    "disparo-de-supresion"].includes(entry.key))) {
-    const actorSide = affectedSideForEffect(effect);
-    combat.effects.checks.push({ id: `effect-${effect.side}-${effect.slot}`,
-      source: "effect", order: combat.effects.checks.length, effectKey: effect.key,
-      effectSide: effect.side, effectSlot: effect.slot, actorSide,
-      abilitySlugs: effect.key === "cegar-oponente" ? ["evadir"] : ["voluntad"],
-      opposedSide: effect.side, label: effect.name, status: "pending" });
-    effect.status = "pending";
-  }
-}
-
-async function refundExchangeActionPoints(combat) {
-  const economy = combat.turnEconomy;
-  if (economy?.attackSpent) {
-    const attacker = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
-    if (attacker) await attacker.update({ "system.resources.actionPoints.value":
-      currentActionPoints(attacker) + 1 });
-    economy.attackSpent = false;
-    economy.attackRefunded = true;
-  }
-  if (economy?.defenseSpent) {
-    const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
-    if (defender) await defender.update({ "system.resources.actionPoints.value":
-      currentActionPoints(defender) + 1 });
-    economy.defenseSpent = false;
-    economy.defenseRefunded = true;
-  }
+  return addManagedCombatStatus(combat, effect, { key, statusId, turns, unit, phase,
+    locationId, capabilities, metadata }, combatEffectRuntimeDependencies());
 }
 
 async function cancelCombat(message, current, suppliedReason = "") {
   if (!game.user.isGM || !combatCanBeCancelled(current)) return;
-  const combat = foundry.utils.deepClone(current);
+  let reason = suppliedReason;
   if (!suppliedReason && current.status === "awaitingEffects") {
     const result = await foundry.applications.api.DialogV2.wait({
       window: { title: localize("MYTHRASF.Contest.Cancel") },
@@ -848,32 +669,19 @@ async function cancelCombat(message, current, suppliedReason = "") {
       { action: "back", label: localize("MYTHRASF.Cancel") }], rejectClose: false
     });
     if (!result) return;
-    combat.cancelReason = result;
-    combat.cancelledBy = game.user.id;
+    reason = result;
   }
-  if (suppliedReason) combat.cancelReason = suppliedReason;
-  combat.cancelledBy ??= game.user.id;
-  await refundExchangeActionPoints(combat);
-  combat.status = "cancelled"; combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyCombatExchangeCancellation(message, current, { reason, userId: game.user.id,
+    clone: foundry.utils.deepClone, resolveActor: combatActor, render: renderCombatExchange,
+    flagScope: FLAG_SCOPE });
 }
 
 async function closeCombatExchange(message, current) {
   if (!game.user.isGM || !current.turnEconomy || current.turnEconomy.turnAdvanced) return;
   if (exchangeTerminal(current)) {
-    const combat = foundry.utils.deepClone(current);
-    const tracker = game.combats.get(combat.turnEconomy.combatId);
-    if (tracker?.started && tracker.combatant?.id === combat.turnEconomy.combatantId
-      && Number(tracker.round) === Number(combat.turnEconomy.round)) {
-      await advanceCombatTurnForExchange(message, combat, { force: true });
-    } else {
-      combat.turnEconomy.turnAdvanced = true;
-      combat.turnEconomy.advancedAt = Date.now();
-      combat.revision += 1;
-      await message.update({ content: renderCombatExchange(combat),
-        [`flags.${FLAG_SCOPE}.combat`]: combat });
-    }
-    return;
+    return closeTerminalCombatExchange(message, current, { clone: foundry.utils.deepClone,
+      combatById: (id) => game.combats.get(id), render: renderCombatExchange,
+      advance: advanceCombatTurnForExchange, flagScope: FLAG_SCOPE });
   }
   const resolution = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.Tracker.CloseExchange") },
@@ -885,14 +693,13 @@ async function closeCombatExchange(message, current) {
   });
   if (!resolution) return;
   const combat = foundry.utils.deepClone(current);
-  resolvePendingExchangeSteps(combat, { note: resolution.note, userId: game.user.id });
+  resolveCombatExchangePending(combat, { note: resolution.note, userId: game.user.id });
   return closeCombatExchange(message, combat);
 }
 
 async function resolveCombatConsequence(message, current, index) {
   if (!game.user.isGM) return;
-  const combat = foundry.utils.deepClone(current);
-  const consequence = combat.consequences?.[Number(index)];
+  const consequence = current.consequences?.[Number(index)];
   if (!consequence || consequence.status !== "pending") return;
   const note = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.CombatEffect.ResolveManual") },
@@ -900,18 +707,15 @@ async function resolveCombatConsequence(message, current, index) {
     buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.ResolveManual"),
       callback: (event, button) => button.form.elements.note.value.trim() }], rejectClose: false });
   if (note == null) return;
-  Object.assign(consequence, { status: "resolved", note, userId: game.user.id,
-    resolvedAt: Date.now() });
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
+  return resolveCombatExchangeConsequence(message, current, index, { note,
+    userId: game.user.id, clone: foundry.utils.deepClone, render: renderCombatExchange,
+    advance: advanceCombatTurnForExchange, flagScope: FLAG_SCOPE });
 }
 
 async function requestDropHeldItem(message, current, index, itemId) {
   const consequence = current.consequences?.[Number(index)];
   if (!consequence || consequence.key !== "dropHeldItem" || consequence.status !== "pending") return;
-  const entry = sideEntry(current, consequence.actorSide ?? "defender");
+  const entry = combatSideEntry(current, consequence.actorSide ?? "defender");
   const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
   if (!actor || (!game.user.isGM && !actor.isOwner)) return;
   const request = { action: "combatDropHeldItem", messageId: message.id,
@@ -923,26 +727,9 @@ async function requestDropHeldItem(message, current, index, itemId) {
 }
 
 async function applyDropHeldItem(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || Number(request.revision) !== Number(combat.revision)) return;
-  const consequence = combat.consequences?.[Number(request.consequenceIndex)];
-  if (!consequence || consequence.key !== "dropHeldItem" || consequence.status !== "pending") return;
-  const entry = sideEntry(combat, consequence.actorSide ?? "defender");
-  const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
-  const user = game.users.get(request.userId);
-  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
-  const itemId = String(request.itemId ?? "");
-  const choice = (consequence.itemChoices ?? []).find((item) => item.id === itemId);
-  if (itemId && !choice) return;
-  const item = itemId ? actor.items.get(itemId) : null;
-  if (itemId && (!item || item.type !== "weapon")) return;
-  if (item?.system.equipped) await item.update({ "system.equipped": false });
-  Object.assign(consequence, { status: "resolved", itemId,
-    itemName: choice?.name ?? "", resolvedBy: user.id, resolvedAt: Date.now() });
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
+  return applyDroppedCombatItem(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    render: renderCombatExchange, advance: advanceCombatTurnForExchange });
 }
 
 async function spendCombatLuck(message, current, side, manual = false) {
@@ -983,9 +770,9 @@ async function spendCombatLuck(message, current, side, manual = false) {
   if (!choice) return;
   const roll = choice === "reroll" ? await evaluateSystemRoll("1d100", { manual }) : null;
   const rawRoll = roll?.total ?? invertD100(currentRoll);
-  const points = Number(spender.actor.system.resources?.luckPoints?.value ?? 0);
-  if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-  await spender.actor.update({ "system.resources.luckPoints.value": points - 1 });
+  if (!await spendActorLuckPoint(spender.actor)) {
+    return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
+  }
   const request = { action: "combatLuck", messageId: message.id, revision: current.revision,
     userId: game.user.id, side, mode: choice, luckSide: spender.side,
     rawRoll, serializedRoll: roll?.toJSON?.() ?? null,
@@ -995,75 +782,12 @@ async function spendCombatLuck(message, current, side, manual = false) {
 }
 
 async function applyCombatLuck(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || Number(request.revision) !== Number(combat.revision)
-    || !combatRollLuckAllowed(combat)
-    || !["attacker", "defender"].includes(request.side)) return;
-  const entry = request.side === "attacker" ? combat.attacker : combat.defender;
-  const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
-  const spenderEntries = await Promise.all(["attacker", "defender"].map(async (side) => {
-    const participant = side === "attacker" ? combat.attacker : combat.defender;
-    return { side, actor: await combatActor(participant.tokenUuid, participant.actorUuid) };
-  }));
-  const spender = spenderEntries.find((candidate) => candidate.side === request.luckSide);
-  const user = game.users.get(request.userId);
-  const ownRoll = spender?.side === request.side;
-  if (!actor || !spender?.actor || !user
-    || (!user.isGM && !spender.actor.testUserPermission(user, "OWNER"))
-    || !["reroll", "invert"].includes(request.mode)
-    || (!ownRoll && request.mode !== "reroll")) return;
-  if (request.side === "defender" && !entry.defense?.rawRoll) return;
-  if (!request.luckAlreadySpent) {
-    const points = Number(spender.actor.system.resources?.luckPoints?.value ?? 0);
-    if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-    await spender.actor.update({ "system.resources.luckPoints.value": points - 1 });
-  }
-  const currentRoll = request.side === "attacker" ? entry.rawRoll : entry.defense.rawRoll;
-  entry.luckHistory = [...(entry.luckHistory ?? []), currentRoll];
-  entry.luckSpendHistory = [...(entry.luckSpendHistory ?? []), {
-    value: currentRoll, spenderId: spender.actor.id, spenderUuid: spender.actor.uuid,
-    spenderName: actorDisplayName(spender.actor),
-    mode: request.mode }];
-  if (request.side === "attacker") entry.rawRoll = Number(request.rawRoll);
-  else entry.defense.rawRoll = Number(request.rawRoll);
-  const ability = request.side === "attacker" ? actor.items.get(entry.styleId)
-    : actor.items.get(entry.defense.abilityId ?? entry.defense.styleId);
-  const target = request.side === "attacker" ? entry.target : entry.defense.target;
-  await recordAbilityFumble(ability, classifyContestRoll(request.rawRoll, target));
-  if (request.side === "attacker" && combat.surprise && !combat.surprise.consumed) {
-    const result = classifyContestRoll(entry.rawRoll, entry.target);
-    combat.surprise.eligible = ["success", "critical"].includes(result);
-    if (combat.status === "awaitingEffects" && combat.surprise.eligible) {
-      const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
-      if (defender) combat.effects.surpriseSlots += await consumeSurpriseBonus(defender, combat);
-    }
-  }
-  if (["resolved", "awaitingEffects"].includes(combat.status)) combat.resolution = resolveCombatExchange({ predeclared: combat.predeclared,
-    attack: { target: combat.attacker.target, rawRoll: combat.attacker.rawRoll }, defense: combat.defender.defense });
-  else if (!combat.predeclared) combat.attackClassification = resolveCombatExchange({
-    attack: { target: combat.attacker.target, rawRoll: combat.attacker.rawRoll }, defense: { type: "none" } }).attack;
-  await recordCombatResolutionFumbles(combat);
-  if (combat.status === "awaitingEffects") {
-    const surpriseSlots = Number(combat.effects?.surpriseSlots ?? 0);
-    const sideSlots = combatEffectSlotsBySide({ winner: combat.resolution.winner,
-      differential: combat.resolution.effects, surprise: surpriseSlots });
-    const totalSlots = sideSlots.attacker + sideSlots.defender;
-    combat.effects = { winner: combat.resolution.winner, slots: totalSlots, sideSlots,
-      surpriseSlots, pendingSide: sideSlots.attacker ? "attacker"
-        : sideSlots.defender ? "defender" : null,
-      selections: [], confirmed: totalSlots === 0, checks: [] };
-    if (!totalSlots) {
-      combat.status = "resolved";
-      combat.damage = { status: combatAttackHits(combat.resolution) ? "ready" : "unavailable" };
-    }
-  }
-  combat.revision += 1;
-  if (combat.status === "resolved" && ["ready", "unavailable"].includes(combat.damage?.status)) {
-    combat.damage = { status: combatAttackHits(combat.resolution) ? "ready" : "unavailable" };
-  }
-  await message.update({ content: renderCombatExchange(combat),
-    rolls: appendSerializedRolls(message, request.serializedRoll),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyCombatLuckTransition(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    warn: (text) => ui.notifications.warn(text), localize, actorName: actorDisplayName,
+    recordFumble: recordAbilityFumble, recordFumbles: recordCombatResolutionFumbles,
+    consumeSurprise: consumeSurpriseBonus, render: renderCombatExchange,
+    appendRolls: appendSerializedRolls });
 }
 
 async function requestCombatDamage(message, combat, manual = false) {
@@ -1135,41 +859,10 @@ async function requestCombatDamage(message, combat, manual = false) {
 }
 
 async function applyCombatDamage(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || combat.damage?.status !== "ready" || Number(request.revision) !== Number(combat.revision)) return;
-  const actor = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
-  const user = game.users.get(request.userId);
-  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
-  const location = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
-    entry.id === request.locationId) : findHitLocation((combat.defender.locations ?? []).map((entry) => ({
-    id: entry.id, name: entry.name, system: { rangeStart: entry.rangeStart,
-      rangeEnd: entry.rangeEnd, permanentWound: entry.permanentWound }
-  })), request.locationRoll);
-  combat.damage = { status: "rolled", formula: request.formula,
-    weaponFormula: request.weaponFormula, modifierFormula: request.modifierFormula,
-    extraordinaryFormula: request.extraordinaryFormula, resultExpression: request.resultExpression,
-    rollExpression: request.rollExpression,
-    rawRoll: Number(request.rawRoll),
-    serializedRoll: request.serializedRoll, alternateRoll: request.alternateRoll,
-    luckHistory: [], locationRoll: request.locationRoll == null ? null : Number(request.locationRoll),
-    rolledLocationId: request.rolledLocationId ?? "",
-    locationId: location?.id ?? "" };
-  if (!location && combat.defender.targetType !== "weapon") {
-    combat.damage.status = "missedLocation";
-    combat.revision += 1;
-    await message.update({ content: renderCombatExchange(combat),
-      rolls: appendSerializedRolls(message, request.serializedRoll,
-        request.alternateRoll?.serializedRoll, request.serializedLocationRoll),
-      [`flags.${FLAG_SCOPE}.combat`]: combat });
-    await advanceCombatTurnForExchange(message, combat);
-    return;
-  }
-  combat.revision += 1;
-  await refreshDamageProposal(combat);
-  await message.update({ content: renderCombatExchange(combat),
-    rolls: appendSerializedRolls(message, request.serializedRoll,
-      request.alternateRoll?.serializedRoll, request.serializedLocationRoll),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyRolledCombatDamage(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    refreshProposal: refreshDamageProposal, render: renderCombatExchange,
+    appendRolls: appendSerializedRolls, advance: advanceCombatTurnForExchange });
 }
 
 async function requestDamageLuck(message, combat, manual = false) {
@@ -1180,7 +873,7 @@ async function requestDamageLuck(message, combat, manual = false) {
   let roll;
   try { roll = await evaluateSystemRoll(combat.damage.formula, { manual }); }
   catch { return ui.notifications.warn(localize("MYTHRASF.Combat.InvalidDamageFormula")); }
-  await actor.update({ "system.resources.luckPoints.value": Number(actor.system.resources.luckPoints.value) - 1 });
+  if (!await spendActorLuckPoint(actor)) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
   const request = { action: "combatDamageLuck", messageId: message.id, revision: combat.revision,
     userId: game.user.id, rawRoll: roll.total, resultExpression: roll.result,
     rollExpression: evaluatedDamageExpression(roll, [combat.damage.weaponFormula,
@@ -1191,91 +884,15 @@ async function requestDamageLuck(message, combat, manual = false) {
 }
 
 async function applyDamageLuck(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
-    || Number(request.revision) !== Number(combat.revision)) return;
-  const actor = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
-  const user = game.users.get(request.userId);
-  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
-  combat.damage.luckHistory = [...(combat.damage.luckHistory ?? []), combat.damage.rawRoll];
-  combat.damage.rawRoll = Number(request.rawRoll);
-  combat.damage.resultExpression = request.resultExpression;
-  combat.damage.rollExpression = request.rollExpression;
-  combat.damage.serializedRoll = request.serializedRoll;
-  delete combat.damage.woundLuck;
-  combat.effects.checks = [];
-  for (const effect of combat.effects.selections ?? []) {
-    if (effect.requiresWound) effect.status = "conditional";
-  }
-  await refreshDamageProposal(combat);
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    rolls: appendSerializedRolls(message, request.serializedRoll),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyCombatDamageLuck(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    refreshProposal: refreshDamageProposal, render: renderCombatExchange,
+    appendRolls: appendSerializedRolls });
 }
 
 async function refreshDamageProposal(combat, requestedLocationId = null) {
-  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
-  const locationId = requestedLocationId ?? combat.damage.locationId;
-  const location = defender?.items.get(locationId);
-  const weaponTarget = combat.defender.targetType === "weapon";
-  if (!defender || !location || (!weaponTarget && location.type !== "hitLocation")
-    || (weaponTarget && location.type !== "weapon")) {
-    combat.damage.status = "stale";
-    return;
-  }
-  const armor = weaponTarget ? Number(location.system.armorPoints ?? 0) : totalArmorPoints(location,
-    defender.items.filter((item) => item.type === "armor"));
-  const defense = combat.defender.defense;
-  let parry = defense?.type === "parry" && ["success", "critical"].includes(combat.resolution.defense.result)
-    ? parryReduction(combat.attacker.weaponSize, defense.weaponSize) : { type: "none" };
-  const tracker = combat.turnEconomy ? game.combats.get(combat.turnEconomy.combatId) : null;
-  const passive = !weaponTarget && tracker ? passiveBlockFor(tracker,
-    combat.turnEconomy.defenderCombatantId, location.id) : null;
-  if (passive) {
-    parry = parryReduction(combat.attacker.weaponSize, passive.weaponSize);
-    combat.damage.passiveBlock = { weaponId: passive.weaponId, weaponName: passive.weaponName,
-      weaponSize: passive.weaponSize, locationId: location.id };
-  } else delete combat.damage.passiveBlock;
-  if (selectedEffectCount(combat.effects?.selections ?? [], "improveParry")) parry = { type: "full" };
-  if (selectedEffectCount(combat.effects?.selections ?? [], "bypassParry")) parry = { type: "none" };
-  const effectiveArmor = selectedEffectCount(combat.effects?.selections ?? [], "bypassArmor") ? 0 : armor;
-  const rangeAdjustedDamage = applyLongRangeDamage(combat.damage.rawRoll, combat.ranged?.band);
-  const cover = !weaponTarget && defense?.type === "cover" && tracker ? coverFor(tracker,
-    combat.turnEconomy.defenderCombatantId, location.id) : null;
-  const coverProtection = Math.max(0, Number(cover?.protection ?? 0));
-  const calculation = resolveDamage({ rolledDamage: rangeAdjustedDamage,
-    containedBlow: combat.declarations?.containedBlow, parry, coverPoints: coverProtection,
-    armorPoints: effectiveArmor,
-    targetSize: defender.system.size });
-  calculation.beforeRange = Number(combat.damage.rawRoll);
-  calculation.afterRange = rangeAdjustedDamage;
-  calculation.cover = cover ? { source: cover.source, protection: coverProtection,
-    absorbed: Math.min(coverProtection, calculation.afterParry) } : null;
-  const before = Number(location.system.currentHitPoints ?? 0);
-  let after = before - calculation.penetratingDamage;
-  if (!selectedEffectCount(combat.effects?.selections ?? [], "bash")) {
-    calculation.push = { triggered: false, excess: 0, distance: 0 };
-  }
-  let resulting = weaponTarget ? "healthy" : woundLevel(after, location.system.maxHitPoints);
-  if (!weaponTarget && combat.damage.woundLuck?.locationId === location.id
-    && resulting === "major") {
-    const adjustment = majorWoundLuckAdjustment({ beforeHitPoints: before,
-      maxHitPoints: location.system.maxHitPoints,
-      penetratingDamage: calculation.penetratingDamage });
-    if (adjustment) {
-      calculation.penetratingDamage = adjustment.penetratingDamage;
-      after = adjustment.afterHitPoints;
-      resulting = adjustment.resultingWound;
-    }
-  }
-  prepareDamageChecks(combat, { location, resultingWound: resulting,
-    penetratingDamage: calculation.penetratingDamage, weaponTarget });
-  Object.assign(combat.damage, calculation, { status: "proposed", locationId: location.id,
-    locationName: location.name, armorSnapshot: armor, beforeHitPoints: before,
-    maxHitPoints: Number(location.system.maxHitPoints ?? 1), afterHitPoints: after,
-    previousWound: weaponTarget ? "healthy" : woundLevel(before, location.system.maxHitPoints),
-    resultingWound: resulting });
+  return refreshCombatDamageProposal(combat, requestedLocationId, { resolveActor: combatActor,
+    combatById: (id) => game.combats.get(id), passiveBlockFor, coverFor });
 }
 
 async function requestApplyDamage(message, combat, locationId, manual = false) {
@@ -1294,7 +911,7 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
   if (check.source === "wound" && (combat.effects?.selections ?? [])
     .some((effect) => effect.status === "pending")) return;
   if (check.source === "wound" && combat.damage?.status !== "applied") return;
-  const actorEntry = sideEntry(combat, check.actorSide ?? "defender");
+  const actorEntry = combatSideEntry(combat, check.actorSide ?? "defender");
   const defender = await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid);
   if (!defender || (!game.user.isGM && !defender.isOwner)) return;
   let resolution;
@@ -1329,7 +946,7 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
 
 async function requestCombatCheckLuck(message, combat, checkId, manual = false) {
   const check = (combat.effects?.checks ?? []).find((entry) => entry.id === checkId);
-  const actorEntry = check ? sideEntry(combat, check.actorSide ?? "defender") : null;
+  const actorEntry = check ? combatSideEntry(combat, check.actorSide ?? "defender") : null;
   const actor = actorEntry ? await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid) : null;
   if (!check || check.source !== "wound" || check.status !== "rolled"
     || check.resolution?.automaticFailure || !actor
@@ -1394,36 +1011,9 @@ async function requestWoundLuck(message, combat, checkId) {
 }
 
 async function applyWoundLuck(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || Number(request.revision) !== Number(combat.revision)
-    || combat.damage?.status !== "proposed") return;
-  const check = (combat.effects?.checks ?? []).find((entry) => entry.id === request.checkId);
-  const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
-  if (!check || check.id !== firstPending?.id || check.status !== "pending"
-    || check.source !== "wound" || check.woundSeverity !== "major"
-    || (combat.effects?.selections ?? []).some((effect) => effect.status === "pending")) return;
-  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
-  const user = game.users.get(request.userId);
-  const location = defender?.items.get(check.locationId);
-  if (!defender || !location || !user
-    || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) return;
-  const points = Number(defender.system.resources?.luckPoints?.value ?? 0);
-  if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-  const adjustment = majorWoundLuckAdjustment({
-    beforeHitPoints: combat.damage.beforeHitPoints,
-    maxHitPoints: combat.damage.maxHitPoints,
-    penetratingDamage: combat.damage.penetratingDamage
-  });
-  if (!adjustment
-    || Number(location.system.currentHitPoints) !== Number(combat.damage.beforeHitPoints)) return;
-  await defender.update({ "system.resources.luckPoints.value": points - 1 });
-  Object.assign(combat.damage, adjustment, { woundLuck: { userId: user.id,
-    spentAt: Date.now(), locationId: location.id } });
-  prepareDamageChecks(combat, { location, resultingWound: "serious",
-    penetratingDamage: adjustment.penetratingDamage });
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyMajorWoundLuck(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    warn: (text) => ui.notifications.warn(text), localize, render: renderCombatExchange });
 }
 
 async function requestResolveEffect(message, combat, slot) {
@@ -1453,253 +1043,39 @@ async function requestResolveEffect(message, combat, slot) {
 }
 
 async function applyResolvedEffect(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || Number(request.revision) !== Number(combat.revision)) return;
-  const user = game.users.get(request.userId);
-  if (!user) return;
-  const effect = (combat.effects?.selections ?? []).find((entry) =>
-    Number(entry.slot) === Number(request.slot));
-  if (!effect || effect.status !== "pending") return;
-  const selfSide = effect.side ?? combat.effects.winner;
-  const affectedSide = effect.target === "self" ? selfSide
-    : selfSide === "attacker" ? "defender" : "attacker";
-  const affectedEntry = affectedSide === "attacker" ? combat.attacker : combat.defender;
-  const affected = await combatActor(affectedEntry.tokenUuid, affectedEntry.actorUuid);
-  if (!affected || (!user.isGM && !affected.testUserPermission(user, "OWNER"))) return;
-  if ((combat.effects?.checks ?? []).some((check) => check.effectKey === effect.key
-    && check.status === "pending")) return;
-  effect.status = "resolved";
-  effect.resolution = { manual: true, note: String(request.note ?? ""),
-    userId: user.id, resolvedAt: Date.now() };
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
+  return applyManualCombatEffectResolution(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    render: renderCombatExchange });
 }
 
 async function applyCombatCheck(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || Number(request.revision) !== Number(combat.revision)) return;
-  const pendingCheck = combat?.effects?.checks?.find((entry) => entry.id === request.checkId);
-  const actorEntry = pendingCheck ? sideEntry(combat, pendingCheck.actorSide ?? "defender") : null;
-  const defender = actorEntry ? await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid) : null;
-  const user = game.users.get(request.userId);
-  if (!defender || !user || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) return;
-  const check = (combat.effects?.checks ?? []).find((entry) => entry.id === request.checkId);
-  const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
-  if (!check || (request.finalize || request.reroll
-    ? check.status !== "rolled" : check.status !== "pending" || firstPending?.id !== check.id)
-    || (request.resolution?.manual && !user.isGM)) return;
-  if (check.source === "wound" && (combat.effects?.selections ?? [])
-    .some((effect) => effect.status === "pending")) return;
-  if (request.reroll) {
-    if (check.source !== "wound" || check.resolution?.automaticFailure) return;
-    const points = Number(defender.system.resources?.luckPoints?.value ?? 0);
-    if (points < 1) return ui.notifications.warn(localize("MYTHRASF.Luck.None"));
-    await defender.update({ "system.resources.luckPoints.value": points - 1 });
-    check.resolution = { ...request.resolution,
-      luckHistory: [...(check.resolution?.luckHistory ?? []), {
-        rawRoll: check.resolution?.rawRoll, spenderName: actorDisplayName(defender) }],
-      userId: user.id, rolledAt: Date.now() };
-  } else if (request.finalize) {
-    check.status = "resolved";
-    check.resolution = { ...check.resolution, userId: user.id, resolvedAt: Date.now() };
-  } else {
-    check.status = check.source === "wound" ? "rolled" : "resolved";
-    check.resolution = { ...request.resolution, userId: user.id, rolledAt: Date.now() };
-  }
-  if (request.finalize && check.source === "wound" && combat.damage?.status === "applied") {
-    const location = defender.items.get(check.locationId);
-    if (location) await applyWoundConsequences(combat, defender, location,
-      { afterEndurance: true, manual: request.manual });
-  } else if (check.source !== "wound" && !request.reroll) await applyCheckConsequence(combat,
-    check, defender, { manual: request.manual });
-  combat.revision += 1;
-  await message.update({ content: renderCombatExchange(combat),
-    rolls: appendSerializedRolls(message, request.resolution?.serializedRoll),
-    [`flags.${FLAG_SCOPE}.combat`]: combat });
-}
-
-async function applyCheckConsequence(combat, check, actor, { manual = false } = {}) {
-  if (check.resolution?.manual || !actor) return;
-  const resisted = check.resolution?.winner === "left";
-  const effect = (combat.effects?.selections ?? []).find((entry) =>
-    entry.key === check.effectKey && Number(entry.slot) === Number(check.effectSlot ?? entry.slot)
-    && (!check.effectSide || entry.side === check.effectSide));
-  if (!effect) return;
-  effect.resolution = { checkId: check.id, resisted, resolvedAt: Date.now() };
-  effect.status = "resolved";
-  if (resisted) return;
-  if (effect.key === "cegar-oponente") {
-    const duration = await evaluateAnimatedRoll("1d3", { manual });
-    await addManagedStatus(combat, effect, { key: "blinded", statusId: "blinded",
-      turns: duration.total });
-  }
-  if (effect.key === "disparo-de-supresion") {
-    const sourceActorUuid = sideEntry(combat, effect.side).actorUuid;
-    const existing = timedEffects(actor).find((candidate) => {
-      const condition = candidate.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-      return condition?.key === "suppressed" && condition.sourceActorUuid === sourceActorUuid;
-    });
-    if (existing) {
-      const condition = existing.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-      await existing.update({ [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]: {
-        ...condition, original: Number(condition.original ?? 1) + 1,
-        remaining: Number(condition.remaining ?? 1) + 1 } });
-    } else await addManagedStatus(combat, effect, { key: "suppressed",
-      statusId: "suppressed", turns: 1 });
-  }
-  if (effect.key === "desangrar") {
-    await addManagedStatus(combat, effect, { key: "exsanguinating",
-      statusId: "exsanguinating", unit: "manual" });
-  }
-  if (effect.key === "tumbar-oponente") {
-    await addManagedStatus(combat, effect, { key: "incapacitated",
-      statusId: "incapacitated", unit: "manual" });
-  }
-  if (effect.key === "aturdir-localizacion") {
-    const location = actor.items.get(combat.damage.locationId);
-    const turns = Math.max(1, Number(combat.damage.penetratingDamage ?? 1));
-    const category = location?.system.category ?? location?.system.hpClass;
-    const statusId = category === "head" ? "unconscious"
-      : ["chest", "abdomen", "torso"].includes(category) ? "stunnedTorso" : "stunnedLocation";
-    await addManagedStatus(combat, effect, { key: statusId, statusId, turns,
-      locationId: location?.id ?? "" });
-  }
+  return applyCombatCheckTransition(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    warn: (text) => ui.notifications.warn(text), localize, actorName: actorDisplayName,
+    applyWoundConsequences, applyEffectConsequence: applyCombatEffectCheckConsequence,
+    effectDependencies: combatEffectRuntimeDependencies, render: renderCombatExchange,
+    appendRolls: appendSerializedRolls });
 }
 
 async function applyProposedDamage(message, request) {
-  const combat = foundry.utils.deepClone(message.getFlag(FLAG_SCOPE, "combat"));
-  if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
-    || Number(request.revision) !== Number(combat.revision)) return;
-  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
-  const user = game.users.get(request.userId);
-  if (!defender || !user || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) return;
-  if (!damageLocationChoices(combat).some((location) => location.id === request.locationId)) return;
-  if (request.locationId !== combat.damage.locationId) {
-    delete combat.damage.woundLuck;
-    combat.effects.checks = [];
-    for (const effect of combat.effects.selections ?? []) {
-      if (effect.requiresWound) effect.status = "conditional";
-    }
-    await refreshDamageProposal(combat, request.locationId);
-    combat.revision += 1;
-    return message.update({ content: renderCombatExchange(combat),
-      [`flags.${FLAG_SCOPE}.combat`]: combat });
-  }
-  if ((combat.effects?.checks ?? []).some((check) =>
-    check.status === "pending" && check.source !== "wound")) return;
-  if ((combat.effects?.selections ?? []).some((effect) => effect.status === "pending")) return;
-  if (combat.damage.status === "stale") {
-    await refreshDamageProposal(combat, request.locationId);
-    combat.revision += 1;
-    return message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
-  }
-  const selectedLocation = defender.items.get(request.locationId);
-  const sameProposal = request.locationId === combat.damage.locationId;
-  const expectedHitPoints = combat.damage.beforeHitPoints;
-  const currentArmor = selectedLocation ? combat.defender.targetType === "weapon"
-    ? Number(selectedLocation.system.armorPoints ?? 0) : totalArmorPoints(selectedLocation,
-      defender.items.filter((item) => item.type === "armor")) : null;
-  if (!selectedLocation || (sameProposal
-    && (Number(selectedLocation.system.currentHitPoints) !== Number(expectedHitPoints)
-      || Number(currentArmor) !== Number(combat.damage.armorSnapshot)))) {
-    combat.damage.status = "stale";
-    combat.revision += 1;
-    return message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
-  }
-  await refreshDamageProposal(combat, request.locationId);
-  const location = defender.items.get(combat.damage.locationId);
-  combat.damage.status = "applying";
-  combat.revision += 1;
-  await message.update({ [`flags.${FLAG_SCOPE}.combat`]: combat });
-  const locationUpdate = { "system.currentHitPoints": combat.damage.afterHitPoints };
-  if (combat.defender.targetType !== "weapon" && combat.damage.resultingWound === "major"
-    && Number(location.system.permanentWound?.severity ?? 0) < 3) {
-    const permanentRoll = await evaluateAnimatedRoll("1d3", { manual: request.manual });
-    const currentSeverity = Number(location.system.permanentWound?.severity ?? 0);
-    const effectiveSeverity = Math.max(permanentRoll.total, currentSeverity + 1);
-    const kind = woundLocationKind(location);
-    const description = game.i18n.format(
-      `MYTHRASF.PermanentWound.Suggested.${kind.extremity ? "extremity" : "other"}`,
-      { location: location.name, severity: effectiveSeverity });
-    const permanentWound = permanentWoundState(location,
-      { severity: effectiveSeverity, roll: permanentRoll.total, description });
-    locationUpdate["system.permanentWound"] = permanentWound;
-    locationUpdate["system.maxHitPoints"] = permanentWound.effectiveMaxHitPoints;
-    locationUpdate["system.currentHitPoints"] = Math.min(combat.damage.afterHitPoints,
-      permanentWound.effectiveMaxHitPoints);
-    combat.damage.afterHitPoints = locationUpdate["system.currentHitPoints"];
-    combat.damage.permanentWound = permanentWound;
-    combat.damage.permanentWoundRoll = permanentRoll.total;
-  }
-  try { await location.update(locationUpdate); }
-  catch (error) {
-    combat.damage.status = "proposed";
-    await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
-    throw error;
-  }
-  combat.damage.status = "applied";
-  if (combat.defender.targetType !== "weapon") await applyWoundConsequences(combat, defender,
-    location, { manual: request.manual });
-  combat.damage.appliedBy = user.id;
-  combat.damage.appliedAt = Date.now();
-  await message.update({ content: renderCombatExchange(combat), [`flags.${FLAG_SCOPE}.combat`]: combat });
-  await advanceCombatTurnForExchange(message, combat);
+  return applyProposedCombatDamage(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    armorPoints: (location, defender, targetType) => targetType === "weapon"
+      ? Number(location.system.armorPoints ?? 0) : totalArmorPoints(location,
+        defender.items.filter((item) => item.type === "armor")),
+    refreshProposal: refreshDamageProposal, render: renderCombatExchange,
+    evaluateRoll: evaluateAnimatedRoll, format: game.i18n.format.bind(game.i18n),
+    applyWoundConsequences, advance: advanceCombatTurnForExchange });
 }
 
 function heldItemChoices(actor) {
-  return actor.items.filter((item) => {
-    if (item.type !== "weapon" || !item.system.equipped) return false;
-    const mode = findWeaponMode(item, item.system.activeModeKey);
-    return Number(mode?.handsRequired ?? 1) > 0;
-  }).map((item) => ({ id: item.id, name: item.name, img: item.img ?? "" }));
+  return heldCombatItemChoices(actor);
 }
 
 async function applyWoundConsequences(combat, defender, location,
   { afterEndurance = false, manual = false } = {}) {
-  const wound = combat.damage.resultingWound;
-  if (!['serious', 'major'].includes(wound)) return;
-  const pseudoEffect = { side: "attacker", target: "opponent", slot: -1,
-    key: `wound-${wound}` };
-  const { extremity, arm, leg } = woundLocationKind(location);
-  const check = (combat.effects?.checks ?? []).find((entry) => entry.source === "wound"
-    && entry.id === `wound-${location.id}`);
-  const enduranceSucceeded = check?.status === "resolved" && !check.resolution?.manual
-    ? check.resolution?.winner === "left" : null;
-  if (check?.resolution?.manual) combat.consequences = [...(combat.consequences ?? []), {
-    key: "manualWoundOutcome", status: "pending", locationId: location.id,
-    requiresConfirmation: true }];
-  const plan = woundConsequencePlan({ wound, locationKind: { extremity, arm, leg },
-    enduranceSucceeded,
-    healingRate: defender.system.attributes?.healingRate,
-    penetratingDamage: combat.damage.penetratingDamage });
-  const baselineTypes = new Set(woundConsequencePlan({ wound,
-    locationKind: { extremity, arm, leg },
-    enduranceSucceeded: null, healingRate: defender.system.attributes?.healingRate,
-    penetratingDamage: combat.damage.penetratingDamage }).actions.map((action) => action.type));
-  const executablePlan = afterEndurance ? { ...plan,
-    actions: plan.actions.filter((action) => !baselineTypes.has(action.type)) } : plan;
-  await executeWoundConsequencePlan(executablePlan, {
-    stunned: async (action) => {
-      const duration = await evaluateAnimatedRoll(action.durationFormula, { manual });
-      return addManagedStatus(combat, pseudoEffect, { key: "stunned",
-        statusId: "stunned", turns: duration.total, locationId: location.id });
-    },
-    disableLocation: () => location.update({ "system.disabled": true }),
-    dropHeldItem: () => {
-      const choices = heldItemChoices(defender);
-      combat.consequences = [...(combat.consequences ?? []), {
-        key: "dropHeldItem", status: "pending", actorSide: "defender",
-        locationId: location.id, locationName: location.name, itemChoices: choices }];
-    },
-    prone: () => addManagedStatus(combat, pseudoEffect, { key: "prone",
-      statusId: "prone", unit: "manual", locationId: location.id }),
-    unconscious: (action) => addManagedStatus(combat, pseudoEffect, { key: "unconscious",
-      statusId: "unconscious", unit: "manual", locationId: location.id,
-      metadata: action.durationNote ? { durationNote: action.durationNote } : undefined }),
-    dying: (action) => applyDying(defender, { rounds: action.rounds, mode: action.mode,
-      locationId: location.id, sourceName: location.name }),
-    death: () => applyDeath(defender)
-  });
+  return applyCombatWoundConsequences(combat, defender, location, { afterEndurance, manual,
+    evaluateRoll: evaluateAnimatedRoll, addStatus: addManagedStatus, applyDying, applyDeath });
 }
 
 export function activateCombatCard(message, html) {
@@ -1739,7 +1115,7 @@ export function activateCombatCard(message, html) {
     }));
   card.querySelectorAll("[data-combat-action='drop-held-item']").forEach(async (button) => {
     const consequence = combat.consequences?.[Number(button.dataset.consequenceIndex)];
-    const entry = sideEntry(combat, consequence?.actorSide ?? "defender");
+    const entry = combatSideEntry(combat, consequence?.actorSide ?? "defender");
     const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });

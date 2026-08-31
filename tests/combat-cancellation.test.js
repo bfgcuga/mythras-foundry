@@ -19,17 +19,21 @@ test("el ataque puede cancelarse hasta aplicar una consecuencia", () => {
 
 test("cancelar restituye ambos PA y no solicita avanzar el tracker", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
-  assert.match(source, /economy\?\.attackSpent[\s\S]*currentActionPoints\(attacker\) \+ 1/);
-  assert.match(source, /economy\?\.defenseSpent[\s\S]*currentActionPoints\(defender\) \+ 1/);
+  const runtime = fs.readFileSync(new URL("../scripts/rules/combat-exchange-runtime.js",
+    import.meta.url), "utf8");
+  assert.match(runtime, /\["attackSpent", "attackRefunded", combat\.attacker\]/);
+  assert.match(runtime, /\["defenseSpent", "defenseRefunded", combat\.defender\]/);
+  assert.match(runtime, /currentActionPoints\(actor\) \+ 1/);
   const cancelBody = source.slice(source.indexOf("async function cancelCombat"),
     source.indexOf("async function closeCombatExchange"));
   assert.doesNotMatch(cancelBody, /advanceCombatTurnForExchange/);
 });
 
 test("cerrar un intercambio terminal avanza aunque todavía pueda cancelarse", () => {
-  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
-  assert.match(source, /advanceCombatTurnForExchange\(message, combat, \{ force: true \}\)/);
-  assert.match(source, /\(!force && combatCanBeCancelled\(combat\)\)/);
+  const runtime = fs.readFileSync(new URL("../scripts/rules/combat-exchange-runtime.js",
+    import.meta.url), "utf8");
+  assert.match(runtime, /advance\(message, combat, \{ force: true \}\)/);
+  assert.match(runtime, /\(!force && combatCanBeCancelled\(combat\)\)/);
 });
 
 test("el cierre forzado resuelve los pasos pendientes sin cancelar daño aplicado", () => {

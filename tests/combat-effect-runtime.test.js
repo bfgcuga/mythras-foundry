@@ -1,0 +1,97 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { addManagedCombatStatus, applyCombatEffectCheckConsequence,
+  applyImmediateCombatEffects, combatEffectAffectedSide
+} from "../scripts/rules/combat-effect-runtime.js";
+
+function combat(selections = []) {
+  return { attacker: { actorUuid: "Actor.attacker", tokenUuid: "Token.attacker",
+    actorName: "Atacante" }, defender: { actorUuid: "Actor.defender",
+    tokenUuid: "Token.defender", actorName: "Defensor" },
+  turnEconomy: { combatId: "combat", combatantId: "a", defenderCombatantId: "d" },
+  effects: { selections, checks: [] }, damage: { locationId: "head", penetratingDamage: 3 } };
+}
+
+function dependencies({ conditions = [], positions = [] } = {}) {
+  const actors = { "Actor.attacker": { uuid: "Actor.attacker" },
+    "Actor.defender": { uuid: "Actor.defender" } };
+  return { resolveActor: async (tokenUuid, actorUuid) => actors[actorUuid],
+    combatById: () => ({ uuid: "Combat.combat", round: 2, turn: 1,
+      mythrasTurnEconomy: { cycle: 3 }, combatant: { actor: actors["Actor.defender"] } }),
+  localize: (key) => key, applyCondition: async (actor, condition) => {
+    conditions.push({ actor, condition });
+  }, engagementKey: (left, right) => `${left}:${right}`,
+  setPosition: async (...args) => { positions.push(args); },
+  evaluateRoll: async () => ({ total: 2 }) };
+}
+
+test("el lado afectado distingue efectos propios y contra el oponente", () => {
+  assert.equal(combatEffectAffectedSide({ side: "attacker", target: "self" }), "attacker");
+  assert.equal(combatEffectAffectedSide({ side: "attacker" }), "defender");
+  assert.equal(combatEffectAffectedSide({ side: "defender" }), "attacker");
+});
+
+test("un estado gestionado conserva origen, combate y duración", async () => {
+  const conditions = [];
+  const state = combat();
+  state.messageUuid = "ChatMessage.message";
+  await addManagedCombatStatus(state, { side: "attacker" },
+    { key: "pressed", statusId: "pressed", turns: 1 }, dependencies({ conditions }));
+  assert.equal(conditions.length, 1);
+  assert.equal(conditions[0].actor.uuid, "Actor.defender");
+  assert.equal(conditions[0].condition.source.messageUuid, "ChatMessage.message");
+  assert.equal(conditions[0].condition.combat.cycle, 3);
+  assert.equal(conditions[0].condition.duration.skipCurrentTurn, true);
+  assert.equal(state.consequencesApplied, true);
+});
+
+test("los efectos inmediatos aplican estados, alcance y pruebas pendientes", async () => {
+  const conditions = [];
+  const positions = [];
+  const selections = [
+    { key: "aprovechar-la-ventaja", side: "attacker", slot: 0 },
+    { key: "desequilibrar-oponente", side: "attacker", slot: 1 },
+    { key: "desequilibrar-oponente", side: "attacker", slot: 2 },
+    { key: "retirada", side: "defender", slot: 3 },
+    { key: "cegar-oponente", name: "Cegar", side: "attacker", slot: 4 },
+    { key: "disparo-de-supresion", name: "Supresión", side: "attacker", slot: 5 },
+    { key: "ignorado", side: "attacker", slot: 6, waived: true }
+  ];
+  const state = combat(selections);
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" },
+    dependencies({ conditions, positions }));
+  assert.equal(state.messageUuid, "ChatMessage.message");
+  assert.deepEqual(conditions.map((entry) => entry.condition.duration.value), [1, 2]);
+  assert.equal(positions.length, 1);
+  assert.deepEqual(positions[0].slice(1, 3), ["a:d", "neutral"]);
+  assert.equal(positions[0][3].status, "disengaged");
+  assert.deepEqual(state.effects.checks.map((entry) => entry.abilitySlugs),
+    [["evadir"], ["voluntad"]]);
+  assert.equal(selections[4].status, "pending");
+  assert.equal(selections[5].status, "pending");
+});
+
+test("una prueba de efecto no resistida ejecuta su consecuencia", async () => {
+  const conditions = [];
+  const effect = { key: "cegar-oponente", side: "attacker", slot: 2 };
+  const state = combat([effect]);
+  const check = { id: "check", effectKey: effect.key, effectSlot: 2,
+    resolution: { winner: "right" } };
+  await applyCombatEffectCheckConsequence(state, check, { uuid: "Actor.defender" },
+    { ...dependencies({ conditions }), manual: true });
+  assert.equal(effect.status, "resolved");
+  assert.equal(effect.resolution.resisted, false);
+  assert.equal(conditions[0].condition.key, "blinded");
+  assert.equal(conditions[0].condition.duration.value, 2);
+});
+
+test("una prueba resistida resuelve el efecto sin aplicar documentos", async () => {
+  const conditions = [];
+  const effect = { key: "tumbar-oponente", side: "attacker", slot: 1 };
+  const state = combat([effect]);
+  await applyCombatEffectCheckConsequence(state, { id: "check", effectKey: effect.key,
+    effectSlot: 1, resolution: { winner: "left" } }, { uuid: "Actor.defender" },
+  dependencies({ conditions }));
+  assert.equal(effect.resolution.resisted, true);
+  assert.equal(conditions.length, 0);
+});

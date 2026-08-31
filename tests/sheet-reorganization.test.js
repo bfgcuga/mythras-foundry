@@ -147,16 +147,17 @@ test("la consulta de heridas no descarta tiradas mediante una clasificación fí
 });
 
 test("una herida grave inutiliza la localización sin reutilizar Aturdir Localización", async () => {
-  const [combat, wounds, dialog, runtime] = await Promise.all([
-    read("scripts/rules/combat-chat.js"), read("scripts/rules/wound-consequences.js"),
+  const [combat, woundRuntime, wounds, dialog, runtime] = await Promise.all([
+    read("scripts/rules/combat-chat.js"), read("scripts/rules/combat-wound-runtime.js"),
+    read("scripts/rules/wound-consequences.js"),
     read("scripts/ui/wound-roll-dialog.js"),
     read("scripts/rules/timed-condition-runtime.js")]);
   assert.match(wounds, /type: "disableLocation"/);
-  assert.match(combat, /disableLocation: \(\) => location\.update\(\{ "system\.disabled": true \}\)/);
+  assert.match(woundRuntime, /disableLocation: \(\) => location\.update\(\{ "system\.disabled": true \}\)/);
   assert.doesNotMatch(combat, /untilPositiveHitPoints/);
   assert.doesNotMatch(dialog, /untilPositiveHitPoints|timedIds/);
   assert.doesNotMatch(runtime, /untilPositiveHitPoints|removeRecoveredLocationConditions/);
   assert.match(wounds, /type: "stunned", durationFormula: "1d3"/);
-  assert.match(combat, /key: "dropHeldItem"[\s\S]*itemChoices: choices/);
+  assert.match(woundRuntime, /key: "dropHeldItem"[\s\S]*heldCombatItemChoices\(defender\)/);
   assert.doesNotMatch(combat, /statusId: "seriousWound"/);
 });

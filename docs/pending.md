@@ -76,6 +76,6 @@ Antes de cambiar las hojas debe definirse una matriz para `NONE`, `LIMITED`,
   separar preparación, sincronización de Items y materialización.
 - Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
   renderizado y el transporte antes de ampliar significativamente los peligros.
-- Evaluar una infraestructura común para transacciones interactivas solo después
-  de terminar la división de combate; no abstraer antes de disponer de patrones
+- Evaluar una infraestructura común para transacciones interactivas a partir de
+  los patrones ya separados en combate; no abstraer sin consumidores adicionales
   estables en combate, concursos, alcance y consecuencias de asalto.

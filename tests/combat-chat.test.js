@@ -15,10 +15,16 @@ test("el primer DJ activo coordina y el autor es el respaldo", () => {
 
 test("paradas y daño se incorporan como Roll al mensaje interactivo", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
-  assert.match(source, /appendSerializedRolls\(message, request\.defense\.serializedRoll\)/);
-  assert.match(source, /request\.alternateRoll\?\.serializedRoll, request\.serializedLocationRoll/);
-  assert.match(source, /rolls: appendSerializedRolls\(message, request\.serializedRoll\)/);
-  assert.match(source, /appendSerializedRolls\(message, request\.resolution\?\.serializedRoll\)/);
+  const responseRuntime = fs.readFileSync(new URL("../scripts/rules/combat-response-runtime.js",
+    import.meta.url), "utf8");
+  const damageRuntime = fs.readFileSync(new URL("../scripts/rules/combat-damage-runtime.js",
+    import.meta.url), "utf8");
+  const checkRuntime = fs.readFileSync(new URL("../scripts/rules/combat-check-runtime.js",
+    import.meta.url), "utf8");
+  assert.match(responseRuntime, /appendRolls\(message, request\.defense\.serializedRoll\)/);
+  assert.match(damageRuntime, /request\.alternateRoll\?\.serializedRoll, request\.serializedLocationRoll/);
+  assert.match(damageRuntime, /rolls: appendRolls\(message, request\.serializedRoll\)/);
+  assert.match(checkRuntime, /appendRolls\(message, request\.resolution\?\.serializedRoll\)/);
 });
 
 test("la parada prefiere el arma que no mantiene el bloqueo pasivo", () => {
@@ -41,6 +47,8 @@ test("cancelar el selector de parada no produce una defensa parcial", () => {
 
 test("la tarjeta descarta parar y evadir antes del diálogo si no quedan PA", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const damageRuntime = fs.readFileSync(new URL("../scripts/rules/combat-damage-runtime.js",
+    import.meta.url), "utf8");
   assert.match(source, /\["parry", "evade"\]\.includes\(type\)[\s\S]*currentActionPoints\(actor\) < 1/);
   assert.match(source, /lacksActionPoints[\s\S]*\["parry", "evade"\]\.includes\(button\.dataset\.combatAction\)/);
   assert.match(source, /MYTHRASF\.Combat\.NoActionPoints/);
@@ -66,7 +74,9 @@ test("una tirada sin localización cierra el daño sin reasignarlo", () => {
     import.meta.url), "utf8");
   const state = fs.readFileSync(new URL("../scripts/rules/combat-exchange-state.js",
     import.meta.url), "utf8");
-  assert.match(source, /combat\.damage\.status = "missedLocation"/);
+  const damageRuntime = fs.readFileSync(new URL("../scripts/rules/combat-damage-runtime.js",
+    import.meta.url), "utf8");
+  assert.match(damageRuntime, /combat\.damage\.status = "missedLocation"/);
   assert.match(renderer, /MYTHRASF\.Combat\.NoHitLocation/);
   assert.match(state, /"unavailable", "applied", "missedLocation"/);
   assert.match(source, /permanentWound: entry\.permanentWound/);
@@ -104,49 +114,62 @@ test("la prueba de herida crítica ofrece reducirla mediante Suerte", () => {
   const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
     import.meta.url), "utf8");
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const damageRuntime = fs.readFileSync(new URL("../scripts/rules/combat-damage-runtime.js",
+    import.meta.url), "utf8");
   assert.match(renderer, /data-combat-action="wound-luck"/);
   assert.match(source, /action: "combatWoundLuck"/);
-  assert.match(source, /"system\.resources\.luckPoints\.value": points - 1/);
+  assert.match(damageRuntime, /"system\.resources\.luckPoints\.value": points - 1/);
   assert.match(renderer, /combat-wound-luck-button/);
   assert.doesNotMatch(renderer, /resolve-check-manual/);
 });
 
 test("el daño precede a la prueba de Aguante de la herida", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const damageRuntime = fs.readFileSync(new URL("../scripts/rules/combat-damage-runtime.js",
+    import.meta.url), "utf8");
   const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
     import.meta.url), "utf8");
   assert.match(source, /check\.source === "wound" && combat\.damage\?\.status !== "applied"/);
-  assert.match(source, /check\.status === "pending" && check\.source !== "wound"/);
+  assert.match(damageRuntime, /check\.status === "pending" && check\.source !== "wound"/);
   assert.match(renderer, /MYTHRASF\.Combat\.WoundCheck\.ApplyDamageFirst/);
 });
 
 test("las heridas graves y críticas permiten Suerte antes de aplicar consecuencias", () => {
-  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const checkRuntime = fs.readFileSync(new URL("../scripts/rules/combat-check-runtime.js",
+    import.meta.url), "utf8");
   const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
     import.meta.url), "utf8");
-  assert.match(source, /check\.source === "wound" \? "rolled" : "resolved"/);
-  assert.match(source, /request\.finalize && check\.source === "wound"/);
-  assert.match(source, /"system\.resources\.luckPoints\.value": points - 1/);
+  assert.match(checkRuntime, /check\.source === "wound" \? "rolled" : "resolved"/);
+  assert.match(checkRuntime, /request\.finalize && check\.source === "wound"/);
+  assert.match(checkRuntime, /"system\.resources\.luckPoints\.value": points - 1/);
   assert.match(renderer, /data-combat-action="check-luck"/);
   assert.match(renderer, /data-combat-action="confirm-check"/);
 });
 
 test("la suerte de combate permite elegir pagador y limita la tirada ajena a repetir", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const responseRuntime = fs.readFileSync(new URL("../scripts/rules/combat-response-runtime.js",
+    import.meta.url), "utf8");
+  const resourceRuntime = fs.readFileSync(new URL("../scripts/rules/combat-resource-runtime.js",
+    import.meta.url), "utf8");
   assert.match(source, /spenders\.length > 1[\s\S]*name="luckSide"/);
   assert.match(source, /const ownRoll = spender\.side === side/);
   assert.match(source, /ownRoll \? \[\{ action: "invert"/);
-  assert.match(source, /\(!ownRoll && request\.mode !== "reroll"\)/);
-  assert.match(source, /spender\.actor\.update\(\{ "system\.resources\.luckPoints\.value": points - 1 \}\)/);
+  assert.match(responseRuntime, /\(!ownRoll && request\.mode !== "reroll"\)/);
+  assert.match(resourceRuntime, /"system\.resources\.luckPoints\.value": points - 1/);
 });
 
 test("el fallo de Aguante en un brazo resuelve en la tarjeta qué objeto se suelta", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const woundRuntime = fs.readFileSync(new URL("../scripts/rules/combat-wound-runtime.js",
+    import.meta.url), "utf8");
+  const runtime = fs.readFileSync(new URL("../scripts/rules/combat-exchange-runtime.js",
+    import.meta.url), "utf8");
   const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
     import.meta.url), "utf8");
-  assert.match(source, /function heldItemChoices[\s\S]*item\.system\.equipped/);
-  assert.match(source, /applyWoundConsequences\(combat, defender, location,[\s\S]*afterEndurance: true/);
-  assert.match(source, /applyDropHeldItem[\s\S]*"system\.equipped": false/);
+  assert.match(woundRuntime, /heldCombatItemChoices[\s\S]*item\.system\.equipped/);
+  assert.match(woundRuntime, /afterEndurance[\s\S]*baselineTypes/);
+  assert.match(runtime, /applyDroppedCombatItem[\s\S]*"system\.equipped": false/);
   assert.match(renderer, /data-combat-action="drop-held-item"/);
   assert.match(renderer, /data-drop-held-item/);
 });
