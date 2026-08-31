@@ -16,19 +16,13 @@ El trabajo confirmado que todavía no tiene prioridad ni posición se mantiene e
   `formidable-natural-weapons`. Las armas manufacturadas no dependen de él.
 - Cubrir ambos comportamientos con pruebas.
 
-## 2. Completar Elegir Localización sobre extremidades lisiadas
-
-Al elegir una extremidad afectada por una lesión permanente, tirar `1d3` para
-determinar si se alcanza la parte restante. Esta resolución no debe reutilizar
-la tirada aleatoria de localización que descarta resultados anulados.
-
-## 3. Integrar las acciones diferenciales pendientes
+## 2. Integrar las acciones diferenciales pendientes
 
 Conectar Forcejear, Maniobrar, Ponerse en Pie y Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
 pero la resolución sigue siendo guiada.
 
-## 4. Implementar Entrenar Habilidad
+## 3. Implementar Entrenar Habilidad
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.

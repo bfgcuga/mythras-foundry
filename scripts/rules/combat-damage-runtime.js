@@ -1,4 +1,4 @@
-import { findHitLocation, permanentWoundState, woundLevel,
+import { findHitLocation, permanentWoundHitCheck, permanentWoundState, woundLevel,
   woundLocationKind } from "./hit-locations.js";
 import { damageLocationChoices, majorWoundLuckAdjustment,
   prepareDamageChecks } from "./combat-damage.js";
@@ -189,27 +189,50 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
 }
 
 export async function applyRolledCombatDamage(message, request, { clone, flagScope,
-  resolveActor, userById, refreshProposal, render, appendRolls, advance } = {}) {
+  resolveActor, userById, permanentWoundRule = "checkD3", refreshProposal, render,
+  appendRolls, advance } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || combat.damage?.status !== "ready"
     || Number(request.revision) !== Number(combat.revision)) return false;
   const actor = await resolveActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
   const user = userById(request.userId);
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return false;
-  const location = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
+  const checkEveryMutilatedHit = permanentWoundRule !== "reduceD20Range";
+  const selectedLocation = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
     entry.id === request.locationId) : findHitLocation((combat.defender.locations ?? []).map((entry) => ({
     id: entry.id, name: entry.name, system: { rangeStart: entry.rangeStart,
-      rangeEnd: entry.rangeEnd, permanentWound: entry.permanentWound }
-  })), request.locationRoll);
+      rangeEnd: entry.rangeEnd, category: entry.category, hpClass: entry.hpClass,
+      permanentWound: entry.permanentWound }
+  })), request.locationRoll, { ignorePermanentWounds: checkEveryMutilatedHit });
+  const selectedLocationSystem = selectedLocation?.system ?? selectedLocation ?? {};
+  const selectedLocationModel = selectedLocation ? { ...selectedLocation,
+    system: selectedLocationSystem } : null;
+  const chosenByEffect = selectedEffectCount(combat.effects?.selections ?? [], "chooseLocation") > 0;
+  const requiresPermanentWoundRoll = combat.defender.targetType !== "weapon"
+    && woundLocationKind(selectedLocationModel).extremity
+    && Number(selectedLocationSystem.permanentWound?.severity ?? 0) > 0
+    && (checkEveryMutilatedHit || chosenByEffect);
+  if (requiresPermanentWoundRoll && request.permanentWoundHitRoll == null) return false;
+  const permanentWoundHit = !requiresPermanentWoundRoll
+    || permanentWoundHitCheck(selectedLocationModel, request.permanentWoundHitRoll);
+  const location = permanentWoundHit ? selectedLocation : null;
   combat.damage = { status: "rolled", formula: request.formula,
     weaponFormula: request.weaponFormula, modifierFormula: request.modifierFormula,
     extraordinaryFormula: request.extraordinaryFormula, resultExpression: request.resultExpression,
     rollExpression: request.rollExpression, rawRoll: Number(request.rawRoll),
     serializedRoll: request.serializedRoll, alternateRoll: request.alternateRoll,
     luckHistory: [], locationRoll: request.locationRoll == null ? null : Number(request.locationRoll),
-    rolledLocationId: request.rolledLocationId ?? "", locationId: location?.id ?? "" };
+    rolledLocationId: request.rolledLocationId ?? "", locationId: location?.id ?? "",
+    permanentWoundHitRoll: !requiresPermanentWoundRoll
+      ? null : Number(request.permanentWoundHitRoll),
+    permanentWoundLocationName: !requiresPermanentWoundRoll
+      ? "" : selectedLocation?.name ?? "",
+    permanentWoundSeverity: !requiresPermanentWoundRoll
+      ? 0 : Number(selectedLocationSystem.permanentWound?.severity ?? 0),
+    permanentWoundHit };
   const rolls = appendRolls(message, request.serializedRoll,
-    request.alternateRoll?.serializedRoll, request.serializedLocationRoll);
+    request.alternateRoll?.serializedRoll, request.serializedLocationRoll,
+    request.serializedPermanentWoundHitRoll);
   if (!location && combat.defender.targetType !== "weapon") {
     combat.damage.status = "missedLocation";
     combat.revision += 1;

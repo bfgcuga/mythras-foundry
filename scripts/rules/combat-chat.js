@@ -3,14 +3,15 @@ import { combatAttackHits, damageModifierFormula, difficultyTarget,
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "./weapon-modes.js";
 import { resolveActorConditions, actorLoadState } from "./actor-conditions.js";
 import { invertD100 } from "./skill-roll.js";
-import { findHitLocation } from "./hit-locations.js";
+import { findHitLocation, woundLocationKind } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { combatEffectRule, eligibleCombatEffects, maximizeDamageFormula,
   mergeCombatEffectDocuments, opposedEffectWinner, selectedEffectCount } from "./combat-effects.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
-import { getActionPointRules, getSystemSetting, SETTING_KEYS } from "../settings.js";
+import { getActionPointRules, getSystemSetting, PERMANENT_WOUND_HIT_LOCATION_RULES,
+  SETTING_KEYS } from "../settings.js";
 import { normalizeCatalogConfig } from "./catalog.js";
 import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
@@ -73,7 +74,7 @@ function combatEffectRuntimeDependencies() {
 
 function locationSnapshot(item) {
   return { id: item.id, name: item.name, rangeStart: item.system.rangeStart,
-    rangeEnd: item.system.rangeEnd,
+    rangeEnd: item.system.rangeEnd, category: item.system.category, hpClass: item.system.hpClass,
     permanentWound: foundry.utils.deepClone(item.system.permanentWound ?? {}) };
 }
 
@@ -824,12 +825,17 @@ async function requestCombatDamage(message, combat, manual = false) {
     : (combat.effects?.selections ?? []).find((entry) =>
     entry.ruleKey === "chooseLocation")?.parameters?.locationId;
   const locationRoll = chosenLocation ? null : await evaluateSystemRoll("1d20", { manual });
+  const permanentWoundRule = getSystemSetting(SETTING_KEYS.permanentWoundHitLocationRule);
+  const checkEveryMutilatedHit = permanentWoundRule
+    === PERMANENT_WOUND_HIT_LOCATION_RULES.checkD3;
   let rolledLocationId = "";
   if (locationRoll && selectedEffectCount(combat.effects?.selections ?? [], "aimedShot")) {
     const locations = combat.defender.locations ?? [];
     const rolledLocation = findHitLocation(locations.map((entry) => ({ ...entry,
       system: { rangeStart: entry.rangeStart, rangeEnd: entry.rangeEnd,
-        permanentWound: entry.permanentWound } })), locationRoll.total);
+        category: entry.category, hpClass: entry.hpClass,
+        permanentWound: entry.permanentWound } })), locationRoll.total,
+    { ignorePermanentWounds: checkEveryMutilatedHit });
     rolledLocationId = rolledLocation?.id ?? "";
     if (!rolledLocationId) {
       chosenLocation = "";
@@ -845,6 +851,24 @@ async function requestCombatDamage(message, combat, manual = false) {
     if (!chosenLocation) return;
     }
   }
+  const selectedLocation = (combat.defender.locations ?? []).find((entry) =>
+    entry.id === chosenLocation) ?? (combat.defender.locations ?? []).find((entry) =>
+    entry.id === rolledLocationId) ?? (locationRoll ? findHitLocation(
+      (combat.defender.locations ?? []).map((entry) => ({ ...entry,
+        system: { rangeStart: entry.rangeStart, rangeEnd: entry.rangeEnd,
+          category: entry.category, hpClass: entry.hpClass,
+          permanentWound: entry.permanentWound } })), locationRoll.total,
+      { ignorePermanentWounds: checkEveryMutilatedHit }) : null);
+  const selectedLocationModel = selectedLocation ? { ...selectedLocation,
+    system: { category: selectedLocation.category, hpClass: selectedLocation.hpClass,
+      permanentWound: selectedLocation.permanentWound } } : null;
+  const chosenByEffect = Boolean(chosenLocation && !locationRoll);
+  const requiresPermanentWoundRoll = combat.defender.targetType !== "weapon"
+    && woundLocationKind(selectedLocationModel).extremity
+    && Number(selectedLocation?.permanentWound?.severity ?? 0) > 0
+    && (checkEveryMutilatedHit || chosenByEffect);
+  const permanentWoundHitRoll = requiresPermanentWoundRoll
+    ? await evaluateSystemRoll("1d3", { manual }) : null;
   const request = { action: "combatDamage", messageId: message.id, revision: combat.revision,
     userId: game.user.id, formula, weaponFormula: weaponDamage, modifierFormula: modifier,
     extraordinaryFormula: extraordinary, resultExpression: roll.result,
@@ -853,6 +877,8 @@ async function requestCombatDamage(message, combat, manual = false) {
     alternateRoll: alternateRoll ? { rawRoll: alternateRoll.total,
       serializedRoll: alternateRoll.toJSON() } : null,
     locationRoll: locationRoll?.total ?? null, serializedLocationRoll: locationRoll?.toJSON?.() ?? null, rolledLocationId,
+    permanentWoundHitRoll: permanentWoundHitRoll?.total ?? null,
+    serializedPermanentWoundHitRoll: permanentWoundHitRoll?.toJSON?.() ?? null,
     locationId: chosenLocation ?? "" };
   if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) await applyCombatDamage(message, request);
   else game.socket.emit(SOCKET, request);
@@ -861,6 +887,7 @@ async function requestCombatDamage(message, combat, manual = false) {
 async function applyCombatDamage(message, request) {
   return applyRolledCombatDamage(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+    permanentWoundRule: getSystemSetting(SETTING_KEYS.permanentWoundHitLocationRule),
     refreshProposal: refreshDamageProposal, render: renderCombatExchange,
     appendRolls: appendSerializedRolls, advance: advanceCombatTurnForExchange });
 }

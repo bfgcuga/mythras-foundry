@@ -109,14 +109,21 @@ El sistema incluye actualmente:
   cerrados para restricciones de arma y tirada, casillas para sus estados
   booleanos y una sección avanzada para la ejecución. El daño muestra por
   separado la fórmula del arma, el bonificador, los resultados evaluados, el total y el d20 de
-  localización. Las pruebas causadas por heridas muestran motivo, habilidad,
+  localización. Por defecto, las extremidades con herida permanente conservan
+  su rango d20 y cada impacto exige un 1d3: debe superar la gravedad 1–3 para
+  alcanzar la parte restante. Un ajuste de mundo permite usar en su lugar la
+  reducción oficial del rango d20; «Elegir Localización» siempre realiza el
+  1d3. La tirada y un posible fallo quedan visibles en la tarjeta. Las pruebas
+  causadas por heridas muestran motivo, habilidad,
   d100, objetivo, ataque enfrentado, resultado y consecuencia; una ayuda
   contextual mantiene fuera de la tarjeta la explicación extensa. El DJ puede
   cancelar el intercambio hasta aplicar daño o un estado: se restituyen los PA
   de ataque y defensa, no avanza el tracker y la tarjeta deja constancia de que
-  no se aplicaron sus efectos. Ataque y defensa reutilizan los colores de las
-  tiradas de habilidad para éxito, crítico, fallo y pifia; dificultad, objetivo
-  efectivo y gravedad de la herida usan también sus tonos semánticos compartidos.
+  no se aplicaron sus efectos. Ataque, defensa y las tiradas enfrentadas de
+  heridas reutilizan los colores de las tiradas de habilidad para éxito,
+  crítico, fallo y pifia; el resultado resistido o no resistido, la dificultad,
+  el objetivo efectivo y la gravedad de la herida usan también sus tonos
+  semánticos compartidos.
   La selección incorpora asimismo los efectos procedentes de los compendios
   homebrew configurados por el mundo, que pueden añadir claves o sustituir
   deliberadamente una oficial;

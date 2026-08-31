@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyCombatDamageDocument, applyProposedCombatDamage, combatDamageDocumentIsCurrent
+import { applyCombatDamageDocument, applyProposedCombatDamage, applyRolledCombatDamage,
+  combatDamageDocumentIsCurrent
 } from "../scripts/rules/combat-damage-runtime.js";
 
 function location(overrides = {}) {
@@ -108,4 +109,56 @@ test("un fallo documental restaura la propuesta sin avanzar", async () => {
   assert.deepEqual(fixture.updates.map((change) =>
     change["flags.mythras-foundry.combat"].damage.status), ["applying", "proposed"]);
   assert.equal(fixture.calls.advance, 0);
+});
+
+function mutilatedHitFixture({ selections = [] } = {}) {
+  const combat = { revision: 1, attacker: { actorUuid: "Actor.attacker", tokenUuid: "" },
+    defender: { targetType: "actor", locations: [{ id: "arm", name: "Brazo",
+      rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm",
+      permanentWound: { severity: 1, lostHitResults: 1 } }] },
+    effects: { selections }, damage: { status: "ready" } };
+  const updates = [];
+  const message = { getFlag: () => combat, update: async (change) => updates.push(change) };
+  const calls = { refreshed: 0, advanced: 0 };
+  const dependencies = { clone: structuredClone, flagScope: "mythras-foundry",
+    resolveActor: async () => ({ testUserPermission: () => true }),
+    userById: () => ({ id: "gm", isGM: true }),
+    refreshProposal: async () => { calls.refreshed += 1; }, render: () => "rendered",
+    appendRolls: () => [], advance: async () => { calls.advanced += 1; } };
+  const request = { revision: 1, userId: "gm", rawRoll: 4, locationRoll: 13,
+    serializedRoll: {}, serializedLocationRoll: {} };
+  return { message, request, dependencies, updates, calls };
+}
+
+test("la regla alternativa conserva el d20 y aplica después el 1d3", async () => {
+  const fixture = mutilatedHitFixture();
+  const applied = await applyRolledCombatDamage(fixture.message,
+    { ...fixture.request, permanentWoundHitRoll: 2,
+      serializedPermanentWoundHitRoll: { formula: "1d3", total: 2 } },
+    { ...fixture.dependencies, permanentWoundRule: "checkD3" });
+  assert.equal(applied, true);
+  assert.equal(fixture.calls.refreshed, 1);
+  assert.equal(fixture.updates[0]["flags.mythras-foundry.combat"].damage.locationId, "arm");
+});
+
+test("la regla alternativa convierte en fallo un 1d3 insuficiente", async () => {
+  const fixture = mutilatedHitFixture();
+  await applyRolledCombatDamage(fixture.message,
+    { ...fixture.request, permanentWoundHitRoll: 1,
+      serializedPermanentWoundHitRoll: { formula: "1d3", total: 1 } },
+    { ...fixture.dependencies, permanentWoundRule: "checkD3" });
+  const damage = fixture.updates[0]["flags.mythras-foundry.combat"].damage;
+  assert.equal(damage.status, "missedLocation");
+  assert.equal(damage.permanentWoundHit, false);
+  assert.equal(fixture.calls.advanced, 1);
+});
+
+test("Elegir Localización exige el 1d3 incluso con la regla oficial", async () => {
+  const fixture = mutilatedHitFixture({ selections: [{ key: "choose-location",
+    ruleKey: "chooseLocation" }] });
+  const applied = await applyRolledCombatDamage(fixture.message,
+    { ...fixture.request, locationId: "arm", locationRoll: null },
+    { ...fixture.dependencies, permanentWoundRule: "reduceD20Range" });
+  assert.equal(applied, false);
+  assert.equal(fixture.updates.length, 0);
 });

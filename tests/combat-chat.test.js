@@ -66,6 +66,9 @@ test("las pruebas de heridas distinguen oposición y consecuencia anatómica", (
     import.meta.url), "utf8");
   assert.match(renderer, /combat-check-detail combat-check-consequence/);
   assert.doesNotMatch(renderer, /mythras-chat-row combat-check-consequence/);
+  assert.match(renderer, /resolution\.rawRoll[\s\S]*resolution\.result/);
+  assert.match(renderer, /opposed\.rawRoll[\s\S]*opposed\.result/);
+  assert.match(renderer, /mythras-chat-total mythras-chat-result--\$\{resisted/);
 });
 
 test("una tirada sin localización cierra el daño sin reasignarlo", () => {
@@ -80,6 +83,11 @@ test("una tirada sin localización cierra el daño sin reasignarlo", () => {
   assert.match(renderer, /MYTHRASF\.Combat\.NoHitLocation/);
   assert.match(state, /"unavailable", "applied", "missedLocation"/);
   assert.match(source, /permanentWound: entry\.permanentWound/);
+  assert.match(source, /evaluateSystemRoll\("1d3"/);
+  assert.match(source, /SETTING_KEYS\.permanentWoundHitLocationRule/);
+  assert.match(renderer, /MYTHRASF\.Combat\.PermanentWoundHitFailed/);
+  assert.match(damageRuntime, /permanentWoundHitCheck/);
+  assert.match(damageRuntime, /serializedPermanentWoundHitRoll/);
 });
 
 test("la respuesta de combate rechaza estado, revision, propiedad y tipo invalidos", () => {
@@ -172,4 +180,5 @@ test("el fallo de Aguante en un brazo resuelve en la tarjeta qué objeto se suel
   assert.match(runtime, /applyDroppedCombatItem[\s\S]*"system\.equipped": false/);
   assert.match(renderer, /data-combat-action="drop-held-item"/);
   assert.match(renderer, /data-drop-held-item/);
+  assert.match(renderer, /MYTHRASF\.Combat\.Consequence\.droppedItem/);
 });

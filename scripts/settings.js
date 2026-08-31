@@ -10,6 +10,7 @@ export const SETTING_KEYS = Object.freeze({
   socialClassMethod: "socialClassMethod",
   detailedReach: "detailedReach",
   passiveBlockContiguity: "passiveBlockContiguity",
+  permanentWoundHitLocationRule: "permanentWoundHitLocationRule",
   dynamicCombatInitiative: "dynamicCombatInitiative",
   showNpcCombatFatigueChecks: "showNpcCombatFatigueChecks",
   silhouetteOrientation: "silhouetteOrientation",
@@ -30,6 +31,11 @@ export const SOCIAL_CLASS_METHODS = Object.freeze({
 export const SILHOUETTE_ORIENTATIONS = Object.freeze({
   front: "front",
   back: "back"
+});
+
+export const PERMANENT_WOUND_HIT_LOCATION_RULES = Object.freeze({
+  checkD3: "checkD3",
+  reduceD20Range: "reduceD20Range"
 });
 
 export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
@@ -146,6 +152,22 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       name: "MYTHRASF.Settings.PassiveBlockContiguity.Name",
       hint: "MYTHRASF.Settings.PassiveBlockContiguity.Hint",
       scope: "world", config: true, type: Boolean, default: false,
+      requiresReload: false
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.permanentWoundHitLocationRule,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.PermanentWoundHitLocation.Name",
+      hint: "MYTHRASF.Settings.PermanentWoundHitLocation.Hint",
+      scope: "world", config: true, type: String,
+      choices: Object.freeze({
+        [PERMANENT_WOUND_HIT_LOCATION_RULES.checkD3]:
+          "MYTHRASF.Settings.PermanentWoundHitLocation.CheckD3",
+        [PERMANENT_WOUND_HIT_LOCATION_RULES.reduceD20Range]:
+          "MYTHRASF.Settings.PermanentWoundHitLocation.ReduceD20Range"
+      }),
+      default: PERMANENT_WOUND_HIT_LOCATION_RULES.checkD3,
       requiresReload: false
     })
   }),

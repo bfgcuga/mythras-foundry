@@ -23,6 +23,7 @@ import {
   isLocationDisabled,
   locationWoundState,
   permanentWoundLostHitResults,
+  permanentWoundHitCheck,
   permanentWoundMaximum,
   permanentWoundSeverity,
   permanentWoundState,
@@ -238,6 +239,27 @@ test("los resultados anulados desde el inicio no impactan ninguna localización"
   assert.equal(findHitLocation([arm], 13), null);
   assert.equal(findHitLocation([arm], 14), null);
   assert.equal(findHitLocation([arm], 15), arm);
+});
+
+test("el 1d3 de una extremidad mutilada falla según su nivel de gravedad", () => {
+  const arm = (severity) => ({ system: { category: "limb", hpClass: "arm",
+    permanentWound: { severity } } });
+  assert.deepEqual([1, 2, 3].map((roll) => permanentWoundHitCheck(arm(1), roll)),
+  [false, true, true]);
+  assert.deepEqual([1, 2, 3].map((roll) => permanentWoundHitCheck(arm(2), roll)),
+  [false, false, true]);
+  assert.deepEqual([1, 2, 3].map((roll) => permanentWoundHitCheck(arm(3), roll)),
+  [false, false, false]);
+  assert.equal(permanentWoundHitCheck({ system: { category: "head",
+    permanentWound: { severity: 3 } } }, 1), true);
+});
+
+test("la regla alternativa conserva el rango d20 completo", () => {
+  const arm = { system: { rangeStart: 13, rangeEnd: 15,
+    permanentWound: { lostHitResults: 2 } } };
+  assert.equal(findHitLocation([arm], 13, { ignorePermanentWounds: true }), arm);
+  assert.equal(findHitLocation([arm], 14, { ignorePermanentWounds: true }), arm);
+  assert.equal(findHitLocation([arm], 15, { ignorePermanentWounds: true }), arm);
 });
 
 test("una defensa predeclarada comparte la mayor reduccion por encima de 100", () => {

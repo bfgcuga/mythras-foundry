@@ -9,6 +9,7 @@ import {
   getProfessionAllocationRules,
   getSocialClassMethod,
   getSystemSetting,
+  PERMANENT_WOUND_HIT_LOCATION_RULES,
   registerSystemSettings,
   SETTING_KEYS,
   SILHOUETTE_ORIENTATIONS,
@@ -53,6 +54,12 @@ test("registra todas las opciones del sistema con claves centralizadas", () => {
     ({ key }) => key === SETTING_KEYS.passiveBlockContiguity);
   assert.equal(passiveBlockContiguity.options.default, false);
   assert.equal(passiveBlockContiguity.options.requiresReload, false);
+  const permanentWoundHitLocation = registrations.find(
+    ({ key }) => key === SETTING_KEYS.permanentWoundHitLocationRule);
+  assert.equal(permanentWoundHitLocation.options.default,
+    PERMANENT_WOUND_HIT_LOCATION_RULES.checkD3);
+  assert.equal(permanentWoundHitLocation.options.scope, "world");
+  assert.equal(permanentWoundHitLocation.options.requiresReload, false);
   const dynamicCombatInitiative = registrations.find(
     ({ key }) => key === SETTING_KEYS.dynamicCombatInitiative);
   assert.equal(dynamicCombatInitiative.options.default, true);

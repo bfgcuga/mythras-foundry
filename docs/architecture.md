@@ -379,7 +379,8 @@ simultaneidad permite aplicar de forma segura las transacciones secuenciales.
 Las pruebas enfrentadas provocadas por heridas graves y críticas se conservan dentro de
 `combat.effects.checks`. Cada entrada de herida identifica gravedad, localización y clase
 anatómica. Su tarjeta presenta por separado el d100 y grado de Aguante, la tirada original
-opuesta, el resultado de la oposición y la consecuencia aplicable. El `Roll` serializado se
+opuesta, el resultado de la oposición y la consecuencia aplicable. Ambas tiradas y el
+resultado resistido o no resistido consumen los tonos semánticos compartidos. El `Roll` serializado se
 añade al mensaje al resolver la prueba; la explicación extensa se abre desde la ayuda
 contextual de la propia entrada.
 
@@ -407,7 +408,14 @@ traducidos. La lesión consolidada reside en
 máximo efectivo, resultados del d20 anulados y descripción. El máximo operativo
 de la localización es siempre el efectivo; los recálculos por CON/TAM y la
 generación de PNJ reaplican la lesión mediante los ayudantes puros de
-`scripts/rules/hit-locations.js`. Los textos de Trasfondo residen en
+`scripts/rules/hit-locations.js`. El ajuste de mundo
+`permanentWoundHitLocationRule` decide cómo afecta una mutilación al impacto:
+`checkD3`, valor predeterminado, conserva el rango original y exige que `1d3`
+supere la gravedad en cada impacto; `reduceD20Range` aplica los resultados d20
+anulados de la regla oficial. «Elegir Localización» exige siempre el 1d3. El
+coordinador valida el modo activo, incorpora el dado al mensaje y convierte el
+impacto en `missedLocation` cuando alcanza la parte ausente. Los textos de
+Trasfondo residen en
 `CharacterData.system.narrative`, mientras que el panel de heridas permanentes
 edita directamente sus Items de localización.
 

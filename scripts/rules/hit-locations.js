@@ -130,10 +130,21 @@ export function hasSeriousWound(locations) {
   return (locations ?? []).some((location) => locationWoundState(location) === "serious");
 }
 
-export function findHitLocation(locations, roll) {
+export function permanentWoundHitCheck(location, roll) {
+  const system = location?.system ?? location ?? {};
+  const severity = Math.max(0, Math.min(3,
+    Math.floor(Number(system.permanentWound?.severity) || 0)));
+  if (!severity || !woundLocationKind(location).extremity) return true;
+  return Number(roll) > severity;
+}
+
+export function findHitLocation(locations, roll, { ignorePermanentWounds = false } = {}) {
   const value = Number(roll);
   return locations.find((location) => {
-    const range = effectiveHitLocationRange(location);
+    const system = location?.system ?? location ?? {};
+    const range = ignorePermanentWounds
+      ? { start: Number(system.rangeStart), end: Number(system.rangeEnd) }
+      : effectiveHitLocationRange(location);
     return value >= range.start && value <= range.end;
   }) ?? null;
 }
