@@ -1,30 +1,5 @@
 import { combatSideEntry } from "./combat-effect-runtime.js";
-
-export async function applyManualCombatEffectResolution(message, request, { clone, flagScope,
-  resolveActor, userById, render } = {}) {
-  const combat = clone(message.getFlag(flagScope, "combat"));
-  if (!combat || Number(request.revision) !== Number(combat.revision)) return false;
-  const user = userById(request.userId);
-  if (!user) return false;
-  const effect = (combat.effects?.selections ?? []).find((entry) =>
-    Number(entry.slot) === Number(request.slot));
-  if (!effect || effect.status !== "pending"
-    || !["applied", "unavailable", "missedLocation"].includes(combat.damage?.status)) return false;
-  const selfSide = effect.side ?? combat.effects.winner;
-  const affectedSide = effect.target === "self" ? selfSide
-    : selfSide === "attacker" ? "defender" : "attacker";
-  const affectedEntry = combatSideEntry(combat, affectedSide);
-  const affected = await resolveActor(affectedEntry.tokenUuid, affectedEntry.actorUuid);
-  if (!affected || (!user.isGM && !affected.testUserPermission(user, "OWNER"))) return false;
-  if ((combat.effects?.checks ?? []).some((check) => check.effectKey === effect.key
-    && check.status === "pending")) return false;
-  effect.status = "resolved";
-  effect.resolution = { manual: true, note: String(request.note ?? ""),
-    userId: user.id, resolvedAt: Date.now() };
-  combat.revision += 1;
-  await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
-  return true;
-}
+import { combatEffectCheckPhase } from "./combat-effects.js";
 
 export async function applyCombatCheckTransition(message, request, { clone, flagScope,
   resolveActor, userById, warn, localize, actorName, applyWoundConsequences,
@@ -41,9 +16,13 @@ export async function applyCombatCheckTransition(message, request, { clone, flag
   }
   const check = (combat.effects?.checks ?? []).find((entry) => entry.id === request.checkId);
   const firstPending = (combat.effects?.checks ?? []).find((entry) => entry.status === "pending");
+  const phase = combatEffectCheckPhase(check, combat.effects?.selections ?? []);
+  const phaseReady = ["beforeDamage", "damage"].includes(phase)
+    ? combat.damage?.status === "ready"
+    : ["applied", "unavailable", "missedLocation"].includes(combat.damage?.status);
   if (!check || (request.finalize || request.reroll
     ? check.status !== "rolled" : check.status !== "pending" || firstPending?.id !== check.id)
-    || (request.resolution?.manual && !user.isGM)) return false;
+    || !phaseReady || (request.resolution?.manual && !user.isGM)) return false;
   if (check.source === "wound" && (combat.effects?.selections ?? [])
     .some((effect) => effect.status === "pending")) return false;
   if (request.reroll) {

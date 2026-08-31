@@ -142,7 +142,7 @@ export function buildHomebrewItem(type, fields = {}) {
       key: homebrewSlug(fields.key || name), source, description,
       offensive: checked(fields.offensive), defensive: checked(fields.defensive),
       weaponRestriction, rollRestriction, stackable: checked(fields.stackable),
-      ruleKey: "guided", stage: "afterEffect", requiresWound: checked(fields.requiresWound),
+      ruleKey: "guided", stage: "beforeDamage", requiresWound: checked(fields.requiresWound),
       endurance: checked(fields.endurance), tableColumns: [], tableRows: [], tableNote: ""
     } };
   }

@@ -7,8 +7,10 @@ import { findHitLocation, woundLocationKind } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
-import { combatEffectRule, combatEffectSelectionHighlight, eligibleCombatEffects, maximizeDamageFormula,
-  mergeCombatEffectDocuments, opposedEffectWinner, selectedEffectCount } from "./combat-effects.js";
+import { canonicalCombatEffectStage, combatEffectCheckPhase, combatEffectRule,
+  combatEffectSelectionHighlight, eligibleCombatEffects, initialCombatEffectStatus,
+  maximizeDamageFormula, mergeCombatEffectDocuments, opposedEffectWinner,
+  selectedEffectCount } from "./combat-effects.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
 import { getActionPointRules, getSystemSetting, PERMANENT_WOUND_HIT_LOCATION_RULES,
   SETTING_KEYS } from "../settings.js";
@@ -48,8 +50,7 @@ import { advanceCombatExchange, applyCombatExchangeCancellation, applyDroppedCom
 import { applyAccidentalTargetTransition, applyCombatDefenseTransition, applyCombatEffectsTransition,
   applyCombatLuckTransition
 } from "./combat-response-runtime.js";
-import { applyCombatCheckTransition, applyManualCombatEffectResolution
-} from "./combat-check-runtime.js";
+import { applyCombatCheckTransition } from "./combat-check-runtime.js";
 import { consumeSurpriseEffectBonus, consumeWeaponModeAmmunition, spendActorActionPoint,
   spendActorLuckPoint } from "./combat-resource-runtime.js";
 import { applyCombatWoundConsequences, heldCombatItemChoices
@@ -134,7 +135,7 @@ const effectView = (item) => {
     stackable: item.system.stackable, description: item.system.description,
     ...defaults,
     ruleKey: item.system.ruleKey,
-    stage: item.system.stage,
+    stage: canonicalCombatEffectStage(item.system.stage),
     requiresWound: Boolean(item.system.requiresWound),
     endurance: Boolean(item.system.endurance)
   };
@@ -676,7 +677,7 @@ async function chooseCombatEffects(message, combat) {
     const effect = eligible.find((entry) => entry.key === selected.key);
     return { slot: index, waived: false, ...effect,
       parameters: { locationId: selected.locationId, note: selected.note },
-      status: effect.requiresWound ? "conditional" : effect.ruleKey === "guided" ? "pending" : "active" };
+      status: initialCombatEffectStatus(effect) };
   });
   const request = { action: "combatEffects", messageId: message.id, revision: combat.revision,
     userId: game.user.id, side, selections };
@@ -981,7 +982,11 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
   if (!check || check.status !== "pending" || firstPending?.id !== check.id) return;
   if (check.source === "wound" && (combat.effects?.selections ?? [])
     .some((effect) => effect.status === "pending")) return;
-  if (!["applied", "unavailable", "missedLocation"].includes(combat.damage?.status)) return;
+  const phase = combatEffectCheckPhase(check, combat.effects?.selections ?? []);
+  const phaseReady = ["beforeDamage", "damage"].includes(phase)
+    ? combat.damage?.status === "ready"
+    : ["applied", "unavailable", "missedLocation"].includes(combat.damage?.status);
+  if (!phaseReady) return;
   const actorEntry = combatSideEntry(combat, check.actorSide ?? "defender");
   const defender = await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid);
   if (!defender || (!game.user.isGM && !defender.isOwner)) return;
@@ -1109,38 +1114,6 @@ async function applyWoundLuck(message, request) {
     warn: (text) => ui.notifications.warn(text), localize, render: renderCombatExchange });
 }
 
-async function requestResolveEffect(message, combat, slot) {
-  const effect = (combat.effects?.selections ?? []).find((entry) => Number(entry.slot) === Number(slot));
-  if (!effect || effect.status !== "pending") return;
-  if ((combat.effects?.checks ?? []).some((check) => check.effectKey === effect.key
-    && check.status === "pending")) return;
-  const selfSide = effect.side ?? combat.effects.winner;
-  const affectedSide = effect.target === "self" ? selfSide
-    : selfSide === "attacker" ? "defender" : "attacker";
-  const affectedEntry = affectedSide === "attacker" ? combat.attacker : combat.defender;
-  const affected = await combatActor(affectedEntry.tokenUuid, affectedEntry.actorUuid);
-  if (!game.user.isGM && !affected?.isOwner) return;
-  const note = await foundry.applications.api.DialogV2.wait({
-    window: { title: effect.name },
-    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.CombatEffect.ResolutionNote"))}</span><textarea name="note">${escape(effect.parameters?.note ?? "")}</textarea></label></div>`,
-    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.ResolveManual"),
-      callback: (event, button) => button.form.elements.note.value.trim() },
-    { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false
-  });
-  if (note == null) return;
-  const request = { action: "combatResolveEffect", messageId: message.id,
-    revision: combat.revision, userId: game.user.id, slot: effect.slot, note };
-  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
-    await applyResolvedEffect(message, request);
-  } else game.socket.emit(SOCKET, request);
-}
-
-async function applyResolvedEffect(message, request) {
-  return applyManualCombatEffectResolution(message, request, { clone: foundry.utils.deepClone,
-    flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
-    render: renderCombatExchange });
-}
-
 async function applyCombatCheck(message, request) {
   return applyCombatCheckTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
@@ -1213,16 +1186,6 @@ export function activateCombatCard(message, html) {
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
   card.querySelectorAll("[data-gm-only]").forEach((button) => { button.hidden = !game.user.isGM; });
-  card.querySelectorAll("[data-combat-action='resolve-effect']").forEach(async (button) => {
-    const effect = (combat.effects?.selections ?? []).find((entry) =>
-      Number(entry.slot) === Number(button.dataset.effectSlot));
-    const selfSide = effect?.side ?? combat.effects?.winner;
-    const affectedSide = effect?.target === "self" ? selfSide
-      : selfSide === "attacker" ? "defender" : "attacker";
-    const entry = affectedSide === "attacker" ? combat.attacker : combat.defender;
-    const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
-    button.hidden = !game.user.isGM && !actor?.isOwner;
-  });
   const gm = card.querySelector("[data-combat-gm-actions]"); if (gm) gm.hidden = !game.user.isGM;
   card.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-combat-action]"); if (!button) return;
@@ -1253,8 +1216,6 @@ export function activateCombatCard(message, html) {
     if (action === "confirm-check") return requestConfirmCombatCheck(message, combat,
       button.dataset.checkId);
     if (action === "wound-luck") return requestWoundLuck(message, combat, button.dataset.checkId);
-    if (action === "resolve-effect") return requestResolveEffect(message, combat,
-      button.dataset.effectSlot);
     if (action === "roll-damage") return requestCombatDamage(message, combat, manual);
     if (action === "apply-damage") return requestApplyDamage(message, combat,
       card.querySelector("[data-damage-location]")?.value ?? combat.damage.locationId, manual);
@@ -1269,7 +1230,7 @@ export function registerCombatSocket() {
       combatEffects: applyCombatEffects, combatDamage: applyCombatDamage,
       combatDamageLuck: applyDamageLuck, combatApplyDamage: applyProposedDamage,
       combatCheck: applyCombatCheck, combatWoundLuck: applyWoundLuck,
-      combatResolveEffect: applyResolvedEffect, combatDropHeldItem: applyDropHeldItem
+      combatDropHeldItem: applyDropHeldItem
     }
   });
 }

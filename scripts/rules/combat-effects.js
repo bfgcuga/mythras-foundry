@@ -3,7 +3,7 @@ const normalize = (value) => String(value ?? "").normalize("NFD")
 
 export const COMBAT_EFFECT_STAGES = Object.freeze([
   "beforeDamage", "damageRoll", "beforeLocation", "beforeArmor",
-  "afterPenetration", "afterEffect", "woundChecks"
+  "afterPenetration", "afterDamage", "woundChecks"
 ]);
 
 export const COMBAT_EFFECT_WEAPON_RESTRICTIONS = Object.freeze([
@@ -17,28 +17,33 @@ export const COMBAT_EFFECT_ROLL_RESTRICTIONS = Object.freeze([
 ]);
 
 export const COMBAT_EFFECT_RULES = Object.freeze({
-  "abrir-distancia": { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  alzarse: { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  ardid: { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  "cerrar-distancia": { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  "disparo-y-a-cubierto": { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  liberarse: { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  "mantenerse-firme": { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  "recarga-rapida": { ruleKey: "guided", stage: "afterEffect", target: "self" },
-  retirada: { ruleKey: "guided", stage: "afterEffect", target: "self" },
+  "abrir-distancia": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  alzarse: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  ardid: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  "cerrar-distancia": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  "disparo-y-a-cubierto": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  liberarse: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  "mantenerse-firme": { ruleKey: "guided", stage: "afterPenetration", target: "self" },
+  "recarga-rapida": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  retirada: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   "elegir-localizacion": { ruleKey: "chooseLocation", stage: "beforeLocation" },
   empalar: { ruleKey: "impale", stage: "damageRoll", requiresWound: true },
   "maximizar-dano": { ruleKey: "maximizeDamage", stage: "damageRoll" },
   "mejorar-parada": { ruleKey: "improveParry", stage: "beforeDamage" },
   "sortear-parada": { ruleKey: "bypassParry", stage: "beforeDamage" },
   "superar-armadura": { ruleKey: "bypassArmor", stage: "beforeArmor" },
+  "hender-armadura": { ruleKey: "guided", stage: "beforeArmor" },
+  "sortear-cobertura": { ruleKey: "guided", stage: "beforeArmor" },
   golpetazo: { ruleKey: "bash", stage: "afterPenetration" },
+  "potenciar-penetracion": { ruleKey: "guided", stage: "afterPenetration" },
   "tiro-apuntado": { ruleKey: "aimedShot", stage: "beforeLocation" },
-  "aturdir-localizacion": { ruleKey: "guided", stage: "afterEffect", requiresWound: true,
+  "arruinar-conjuro": { ruleKey: "guided", stage: "afterDamage", requiresWound: true },
+  "forzar-rendicion": { ruleKey: "guided", stage: "beforeDamage", replacesDamage: true },
+  "aturdir-localizacion": { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
     endurance: true },
-  desangrar: { ruleKey: "guided", stage: "afterEffect", requiresWound: true,
+  desangrar: { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
     endurance: true },
-  "tumbar-oponente": { ruleKey: "guided", stage: "afterEffect", requiresWound: true,
+  "tumbar-oponente": { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
     endurance: true }
 });
 
@@ -46,13 +51,56 @@ export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
   ...new Set(["guided", ...Object.values(COMBAT_EFFECT_RULES).map((rule) => rule.ruleKey)])
 ]);
 
+const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
+  "abrir-distancia", "aprovechar-la-ventaja", "aturdir-localizacion", "cegar-oponente",
+  "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
+  "muerte-silenciosa", "retirada", "tumbar-oponente"
+]));
+
+export function combatEffectIsAutomated(effect) {
+  return effect?.ruleKey !== "guided" || AUTOMATED_GUIDED_EFFECTS.has(effect?.key);
+}
+
+export function initialCombatEffectStatus(effect) {
+  if (effect?.requiresWound) return "conditional";
+  return combatEffectIsAutomated(effect) ? "active" : "notAutomated";
+}
+
 export function combatEffectSlug(value) {
   return normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 export function combatEffectRule(effect) {
   return COMBAT_EFFECT_RULES[effect?.key ?? combatEffectSlug(effect?.name)]
-    ?? { ruleKey: "guided", stage: "afterEffect", target: "opponent" };
+    ?? { ruleKey: "guided", stage: "beforeDamage", target: "opponent" };
+}
+
+export function canonicalCombatEffectStage(stage) {
+  if (stage === "afterEffect") return "afterDamage";
+  return COMBAT_EFFECT_STAGES.includes(stage) ? stage : "beforeDamage";
+}
+
+export function combatEffectResolutionPhase(effect) {
+  const stage = canonicalCombatEffectStage(effect?.stage);
+  if (stage === "afterDamage") return "afterDamage";
+  if (stage === "woundChecks") return "woundChecks";
+  if (["damageRoll", "beforeLocation", "beforeArmor", "afterPenetration"].includes(stage)) {
+    return "damage";
+  }
+  return "beforeDamage";
+}
+
+export function combatEffectPendingPhase(effect) {
+  if (effect?.requiresWound && effect?.status === "pending") return "afterDamage";
+  return combatEffectResolutionPhase(effect);
+}
+
+export function combatEffectCheckPhase(check, selections = []) {
+  if (check?.source === "wound") return "woundChecks";
+  const effect = selections.find((entry) => entry.key === check?.effectKey
+    && Number(entry.slot) === Number(check?.effectSlot)
+    && (!check?.effectSide || entry.side === check.effectSide));
+  return combatEffectResolutionPhase(effect);
 }
 
 export function mergeCombatEffectDocuments(documentGroups = []) {

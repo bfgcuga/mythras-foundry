@@ -104,13 +104,15 @@ El sistema incluye actualmente:
   proponen al DJ o propietario defensor la aplicación de PG y heridas. Antes
   del daño, el ganador selecciona o renuncia a sus efectos de combate; la
   tarjeta filtra los 44 efectos por lado, tirada y arma, automatiza los
-  modificadores compatibles y aplica primero el daño; después presenta por
-  separado la resolución de efectos y la de heridas. «Cegar oponente» permite
+  modificadores compatibles y avanza por fases sin detener el daño por efectos
+  no automatizados: integra en el daño los cambios de parada, localización,
+  tirada y armadura, y presenta después las consecuencias condicionadas y las
+  heridas. «Cegar oponente» se resuelve antes del daño, permite
   resistir con Evadir o con un estilo que use un escudo equipado, admite repetir
   la resistencia con Suerte y aplica automáticamente Cegado durante 1d3 turnos
   si no se resiste. El compendio procede de *Mythras básico
-  revisado*; cada efecto dispone de una hoja ancha y editable con selectores
-  cerrados para restricciones de arma y tirada, casillas para sus estados
+  revisado*; cada efecto dispone de una hoja ancha y editable que presenta la
+  descripción antes de la configuración, con selectores cerrados para restricciones de arma y tirada, casillas para sus estados
   booleanos y una sección avanzada para la ejecución. El daño muestra por
   separado la fórmula del arma, el bonificador, los resultados evaluados, el total y el d20 de
   localización. Por defecto, las extremidades con herida permanente conservan

@@ -15,7 +15,8 @@ import { ARMOR_MATERIAL_MODIFIERS, ARMOR_REFERENCE_LOCATIONS, armorPieceTypeForL
 import { inventoryCarried } from "../rules/inventory.js";
 import { TRAIT_TYPES, mergeTraitReferences, removeTraitReference, traitReference,
   traitSlug } from "../rules/traits.js";
-import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_RULE_KEYS, COMBAT_EFFECT_STAGES,
+import { canonicalCombatEffectStage, COMBAT_EFFECT_ROLL_RESTRICTIONS,
+  COMBAT_EFFECT_RULE_KEYS, COMBAT_EFFECT_STAGES,
   COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "../rules/combat-effects.js";
 
 async function prepareTraitReferences(references = []) {
@@ -245,6 +246,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isCombatEffect: this.item.type === "combatEffect",
       combatEffectWeaponRestriction: this.item.system.weaponRestriction,
       combatEffectRollRestriction: this.item.system.rollRestriction,
+      combatEffectStage: canonicalCombatEffectStage(this.item.system.stage),
       combatEffectWeaponRestrictionChoices: COMBAT_EFFECT_WEAPON_RESTRICTIONS.map((value) => ({
         value, label: game.i18n.localize(`MYTHRASF.CombatEffect.WeaponRestrictionChoice.${value || "none"}`)
       })),
@@ -351,7 +353,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (this.item.type === "combatEffect" && !this._combatEffectDefaultSizeApplied) {
       this._combatEffectDefaultSizeApplied = true;
-      this.setPosition({ width: 780, height: 640 });
+      this.setPosition({ width: 740, height: 640 });
     }
 
     this.element.querySelector("[data-action='view-item-image']")

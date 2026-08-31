@@ -6,15 +6,15 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Combate y automatización
 
-- Revisar todas las apariciones de «Resolver manualmente» en los flujos
-  interactivos y determinar, caso por caso, si deben eliminarse para evitar
-  cierres accidentales o bloqueos cuando la resolución reglamentaria exige una
-  tirada.
+- Eliminar las notas moradas temporales «Automatizado» y «No automatizado» de
+  la tarjeta de ataque cuando deje de ser necesario auditar visualmente la
+  cobertura de automatización de los efectos de combate.
 - Ampliar las consecuencias persistentes de efectos que todavía dependen de
   geometría o decisiones narrativas, incluidos Alcance, Cambiar Alcance,
   Retirada, Bloqueo Pasivo y fuentes liberables.
 - Completar la automatización de magia y monturas cuando existan esos
-  subsistemas; hasta entonces sus acciones permanecen guiadas.
+  subsistemas; hasta entonces sus efectos figuran como no automatizados y no
+  interrumpen el intercambio.
 - Valorar múltiples coberturas simultáneas por combatiente. Antes de
   implementarlas hay que definir cómo se combinan protección, localizaciones y
   cobertura completa.

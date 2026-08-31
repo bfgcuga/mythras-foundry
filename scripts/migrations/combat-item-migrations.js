@@ -1,10 +1,16 @@
 import { normalizeWeaponProfile, parseWeaponProfileReferences } from "../rules/combat.js";
 import { legacyWeaponMode, weaponModes } from "../rules/weapon-modes.js";
 import { parseRangeProfile } from "../rules/ranged-combat.js";
+import { canonicalCombatEffectStage } from "../rules/combat-effects.js";
 
 export async function migrateCombatItems(actor) {
   const updates = [];
   for (const item of actor.items) {
+    if (item.type === "combatEffect" && item.system.stage !== canonicalCombatEffectStage(
+      item.system.stage)) {
+      updates.push({ _id: item.id,
+        "system.stage": canonicalCombatEffectStage(item.system.stage) });
+    }
     const legacyWeapons = foundry.utils.getProperty(item._source, "system.weapons");
     if (item.type === "combatStyle" && (item.system.weaponProfiles?.length ?? 0) === 0
       && legacyWeapons) {
@@ -77,6 +83,11 @@ export async function migrateCombatItems(actor) {
 }
 
 export async function migrateWorldCombatItem(item) {
+  if (item.type === "combatEffect") {
+    const stage = canonicalCombatEffectStage(item.system.stage);
+    if (stage !== item.system.stage) await item.update({ "system.stage": stage });
+    return;
+  }
   const legacyWeapons = foundry.utils.getProperty(item._source, "system.weapons");
   if (item.type === "combatStyle" && (item.system.weaponProfiles?.length ?? 0) === 0
     && legacyWeapons) {

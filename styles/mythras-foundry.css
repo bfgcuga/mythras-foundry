@@ -3037,7 +3037,7 @@
 .combat-effect-table th,
 .combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
-.mythras-foundry .combat-effect-item-sheet { min-width: 700px; }
+.mythras-foundry .combat-effect-item-sheet { min-width: 660px; }
 .mythras-foundry .combat-effect-sheet-summary,
 .mythras-foundry .combat-effect-advanced fieldset {
   display: grid;
@@ -3057,8 +3057,15 @@
 .mythras-foundry .combat-effect-state-group label,
 .mythras-foundry .combat-effect-checkbox { display: flex; align-items: center; gap: 0.4rem; }
 .mythras-foundry .combat-effect-checkbox { min-height: var(--form-field-height); }
-.mythras-foundry .combat-effect-sheet-description textarea { width: 100%; min-height: 11rem; resize: vertical; }
+.mythras-foundry .combat-effect-sheet-description textarea { width: 100%; min-height: 9rem; resize: vertical; }
 .mythras-foundry .combat-effect-description { white-space: normal; line-height: 1.45; }
+.mythras-foundry .combat-effect-debug-note,
+.mythras-chat-card .combat-effect-debug-note {
+  display: inline-block;
+  margin-left: 0.3rem;
+  color: #6f42c1;
+  font-weight: 700;
+}
 .mythras-foundry .combat-effect-advanced summary { cursor: pointer; font-weight: 700; }
 .mythras-foundry .combat-effect-advanced fieldset { margin-top: 0.55rem; }
 @media (max-width: 720px) {

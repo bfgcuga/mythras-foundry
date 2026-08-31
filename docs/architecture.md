@@ -569,6 +569,23 @@ Las resistencias de efectos siguen el mismo estado provisional y admiten Suerte
 antes de aceptar el resultado. «Cegar oponente» ofrece Evadir y los estilos de
 combate aplicables a un escudo equipado; tras una resistencia fallida y aceptada
 tira 1d3, aplica Cegado y conserva esa duración como consecuencia mostrada.
+La propiedad `stage` es la fuente de verdad del orden. `beforeDamage` contiene
+las resoluciones independientes; `damageRoll`, `beforeLocation`, `beforeArmor` y `afterPenetration`
+sitúan modificaciones dentro del cálculo; `afterDamage` agrupa consecuencias
+que necesitan conocer penetración o herida, y `woundChecks` queda reservado a
+las comprobaciones anatómicas. El valor histórico `afterEffect` se normaliza a
+`afterDamage`; los efectos nuevos sin una fase válida usan `beforeDamage`.
+La tarjeta conserva visibles los resultados previos y nunca bloquea el daño por
+un efecto sin automatizar: esos efectos quedan cerrados como `notAutomated` sin
+pedir notas ni confirmaciones. Las pruebas automatizadas pueden resolverse en su
+fase sin ocultar «Tirar daño». Así, «Cegar oponente» se presenta antes del daño,
+mientras Aturdir, Desangrar y
+Tumbar solo aparecen después de aplicarlo si su condición se activó. Empalar
+participa en `damageRoll`, aplica su doble tirada automáticamente y no crea una
+confirmación narrativa posterior.
+Como ayuda temporal de desarrollo, cada selección muestra en morado
+«Automatizado» o «No automatizado»; estas notas no forman parte de la interfaz
+final y su retirada está registrada en `docs/pending.md`.
 La tarjeta presenta la etiqueta «Consecuencia:» sobre su explicación para que
 el texto operativo disponga del ancho completo del panel.
 Las condiciones medidas en turnos propios se descuentan normalmente desde

@@ -1,5 +1,6 @@
 import { combatAttackHits, resolveCombatExchange } from "./combat.js";
-import { combatEffectSlotsBySide, validateEffectSelections } from "./combat-effects.js";
+import { canonicalCombatEffectStage, combatEffectSlotsBySide,
+  initialCombatEffectStatus, validateEffectSelections } from "./combat-effects.js";
 import { effectiveActionPointMaximum } from "./action-points.js";
 import { validateCombatResponse } from "./combat-exchange-state.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
@@ -115,10 +116,10 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     if (selection.waived) return { slot: index, side, waived: true };
     const effect = catalogByKey.get(selection.key);
     return { slot: index, side, waived: false, ...effect,
+      stage: canonicalCombatEffectStage(effect.stage),
       parameters: { locationId: String(selection.parameters?.locationId ?? ""),
         note: String(selection.parameters?.note ?? "") },
-      status: effect.requiresWound ? "conditional"
-        : effect.ruleKey === "guided" ? "pending" : "active" };
+      status: initialCombatEffectStatus(effect) };
   });
   combat.effects.selections.push(...sideSelections);
   combat.effects.confirmations = { ...(combat.effects.confirmations ?? {}),
@@ -132,7 +133,11 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     combat.effects.confirmedAt = Date.now();
     await applyImmediateEffects(combat, message, immediateDependencies());
     combat.status = "resolved";
-    combat.damage = { status: combatAttackHits(combat.resolution) ? "ready" : "unavailable" };
+    const attackHits = combatAttackHits(combat.resolution);
+    combat.damage = { status: attackHits ? "ready" : "unavailable" };
+    if (!attackHits) combat.effects.selections.forEach((effect) => {
+      if (effect.requiresWound) effect.status = "notActivated";
+    });
   }
   combat.revision += 1;
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });

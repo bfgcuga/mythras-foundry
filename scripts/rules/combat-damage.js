@@ -1,4 +1,4 @@
-import { selectedEffectCount } from "./combat-effects.js";
+import { combatEffectIsAutomated, selectedEffectCount } from "./combat-effects.js";
 import { woundLocationKind } from "./hit-locations.js";
 
 export function damageLocationChoices(combat) {
@@ -29,14 +29,15 @@ export function prepareDamageChecks(combat, { location, resultingWound,
   const checks = [];
   (combat.effects?.selections ?? []).forEach((effect, order) => {
     if (effect.requiresWound) {
-      const guided = !effect.ruleKey || effect.ruleKey === "guided";
-      const activatedStatus = guided && effect.status !== "resolved"
-        ? "pending" : "resolved";
+      const checkedAutomatically = combatEffectIsAutomated(effect) && effect.endurance;
+      const activatedStatus = checkedAutomatically && effect.status !== "resolved"
+        ? "pending" : combatEffectIsAutomated(effect) ? "resolved" : "notAutomated";
       effect.status = !weaponTarget && penetratingDamage > 0 ? activatedStatus : "notActivated";
     }
     const checkId = `effect-${effect.side ?? combat.effects.winner}-${effect.slot}`;
     const unconditionalCheck = ["cegar-oponente", "disparo-de-supresion"].includes(effect.key);
-    if (unconditionalCheck || (!weaponTarget && effect.endurance && penetratingDamage > 0)) checks.push({
+    if (unconditionalCheck || (!weaponTarget && combatEffectIsAutomated(effect)
+      && effect.endurance && penetratingDamage > 0)) checks.push({
       id: checkId, source: "effect", order, effectKey: effect.key,
       effectSide: effect.side ?? combat.effects.winner, effectSlot: effect.slot,
       actorSide: unconditionalCheck

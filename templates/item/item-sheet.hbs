@@ -345,6 +345,7 @@
   {{/if}}
 
   {{#if isCombatEffect}}
+    <fieldset class="combat-effect-sheet-description"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable combat-effect-description" name="system.description">{{item.system.description}}</textarea></fieldset>
     <fieldset class="combat-effect-sheet-summary"><legend>{{localize "MYTHRASF.CombatEffect.Configuration"}}</legend>
       <label class="combat-effect-wide-field"><span>{{localize "MYTHRASF.Item.Source"}}</span><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}"></label>
       <div class="combat-effect-state-group" role="group" aria-label="{{localize "MYTHRASF.CombatEffect.Side"}}">
@@ -356,12 +357,11 @@
       <label><span>{{localize "MYTHRASF.CombatEffect.RollRestriction"}}</span><select class="sheet-field-editable" name="system.rollRestriction">{{selectOptions combatEffectRollRestrictionChoices selected=combatEffectRollRestriction labelAttr="label" valueAttr="value"}}</select></label>
       <label class="combat-effect-checkbox"><input type="checkbox" class="sheet-state-box" name="system.stackable" {{checked item.system.stackable}}> <span>{{localize "MYTHRASF.CombatEffect.Stackable"}}</span></label>
     </fieldset>
-    <fieldset class="combat-effect-sheet-description"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable combat-effect-description" name="system.description">{{item.system.description}}</textarea></fieldset>
     <details class="combat-effect-advanced"><summary>{{localize "MYTHRASF.CombatEffect.Advanced"}}</summary>
       <fieldset><legend>{{localize "MYTHRASF.CombatEffect.Execution"}}</legend>
         <label><span>{{localize "MYTHRASF.CombatEffect.Key"}}</span><input class="sheet-field-readonly" value="{{item.system.key}}" readonly></label>
         <label><span>{{localize "MYTHRASF.CombatEffect.RuleKey"}}</span><select class="sheet-field-editable" name="system.ruleKey">{{selectOptions combatEffectRuleChoices selected=item.system.ruleKey labelAttr="label" valueAttr="value"}}</select></label>
-        <label><span>{{localize "MYTHRASF.CombatEffect.StageLabel"}}</span><select class="sheet-field-editable" name="system.stage">{{selectOptions combatEffectStageChoices selected=item.system.stage labelAttr="label" valueAttr="value"}}</select></label>
+        <label><span>{{localize "MYTHRASF.CombatEffect.StageLabel"}}</span><select class="sheet-field-editable" name="system.stage">{{selectOptions combatEffectStageChoices selected=combatEffectStage labelAttr="label" valueAttr="value"}}</select></label>
         <label class="combat-effect-checkbox"><input type="checkbox" class="sheet-state-box" name="system.requiresWound" {{checked item.system.requiresWound}}> <span>{{localize "MYTHRASF.CombatEffect.RequiresWound"}}</span></label>
         <label class="combat-effect-checkbox"><input type="checkbox" class="sheet-state-box" name="system.endurance" {{checked item.system.endurance}}> <span>{{localize "MYTHRASF.CombatEffect.Endurance"}}</span></label>
       </fieldset>

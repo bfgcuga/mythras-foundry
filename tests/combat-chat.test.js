@@ -140,7 +140,17 @@ test("el daño precede a la prueba de Aguante de la herida", () => {
   assert.match(source, /\["applied", "unavailable", "missedLocation"\]\.includes\(combat\.damage\?\.status\)/);
   assert.doesNotMatch(damageRuntime, /check\.status === "pending" && check\.source !== "wound"/);
   assert.match(renderer, /MYTHRASF\.Combat\.WoundCheck\.ApplyDamageFirst/);
-  assert.match(renderer, /const effectChecks = \["applied", "unavailable", "missedLocation"\]/);
+  assert.match(renderer, /combat\.damage\?\.status === "applied"/);
+});
+
+test("las resistencias automatizadas no ocultan ni bloquean el daño", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(source, /combatEffectCheckPhase\(check, combat\.effects\?\.selections/);
+  assert.match(source, /combat\.damage\?\.status === "ready"/);
+  assert.match(renderer, /combat\.damage\?\.status === "ready"\) damageHtml/);
+  assert.doesNotMatch(renderer, /resolve-effect/);
 });
 
 test("las heridas graves y críticas permiten Suerte antes de aplicar consecuencias", () => {

@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
-  combatEffectEligible, combatEffectRule, combatEffectSelectionHighlight,
-  combatEffectSlug, combatEffectSlotsBySide,
+  canonicalCombatEffectStage, combatEffectEligible, combatEffectResolutionPhase,
+  combatEffectIsAutomated, combatEffectRule, combatEffectSelectionHighlight,
+  combatEffectSlug, combatEffectSlotsBySide, initialCombatEffectStatus,
   maximizeDamageFormula, mergeCombatEffectDocuments,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
 
@@ -16,6 +17,23 @@ const effects = source.efectos_combate.map((entry) => ({
   rollRestriction: entry.tirada_especifica ?? "", stackable: entry.apilable,
   ...combatEffectRule({ key: combatEffectSlug(entry.nombre) })
 }));
+
+test("todos los efectos oficiales tienen una fase canónica de resolución", () => {
+  const classified = effects.map((effect) => ({ effect,
+    rule: combatEffectRule({ key: effect.key }) }));
+  assert.equal(classified.length, source.efectos_combate.length);
+  classified.forEach(({ rule }) => assert.equal(canonicalCombatEffectStage(rule.stage), rule.stage));
+  assert.equal(combatEffectRule({ key: "cegar-oponente" }).stage, "beforeDamage");
+  assert.equal(combatEffectRule({ key: "elegir-localizacion" }).stage, "beforeLocation");
+  assert.equal(combatEffectRule({ key: "empalar" }).stage, "damageRoll");
+  assert.equal(combatEffectRule({ key: "aturdir-localizacion" }).stage, "afterDamage");
+  assert.equal(combatEffectRule({ key: "forzar-rendicion" }).replacesDamage, true);
+  assert.equal(combatEffectResolutionPhase({ stage: "afterEffect" }), "afterDamage");
+  assert.equal(combatEffectIsAutomated({ key: "cegar-oponente", ruleKey: "guided" }), true);
+  assert.equal(combatEffectIsAutomated({ key: "agarrar", ruleKey: "guided" }), false);
+  assert.equal(initialCombatEffectStatus({ key: "agarrar", ruleKey: "guided" }),
+    "notAutomated");
+});
 
 test("Sorpresa puede conceder efectos ofensivos aunque gane la defensa", () => {
   assert.deepEqual(combatEffectSlotsBySide({ winner: "defender", differential: 2,
@@ -151,14 +169,21 @@ test("la hoja de efecto es editable, restringe sus valores y usa booleanos visua
   assert.match(template, /name="system\.description"/);
   assert.match(template, /name="system\.weaponRestriction">{{selectOptions/);
   assert.match(template, /name="system\.rollRestriction">{{selectOptions/);
+  assert.ok(template.indexOf("combat-effect-sheet-description")
+    < template.indexOf("combat-effect-sheet-summary"));
   for (const field of ["offensive", "defensive", "stackable", "requiresWound", "endurance"]) {
     assert.match(template, new RegExp(`type="checkbox"[^>]*sheet-state-box[^>]*name="system\\.${field}"`));
   }
-  assert.match(sheet, /this\.item\.type === "combatEffect"[\s\S]*?width: 780, height: 640/);
+  assert.match(sheet, /this\.item\.type === "combatEffect"[\s\S]*?width: 740, height: 640/);
   assert.match(combat, /ruleKey: item\.system\.ruleKey/);
   assert.match(combat, /requiresWound: Boolean\(item\.system\.requiresWound\)/);
   assert.match(combat, /SETTING_KEYS\.catalogSources/);
   assert.match(combat, /mergeCombatEffectDocuments\(groups\)/);
+  assert.match(combat, /initialCombatEffectStatus\(effect\)/);
+  const renderer = readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(renderer, /combat-effect-debug-note/);
+  assert.doesNotMatch(renderer, /data-combat-action="resolve-effect"/);
 });
 
 test("el diálogo de selección muestra descripciones y solo pide parámetros reglados", () => {

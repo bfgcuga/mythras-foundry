@@ -370,7 +370,7 @@ export class CombatEffectData extends foundry.abstract.TypeDataModel {
       rollRestriction: textField(),
       stackable: new BooleanField({ required: true, nullable: false, initial: false }),
       ruleKey: textField("guided"),
-      stage: textField("afterEffect"),
+      stage: textField("beforeDamage"),
       requiresWound: new BooleanField({ required: true, nullable: false, initial: false }),
       endurance: new BooleanField({ required: true, nullable: false, initial: false }),
       tableColumns: new ArrayField(textField(), { required: true, nullable: false, initial: [] }),

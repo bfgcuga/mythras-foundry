@@ -8,8 +8,9 @@ test("la fase de daño conserva resoluciones previas y ordena efectos antes que 
     system: { category: "limb", hpClass: "leg" } };
   const previous = { winner: "left" };
   const combat = { defender: { locations: [location] }, damage: { locationId: "leg" },
-    effects: { winner: "attacker", selections: [{ key: "test", side: "attacker", slot: 0,
-      name: "Efecto", ruleKey: "guided", endurance: true, requiresWound: true,
+    effects: { winner: "attacker", selections: [{ key: "aturdir-localizacion",
+      side: "attacker", slot: 0, name: "Aturdir localización", ruleKey: "guided",
+      endurance: true, requiresWound: true,
       status: "conditional" }],
     checks: [{ id: "wound-leg", resolution: previous, status: "resolved" }] } };
   const checks = prepareDamageChecks(combat, { location, resultingWound: "serious",
@@ -26,7 +27,7 @@ test("Elegir Localización limita las opciones de la propuesta de daño", () => 
   assert.deepEqual(damageLocationChoices(combat).map((entry) => entry.id), ["arm"]);
 });
 
-test("Empalar queda resuelto al penetrar y no bloquea la prueba de la herida", () => {
+test("Empalar aplica su automatización sin dejar una confirmación manual", () => {
   const location = { id: "arm", name: "Brazo",
     system: { category: "arm", hpClass: "arm" } };
   const combat = { defender: { locations: [location] }, damage: { locationId: "arm" },
@@ -52,6 +53,18 @@ test("una resistencia no condicionada al daño se conserva al recalcular la prop
   assert.equal(checks.length, 1);
   assert.equal(checks[0].id, previous.id);
   assert.equal(checks[0].allowsShieldStyle, true);
+});
+
+test("un efecto condicionado no automatizado se cierra sin crear pruebas", () => {
+  const location = { id: "chest", name: "Pecho",
+    system: { category: "chest", hpClass: "chest" } };
+  const effect = { key: "arruinar-conjuro", side: "attacker", slot: 0,
+    ruleKey: "guided", requiresWound: true, status: "conditional" };
+  const combat = { effects: { winner: "attacker", selections: [effect], checks: [] } };
+  const checks = prepareDamageChecks(combat, { location, resultingWound: "minor",
+    penetratingDamage: 1 });
+  assert.equal(effect.status, "notAutomated");
+  assert.deepEqual(checks, []);
 });
 
 test("la suerte reduce una herida crítica al mínimo exacto de herida grave", () => {
