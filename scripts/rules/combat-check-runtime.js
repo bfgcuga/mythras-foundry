@@ -8,7 +8,8 @@ export async function applyManualCombatEffectResolution(message, request, { clon
   if (!user) return false;
   const effect = (combat.effects?.selections ?? []).find((entry) =>
     Number(entry.slot) === Number(request.slot));
-  if (!effect || effect.status !== "pending") return false;
+  if (!effect || effect.status !== "pending"
+    || !["applied", "unavailable", "missedLocation"].includes(combat.damage?.status)) return false;
   const selfSide = effect.side ?? combat.effects.winner;
   const affectedSide = effect.target === "self" ? selfSide
     : selfSide === "attacker" ? "defender" : "attacker";
@@ -46,7 +47,7 @@ export async function applyCombatCheckTransition(message, request, { clone, flag
   if (check.source === "wound" && (combat.effects?.selections ?? [])
     .some((effect) => effect.status === "pending")) return false;
   if (request.reroll) {
-    if (check.source !== "wound" || check.resolution?.automaticFailure) return false;
+    if (check.resolution?.automaticFailure) return false;
     const points = Number(defender.system.resources?.luckPoints?.value ?? 0);
     if (points < 1) { warn(localize("MYTHRASF.Luck.None")); return false; }
     await defender.update({ "system.resources.luckPoints.value": points - 1 });
@@ -58,14 +59,14 @@ export async function applyCombatCheckTransition(message, request, { clone, flag
     check.status = "resolved";
     check.resolution = { ...check.resolution, userId: user.id, resolvedAt: Date.now() };
   } else {
-    check.status = check.source === "wound" ? "rolled" : "resolved";
+    check.status = "rolled";
     check.resolution = { ...request.resolution, userId: user.id, rolledAt: Date.now() };
   }
   if (request.finalize && check.source === "wound" && combat.damage?.status === "applied") {
     const location = defender.items.get(check.locationId);
     if (location) await applyWoundConsequences(combat, defender, location,
       { afterEndurance: true, manual: request.manual });
-  } else if (check.source !== "wound" && !request.reroll) {
+  } else if (request.finalize && check.source !== "wound") {
     await applyEffectConsequence(combat, check, defender,
       { manual: request.manual, ...effectDependencies() });
   }

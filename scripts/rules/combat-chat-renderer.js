@@ -82,7 +82,8 @@ function combatCheckHtml(check, combat) {
       title="${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}"
       aria-label="${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}"><i class="fas fa-clover"
       aria-hidden="true"></i><span>${escape(localize("MYTHRASF.Combat.WoundCheck.Luck"))}</span></button>` : "";
-  const woundDamageApplied = !wound || combat.damage?.status === "applied";
+  const woundDamageApplied = ["applied", "unavailable", "missedLocation"]
+    .includes(combat.damage?.status);
   if (check.status === "pending") return `<article class="combat-check-entry"><header><strong>${escape(
     title)}</strong>${help}</header><div class="combat-check-detail"><strong>${escape(localize(
       "MYTHRASF.Combat.CheckReasonLabel"))}</strong><span>${escape(reason)}</span></div><div class="combat-check-detail"><strong>${escape(
@@ -100,8 +101,17 @@ function combatCheckHtml(check, combat) {
   const opposed = resolution.opposed ?? {};
   const resisted = resolution.winner === "left";
   const outcomeKey = woundCheckOutcomeKey(check, combat);
+  const effectConsequence = check.status === "rolled"
+    ? localize("MYTHRASF.Combat.CheckPendingConsequence")
+    : check.consequence?.key === "blinded"
+      ? game.i18n.format("MYTHRASF.Combat.EffectConsequence.blinded", {
+        turns: Number(check.consequence.turns ?? 0) })
+      : check.consequence?.key === "suppressed"
+        ? game.i18n.format("MYTHRASF.Combat.EffectConsequence.suppressed", {
+          turns: Number(check.consequence.turns ?? 1) })
+        : localize("MYTHRASF.Combat.EffectConsequence.resisted");
   const outcome = outcomeKey ? localize(`MYTHRASF.Combat.WoundCheck.Outcome.${outcomeKey}`)
-    : localize(`MYTHRASF.Combat.CheckOutcome.${resisted ? "resisted" : "failed"}`);
+    : effectConsequence;
   const abilityRoll = resolution.automaticFailure
     ? `<div class="mythras-chat-row"><span>${escape(localize(
       "MYTHRASF.Suffocation.Endurance"))}</span><strong class="combat-roll-outcome mythras-chat-result--failure">${escape(localize(
@@ -109,7 +119,7 @@ function combatCheckHtml(check, combat) {
     : `<div class="mythras-chat-row"><span>${escape(resolution.abilityName ?? localize(
       "MYTHRASF.Suffocation.Endurance"))} (1d100 / ${Number(resolution.target ?? 0)}%)</span>${rollOutcome(
         resolution.rawRoll ?? 0, resolution.result)}</div>`;
-  const pendingDecision = check.status === "rolled" ? `<div class="combat-check-actions"><button type="button" class="sheet-icon-button mythras-chat-luck-button" data-combat-action="check-luck" data-check-id="${escape(check.id)}" title="${escape(localize("MYTHRASF.Combat.WoundCheck.LuckReroll"))}" aria-label="${escape(localize("MYTHRASF.Combat.WoundCheck.LuckReroll"))}"><i class="fas fa-clover" aria-hidden="true"></i></button><button type="button" data-combat-action="confirm-check" data-check-id="${escape(check.id)}" title="${escape(localize("MYTHRASF.Combat.WoundCheck.ConfirmResult"))}">${escape(localize("MYTHRASF.Combat.WoundCheck.ConfirmResult"))}</button></div>` : "";
+  const pendingDecision = check.status === "rolled" ? `<div class="combat-check-actions"><button type="button" class="sheet-icon-button mythras-chat-luck-button" data-combat-action="check-luck" data-check-id="${escape(check.id)}" title="${escape(localize("MYTHRASF.Combat.CheckLuckReroll"))}" aria-label="${escape(localize("MYTHRASF.Combat.CheckLuckReroll"))}"><i class="fas fa-clover" aria-hidden="true"></i></button><button type="button" data-combat-action="confirm-check" data-check-id="${escape(check.id)}" title="${escape(localize("MYTHRASF.Combat.WoundCheck.ConfirmResult"))}">${escape(localize("MYTHRASF.Combat.WoundCheck.ConfirmResult"))}</button></div>` : "";
   const luckHistory = (resolution.luckHistory ?? []).map((attempt) => `<small class="mythras-chat-luck-spent">${Number(attempt.rawRoll)} — ${escape(game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: attempt.spenderName }))}</small>`).join("");
   return `<article class="combat-check-entry"><header><strong>${escape(title)}</strong>${help}</header>
     ${abilityRoll}
@@ -225,13 +235,23 @@ export function renderCombatExchange(combat) {
       `<div class="mythras-chat-row"><span>${escape(localize(
         "MYTHRASF.Combat.WoundCheck.LuckSpent"))}</span><strong>−1</strong></div></fieldset>`);
   }
-  const selectedEffects = (combat.effects?.selections ?? []).map((effect) => effect.waived
+  const selectedEffects = (combat.effects?.selections ?? []).map((effect) => {
+    const automated = (combat.effects?.checks ?? []).some((check) =>
+      check.effectSide === effect.side && Number(check.effectSlot) === Number(effect.slot));
+    const consequencesReady = ["applied", "unavailable", "missedLocation"]
+      .includes(combat.damage?.status);
+    return effect.waived
     ? `<li>${escape(localize("MYTHRASF.CombatEffect.Waive"))}</li>`
-    : `<li><button type="button" class="sheet-icon-button" data-combat-action="open-effect" data-effect-uuid="${escape(effect.uuid)}" title="${escape(localize("MYTHRASF.CombatEffect.Open"))}"><i class="fas fa-book-open" aria-hidden="true"></i></button> ${escape(effect.name)}${effect.status === "pending" ? ` — ${escape(localize("MYTHRASF.CombatEffect.Guided"))} <button type="button" data-combat-action="resolve-effect" data-effect-slot="${effect.slot}" title="${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}">${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : ""}</li>`).join("");
+    : `<li><button type="button" class="sheet-icon-button" data-combat-action="open-effect" data-effect-uuid="${escape(effect.uuid)}" title="${escape(localize("MYTHRASF.CombatEffect.Open"))}"><i class="fas fa-book-open" aria-hidden="true"></i></button> ${escape(effect.name)}${effect.status === "pending" && !automated && consequencesReady ? ` — ${escape(localize("MYTHRASF.CombatEffect.Guided"))} <button type="button" data-combat-action="resolve-effect" data-effect-slot="${effect.slot}" title="${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}">${escape(localize("MYTHRASF.CombatEffect.ResolveManual"))}</button>` : ""}</li>`;
+  }).join("");
   const effectsHtml = combat.status === "awaitingEffects"
     ? `<fieldset class="combat-effects-panel"><legend>${escape(localize("MYTHRASF.CombatEffect.Pending"))}</legend><button type="button" data-combat-action="choose-effects" title="${escape(localize("MYTHRASF.CombatEffect.Select"))}">${escape(localize("MYTHRASF.CombatEffect.Select"))}</button></fieldset>`
     : selectedEffects ? `<fieldset class="combat-effects-panel"><legend>${escape(localize("MYTHRASF.CombatEffect.Selected"))}</legend><ol>${selectedEffects}</ol></fieldset>` : "";
-  const checksHtml = (combat.effects?.checks ?? []).length ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.Checks"))}</legend>${combat.effects.checks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : "";
+  const allChecks = combat.effects?.checks ?? [];
+  const effectChecks = ["applied", "unavailable", "missedLocation"].includes(combat.damage?.status)
+    ? allChecks.filter((check) => check.source === "effect") : [];
+  const woundChecks = allChecks.filter((check) => check.source === "wound");
+  const checksHtml = `${effectChecks.length ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.EffectResolution"))}</legend>${effectChecks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : ""}${woundChecks.length ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.WoundResolution"))}</legend>${woundChecks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : ""}`;
   const consequencesHtml = (combat.consequences ?? []).length ? `<fieldset><legend>${escape(localize("MYTHRASF.Combat.Consequences"))}</legend>${combat.consequences.map(combatConsequenceHtml).join("")}</fieldset>` : "";
   const tracker = combat.turnEconomy ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Tracker.Position"))}</span><strong>${escape(game.i18n.format("MYTHRASF.Tracker.RoundCycle", { round: combat.turnEconomy.round, cycle: combat.turnEconomy.cycle }))}</strong></div>` : "";
   const close = combat.turnEconomy && !combat.turnEconomy.turnAdvanced

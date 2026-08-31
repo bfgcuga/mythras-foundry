@@ -137,9 +137,10 @@ test("el daño precede a la prueba de Aguante de la herida", () => {
     import.meta.url), "utf8");
   const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
     import.meta.url), "utf8");
-  assert.match(source, /check\.source === "wound" && combat\.damage\?\.status !== "applied"/);
-  assert.match(damageRuntime, /check\.status === "pending" && check\.source !== "wound"/);
+  assert.match(source, /\["applied", "unavailable", "missedLocation"\]\.includes\(combat\.damage\?\.status\)/);
+  assert.doesNotMatch(damageRuntime, /check\.status === "pending" && check\.source !== "wound"/);
   assert.match(renderer, /MYTHRASF\.Combat\.WoundCheck\.ApplyDamageFirst/);
+  assert.match(renderer, /const effectChecks = \["applied", "unavailable", "missedLocation"\]/);
 });
 
 test("las heridas graves y críticas permiten Suerte antes de aplicar consecuencias", () => {
@@ -147,11 +148,25 @@ test("las heridas graves y críticas permiten Suerte antes de aplicar consecuenc
     import.meta.url), "utf8");
   const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
     import.meta.url), "utf8");
-  assert.match(checkRuntime, /check\.source === "wound" \? "rolled" : "resolved"/);
+  assert.match(checkRuntime, /check\.status = "rolled"/);
   assert.match(checkRuntime, /request\.finalize && check\.source === "wound"/);
   assert.match(checkRuntime, /"system\.resources\.luckPoints\.value": points - 1/);
   assert.match(renderer, /data-combat-action="check-luck"/);
   assert.match(renderer, /data-combat-action="confirm-check"/);
+});
+
+test("las pruebas de efectos admiten habilidad elegida, Suerte y consecuencia automatizada", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  const runtime = fs.readFileSync(new URL("../scripts/rules/combat-check-runtime.js",
+    import.meta.url), "utf8");
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  assert.match(source, /shieldResistanceChoices[\s\S]*mode\.weaponType === "shield"/);
+  assert.match(source, /MYTHRASF\.Combat\.CheckChooseAbility/);
+  assert.match(runtime, /if \(request\.reroll\) \{\s+if \(check\.resolution\?\.automaticFailure\)/);
+  assert.match(runtime, /request\.finalize && check\.source !== "wound"/);
+  assert.match(renderer, /MYTHRASF\.Combat\.EffectConsequence\.blinded/);
+  assert.match(renderer, /MYTHRASF\.Combat\.EffectResolution/);
 });
 
 test("la suerte de combate permite elegir pagador y limita la tirada ajena a repetir", () => {

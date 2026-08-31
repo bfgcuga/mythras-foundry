@@ -23,6 +23,15 @@ test("una condición aplicada durante el turno actual se arma sin descontarse", 
   assert.equal(advanceActorTurnDuration(armed.condition).action, "expire");
 });
 
+test("Titubear consume incluso la condición aplicada durante el turno actual", () => {
+  const condition = timedConditionSource({ key: "blinded",
+    duration: { unit: "actorTurn", value: 1, skipCurrentTurn: true } });
+  const result = advanceActorTurnDuration(condition, { consumeCurrent: true });
+  assert.equal(result.action, "expire");
+  assert.equal(result.condition.remaining, 0);
+  assert.equal(result.condition.skipCurrentTurn, false);
+});
+
 test("varios turnos solo descuentan uno por final de turno propio", () => {
   const condition = timedConditionSource({ key: "offBalance",
     duration: { unit: "actorTurn", value: 3 } });

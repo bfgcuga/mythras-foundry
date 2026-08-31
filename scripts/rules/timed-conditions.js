@@ -20,13 +20,14 @@ export function timedConditionSource({ key, statusId = key, source = {}, combat 
     appliedAt: Date.now(), ...metadata });
 }
 
-export function advanceActorTurnDuration(condition) {
+export function advanceActorTurnDuration(condition, { consumeCurrent = false } = {}) {
   if (!condition || condition.unit !== "actorTurn") return { action: "keep", condition };
-  if (condition.skipCurrentTurn) return { action: "update",
+  if (condition.skipCurrentTurn && !consumeCurrent) return { action: "update",
     condition: { ...condition, skipCurrentTurn: false } };
   const remaining = Math.max(0, Number(condition.remaining ?? 1) - 1);
-  return remaining === 0 ? { action: "expire", condition: { ...condition, remaining: 0 } }
-    : { action: "update", condition: { ...condition, remaining } };
+  const next = { ...condition, remaining, skipCurrentTurn: false };
+  return remaining === 0 ? { action: "expire", condition: next }
+    : { action: "update", condition: next };
 }
 
 export function expiresAtRoundEnd(condition, combatUuid) {

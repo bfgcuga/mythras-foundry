@@ -127,6 +127,16 @@ export function eligibleCombatEffects(effects, context) {
   return effects.filter((effect) => combatEffectEligible(effect, context));
 }
 
+export function combatEffectSelectionHighlight(effect, side) {
+  const restriction = String(effect?.rollRestriction ?? "").trim();
+  if (restriction === "winnerCritical"
+    || (side === "attacker" && restriction === "attackerCritical")
+    || (side === "defender" && restriction === "defenderCritical")) return "critical";
+  if (restriction === "opponentFumble"
+    || (side === "defender" && restriction === "attackerFumble")) return "fumble";
+  return "";
+}
+
 export function validateEffectSelections({ slots = 0, selections = [], effects = [], context = {} }) {
   if (selections.length !== slots) return { valid: false, reason: "slots" };
   const catalog = new Map(effects.map((effect) => [effect.key, effect]));

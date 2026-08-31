@@ -74,6 +74,7 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
       effectSide: effect.side, effectSlot: effect.slot,
       actorSide: combatEffectAffectedSide(effect),
       abilitySlugs: effect.key === "cegar-oponente" ? ["evadir"] : ["voluntad"],
+      allowsShieldStyle: effect.key === "cegar-oponente",
       opposedSide: effect.side, label: effect.name, status: "pending" });
     effect.status = "pending";
   }
@@ -89,11 +90,16 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
   if (!effect) return;
   effect.resolution = { checkId: check.id, resisted, resolvedAt: Date.now() };
   effect.status = "resolved";
-  if (resisted) return;
+  if (resisted) {
+    check.consequence = { key: "resisted" };
+    return;
+  }
   if (effect.key === "cegar-oponente") {
     const duration = await dependencies.evaluateRoll("1d3", { manual });
     await addManagedCombatStatus(combat, effect, { key: "blinded", statusId: "blinded",
       turns: duration.total }, dependencies);
+    check.consequence = { key: "blinded", turns: duration.total };
+    effect.resolution.consequence = check.consequence;
   }
   if (effect.key === "disparo-de-supresion") {
     const sourceActorUuid = combatSideEntry(combat, effect.side).actorUuid;
@@ -108,6 +114,8 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
         remaining: Number(condition.remaining ?? 1) + 1 } });
     } else await addManagedCombatStatus(combat, effect, { key: "suppressed",
       statusId: "suppressed", turns: 1 }, dependencies);
+    check.consequence = { key: "suppressed", turns: 1 };
+    effect.resolution.consequence = check.consequence;
   }
   if (effect.key === "desangrar") await addManagedCombatStatus(combat, effect,
     { key: "exsanguinating", statusId: "exsanguinating", unit: "manual" }, dependencies);

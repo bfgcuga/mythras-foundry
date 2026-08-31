@@ -2,6 +2,7 @@ import { currentActionPoints } from "./action-points.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
+import { advanceActorTurnConditions } from "./timed-condition-runtime.js";
 import { COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
   chargeEligibility, chargeModifiers, movementDeclaration,
   normalizeCombatActionState, combatActionPresentation } from "./combat-actions.js";
@@ -187,12 +188,18 @@ async function executeAction(combat, action) {
     const prone = actor.effects.filter((effect) => effect.statuses?.has?.("prone"));
     if (prone.length) await actor.deleteEmbeddedDocuments("ActiveEffect", prone.map((effect) => effect.id));
     current.status = "resolved";
-  } else if (current.key === "hesitate") current.status = "resolved";
+  } else if (current.key === "hesitate") {
+    await advanceActorTurnConditions(actor, [], { consumeCurrent: true });
+    current.status = "resolved";
+    current.actorTurnConditionsAdvanced = true;
+  }
   else current.status = "awaitingConfirmation";
   current.resolvedAt = current.status === "resolved" ? Date.now() : null;
   current.revision += 1; await save(combat, state); await updateCard(current);
   Hooks.callAll("mythrasCombatActionResolved", combat, current);
-  if (current.status === "resolved" && combat.combatant?.id === current.combatantId) await combat.nextTurn();
+  if (current.status === "resolved" && combat.combatant?.id === current.combatantId) {
+    await combat.nextTurn({ skipCurrentActorConditions: current.actorTurnConditionsAdvanced });
+  }
 }
 
 async function updateCard(action) {

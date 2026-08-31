@@ -41,6 +41,19 @@ test("Empalar queda resuelto al penetrar y no bloquea la prueba de la herida", (
   assert.deepEqual(checks.map((entry) => entry.source), ["wound"]);
 });
 
+test("una resistencia no condicionada al daño se conserva al recalcular la propuesta", () => {
+  const location = { id: "arm", name: "Brazo", system: { category: "arm", hpClass: "arm" } };
+  const previous = { id: "effect-defender-0", source: "effect", effectKey: "cegar-oponente",
+    effectSide: "defender", effectSlot: 0, status: "pending" };
+  const combat = { effects: { winner: "defender", selections: [{ key: "cegar-oponente",
+    side: "defender", slot: 0, name: "Cegar oponente" }], checks: [previous] } };
+  const checks = prepareDamageChecks(combat, { location, resultingWound: "healthy",
+    penetratingDamage: 0, weaponTarget: true });
+  assert.equal(checks.length, 1);
+  assert.equal(checks[0].id, previous.id);
+  assert.equal(checks[0].allowsShieldStyle, true);
+});
+
 test("la suerte reduce una herida crítica al mínimo exacto de herida grave", () => {
   assert.deepEqual(majorWoundLuckAdjustment({ beforeHitPoints: 5, maxHitPoints: 5,
     penetratingDamage: 11 }), { afterHitPoints: -4, penetratingDamage: 9,

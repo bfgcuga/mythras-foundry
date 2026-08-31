@@ -16,10 +16,10 @@ export async function applyTimedCondition(actor, { name, img, statusId, ...confi
     flags: { [TIMED_CONDITION_SCOPE]: { [TIMED_CONDITION_FLAG]: condition } } }]);
 }
 
-export async function advanceActorTurnConditions(actor, history = []) {
+export async function advanceActorTurnConditions(actor, history = [], options = {}) {
   const updates = []; const deletes = [];
   for (const effect of timedEffects(actor)) {
-    const result = advanceActorTurnDuration(flag(effect));
+    const result = advanceActorTurnDuration(flag(effect), options);
     if (result.action === "update") updates.push({ _id: effect.id,
       [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]: result.condition });
     if (result.action === "expire") {

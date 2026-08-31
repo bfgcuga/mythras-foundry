@@ -15,6 +15,8 @@
   --mythras-header-line: rgb(255 243 212 / 62%);
   --mythras-header-control: #613129;
   --mythras-header-control-hover: #4f2822;
+  --mythras-effect-critical-highlight: #d4dfc9;
+  --mythras-effect-fumble-highlight: #e2cbc4;
   --mythras-tab-inactive: color-mix(in srgb, var(--mythras-paper) 76%, var(--mythras-accent));
   --mythras-wound-healthy: #285f32;
   --mythras-wound-minor: #88bd78;
@@ -2162,8 +2164,33 @@
 .mythras-foundry .location-hp-buttons { display: grid; align-content: center; }
 .mythras-foundry .location-hp-buttons .sheet-icon-button { width: 1rem; height: 0.82rem; min-height: 0; padding: 0; font-size: 0.55rem; }
 .mythras-foundry .natural-armor-cell { display: grid; place-items: center; min-height: 1.95rem; }
-.mythras-foundry .combat-effect-dialog .combat-effect-location { display: none; }
-.mythras-foundry .combat-effect-dialog fieldset:has(> select option[data-location-choice]:checked) .combat-effect-location { display: grid; }
+.mythras-foundry .combat-effect-dialog {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.mythras-foundry .combat-effect-dialog fieldset {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+.mythras-foundry .combat-effect-dialog label,
+.mythras-foundry .combat-effect-choice-description { display: grid; gap: 0.25rem; }
+.mythras-foundry .combat-effect-dialog [hidden] { display: none; }
+.mythras-foundry .combat-effect-dialog option.combat-effect-option--critical {
+  background-color: var(--mythras-effect-critical-highlight);
+}
+.mythras-foundry .combat-effect-dialog option.combat-effect-option--fumble {
+  background-color: var(--mythras-effect-fumble-highlight);
+}
+.mythras-foundry .combat-effect-choice-description > span { font-weight: 700; }
+.mythras-foundry .combat-effect-choice-description .combat-effect-description {
+  min-height: 5.5rem;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--mythras-border);
+  overflow-wrap: anywhere;
+}
 
 .mythras-foundry .combat-wound-legend {
   display: flex;

@@ -61,7 +61,8 @@ El sistema incluye actualmente:
   Retrasar, Titubear y Cargar se registran en el combate y gastan PA una sola
   vez. El movimiento es una declaración táctica, Retrasar abre ventanas de
   interrupción ordenadas por iniciativa y las acciones de magia y montura se
-  conservan como confirmaciones guiadas;
+  conservan como confirmaciones guiadas; Titubear consume explícitamente un
+  turno propio de las condiciones temporales;
 - el cuadro de acciones de Combate permanece siempre visible y muestra el coste
   y la causa localizada cuando una acción no puede utilizarse;
 - el cuadro de acciones encabeza la pestaña Combate tanto en personajes como en PNJ;
@@ -103,8 +104,11 @@ El sistema incluye actualmente:
   proponen al DJ o propietario defensor la aplicación de PG y heridas. Antes
   del daño, el ganador selecciona o renuncia a sus efectos de combate; la
   tarjeta filtra los 44 efectos por lado, tirada y arma, automatiza los
-  modificadores compatibles y ordena las tiradas de Aguante de efectos antes
-  que las derivadas de heridas. El compendio procede de *Mythras básico
+  modificadores compatibles y aplica primero el daño; después presenta por
+  separado la resolución de efectos y la de heridas. «Cegar oponente» permite
+  resistir con Evadir o con un estilo que use un escudo equipado, admite repetir
+  la resistencia con Suerte y aplica automáticamente Cegado durante 1d3 turnos
+  si no se resiste. El compendio procede de *Mythras básico
   revisado*; cada efecto dispone de una hoja ancha y editable con selectores
   cerrados para restricciones de arma y tirada, casillas para sus estados
   booleanos y una sección avanzada para la ejecución. El daño muestra por
@@ -114,13 +118,13 @@ El sistema incluye actualmente:
   alcanzar la parte restante. Un ajuste de mundo permite usar en su lugar la
   reducción oficial del rango d20; «Elegir Localización» siempre realiza el
   1d3. La tirada y un posible fallo quedan visibles en la tarjeta. Las pruebas
-  causadas por heridas muestran motivo, habilidad,
+  causadas por efectos o heridas muestran motivo, habilidad elegida,
   d100, objetivo, ataque enfrentado, resultado y consecuencia; una ayuda
   contextual mantiene fuera de la tarjeta la explicación extensa. El DJ puede
   cancelar el intercambio hasta aplicar daño o un estado: se restituyen los PA
   de ataque y defensa, no avanza el tracker y la tarjeta deja constancia de que
   no se aplicaron sus efectos. Ataque, defensa y las tiradas enfrentadas de
-  heridas reutilizan los colores de las tiradas de habilidad para éxito,
+  efectos y heridas reutilizan los colores de las tiradas de habilidad para éxito,
   crítico, fallo y pifia; el resultado resistido o no resistido, la dificultad,
   el objetivo efectivo y la gravedad de la herida usan también sus tonos
   semánticos compartidos.

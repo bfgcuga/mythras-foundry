@@ -7,7 +7,7 @@ import { findHitLocation, woundLocationKind } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
-import { combatEffectRule, eligibleCombatEffects, maximizeDamageFormula,
+import { combatEffectRule, combatEffectSelectionHighlight, eligibleCombatEffects, maximizeDamageFormula,
   mergeCombatEffectDocuments, opposedEffectWinner, selectedEffectCount } from "./combat-effects.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
 import { getActionPointRules, getSystemSetting, PERMANENT_WOUND_HIT_LOCATION_RULES,
@@ -472,9 +472,26 @@ function parryChoices(actor, combatData = null) {
           modeName: weaponModeDisplayName(weapon, mode), styleId: resolved.style?.id ?? "",
           styleName: resolved.usesBase ? localize("MYTHRASF.Combat.BaseStyle") : resolved.style?.name ?? "",
           difficulty, baseTarget: resolved.target, target: difficultyTarget(resolved.target, difficulty),
-          weaponSize: mode.size };
+          weaponSize: mode.size, weaponType: mode.weaponType };
       }).filter(Boolean)));
   return [...new Map(choices.map((choice) => [choice.value, choice])).values()];
+}
+
+function shieldResistanceChoices(actor) {
+  const styles = actor.items.filter((item) => item.type === "combatStyle");
+  return actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+    .flatMap((weapon) => weaponModes(weapon).filter((mode) =>
+      mode.key === weapon.system.activeModeKey && mode.weaponType === "shield")
+      .flatMap((mode) => styles.map((style) => {
+        const resolved = resolveWeaponStyle({ weapon: weaponModeView(weapon, mode), styles,
+          selectedStyleId: style.id, familiarity: mode.familiarity });
+        if (!resolved.style) return null;
+        const difficulty = effectiveDifficulty(actor, resolved.difficulty);
+        if (difficulty === "impossible") return null;
+        return { ability: resolved.style,
+          name: `${resolved.style.name} — ${weaponModeDisplayName(weapon, mode)}`,
+          target: difficultyTarget(resolved.target, difficulty) };
+      }).filter(Boolean)));
 }
 
 export function preferredParryChoice(choices, passiveBlock) {
@@ -607,23 +624,50 @@ async function chooseCombatEffects(message, combat) {
   const catalog = (await combatEffectDocuments()).map(effectView);
   const eligible = eligibleCombatEffects(catalog, effectContext(combat, side));
   const options = [`<option value="__waive__">${escape(localize("MYTHRASF.CombatEffect.Waive"))}</option>`,
-    ...eligible.map((effect) => `<option value="${escape(effect.key)}" ${effect.ruleKey === "chooseLocation" ? "data-location-choice" : ""}>${escape(effect.name)}</option>`)]
+    ...eligible.map((effect) => {
+      const highlight = combatEffectSelectionHighlight(effect, side);
+      const hint = highlight ? localize(`MYTHRASF.CombatEffect.Highlight.${highlight}`) : "";
+      return `<option value="${escape(effect.key)}" ${highlight ? `class="combat-effect-option--${highlight}" title="${escape(hint)}"` : ""}>${escape(effect.name)}</option>`;
+    })]
     .join("");
   const locationOptions = (combat.defender.locations ?? []).map((location) =>
     `<option value="${escape(location.id)}">${escape(location.name)}</option>`).join("");
   const slots = combat.effects.sideSlots?.[side] ?? combat.effects.slots;
   const rows = Array.from({ length: slots }, (_, index) =>
-    `<fieldset><legend>${escape(game.i18n.format("MYTHRASF.CombatEffect.Slot", { slot: index + 1 }))}</legend><select name="effect-${index}">${options}</select><label class="combat-effect-location"><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location-${index}"><option value=""></option>${locationOptions}</select></label><label><span>${escape(localize("MYTHRASF.CombatEffect.Parameters"))}</span><textarea name="note-${index}"></textarea></label></fieldset>`).join("");
+    `<fieldset data-combat-effect-slot="${index}"><legend>${escape(game.i18n.format("MYTHRASF.CombatEffect.Slot", { slot: index + 1 }))}</legend>
+      <label><span>${escape(localize("MYTHRASF.Item.Name"))}</span><select name="effect-${index}">${options}</select></label>
+      <label class="combat-effect-location" hidden><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location-${index}"><option value=""></option>${locationOptions}</select></label>
+      <div class="combat-effect-choice-description"><span>${escape(localize("MYTHRASF.Item.Description"))}</span>
+        ${eligible.map((effect) => `<p class="sheet-field-readonly combat-effect-description" data-effect-description="${escape(effect.key)}" hidden>${escape(effect.description)}</p>`).join("")}
+      </div>
+    </fieldset>`).join("");
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: localize("MYTHRASF.CombatEffect.Select") },
-    content: `<div class="mythras-foundry mythras-dialog combat-effect-dialog">${rows}</div>`,
-    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.Confirm"),
+    position: { width: 760 },
+    content: `<div class="mythras-foundry mythras-dialog combat-effect-dialog"><h2 class="mythras-launcher-title">${escape(localize("MYTHRASF.CombatEffect.SelectionTitle"))}</h2>${rows}</div>`,
+    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.ConfirmSelection"),
       icon: "fas fa-check", default: true, callback: (event, button) =>
         Array.from({ length: slots }, (_, index) => ({
           key: button.form.elements[`effect-${index}`].value,
           locationId: button.form.elements[`location-${index}`].value,
-          note: button.form.elements[`note-${index}`].value.trim()
+          note: ""
         })) }, { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
+    render: (event, dialog) => {
+      const form = dialog.element.querySelector("form");
+      const refreshSlot = (select) => {
+        const slot = select.closest("[data-combat-effect-slot]");
+        const effect = eligible.find((entry) => entry.key === select.value);
+        const location = slot?.querySelector(".combat-effect-location");
+        if (location) location.hidden = effect?.ruleKey !== "chooseLocation";
+        slot?.querySelectorAll("[data-effect-description]").forEach((description) => {
+          description.hidden = description.dataset.effectDescription !== select.value;
+        });
+      };
+      form?.querySelectorAll("select[name^='effect-']").forEach(refreshSlot);
+      form?.addEventListener("change", (change) => {
+        if (change.target.matches("select[name^='effect-']")) refreshSlot(change.target);
+      });
+    },
     rejectClose: false
   });
   if (!result) return;
@@ -937,7 +981,7 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
   if (!check || check.status !== "pending" || firstPending?.id !== check.id) return;
   if (check.source === "wound" && (combat.effects?.selections ?? [])
     .some((effect) => effect.status === "pending")) return;
-  if (check.source === "wound" && combat.damage?.status !== "applied") return;
+  if (!["applied", "unavailable", "missedLocation"].includes(combat.damage?.status)) return;
   const actorEntry = combatSideEntry(combat, check.actorSide ?? "defender");
   const defender = await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid);
   if (!defender || (!game.user.isGM && !defender.isOwner)) return;
@@ -949,11 +993,33 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
       winner: "right", opposed: { rawRoll: combat.resolution.attack.rawRoll,
         target: combat.resolution.attack.target, result: combat.resolution.attack.result } };
   } else {
-    const skill = defender.items.find((item) => item.type === "skill"
-      && (check.abilitySlugs ?? ["aguante"]).includes(item.system.slug));
-    if (!skill) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
+    const skills = defender.items.filter((item) => item.type === "skill"
+      && (check.abilitySlugs ?? ["aguante"]).includes(item.system.slug)).map((skill) => ({
+      ability: skill, name: skill.name, target: Number(skill.system.total ?? 0)
+    }));
+    const shieldStyles = check.allowsShieldStyle ? shieldResistanceChoices(defender) : [];
+    const choices = [...new Map([...skills, ...shieldStyles].filter((choice) => choice.ability)
+      .map((choice) => [choice.ability.id, choice])).values()];
+    if (!choices.length) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
+    let selected = choices[0];
+    if (choices.length > 1) {
+      const abilityId = await foundry.applications.api.DialogV2.wait({
+        window: { title: localize("MYTHRASF.Combat.CheckChooseAbility") },
+        content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(localize(
+          "MYTHRASF.Combat.CheckTest"))}</legend><label><span>${escape(localize(
+            "MYTHRASF.Combat.CheckAbility"))}</span><select name="ability">${choices.map((choice) =>
+              `<option value="${escape(choice.ability.id)}">${escape(choice.name)} (${choice.target}%)</option>`).join("")}</select></label></fieldset></div>`,
+        buttons: [{ action: "roll", label: localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20",
+          default: true, callback: (event, button) => button.form.elements.ability.value },
+        { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times",
+          callback: () => null }], rejectClose: false
+      });
+      if (!abilityId) return;
+      selected = choices.find((choice) => choice.ability.id === abilityId);
+    }
+    const skill = selected.ability;
     const roll = await evaluateAnimatedRoll("1d100", { manual });
-    const target = Number(skill.system.total ?? 0);
+    const target = selected.target;
     await recordAbilityFumble(skill, classifyContestRoll(roll.total, target));
     resolution = { manual: false, abilityId: skill.id, abilityName: skill.name,
       target, rawRoll: roll.total, serializedRoll: roll.toJSON(),
@@ -975,7 +1041,7 @@ async function requestCombatCheckLuck(message, combat, checkId, manual = false) 
   const check = (combat.effects?.checks ?? []).find((entry) => entry.id === checkId);
   const actorEntry = check ? combatSideEntry(combat, check.actorSide ?? "defender") : null;
   const actor = actorEntry ? await combatActor(actorEntry.tokenUuid, actorEntry.actorUuid) : null;
-  if (!check || check.source !== "wound" || check.status !== "rolled"
+  if (!check || check.status !== "rolled"
     || check.resolution?.automaticFailure || !actor
     || (!game.user.isGM && !actor.isOwner)) return;
   const points = Number(actor.system.resources?.luckPoints?.value ?? 0);
@@ -983,8 +1049,8 @@ async function requestCombatCheckLuck(message, combat, checkId, manual = false) 
   const confirmed = await foundry.applications.api.DialogV2.confirm({
     window: { title: localize("MYTHRASF.Luck.Title") },
     content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize(
-      "MYTHRASF.Combat.WoundCheck.LuckRerollConfirm"))}</p></div>`,
-    yes: { label: localize("MYTHRASF.Combat.WoundCheck.LuckReroll") },
+      "MYTHRASF.Combat.CheckLuckRerollConfirm"))}</p></div>`,
+    yes: { label: localize("MYTHRASF.Combat.CheckLuckReroll") },
     no: { label: localize("MYTHRASF.Cancel") }
   });
   if (!confirmed) return;

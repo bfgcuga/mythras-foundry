@@ -27,20 +27,29 @@ export function prepareDamageChecks(combat, { location, resultingWound,
   penetratingDamage, weaponTarget = false } = {}) {
   const previousChecks = new Map((combat.effects?.checks ?? []).map((check) => [check.id, check]));
   const checks = [];
-  (weaponTarget ? [] : combat.effects?.selections ?? []).forEach((effect, order) => {
+  (combat.effects?.selections ?? []).forEach((effect, order) => {
     if (effect.requiresWound) {
       const guided = !effect.ruleKey || effect.ruleKey === "guided";
       const activatedStatus = guided && effect.status !== "resolved"
         ? "pending" : "resolved";
-      effect.status = penetratingDamage > 0 ? activatedStatus : "notActivated";
+      effect.status = !weaponTarget && penetratingDamage > 0 ? activatedStatus : "notActivated";
     }
     const checkId = `effect-${effect.side ?? combat.effects.winner}-${effect.slot}`;
-    if (effect.endurance && penetratingDamage > 0) checks.push({
+    const unconditionalCheck = ["cegar-oponente", "disparo-de-supresion"].includes(effect.key);
+    if (unconditionalCheck || (!weaponTarget && effect.endurance && penetratingDamage > 0)) checks.push({
       id: checkId, source: "effect", order, effectKey: effect.key,
       effectSide: effect.side ?? combat.effects.winner, effectSlot: effect.slot,
-      actorSide: "defender", abilitySlugs: ["aguante"], opposedSide: "attacker",
+      actorSide: unconditionalCheck
+        ? effect.target === "self" ? effect.side
+          : effect.side === "attacker" ? "defender" : "attacker"
+        : "defender",
+      abilitySlugs: effect.key === "cegar-oponente" ? ["evadir"]
+        : effect.key === "disparo-de-supresion" ? ["voluntad"] : ["aguante"],
+      allowsShieldStyle: effect.key === "cegar-oponente",
+      opposedSide: effect.side ?? "attacker",
       label: effect.name, status: previousChecks.get(checkId)?.status ?? "pending",
-      resolution: previousChecks.get(checkId)?.resolution
+      resolution: previousChecks.get(checkId)?.resolution,
+      consequence: previousChecks.get(checkId)?.consequence
     });
   });
   if (!weaponTarget && ["serious", "major"].includes(resultingWound)) checks.push({

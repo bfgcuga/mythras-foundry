@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { availableCombatActions, braceSize, chargeEligibility, chargeModifiers,
   contestWinner, interruptPriority, isEngaged, movementDeclaration,
   normalizeCombatActionState } from "../scripts/rules/combat-actions.js";
@@ -47,4 +48,15 @@ test("el esquema táctico normaliza colecciones antiguas", () => {
   const state = normalizeCombatActionState({ revision: 4, delays: { a: { status: "reserved" } } });
   assert.equal(state.revision, 4); assert.equal(state.delays.a.status, "reserved");
   assert.deepEqual(state.movements, {}); assert.deepEqual(state.actions, {});
+});
+
+test("Titubear consume condiciones de turno propio sin duplicarlas al avanzar", () => {
+  const runtime = readFileSync(new URL("../scripts/rules/combat-action-runtime.js",
+    import.meta.url), "utf8");
+  const combat = readFileSync(new URL("../scripts/documents/mythras-combat.js",
+    import.meta.url), "utf8");
+  assert.match(runtime, /current\.key === "hesitate"[\s\S]*advanceActorTurnConditions\(actor, \[\], \{ consumeCurrent: true \}\)/);
+  assert.match(runtime, /actorTurnConditionsAdvanced = true/);
+  assert.match(runtime, /skipCurrentActorConditions: current\.actorTurnConditionsAdvanced/);
+  assert.match(combat, /!skipCurrentActorConditions[\s\S]*advanceActorTurnConditions/);
 });

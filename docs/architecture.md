@@ -531,8 +531,9 @@ fuera de los catálogos cerrados; la hoja y el creador homebrew solo ofrecen los
 valores canónicos admitidos. La ejecución consume la regla, fase y booleanos
 técnicos persistidos en cada Item. Los efectos automáticos
 condicionados a causar daño, como Empalar, quedan resueltos al confirmar que
-existe daño penetrante; solo los efectos
-guiados permanecen pendientes y preceden a las comprobaciones de heridas. Los
+existe daño penetrante. La tarjeta aplica primero el daño y habilita después,
+en paneles separados, las comprobaciones de efectos y de heridas; los efectos
+guiados no pueden resolverse antes de completar esa fase de daño. Los
 efectos no modelados se conservan como resoluciones guiadas y
 confirmadas, sin inventar geometría, turnos ni estados persistentes.
 La selección de combate combina el compendio oficial con todos los compendios
@@ -540,6 +541,13 @@ de Items configurados en `catalogSources`, toma únicamente documentos
 `combatEffect` con clave y permite que una fuente homebrew posterior sustituya
 una clave oficial de forma determinista. Las restricciones cerradas definen el
 esquema funcional del Item, no limitan el compendio del que puede proceder.
+El diálogo identifica la selección mediante el encabezado rojizo compartido,
+muestra en cada hueco el nombre y la descripción del efecto elegido, y solo
+presenta parámetros cuando la regla los necesita en esta fase (actualmente, la
+localización de «Elegir localización»); la selección no recoge notas libres.
+Las opciones restringidas a un crítico propio se resaltan en verde suave y las
+restringidas a una pifia del rival, en rojo suave; la clasificación procede de
+`rollRestriction` y del lado que realiza la selección, no del texto descriptivo.
 Una Herida Crítica en una extremidad registra directamente el daño, la lesión
 permanente y sus estados mecánicos; no crea una confirmación narrativa
 pendiente. Si no queda otra resolución guiada, el intercambio se considera
@@ -557,8 +565,16 @@ de aplicar el daño porque modifica tanto su cantidad como la gravedad resultant
 El resultado de Aguante de una Herida Grave o Crítica queda provisional antes
 de ejecutar sus consecuencias. Su propietario puede gastar Suerte para repetirlo
 o aceptarlo; únicamente la aceptación consolida las consecuencias anatómicas.
+Las resistencias de efectos siguen el mismo estado provisional y admiten Suerte
+antes de aceptar el resultado. «Cegar oponente» ofrece Evadir y los estilos de
+combate aplicables a un escudo equipado; tras una resistencia fallida y aceptada
+tira 1d3, aplica Cegado y conserva esa duración como consecuencia mostrada.
 La tarjeta presenta la etiqueta «Consecuencia:» sobre su explicación para que
 el texto operativo disponga del ancho completo del panel.
+Las condiciones medidas en turnos propios se descuentan normalmente desde
+`MythrasCombat.nextTurn`. «Titubear» realiza ese consumo al resolver la acción y
+marca el avance posterior para no repetirlo; así el contador progresa incluso si
+el cambio de turno dependiente del coordinador no llega a completarse.
 «Cerrar intercambio y avanzar» permite al DJ resolver conjuntamente cualquier
 paso todavía pendiente —con una nota opcional— sin deshacer el daño ni tratar
 el intercambio como cancelado. En un intercambio terminal que aún admite

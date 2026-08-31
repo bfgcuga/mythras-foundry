@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
-  combatEffectEligible, combatEffectRule, combatEffectSlug, combatEffectSlotsBySide,
+  combatEffectEligible, combatEffectRule, combatEffectSelectionHighlight,
+  combatEffectSlug, combatEffectSlotsBySide,
   maximizeDamageFormula, mergeCombatEffectDocuments,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
 
@@ -95,6 +96,21 @@ test("la selección admite renuncias y solo duplica efectos apilables", () => {
   ], effects, context }).valid, true);
 });
 
+test("la selección resalta críticos propios y pifias del rival según el lado", () => {
+  assert.equal(combatEffectSelectionHighlight({ rollRestriction: "winnerCritical" },
+    "attacker"), "critical");
+  assert.equal(combatEffectSelectionHighlight({ rollRestriction: "attackerCritical" },
+    "attacker"), "critical");
+  assert.equal(combatEffectSelectionHighlight({ rollRestriction: "defenderCritical" },
+    "defender"), "critical");
+  assert.equal(combatEffectSelectionHighlight({ rollRestriction: "opponentFumble" },
+    "attacker"), "fumble");
+  assert.equal(combatEffectSelectionHighlight({ rollRestriction: "attackerFumble" },
+    "defender"), "fumble");
+  assert.equal(combatEffectSelectionHighlight({ rollRestriction: "attackerFumble" },
+    "attacker"), "");
+});
+
 test("maximizar daño sustituye dados de izquierda a derecha sin alterar el resto", () => {
   assert.equal(maximizeDamageFormula("2d6 + 1d4 + 3", 1), "6 + 1d6 + 1d4 + 3");
   assert.equal(maximizeDamageFormula("2d6 + 1d4 + 3", 3), "12 + 4 + 3");
@@ -143,4 +159,16 @@ test("la hoja de efecto es editable, restringe sus valores y usa booleanos visua
   assert.match(combat, /requiresWound: Boolean\(item\.system\.requiresWound\)/);
   assert.match(combat, /SETTING_KEYS\.catalogSources/);
   assert.match(combat, /mergeCombatEffectDocuments\(groups\)/);
+});
+
+test("el diálogo de selección muestra descripciones y solo pide parámetros reglados", () => {
+  const combat = readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8");
+  assert.match(combat, /position: \{ width: 760 \}/);
+  assert.match(combat, /class="mythras-launcher-title"/);
+  assert.match(combat, /MYTHRASF\.CombatEffect\.SelectionTitle/);
+  assert.match(combat, /MYTHRASF\.CombatEffect\.ConfirmSelection/);
+  assert.match(combat, /data-effect-description=/);
+  assert.match(combat, /effect\.description/);
+  assert.match(combat, /effect\?\.ruleKey !== "chooseLocation"/);
+  assert.doesNotMatch(combat, /name="note-\$\{index\}"/);
 });

@@ -110,7 +110,7 @@ export class MythrasCombat extends Combat {
     return super.endCombat();
   }
 
-  async nextTurn() {
+  async nextTurn({ skipCurrentActorConditions = false } = {}) {
     if (coordinator() !== game.user.id) return this;
     if (hasPendingExchange(this.combatant)) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Tracker.PendingExchange"));
@@ -120,7 +120,9 @@ export class MythrasCombat extends Combat {
     const economy = this.mythrasTurnEconomy;
     if (economy.transitioning) return this;
     const history = [...(economy.conditionHistory ?? [])];
-    if (this.combatant?.actor) await advanceActorTurnConditions(this.combatant.actor, history);
+    if (this.combatant?.actor && !skipCurrentActorConditions) {
+      await advanceActorTurnConditions(this.combatant.actor, history);
+    }
     const states = this.turns.map((entry) => ({ ...combatantActionPointState(entry,
       effectiveActionPointMaximum(entry.actor, getActionPointRules())),
     canTakeProactiveTurn: resolveActorConditions(entry.actor, {

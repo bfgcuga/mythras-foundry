@@ -72,11 +72,6 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
       [`flags.${flagScope}.combat`]: combat });
     return true;
   }
-  if ((combat.effects?.checks ?? []).some((check) =>
-    check.status === "pending" && check.source !== "wound")) return false;
-  if ((combat.effects?.selections ?? []).some((effect) => effect.status === "pending")) {
-    return false;
-  }
   if (combat.damage.status === "stale") {
     await refreshProposal(combat, request.locationId);
     combat.revision += 1;
