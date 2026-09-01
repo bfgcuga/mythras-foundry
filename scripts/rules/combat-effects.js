@@ -212,18 +212,36 @@ export function combatEffectSlotsBySide({ winner, differential = 0, surprise = 0
   });
 }
 
+export function maximizeDamageFormulaDetails(formula, count = 0) {
+  const source = String(formula);
+  const dice = Array.from(source.matchAll(/(\d*)d(\d+)/gi), (match, index) => ({
+    index, offset: match.index, text: match[0], amount: Number(match[1] || 1),
+    sides: Number(match[2]), maximized: 0
+  }));
+  let remaining = Math.max(0, Math.trunc(Number(count) || 0));
+  for (const die of [...dice].sort((left, right) =>
+    right.sides - left.sides || left.index - right.index)) {
+    die.maximized = Math.min(die.amount, remaining);
+    remaining -= die.maximized;
+    if (!remaining) break;
+  }
+  const parts = [];
+  let offset = 0;
+  for (const die of dice) {
+    if (die.offset > offset) parts.push({ text: source.slice(offset, die.offset), maximized: false });
+    if (die.maximized) parts.push({ text: String(die.maximized * die.sides), maximized: true });
+    const rest = die.amount - die.maximized;
+    if (die.maximized && rest) parts.push({ text: " + ", maximized: false });
+    if (rest) parts.push({ text: `${rest}d${die.sides}`, maximized: false });
+    offset = die.offset + die.text.length;
+  }
+  if (offset < source.length) parts.push({ text: source.slice(offset), maximized: false });
+  return { formula: parts.map((part) => part.text).join(""), parts,
+    maximizedDice: dice.reduce((total, die) => total + die.maximized, 0) };
+}
+
 export function maximizeDamageFormula(formula, count = 0) {
-  let remaining = Math.max(0, Number(count) || 0);
-  return String(formula).replace(/(\d*)d(\d+)/gi, (match, amountText, sidesText) => {
-    if (!remaining) return match;
-    const amount = Number(amountText || 1);
-    const sides = Number(sidesText);
-    const maximized = Math.min(amount, remaining);
-    remaining -= maximized;
-    const rest = amount - maximized;
-    return [maximized ? String(maximized * sides) : "", rest ? `${rest}d${sides}` : ""]
-      .filter(Boolean).join(" + ");
-  });
+  return maximizeDamageFormulaDetails(formula, count).formula;
 }
 
 export function orderedCombatChecks(checks = []) {

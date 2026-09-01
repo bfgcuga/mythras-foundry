@@ -5,7 +5,7 @@ import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
   canonicalCombatEffectStage, combatEffectEligible, combatEffectResolutionPhase,
   combatEffectIsAutomated, combatEffectRule, combatEffectSelectionHighlight,
   combatEffectSlug, combatEffectSlotsBySide, initialCombatEffectStatus,
-  maximizeDamageFormula, mergeCombatEffectDocuments,
+  maximizeDamageFormula, maximizeDamageFormulaDetails, mergeCombatEffectDocuments,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
 
 const source = JSON.parse(readFileSync(
@@ -129,9 +129,17 @@ test("la selección resalta críticos propios y pifias del rival según el lado"
     "attacker"), "");
 });
 
-test("maximizar daño sustituye dados de izquierda a derecha sin alterar el resto", () => {
+test("maximizar daño prioriza los dados mayores sin alterar el orden de la fórmula", () => {
   assert.equal(maximizeDamageFormula("2d6 + 1d4 + 3", 1), "6 + 1d6 + 1d4 + 3");
   assert.equal(maximizeDamageFormula("2d6 + 1d4 + 3", 3), "12 + 4 + 3");
+  assert.equal(maximizeDamageFormula("1d6 + 1d8 + 1d4", 1), "1d6 + 8 + 1d4");
+  assert.equal(maximizeDamageFormula("1d6 + 1d8 + 1d4", 2), "6 + 8 + 1d4");
+  assert.deepEqual(maximizeDamageFormulaDetails("1d6 + 1d8", 1), {
+    formula: "1d6 + 8",
+    parts: [{ text: "1d6", maximized: false }, { text: " + ", maximized: false },
+      { text: "8", maximized: true }],
+    maximizedDice: 1
+  });
 });
 
 test("las comprobaciones de efectos preceden siempre a las de heridas", () => {

@@ -9,7 +9,7 @@ import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { canonicalCombatEffectStage, combatEffectCheckPhase, combatEffectRule,
   combatEffectSelectionHighlight, eligibleCombatEffects, initialCombatEffectStatus,
-  maximizeDamageFormula, mergeCombatEffectDocuments, opposedEffectWinner,
+  maximizeDamageFormulaDetails, mergeCombatEffectDocuments, opposedEffectWinner,
   selectedEffectCount } from "./combat-effects.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
 import { getActionPointRules, getSystemSetting, PERMANENT_WOUND_HIT_LOCATION_RULES,
@@ -848,7 +848,9 @@ async function requestCombatDamage(message, combat, manual = false) {
   const modifier = damageModifierFormula(actor.system.attributes?.damageModifier, mode.damageModifierMode) || "0";
   const extraordinary = combat.declarations?.extraordinaryDamage || "0";
   const maximizeCount = selectedEffectCount(combat.effects?.selections ?? [], "maximizeDamage");
-  const weaponDamage = maximizeDamageFormula(combat.attacker.damage || mode.damage || "0", maximizeCount);
+  const maximizedDamage = maximizeDamageFormulaDetails(
+    combat.attacker.damage || mode.damage || "0", maximizeCount);
+  const weaponDamage = maximizedDamage.formula;
   const formula = `max(0, (${weaponDamage}) + (${modifier}) + (${extraordinary}))`;
   let roll;
   try { roll = await evaluateSystemRoll(formula, { manual }); }
@@ -915,7 +917,9 @@ async function requestCombatDamage(message, combat, manual = false) {
   const permanentWoundHitRoll = requiresPermanentWoundRoll
     ? await evaluateSystemRoll("1d3", { manual }) : null;
   const request = { action: "combatDamage", messageId: message.id, revision: combat.revision,
-    userId: game.user.id, formula, weaponFormula: weaponDamage, modifierFormula: modifier,
+    userId: game.user.id, formula, weaponFormula: weaponDamage,
+    weaponFormulaParts: maximizedDamage.parts,
+    maximizedWeaponDice: maximizedDamage.maximizedDice, modifierFormula: modifier,
     extraordinaryFormula: extraordinary, resultExpression: roll.result,
     rollExpression: evaluatedDamageExpression(roll, [weaponDamage, modifier, extraordinary]),
     rawRoll: roll.total, serializedRoll: roll.toJSON(),

@@ -26,6 +26,8 @@ El sistema incluye actualmente:
   y únicas para familia, reputación, conexiones y matrimonio;
 - galería de imágenes del personaje con miniaturas ampliables y gestión desde
   la propia hoja;
+- Maximizar Daño automatizado sobre los dados propios del arma, priorizando los
+  de más caras e identificando visualmente los valores sustituidos;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;

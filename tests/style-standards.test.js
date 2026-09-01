@@ -93,6 +93,15 @@ test("el ataque reutiliza los ajustes porcentuales sin configurar un concurso", 
   assert.match(chatScript, /if \(exchangeTerminal\(current\)\)[\s\S]*advanceCombatTurnForExchange/);
 });
 
+test("el daño maximizado se identifica y la hoja de efecto apila sus secciones", () => {
+  assert.match(chatScript, /weaponFormulaParts: maximizedDamage\.parts/);
+  assert.match(css, /combat-damage-maximized/);
+  assert.match(es["MYTHRASF.Combat.DamageMaximized"], /\{maximized\}/);
+  assert.equal(es["MYTHRASF.CombatEffect.Characteristics"], "Características");
+  assert.match(itemTemplate, /combat-effect-sheet-description[\s\S]*combat-effect-sheet-summary/);
+  assert.match(css, /combat-effect-sheet-description,[\s\S]*combat-effect-sheet-summary \{ grid-column: 1 \/ -1/);
+});
+
 test("la familiaridad de combate muestra descriptores localizados y solo penaliza cuando procede", () => {
   for (const key of ["included", "untrained", "similar", "broadlySimilar",
     "reasonablyDifferent", "substantiallyDifferent"]) {

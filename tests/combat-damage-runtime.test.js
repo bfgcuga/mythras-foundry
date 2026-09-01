@@ -134,11 +134,15 @@ test("la regla alternativa conserva el d20 y aplica después el 1d3", async () =
   const fixture = mutilatedHitFixture();
   const applied = await applyRolledCombatDamage(fixture.message,
     { ...fixture.request, permanentWoundHitRoll: 2,
+      weaponFormulaParts: [{ text: "8", maximized: true }], maximizedWeaponDice: 1,
       serializedPermanentWoundHitRoll: { formula: "1d3", total: 2 } },
     { ...fixture.dependencies, permanentWoundRule: "checkD3" });
   assert.equal(applied, true);
   assert.equal(fixture.calls.refreshed, 1);
   assert.equal(fixture.updates[0]["flags.mythras-foundry.combat"].damage.locationId, "arm");
+  assert.deepEqual(fixture.updates[0]["flags.mythras-foundry.combat"].damage.weaponFormulaParts,
+    [{ text: "8", maximized: true }]);
+  assert.equal(fixture.updates[0]["flags.mythras-foundry.combat"].damage.maximizedWeaponDice, 1);
 });
 
 test("la regla alternativa convierte en fallo un 1d3 insuficiente", async () => {

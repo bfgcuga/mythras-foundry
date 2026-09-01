@@ -212,7 +212,9 @@ export async function applyRolledCombatDamage(message, request, { clone, flagSco
     || permanentWoundHitCheck(selectedLocationModel, request.permanentWoundHitRoll);
   const location = permanentWoundHit ? selectedLocation : null;
   combat.damage = { status: "rolled", formula: request.formula,
-    weaponFormula: request.weaponFormula, modifierFormula: request.modifierFormula,
+    weaponFormula: request.weaponFormula, weaponFormulaParts: request.weaponFormulaParts,
+    maximizedWeaponDice: Number(request.maximizedWeaponDice) || 0,
+    modifierFormula: request.modifierFormula,
     extraordinaryFormula: request.extraordinaryFormula, resultExpression: request.resultExpression,
     rollExpression: request.rollExpression, rawRoll: Number(request.rawRoll),
     serializedRoll: request.serializedRoll, alternateRoll: request.alternateRoll,

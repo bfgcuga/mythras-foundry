@@ -3076,6 +3076,8 @@
 .combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
 .mythras-foundry .combat-effect-item-sheet { min-width: 660px; }
+.mythras-foundry .combat-effect-sheet-description,
+.mythras-foundry .combat-effect-sheet-summary { grid-column: 1 / -1; }
 .mythras-foundry .combat-effect-sheet-summary,
 .mythras-foundry .combat-effect-advanced fieldset {
   display: grid;
@@ -3097,6 +3099,10 @@
 .mythras-foundry .combat-effect-checkbox { min-height: var(--form-field-height); }
 .mythras-foundry .combat-effect-sheet-description textarea { width: 100%; min-height: 9rem; resize: vertical; }
 .mythras-foundry .combat-effect-description { white-space: normal; line-height: 1.45; }
+.mythras-chat-card .combat-damage-maximized {
+  color: #6f42c1;
+  font-weight: 700;
+}
 .mythras-foundry .combat-effect-debug-note,
 .mythras-chat-card .combat-effect-debug-note {
   display: inline-block;

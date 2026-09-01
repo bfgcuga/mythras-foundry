@@ -61,6 +61,10 @@ referencias `{ src, title }`. Su interfaz vive en el parcial reutilizable
 `templates/actor/parts/gallery-tab.hbs`; actualmente solo la monta la hoja de
 personaje, dejando abierta su adopción posterior por la hoja de PNJ.
 
+La automatización de Maximizar Daño selecciona primero los dados del arma con
+más caras y conserva partes estructuradas de la fórmula para distinguir en la
+tarjeta los valores sustituidos sin almacenar HTML en el estado de combate.
+
 Los esquemas persistentes de Actor están en `scripts/data/character-data.js` y
 `scripts/data/npc-data.js`; los de Item, en `scripts/data/item-data.js`. Los
 valores calculados no deben duplicarse en los esquemas o plantillas:
