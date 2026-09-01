@@ -96,7 +96,7 @@ export class CombatSheetController {
     this.element.querySelectorAll("[data-action='roll-weapon-attack']").forEach((button) =>
       button.addEventListener("click", (event) => this.rollWeaponAttack(event)));
     this.element.querySelector("[data-action='choose-weapon-attack']")
-      ?.addEventListener("click", () => this.chooseWeaponAttack());
+      ?.addEventListener("click", (event) => this.chooseWeaponAttack(event));
     const tacticalActions = {
       "change-reach": "changeReach", "declare-passive-block": "declarePassiveBlock",
       "declare-cover": "declareCover", "aim-ranged": "aim", "reload-ranged": "reload"
@@ -123,7 +123,8 @@ export class CombatSheetController {
     await weapon.update({ "system.modes": modes });
   }
 
-  async chooseWeaponAttack() {
+  async chooseWeaponAttack(event) {
+    const manual = Boolean(event?.shiftKey);
     const rows = preferAttackChoices(Array.from(this.element
       .querySelectorAll("[data-action='roll-weapon-attack']"))
       .filter((button) => !button.disabled).map((button, index) => {
@@ -142,11 +143,14 @@ export class CombatSheetController {
         callback: (event, button) => Number(button.form.elements.attack.value) },
       { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel") }], rejectClose: false
     });
-    rows.find((row) => row.index === selected)?.button.click();
+    rows.find((row) => row.index === selected)?.button.dispatchEvent(new MouseEvent("click", {
+      bubbles: true, shiftKey: manual
+    }));
   }
 
   async rollWeaponAttack(event) {
     event.preventDefault();
+    const manual = Boolean(event.shiftKey);
     if (!canActorAttack(this.actor.statuses)) return ui.notifications.warn(
       game.i18n.localize("MYTHRASF.Status.CannotAttack"));
     const row = event.currentTarget.closest("[data-item-id]");
@@ -168,6 +172,6 @@ export class CombatSheetController {
       game.i18n.localize("MYTHRASF.Combat.SelectStyle"));
     const targets = Array.from(game.user.targets ?? []);
     await createAttackMessage({ actor: this.actor, weapon, mode, resolution,
-      target: targets.length === 1 ? targets[0] : null, manual: event.shiftKey });
+      target: targets.length === 1 ? targets[0] : null, manual });
   }
 }

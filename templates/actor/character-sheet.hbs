@@ -73,6 +73,7 @@
         {{localize "MYTHRASF.Tab.Inventory"}}
       </button>
       <button type="button" data-tab="narrative">{{localize "MYTHRASF.Tab.Narrative"}}</button>
+      <button type="button" data-tab="gallery">{{localize "MYTHRASF.Tab.Gallery"}}</button>
       {{#if editable}}
         <button type="button" class="sheet-train-skill" data-action="train-skill">
           <i class="fas fa-graduation-cap" aria-hidden="true"></i>
@@ -352,6 +353,10 @@
       </section>
       <section class="tab-panel" data-tab-content="narrative">
         {{> "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs"}}
+      </section>
+      <section class="tab-panel" data-tab-content="gallery">
+        {{> "systems/mythras-foundry/templates/actor/parts/gallery-tab.hbs"
+          gallery=actor.system.gallery editable=editable}}
       </section>
     </main>
 </div>

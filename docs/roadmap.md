@@ -16,13 +16,49 @@ El trabajo confirmado que todavía no tiene prioridad ni posición se mantiene e
   `formidable-natural-weapons`. Las armas manufacturadas no dependen de él.
 - Cubrir ambos comportamientos con pruebas.
 
-## 2. Integrar las acciones diferenciales pendientes
+## 2. Revisar las resoluciones manuales de flujos interactivos
+
+Revisar todas las apariciones de «Resolver manualmente» y determinar, caso por
+caso, si la acción es reglamentaria o debe sustituirse por la tirada o decisión
+correspondiente. Evitar cierres accidentales, consecuencias omitidas y bloqueos
+en intercambios, estados y peligros.
+
+## 3. Definir y aplicar la matriz de permisos y visibilidad
+
+Definir el comportamiento de `NONE`, `LIMITED`, `OBSERVER` y `OWNER` antes de
+ampliar las hojas. La matriz debe cubrir:
+
+- permiso para abrir cada hoja;
+- pestañas y datos visibles;
+- campos editables;
+- acciones y tiradas permitidas;
+- visibilidad de las pestañas administrativas de Items;
+- si `OBSERVER` puede tirar o únicamente consultar.
+
+Aplicar después la matriz de forma coherente a personajes, PNJ e Items y cubrir
+los límites relevantes con pruebas.
+
+## 4. Separar las responsabilidades de las consecuencias de asalto
+
+Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
+renderizado y el transporte antes de ampliar significativamente los peligros.
+Conservar las transiciones y validaciones actuales mediante pruebas durante la
+extracción.
+
+## 5. Integrar las acciones diferenciales pendientes
 
 Conectar Forcejear, Maniobrar, Ponerse en Pie y Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
 pero la resolución sigue siendo guiada.
 
-## 3. Implementar Entrenar Habilidad
+## 6. Implementar venenos, enfermedades y trampas
+
+Incorporar reglas, configuración, resolución, persistencia y presentación para
+venenos, enfermedades y trampas sobre la infraestructura separada de
+consecuencias. Mantener fuera de este alcance las inclemencias y macros de clima
+hasta que sus reglas estén definidas.
+
+## 7. Implementar Entrenar Habilidad
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.

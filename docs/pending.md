@@ -6,6 +6,9 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Combate y automatización
 
+- Revisar si «Cancelar» debe seguir disponible después de confirmar la elección
+  de efectos de combate, ya que actualmente impide cerrar automáticamente un
+  intercambio terminal y avanzar la iniciativa.
 - Eliminar las notas moradas temporales «Automatizado» y «No automatizado» de
   la tarjeta de ataque cuando deje de ser necesario auditar visualmente la
   cobertura de automatización de los efectos de combate.
@@ -33,7 +36,6 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Peligros
 
-- Implementar reglas y herramientas para venenos, enfermedades y trampas.
 - Definir el alcance de las inclemencias del tiempo —frío, calor, exposición u
   otros peligros— antes de crear sus macros.
 - Crear las macros de clima una vez definidas esas reglas.
@@ -49,6 +51,17 @@ una resolución directa del Game Master.
 - Sustituir la edición directa del JSON de culturas y profesiones por un editor
   visual con menús y habilidades arrastrables.
 
+## Traducciones
+
+- Traducir los nombres de las localizaciones de impacto en todas las interfaces
+  que actualmente muestran el nombre interno sin localizar.
+
+## Menús
+
+- Inventariar los menús del sistema e indicar cuáles tienen un encabezado con
+  título equivalente al de la hoja de personaje y cuáles carecen de él. Tras la
+  revisión, aplicar ese formato compartido a todos los menús donde corresponda.
+
 ## Trasfondo narrativo
 
 La pestaña Trasfondo ya existe y contiene historia, descripción, personalidad,
@@ -56,26 +69,13 @@ motivaciones, familia, relaciones, secretos y notas. Queda por decidir:
 
 - si la descripción física debe desglosarse en edad aparente, altura, peso,
   complexión, cabello, ojos y rasgos distintivos;
-- si debe añadirse una galería variable de imágenes del personaje.
-
-## Permisos y visibilidad
-
-Antes de cambiar las hojas debe definirse una matriz para `NONE`, `LIMITED`,
-`OBSERVER` y `OWNER` que distinga:
-
-- permiso para abrir una hoja;
-- pestañas visibles;
-- datos editables;
-- acciones y tiradas permitidas;
-- visibilidad de pestañas administrativas de Items;
-- si `OBSERVER` puede tirar o únicamente consultar.
+- si la galería de imágenes compartida debe incorporarse también a la hoja de
+  PNJ.
 
 ## Deuda técnica no priorizada
 
 - Extraer el asistente de creación de trasfondo de `character-sheet.js` para
   separar preparación, sincronización de Items y materialización.
-- Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
-  renderizado y el transporte antes de ampliar significativamente los peligros.
 - Evaluar una infraestructura común para transacciones interactivas a partir de
   los patrones ya separados en combate; no abstraer sin consumidores adicionales
   estables en combate, concursos, alcance y consecuencias de asalto.

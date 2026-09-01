@@ -1,0 +1,32 @@
+<fieldset class="character-gallery-panel">
+  <legend>{{localize "MYTHRASF.Gallery.Title"}}</legend>
+  {{#if editable}}
+    <button type="button" class="sheet-add-button" data-action="add-gallery-image"
+      title="{{localize "MYTHRASF.Gallery.Add"}}"
+      aria-label="{{localize "MYTHRASF.Gallery.Add"}}">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+    </button>
+  {{/if}}
+  <div class="character-gallery-grid">
+    {{#each gallery as |image index|}}
+      <figure class="character-gallery-item" data-gallery-index="{{index}}">
+        <button type="button" class="character-gallery-preview" data-action="view-gallery-image"
+          title="{{localize "MYTHRASF.Gallery.View"}}"
+          aria-label="{{localize "MYTHRASF.Gallery.ViewNamed" name=image.title}}">
+          <img src="{{image.src}}" alt="{{image.title}}" loading="lazy">
+        </button>
+        <figcaption>{{image.title}}</figcaption>
+        {{#if ../editable}}
+          <button type="button" class="sheet-icon-button character-gallery-remove"
+            data-action="remove-gallery-image"
+            title="{{localize "MYTHRASF.Gallery.Remove"}}"
+            aria-label="{{localize "MYTHRASF.Gallery.RemoveNamed" name=image.title}}">
+            <i class="fas fa-trash" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+      </figure>
+    {{else}}
+      <p class="empty">{{localize "MYTHRASF.Gallery.Empty"}}</p>
+    {{/each}}
+  </div>
+</fieldset>

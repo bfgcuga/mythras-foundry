@@ -24,6 +24,8 @@ El sistema incluye actualmente:
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
   habilidades, estilos de combate, dinero, equipo inicial y tiradas opcionales
   y únicas para familia, reputación, conexiones y matrimonio;
+- galería de imágenes del personaje con miniaturas ampliables y gestión desde
+  la propia hoja;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;

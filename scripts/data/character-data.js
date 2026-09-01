@@ -9,6 +9,7 @@ import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
 import { UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 
 const {
+  ArrayField,
   BooleanField,
   NumberField,
   SchemaField,
@@ -25,6 +26,11 @@ const textField = () => new StringField({
 const backgroundSelectionField = () => new SchemaField({
   name: textField(),
   sourceUuid: textField()
+});
+
+const galleryImageField = () => new SchemaField({
+  src: textField(),
+  title: textField()
 });
 
 const characteristicField = () => new NumberField({
@@ -110,6 +116,11 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
         "familyReputation", "familyConnections", "allies",
         "contacts", "rivals", "enemies", "secrets", "notes"
       ].map((key) => [key, textField()]))),
+      gallery: new ArrayField(galleryImageField(), {
+        required: true,
+        nullable: false,
+        initial: []
+      }),
       currency: new SchemaField({
         copper: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),
         silver: new NumberField({ required: true, nullable: false, initial: 0, min: 0 }),

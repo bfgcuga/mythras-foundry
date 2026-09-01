@@ -56,6 +56,11 @@ creado pasan por el mismo coordinador.
 
 ## Modelos y cálculos derivados
 
+La galería de personaje se persiste en `system.gallery` como una colección de
+referencias `{ src, title }`. Su interfaz vive en el parcial reutilizable
+`templates/actor/parts/gallery-tab.hbs`; actualmente solo la monta la hoja de
+personaje, dejando abierta su adopción posterior por la hoja de PNJ.
+
 Los esquemas persistentes de Actor están en `scripts/data/character-data.js` y
 `scripts/data/npc-data.js`; los de Item, en `scripts/data/item-data.js`. Los
 valores calculados no deben duplicarse en los esquemas o plantillas:

@@ -396,6 +396,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='train-skill']", "click", () => this.#showTrainingPlaceholder()],
       ["[data-action='choose-portrait']", "click", () => this.#choosePortrait()],
       ["[data-action='view-portrait']", "click", () => this.#viewPortrait()],
+      ["[data-action='add-gallery-image']", "click", () => this.#addGalleryImage()],
+      ["[data-action='view-gallery-image']", "click", (event) => this.#viewGalleryImage(event)],
+      ["[data-action='remove-gallery-image']", "click", (event) => this.#removeGalleryImage(event)],
       ["[data-action='adjust-characteristic']", "click", (event) => this.#adjustCharacteristic(event)],
       ["[data-swap-characteristic]", "change", (event) => this.#swapCharacteristic(event)],
       ["[data-background-select]", "change", (event) => this.#selectBackground(event)],
@@ -789,6 +792,50 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       uuid: this.actor.uuid,
       window: { title: this.actor.name }
     }).render(true);
+  }
+
+  async #addGalleryImage() {
+    if (!this.isEditable) return;
+    const worldDirectory = `worlds/${game.world.id}`;
+    const picker = new FilePicker({
+      type: "image",
+      current: worldDirectory,
+      callback: async (src) => {
+        if (!src) return;
+        const filename = decodeURIComponent(src.split("/").pop() ?? "")
+          .replace(/\.[^.]+$/, "").replaceAll(/[-_]+/g, " ").trim();
+        const gallery = Array.from(this.actor.system.gallery ?? [], (image) => ({
+          src: image.src, title: image.title
+        }));
+        gallery.push({ src, title: filename || game.i18n.localize("MYTHRASF.Gallery.Image") });
+        await this.actor.update({ "system.gallery": gallery });
+      }
+    });
+    await picker.browse(worldDirectory);
+  }
+
+  #viewGalleryImage(event) {
+    const image = this.actor.system.gallery?.[Number(
+      event.currentTarget.closest("[data-gallery-index]")?.dataset.galleryIndex
+    )];
+    if (!image?.src) return;
+    new ImagePopout({
+      src: image.src,
+      uuid: this.actor.uuid,
+      window: { title: image.title || this.actor.name }
+    }).render(true);
+  }
+
+  async #removeGalleryImage(event) {
+    if (!this.isEditable) return;
+    const index = Number(event.currentTarget.closest("[data-gallery-index]")?.dataset.galleryIndex);
+    if (!Number.isInteger(index)) return;
+    const gallery = Array.from(this.actor.system.gallery ?? [], (image) => ({
+      src: image.src, title: image.title
+    }));
+    if (index < 0 || index >= gallery.length) return;
+    gallery.splice(index, 1);
+    await this.actor.update({ "system.gallery": gallery });
   }
 
   async #confirmCharacteristics() {
