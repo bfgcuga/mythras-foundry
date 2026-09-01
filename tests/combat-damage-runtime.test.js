@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { applyCombatDamageDocument, applyProposedCombatDamage, applyRolledCombatDamage,
-  combatDamageDocumentIsCurrent
+  combatDamageDocumentIsCurrent, refreshCombatDamageProposal
 } from "../scripts/rules/combat-damage-runtime.js";
 
 function location(overrides = {}) {
@@ -52,7 +52,8 @@ test("el daño a un arma no crea lesiones permanentes", async () => {
   assert.deepEqual(target.updates, [{ "system.currentHitPoints": -2 }]);
 });
 
-function proposedDamageFixture({ currentHitPoints = 4, updateError = null } = {}) {
+function proposedDamageFixture({ currentHitPoints = 4, updateError = null,
+  passiveBlock = null } = {}) {
   const target = location({ currentHitPoints, permanentWound: { severity: 3 } });
   target.update = async (change) => {
     if (updateError) throw updateError;
@@ -63,18 +64,22 @@ function proposedDamageFixture({ currentHitPoints = 4, updateError = null } = {}
   const defender = { items, testUserPermission: () => true };
   const combat = { revision: 1, defender: { actorUuid: "Actor.defender", tokenUuid: "",
     targetType: "actor", locations: [{ id: "arm", name: "Brazo" }] },
-  effects: { selections: [], checks: [] }, damage: { status: "proposed", locationId: "arm",
+  effects: { selections: [], checks: [] },
+  turnEconomy: { combatId: "combat", defenderCombatantId: "defender" },
+  damage: { status: "proposed", locationId: "arm", passiveBlock,
     beforeHitPoints: 4, armorSnapshot: 2, afterHitPoints: 1, resultingWound: "serious" } };
   const updates = [];
   const message = { getFlag: () => combat, update: async (change) => {
     updates.push(structuredClone(change));
   } };
-  const calls = { wound: 0, advance: 0 };
+  const calls = { wound: 0, advance: 0, consumed: [] };
   const dependencies = { clone: structuredClone, flagScope: "mythras-foundry",
     resolveActor: async () => defender, userById: () => ({ id: "gm", isGM: true }),
     armorPoints: () => 2, refreshProposal: async () => {},
     render: (state) => state.damage.status, evaluateRoll: async () => assert.fail("no debe tirar"),
     format: () => "", applyWoundConsequences: async () => { calls.wound += 1; },
+    combatById: () => ({ id: "combat" }),
+    consumePassiveBlock: async (...args) => { calls.consumed.push(args); },
     advance: async () => { calls.advance += 1; } };
   return { combat, target, message, updates, calls, dependencies };
 }
@@ -109,6 +114,20 @@ test("un fallo documental restaura la propuesta sin avanzar", async () => {
   assert.deepEqual(fixture.updates.map((change) =>
     change["flags.mythras-foundry.combat"].damage.status), ["applying", "proposed"]);
   assert.equal(fixture.calls.advance, 0);
+});
+
+test("el bloqueo pasivo se consume únicamente al aplicar el daño que ha mitigado", async () => {
+  const block = { weaponId: "shield", weaponName: "Escudo", weaponSize: "large" };
+  const fixture = proposedDamageFixture({ passiveBlock: block });
+  await applyProposedCombatDamage(fixture.message,
+    { revision: 1, userId: "gm", locationId: "arm" }, fixture.dependencies);
+  assert.deepEqual(fixture.calls.consumed, [[{ id: "combat" }, "defender", "shield", "damage"]]);
+
+  const failed = proposedDamageFixture({ passiveBlock: block,
+    updateError: new Error("fallo-documental") });
+  await assert.rejects(() => applyProposedCombatDamage(failed.message,
+    { revision: 1, userId: "gm", locationId: "arm" }, failed.dependencies));
+  assert.deepEqual(failed.calls.consumed, []);
 });
 
 function mutilatedHitFixture({ selections = [] } = {}) {
@@ -165,4 +184,36 @@ test("Elegir Localización exige el 1d3 incluso con la regla oficial", async () 
     { ...fixture.dependencies, permanentWoundRule: "reduceD20Range" });
   assert.equal(applied, false);
   assert.equal(fixture.updates.length, 0);
+});
+
+function mitigationProposalFixture(defenseWeaponSize) {
+  const target = location({ currentHitPoints: 12, maxHitPoints: 12 });
+  target.type = "hitLocation";
+  const items = [target];
+  items.get = (id) => items.find((item) => item.id === id);
+  const combat = { attacker: { weaponSize: "large" },
+    defender: { targetType: "actor", defense: { type: "parry",
+      weaponSize: defenseWeaponSize } }, resolution: { defense: { result: "success" } },
+    declarations: {}, effects: { selections: [], checks: [] },
+    turnEconomy: { combatId: "combat", defenderCombatantId: "defender" },
+    damage: { rawRoll: 12, locationId: "arm" } };
+  const dependencies = { resolveActor: async () => ({ items, system: { size: 10 } }),
+    combatById: () => ({}), passiveBlockFor: () => ({ weaponId: "shield",
+      weaponName: "Escudo", weaponSize: "large" }), coverFor: () => null };
+  return { combat, dependencies };
+}
+
+test("una parada parcial permite aplicar después el bloqueo pasivo", async () => {
+  const { combat, dependencies } = mitigationProposalFixture("medium");
+  await refreshCombatDamageProposal(combat, null, dependencies);
+  assert.equal(combat.damage.afterParry, 6);
+  assert.equal(combat.damage.afterPassiveBlock, 0);
+  assert.equal(combat.damage.passiveBlock.weaponName, "Escudo");
+});
+
+test("una parada completa no aplica ni marca el bloqueo pasivo", async () => {
+  const { combat, dependencies } = mitigationProposalFixture("large");
+  await refreshCombatDamageProposal(combat, null, dependencies);
+  assert.equal(combat.damage.afterParry, 0);
+  assert.equal(combat.damage.passiveBlock, undefined);
 });

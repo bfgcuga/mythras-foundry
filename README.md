@@ -31,6 +31,8 @@ El sistema incluye actualmente:
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
+- las siete localizaciones humanas se crean con nombres canónicos en castellano;
+  las anatomías personalizadas conservan literalmente sus nombres;
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
@@ -119,7 +121,12 @@ El sistema incluye actualmente:
   descripción antes de la configuración, con selectores cerrados para restricciones de arma y tirada, casillas para sus estados
   booleanos y una sección avanzada para la ejecución. El daño muestra por
   separado la fórmula del arma, el bonificador, los resultados evaluados, el total y el d20 de
-  localización. Por defecto, las extremidades con herida permanente conservan
+  localización. El desglose solo muestra Golpe Contenido, parada activa o
+  bloqueo pasivo cuando esa mitigación interviene; una parada activa se aplica
+  primero y, si no absorbe todo el daño, se evalúa después el bloqueo pasivo,
+  cuya declaración se consume al confirmar el daño si llega a intervenir.
+  La localización resuelta se muestra como dato de solo lectura y solo los
+  efectos reglados pueden elegirla. Las extremidades con herida permanente conservan
   su rango d20 y cada impacto exige un 1d3: debe superar la gravedad 1–3 para
   alcanzar la parte restante. Un ajuste de mundo permite usar en su lugar la
   reducción oficial del rango d20; «Elegir Localización» siempre realiza el

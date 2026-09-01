@@ -48,7 +48,7 @@ export async function applyCombatDamageDocument({ location, damage, targetType =
 
 export async function applyProposedCombatDamage(message, request, { clone, flagScope,
   resolveActor, userById, armorPoints, refreshProposal, render, evaluateRoll, format,
-  applyWoundConsequences, advance } = {}) {
+  applyWoundConsequences, combatById, consumePassiveBlock, advance } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
     || Number(request.revision) !== Number(combat.revision)) return false;
@@ -107,6 +107,11 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   }
   combat.damage = damageApplication.damage;
   combat.damage.status = "applied";
+  if (combat.damage.passiveBlock && combat.turnEconomy) {
+    await consumePassiveBlock(combatById(combat.turnEconomy.combatId),
+      combat.turnEconomy.defenderCombatantId, combat.damage.passiveBlock.weaponId,
+      "damage");
+  }
   if (combat.defender.targetType !== "weapon") {
     await applyWoundConsequences(combat, defender, location, { manual: request.manual });
   }
@@ -131,31 +136,37 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   const armor = weaponTarget ? Number(location.system.armorPoints ?? 0) : totalArmorPoints(location,
     defender.items.filter((item) => item.type === "armor"));
   const defense = combat.defender.defense;
-  let parry = defense?.type === "parry"
-    && ["success", "critical"].includes(combat.resolution.defense.result)
+  const activeParry = defense?.type === "parry"
+    && ["success", "critical"].includes(combat.resolution.defense.result);
+  let parry = activeParry
     ? parryReduction(combat.attacker.weaponSize, defense.weaponSize) : { type: "none" };
+  const improveParry = selectedEffectCount(combat.effects?.selections ?? [], "improveParry");
+  const bypassParry = selectedEffectCount(combat.effects?.selections ?? [], "bypassParry");
+  if (improveParry) parry = { type: "full" };
+  if (bypassParry) parry = { type: "none" };
   const tracker = combat.turnEconomy ? combatById(combat.turnEconomy.combatId) : null;
   const passive = !weaponTarget && tracker ? passiveBlockFor(tracker,
     combat.turnEconomy.defenderCombatantId, location.id) : null;
-  if (passive) {
-    parry = parryReduction(combat.attacker.weaponSize, passive.weaponSize);
+  let passiveParry = { type: "none" };
+  if (!bypassParry && parry.type !== "full" && Number(combat.damage.rawRoll) > 0 && passive) {
+    passiveParry = parryReduction(combat.attacker.weaponSize, passive.weaponSize);
     combat.damage.passiveBlock = { weaponId: passive.weaponId, weaponName: passive.weaponName,
       weaponSize: passive.weaponSize, locationId: location.id };
   } else delete combat.damage.passiveBlock;
-  if (selectedEffectCount(combat.effects?.selections ?? [], "improveParry")) parry = { type: "full" };
-  if (selectedEffectCount(combat.effects?.selections ?? [], "bypassParry")) parry = { type: "none" };
   const effectiveArmor = selectedEffectCount(combat.effects?.selections ?? [], "bypassArmor") ? 0 : armor;
   const rangeAdjustedDamage = applyLongRangeDamage(combat.damage.rawRoll, combat.ranged?.band);
   const cover = !weaponTarget && defense?.type === "cover" && tracker ? coverFor(tracker,
     combat.turnEconomy.defenderCombatantId, location.id) : null;
   const coverProtection = Math.max(0, Number(cover?.protection ?? 0));
   const calculation = resolveDamage({ rolledDamage: rangeAdjustedDamage,
-    containedBlow: combat.declarations?.containedBlow, parry, coverPoints: coverProtection,
+    containedBlow: combat.declarations?.containedBlow, parry, passiveBlock: passiveParry,
+    coverPoints: coverProtection,
     armorPoints: effectiveArmor, targetSize: defender.system.size });
+  calculation.activeParry = activeParry && !bypassParry;
   calculation.beforeRange = Number(combat.damage.rawRoll);
   calculation.afterRange = rangeAdjustedDamage;
   calculation.cover = cover ? { source: cover.source, protection: coverProtection,
-    absorbed: Math.min(coverProtection, calculation.afterParry) } : null;
+    absorbed: Math.min(coverProtection, calculation.afterPassiveBlock) } : null;
   const before = Number(location.system.currentHitPoints ?? 0);
   let after = before - calculation.penetratingDamage;
   if (!selectedEffectCount(combat.effects?.selections ?? [], "bash")) {

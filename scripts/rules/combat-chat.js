@@ -1135,7 +1135,8 @@ async function applyProposedDamage(message, request) {
         defender.items.filter((item) => item.type === "armor")),
     refreshProposal: refreshDamageProposal, render: renderCombatExchange,
     evaluateRoll: evaluateAnimatedRoll, format: game.i18n.format.bind(game.i18n),
-    applyWoundConsequences, advance: advanceCombatTurnForExchange });
+    applyWoundConsequences, combatById: (id) => game.combats.get(id), consumePassiveBlock,
+    advance: advanceCombatTurnForExchange });
 }
 
 function heldItemChoices(actor) {
@@ -1222,7 +1223,7 @@ export function activateCombatCard(message, html) {
     if (action === "wound-luck") return requestWoundLuck(message, combat, button.dataset.checkId);
     if (action === "roll-damage") return requestCombatDamage(message, combat, manual);
     if (action === "apply-damage") return requestApplyDamage(message, combat,
-      card.querySelector("[data-damage-location]")?.value ?? combat.damage.locationId, manual);
+      combat.damage.locationId, manual);
   });
 }
 

@@ -1,12 +1,25 @@
 export const HUMAN_HIT_LOCATIONS = Object.freeze([
-  { nameKey: "rightLeg", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
-  { nameKey: "leftLeg", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
-  { nameKey: "abdomen", rangeStart: 7, rangeEnd: 9, category: "abdomen", hpClass: "abdomen", armorEncumbranceMultiplier: 2, armorCostPercentage: 20 },
-  { nameKey: "chest", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest", armorEncumbranceMultiplier: 3, armorCostPercentage: 25 },
-  { nameKey: "rightArm", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 7.5 },
-  { nameKey: "leftArm", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 7.5 },
-  { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 10 }
+  { nameKey: "rightLeg", name: "Pierna derecha", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
+  { nameKey: "leftLeg", name: "Pierna izquierda", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
+  { nameKey: "abdomen", name: "Abdomen", rangeStart: 7, rangeEnd: 9, category: "abdomen", hpClass: "abdomen", armorEncumbranceMultiplier: 2, armorCostPercentage: 20 },
+  { nameKey: "chest", name: "Pecho", rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest", armorEncumbranceMultiplier: 3, armorCostPercentage: 25 },
+  { nameKey: "rightArm", name: "Brazo derecho", rangeStart: 13, rangeEnd: 15, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 7.5 },
+  { nameKey: "leftArm", name: "Brazo izquierdo", rangeStart: 16, rangeEnd: 18, category: "limb", hpClass: "arm", armorEncumbranceMultiplier: 1, armorCostPercentage: 7.5 },
+  { nameKey: "head", name: "Cabeza", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 10 }
 ]);
+
+const HUMAN_HIT_LOCATION_ALIASES = Object.freeze({
+  rightLeg: ["pierna derecha", "right leg"],
+  leftLeg: ["pierna izquierda", "left leg"],
+  abdomen: ["abdomen"],
+  chest: ["pecho", "chest"],
+  rightArm: ["brazo derecho", "right arm"],
+  leftArm: ["brazo izquierdo", "left arm"],
+  head: ["cabeza", "head"]
+});
+
+const normalizedLocationName = (value) => String(value ?? "").normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 export function humanArmorFactors(location) {
   const system = location?.system ?? location ?? {};
@@ -15,6 +28,14 @@ export function humanArmorFactors(location) {
     && Number(system.rangeEnd) === candidate.rangeEnd
     && system.category === candidate.category
     && system.hpClass === candidate.hpClass) ?? null;
+}
+
+export function canonicalHumanHitLocationName(location) {
+  const human = humanArmorFactors(location);
+  if (!human) return null;
+  const aliases = HUMAN_HIT_LOCATION_ALIASES[human.nameKey]
+    .map(normalizedLocationName);
+  return aliases.includes(normalizedLocationName(location?.name)) ? human.name : null;
 }
 
 export function woundLocationKind(location) {
@@ -149,7 +170,7 @@ export function findHitLocation(locations, roll, { ignorePermanentWounds = false
   }) ?? null;
 }
 
-export function humanHitLocationData(actorSystem, localize = (key) => key) {
+export function humanHitLocationData(actorSystem) {
   return HUMAN_HIT_LOCATIONS.map((location) => {
     const maximum = calculateLocationHitPoints(
       actorSystem?.constitution,
@@ -157,7 +178,7 @@ export function humanHitLocationData(actorSystem, localize = (key) => key) {
       location.hpClass
     );
     return {
-      name: localize(`MYTHRASF.HitLocation.Name.${location.nameKey}`),
+      name: location.name,
       type: "hitLocation",
       system: {
         rangeStart: location.rangeStart,

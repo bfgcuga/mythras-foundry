@@ -1,15 +1,23 @@
 import { DEFAULT_HOME_DATA } from "../data/equipment.js";
-import { humanArmorFactors, humanHitLocationData,
+import { canonicalHumanHitLocationName, humanArmorFactors, humanHitLocationData,
   permanentWoundState } from "../rules/hit-locations.js";
 import { normalizeWeaponProfile } from "../rules/combat.js";
 import { ARMOR_MATERIAL_MODIFIERS, armorPieceTypeForLocation } from "../rules/armor.js";
 
 export async function ensureHumanHitLocations(actor) {
   if (actor.type !== "character" || actor.items.some((item) => item.type === "hitLocation")) return;
-  await actor.createEmbeddedDocuments("Item", humanHitLocationData(
-    actor.system,
-    (key) => game.i18n.localize(key)
-  ));
+  await actor.createEmbeddedDocuments("Item", humanHitLocationData(actor.system));
+}
+
+export function hitLocationNameMigrationUpdate(item) {
+  if (item.type !== "hitLocation") return null;
+  const name = canonicalHumanHitLocationName(item);
+  return name && name !== item.name ? { name } : null;
+}
+
+export async function migrateHitLocationName(item) {
+  const update = hitLocationNameMigrationUpdate(item);
+  if (update) await item.update(update);
 }
 
 export function permanentWoundMigrationUpdate(item) {
@@ -76,6 +84,8 @@ export async function migrateActorArmor(actor) {
   const updates = [];
   const obsoleteArmorIds = [];
   for (const item of actor.items) {
+    const nameUpdate = hitLocationNameMigrationUpdate(item);
+    if (nameUpdate) updates.push({ _id: item.id, ...nameUpdate });
     if (item.type === "hitLocation"
       && Number(item._source.system?.armorFactorsVersion ?? 0) < 2) {
       const humanFactors = humanArmorFactors(item);
@@ -87,12 +97,14 @@ export async function migrateActorArmor(actor) {
           ?? defaultArmorFactors(item).encumbrance),
         cost: Number(item.system.armorCostPercentage ?? defaultArmorFactors(item).cost)
       };
-      updates.push({
-        _id: item.id,
+      const existing = updates.find((update) => update._id === item.id);
+      const update = existing ?? { _id: item.id };
+      Object.assign(update, {
         "system.armorEncumbranceMultiplier": factors.encumbrance,
         "system.armorCostPercentage": factors.cost,
         "system.armorFactorsVersion": 2
       });
+      if (!existing) updates.push(update);
     }
     if (item.type === "armor"
       && Number(item._source.system?.armorRulesVersion ?? 0) < 4) obsoleteArmorIds.push(item.id);

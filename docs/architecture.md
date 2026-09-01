@@ -360,7 +360,11 @@ después de aplicar habilidades limitadas o reforzadas; la transacción
 conserva la base, esos ajustes y el objetivo efectivo como una sola fuente para
 la clasificación, la tarjeta y las repeticiones por suerte.
 El daño, la localización y la armadura continúan en la misma transacción. Parar reduce el
-daño según el tamaño de ambas armas; Evadir decide si existe impacto comparando
+daño según el tamaño de ambas armas; una parada activa se aplica primero y el
+bloqueo pasivo de la localización se evalúa después únicamente si queda daño
+por mitigar. Si interviene, la declaración se consume al confirmar la aplicación
+del daño; una propuesta cancelada u obsoleta no la consume. La tarjeta omite
+las etapas de mitigación que no hayan intervenido. Evadir decide si existe impacto comparando
 primero el grado y después el dado más alto. La tarjeta conserva una instantánea
 de armadura y PG, pero solo el DJ o el propietario defensor puede confirmar la
 aplicación. Los cambios concurrentes convierten la propuesta en obsoleta y
@@ -412,7 +416,9 @@ La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
 `assets/Silueta`. El ajuste de mundo `silhouetteOrientation` decide si las
 localizaciones izquierdas y derechas se proyectan como vista frontal o dorsal.
 La vinculación usa rangos, categoría y clase de PG humanos, nunca nombres
-traducidos. La lesión consolidada reside en
+traducidos. Esos mismos datos estructurales permiten migrar al castellano solo
+los siete nombres humanos estándar conocidos en español o inglés; los nombres
+complejos y las anatomías personalizadas no se alteran. La lesión consolidada reside en
 `hitLocation.system.permanentWound`: conserva gravedad, tirada, máximo original,
 máximo efectivo, resultados del d20 anulados y descripción. El máximo operativo
 de la localización es siempre el efectivo; los recálculos por CON/TAM y la

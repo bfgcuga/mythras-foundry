@@ -52,14 +52,17 @@ export function combatAttackHits(exchange) {
 }
 
 export function resolveDamage({ rolledDamage = 0, containedBlow = false,
-  parry = { type: "none" }, coverPoints = 0, armorPoints = 0, targetSize = 0 } = {}) {
+  parry = { type: "none" }, passiveBlock = { type: "none" }, coverPoints = 0,
+  armorPoints = 0, targetSize = 0 } = {}) {
   const rolled = Math.max(0, Number(rolledDamage) || 0);
   const afterContainedBlow = containedBlow ? Math.ceil(rolled / 2) : rolled;
   const beforeMitigation = afterContainedBlow;
   const afterParry = parry.type === "full" ? 0 : parry.type === "half"
     ? Math.ceil(afterContainedBlow / 2) : afterContainedBlow;
+  const afterPassiveBlock = passiveBlock.type === "full" ? 0 : passiveBlock.type === "half"
+    ? Math.ceil(afterParry / 2) : afterParry;
   const cover = Math.max(0, Number(coverPoints) || 0);
-  const afterCover = Math.max(0, afterParry - cover);
+  const afterCover = Math.max(0, afterPassiveBlock - cover);
   const armor = Math.max(0, Number(armorPoints) || 0);
   const penetratingDamage = Math.max(0, afterCover - armor);
   const size = Math.max(0, Number(targetSize) || 0);
@@ -68,8 +71,9 @@ export function resolveDamage({ rolledDamage = 0, containedBlow = false,
     distance: Math.ceil((beforeMitigation - size) / 5)
   } : { triggered: false, excess: 0, distance: 0 };
   return { rolledDamage: rolled, containedBlow: Boolean(containedBlow), afterContainedBlow,
-    beforeMitigation, parryType: parry.type, afterParry, coverPoints: cover, afterCover, armorPoints: armor,
-    penetratingDamage, push };
+    beforeMitigation, parryType: parry.type, afterParry,
+    passiveBlockType: passiveBlock.type, afterPassiveBlock,
+    coverPoints: cover, afterCover, armorPoints: armor, penetratingDamage, push };
 }
 
 export function normalizeWeaponProfile(value) {

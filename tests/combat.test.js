@@ -16,6 +16,7 @@ import {
 } from "../scripts/rules/combat.js";
 import {
   calculateLocationHitPoints,
+  canonicalHumanHitLocationName,
   findHitLocation,
   humanHitLocationData,
   hasSeriousWound,
@@ -154,8 +155,18 @@ test("la armadura nunca produce daño negativo", () => {
 test("la tabla humana calcula los siete valores para CON 10 y TAM 10", () => {
   const locations = humanHitLocationData({ constitution: 10, size: 10 });
   assert.equal(locations.length, 7);
+  assert.deepEqual(locations.map((entry) => entry.name), ["Pierna derecha", "Pierna izquierda",
+    "Abdomen", "Pecho", "Brazo derecho", "Brazo izquierdo", "Cabeza"]);
   assert.deepEqual(locations.map((entry) => entry.system.maxHitPoints), [4, 4, 5, 6, 3, 3, 4]);
   assert.equal(calculateLocationHitPoints(10, 10, "chest"), 6);
+});
+
+test("solo los nombres humanos estándar admiten normalización al castellano", () => {
+  const chest = humanHitLocationData({ constitution: 10, size: 10 })[3];
+  assert.equal(canonicalHumanHitLocationName({ ...chest, name: "Chest" }), "Pecho");
+  assert.equal(canonicalHumanHitLocationName({ ...chest, name: "Pecho acorazado" }), null);
+  assert.equal(canonicalHumanHitLocationName({ name: "Tórax", system: {
+    ...chest.system, rangeStart: 8, rangeEnd: 13 } }), null);
 });
 
 test("las localizaciones humanas separan carga y porcentaje de precio de armadura", () => {
@@ -353,4 +364,19 @@ test("una parada completa y la armadura nunca producen daño negativo", () => {
     armorPoints: 4 }).penetratingDamage, 0);
   assert.equal(resolveDamage({ rolledDamage: 3, parry: { type: "none" },
     armorPoints: 8 }).penetratingDamage, 0);
+});
+
+test("el bloqueo pasivo se aplica después de una parada parcial", () => {
+  const damage = resolveDamage({ rolledDamage: 12, parry: { type: "half" },
+    passiveBlock: { type: "half" }, armorPoints: 1 });
+  assert.equal(damage.afterParry, 6);
+  assert.equal(damage.afterPassiveBlock, 3);
+  assert.equal(damage.penetratingDamage, 2);
+});
+
+test("una parada completa deja sin daño que mitigar al bloqueo pasivo", () => {
+  const damage = resolveDamage({ rolledDamage: 12, parry: { type: "full" },
+    passiveBlock: { type: "half" } });
+  assert.equal(damage.afterParry, 0);
+  assert.equal(damage.afterPassiveBlock, 0);
 });

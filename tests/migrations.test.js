@@ -17,7 +17,8 @@ const {
   getDefaultSkillGroup,
   getLegacySkillUpdate
 } = await import("../scripts/migrations/content-migrations.js");
-const { defaultArmorFactors } = await import("../scripts/migrations/actor-migrations.js");
+const { defaultArmorFactors, hitLocationNameMigrationUpdate } = await import(
+  "../scripts/migrations/actor-migrations.js");
 
 test("la migración de habilidades conserva su transformación idempotente", () => {
   const legacy = {
@@ -58,6 +59,14 @@ test("los valores por defecto migrados se resuelven por dominio", () => {
   assert.equal(getDefaultSkillGroup({ system: { slug: "idioma" } }), "language");
   assert.deepEqual(defaultArmorFactors({ system: { category: "chest" } }),
     { encumbrance: 3, cost: 25 });
+});
+
+test("la migración traduce localizaciones humanas estándar y conserva nombres complejos", () => {
+  const system = { rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest" };
+  assert.deepEqual(hitLocationNameMigrationUpdate({ type: "hitLocation", name: "Chest", system }),
+    { name: "Pecho" });
+  assert.equal(hitLocationNameMigrationUpdate({ type: "hitLocation",
+    name: "Pecho superior", system }), null);
 });
 
 test("el entrypoint solo invoca el coordinador de migraciones", async () => {

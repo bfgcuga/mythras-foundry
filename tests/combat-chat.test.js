@@ -38,6 +38,21 @@ test("la parada prefiere el arma que no mantiene el bloqueo pasivo", () => {
     { status: "active", weaponId: "shield" }).value, "shield");
 });
 
+test("la tarjeta solo muestra las mitigaciones de daño realmente aplicadas", () => {
+  const renderer = fs.readFileSync(new URL("../scripts/rules/combat-chat-renderer.js",
+    import.meta.url), "utf8");
+  const runtime = fs.readFileSync(new URL("../scripts/rules/combat-damage-runtime.js",
+    import.meta.url), "utf8");
+  assert.match(renderer, /damage\.containedBlow\s+\?[\s\S]*MYTHRASF\.Combat\.AfterContainedBlow/);
+  assert.match(renderer, /damage\.passiveBlock[\s\S]*MYTHRASF\.Combat\.AfterPassiveBlock/);
+  assert.match(renderer, /damage\.activeParry[\s\S]*MYTHRASF\.Combat\.ParryReduction/);
+  assert.match(renderer, /MYTHRASF\.Combat\.HitPointsBeforeAfter/);
+  assert.doesNotMatch(renderer, /MYTHRASF\.Combat\.AppliedHitPoints/);
+  assert.doesNotMatch(renderer, /data-damage-location/);
+  assert.match(runtime, /parry\.type !== "full"[\s\S]*&& passive/);
+  assert.match(runtime, /passiveBlock: passiveParry/);
+});
+
 test("cancelar el selector de parada no produce una defensa parcial", () => {
   const choices = [{ value: "sword", weaponId: "sword" }];
   assert.equal(selectedParryChoice(choices, "sword"), choices[0]);

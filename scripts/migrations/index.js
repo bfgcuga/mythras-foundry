@@ -5,6 +5,7 @@ import { synchronizeFatigueDeath } from "../rules/death.js";
 import {
   ensureDefaultHome,
   ensureHumanHitLocations,
+  migrateHitLocationName,
   migrateActorArmor,
   migrateActorPermanentWounds,
   migratePermanentWoundItem,
@@ -56,6 +57,7 @@ export async function runWorldMigrations() {
     await migrateWorldArmor(item);
   }
   for (const item of game.items.filter((candidate) => candidate.type === "hitLocation")) {
+    await migrateHitLocationName(item);
     await migratePermanentWoundItem(item);
   }
 
