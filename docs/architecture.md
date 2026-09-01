@@ -657,7 +657,10 @@ con metros declarados, banda, TAM, fuentes de dificultad, potencia efectiva,
 movimiento, preparación y munición consumida. Apuntar vive temporalmente en un
 flag del Actor vinculado a combate, arma y blanco. Los desvíos al disparar a una
 melé usan `awaitingAccidentalTarget` y `awaitingAccidentalDefense`, conservando
-el dado, PA y proyectil originales.
+el dado, PA y proyectil originales. La elegibilidad de efectos distingue el
+modo efectivo de la transacción (`melee` o `ranged`) de las capacidades de la
+instantánea del arma, para que un arma con varios modos solo habilite los
+efectos correspondientes al ataque declarado.
 
 Las comprobaciones secundarias forman una cola persistida: primero se resuelven
 las tiradas de Aguante de efectos, después se confirma su consecuencia y por

@@ -116,12 +116,19 @@ function effectNames(mode = {}) {
   return new Set(String(mode.effects ?? "").split(/[,;\n]/).map(normalize).filter(Boolean));
 }
 
+function combatWeaponType(context = {}) {
+  const attackMode = normalize(context.attackMode);
+  if (attackMode === "melee") return "melee";
+  if (attackMode === "ranged") return "ranged";
+  return normalize(context.weaponMode?.weaponType);
+}
+
 function matchesWeaponRestriction(restriction, context) {
   const wanted = String(restriction ?? "").trim();
   if (!wanted) return true;
   if (!COMBAT_EFFECT_WEAPON_RESTRICTIONS.includes(wanted)) return false;
   const mode = context.weaponMode ?? {};
-  const type = normalize(mode.weaponType);
+  const type = combatWeaponType(context);
   const size = normalize(mode.size);
   const names = effectNames(mode);
   const has = (name) => names.has(normalize(name));
@@ -162,7 +169,7 @@ export function combatEffectEligible(effect, context = {}) {
   if (context.winner === "defender" && !effect.defensive) return false;
   if (effect.key === "muerte-silenciosa" && !context.surpriseAttack) return false;
   if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
-    normalize(context.weaponMode?.weaponType))) {
+    combatWeaponType(context))) {
     if (context.completeCover) return false;
     if (context.attackResult !== "critical" && !(context.rangedBand === "short"
       && (context.rangedTargetStationary || context.rangedTargetUnaware))) return false;

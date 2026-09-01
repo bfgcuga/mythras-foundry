@@ -86,6 +86,15 @@ test("la elegibilidad respeta lado, crítico y capacidades estructuradas del arm
   assert.equal(combatEffectEligible(effects.find((effect) => effect.key === "desangrar"), context), false);
 });
 
+test("las restricciones a distancia respetan el modo usado en el ataque", () => {
+  const rangedEffect = effects.find((effect) => effect.key === "disparo-y-a-cubierto");
+  const dualModeSpearSnapshot = { weaponType: "ranged", size: "G", effects: "Empalar" };
+  const context = { winner: "attacker", attackResult: "success", defenseResult: "failure",
+    weaponMode: dualModeSpearSnapshot };
+  assert.equal(combatEffectEligible(rangedEffect, { ...context, attackMode: "melee" }), false);
+  assert.equal(combatEffectEligible(rangedEffect, { ...context, attackMode: "ranged" }), true);
+});
+
 test("Elegir Localización respeta alcance corto, situación y cobertura completa", () => {
   const choose = effects.find((effect) => effect.key === "elegir-localizacion");
   const context = { winner: "attacker", attackResult: "success", defenseResult: "failure",

@@ -145,6 +145,7 @@ function effectContext(combat, side = combat.effects?.pendingSide ?? combat.reso
   return { winner: side,
     attackResult: combat.resolution?.attack?.result,
     defenseResult: combat.resolution?.defense?.result,
+    attackMode: combat.ranged ? "ranged" : "melee",
     weaponMode: combat.attacker.modeSnapshot,
     unarmed: combat.attacker.modeSnapshot?.key === "unarmed",
     surpriseAttack: Boolean(combat.surprise?.consumed), rangedBand: combat.ranged?.band,
