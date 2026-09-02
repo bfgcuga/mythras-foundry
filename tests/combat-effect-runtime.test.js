@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { addManagedCombatStatus, applyCombatEffectCheckConsequence,
-  applyImmediateCombatEffects, combatEffectAffectedSide
+  applyAutomaticCombatEffectChecks, applyImmediateCombatEffects, combatEffectAffectedSide
 } from "../scripts/rules/combat-effect-runtime.js";
 
 function combat(selections = []) {
@@ -94,4 +94,32 @@ test("una prueba resistida resuelve el efecto sin aplicar documentos", async () 
   dependencies({ conditions }));
   assert.equal(effect.resolution.resisted, true);
   assert.equal(conditions.length, 0);
+});
+
+test("el éxito automático hace fallar la resistencia sin tirar", async () => {
+  const conditions = [];
+  const effect = { key: "cegar-oponente", name: "Cegar", side: "defender", slot: 4,
+    automaticSuccess: true };
+  const state = combat([effect]);
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" },
+    dependencies({ conditions }));
+  const check = state.effects.checks[0];
+  assert.equal(check.automaticFailure, true);
+  assert.equal(check.status, "resolved");
+  assert.equal(check.resolution.automaticFailure, true);
+  assert.equal(effect.resolution.resisted, false);
+  assert.equal(conditions[0].condition.key, "blinded");
+});
+
+test("las resistencias automáticas condicionadas esperan su fase", async () => {
+  const conditions = [];
+  const effect = { key: "tumbar-oponente", side: "defender", slot: 2,
+    automaticSuccess: true };
+  const state = combat([effect]);
+  state.effects.checks = [{ id: "effect-defender-2", source: "effect",
+    effectKey: effect.key, effectSide: "defender", effectSlot: 2,
+    actorSide: "attacker", status: "pending", automaticFailure: true }];
+  await applyAutomaticCombatEffectChecks(state, dependencies({ conditions }));
+  assert.equal(state.effects.checks[0].status, "resolved");
+  assert.equal(conditions[0].condition.statusId, "incapacitated");
 });

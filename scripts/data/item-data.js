@@ -313,6 +313,8 @@ export class ArmorData extends EquipmentData {
 export class HitLocationData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
+      nameKey: new StringField({ required: true, nullable: false, initial: "",
+        choices: ["", "rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head"] }),
       rangeStart: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 1, max: 20 }),
       rangeEnd: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 1, max: 20 }),
       category: new StringField({ required: true, nullable: false, initial: "other",

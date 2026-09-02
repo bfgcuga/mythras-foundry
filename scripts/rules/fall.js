@@ -1,6 +1,6 @@
 import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
-import { findHitLocation, woundLevel } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName, woundLevel } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 import { evaluateSystemRoll } from "./system-roll.js";
 
@@ -87,7 +87,7 @@ async function randomLocations(locations, count, manual = false) {
 
 async function createFallChat(actor, token, configuration, results, locationRolls) {
   const rows = results.map(({ location, roll, damage, before, after, woundBefore,
-    woundAfter, fallDamage, dangerousRoll, dangerousDamage, woundConsequence }) => `<fieldset><legend>${escape(location.name)}</legend>
+    woundAfter, fallDamage, dangerousRoll, dangerousDamage, woundConsequence }) => `<fieldset><legend>${escape(hitLocationDisplayName(location))}</legend>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageRoll"))} (${escape(configuration.formula)})</span><strong class="mythras-chat-roll-value">${fallDamage}</strong></div>
       ${dangerousRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurfaceDamageRoll"))} (${escape(configuration.dangerousSurfaceFormula)})</span><strong class="mythras-chat-roll-value">${dangerousDamage}</strong></div>` : ""}
       ${dangerousRoll ? `<div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fall.TotalDamage"))}</span><strong>${damage}</strong></div>` : ""}

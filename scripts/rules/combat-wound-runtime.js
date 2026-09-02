@@ -1,5 +1,5 @@
 import { findWeaponMode } from "./weapon-modes.js";
-import { woundLocationKind } from "./hit-locations.js";
+import { hitLocationDisplayName, woundLocationKind } from "./hit-locations.js";
 import { executeWoundConsequencePlan, woundConsequencePlan } from "./wound-consequences.js";
 
 export function heldCombatItemChoices(actor) {
@@ -43,7 +43,7 @@ export async function applyCombatWoundConsequences(combat, defender, location,
     dropHeldItem: () => {
       combat.consequences = [...(combat.consequences ?? []), { key: "dropHeldItem",
         status: "pending", actorSide: "defender", locationId: location.id,
-        locationName: location.name, itemChoices: heldCombatItemChoices(defender) }];
+        locationName: hitLocationDisplayName(location), itemChoices: heldCombatItemChoices(defender) }];
     },
     prone: () => addStatus(combat, pseudoEffect, { key: "prone", statusId: "prone",
       unit: "manual", locationId: location.id }),
@@ -51,7 +51,7 @@ export async function applyCombatWoundConsequences(combat, defender, location,
       statusId: "unconscious", unit: "manual", locationId: location.id,
       metadata: action.durationNote ? { durationNote: action.durationNote } : undefined }),
     dying: (action) => applyDying(defender, { rounds: action.rounds, mode: action.mode,
-      locationId: location.id, sourceName: location.name }),
+      locationId: location.id, sourceName: hitLocationDisplayName(location) }),
     death: () => applyDeath(defender)
   });
   return true;

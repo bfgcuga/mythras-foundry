@@ -1,9 +1,9 @@
 <div class="item-sheet-content {{#if isWeapon}}weapon-item-sheet{{/if}} {{#if isCombatStyle}}combat-style-item-sheet{{/if}} {{#if isCombatEffect}}combat-effect-item-sheet{{/if}}">
   <header class="sheet-header {{#if isWeapon}}weapon-sheet-header{{/if}}">
-    <span class="item-image-frame"><img src="{{item.img}}" alt="{{item.name}}" data-edit="img">
+    <span class="item-image-frame"><img src="{{item.img}}" alt="{{itemName}}" data-edit="img">
       {{#if isWeapon}}<button type="button" class="sheet-icon-button item-image-view" data-action="view-item-image" aria-label="{{localize "MYTHRASF.Item.ViewImage"}}" title="{{localize "MYTHRASF.Item.ViewImage"}}"><i class="fas fa-expand" aria-hidden="true"></i></button>{{/if}}
     </span>
-    <input type="text" name="name" value="{{item.name}}" {{#if isPassion}}readonly{{/if}}>
+    <input type="text" name="name" value="{{itemName}}" {{#if isPassion}}readonly{{/if}}>
   </header>
 
   {{#if isSkillLike}}

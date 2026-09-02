@@ -49,3 +49,14 @@ test("el preparador común resuelve estados, armadura y bloqueo pasivo", () => {
   assert.equal(table.rows[0].overMaximum, true);
   assert.equal(table.rows[0].armorOptions[0].label, "Cota (4 PA)");
 });
+
+test("el preparador presenta el nombre localizado de la localización", () => {
+  globalThis.game = { i18n: { localize: (key) => key.endsWith(".chest") ? "Chest" : key } };
+  const location = { id: "chest", type: "hitLocation", name: "Pecho", system: {
+    nameKey: "chest", rangeStart: 10, rangeEnd: 12, armorPoints: 0,
+    currentHitPoints: 6, maxHitPoints: 6, disabled: false,
+    permanentWound: { severity: 0, originalMaxHitPoints: 0 } } };
+  const table = prepareHitLocationTable({ actor: { items: [location] } });
+  assert.equal(table.rows[0].displayName, "Chest");
+  assert.equal(location.name, "Pecho");
+});

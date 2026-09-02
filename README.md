@@ -35,8 +35,9 @@ El sistema incluye actualmente:
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
-- las siete localizaciones humanas se crean con nombres canónicos en castellano;
-  las anatomías personalizadas conservan literalmente sus nombres;
+- las siete localizaciones humanas se guardan con nombres canónicos en castellano
+  y se presentan en el idioma de cada usuario; las anatomías y los nombres
+  personalizados se conservan literalmente;
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
@@ -120,7 +121,14 @@ El sistema incluye actualmente:
   heridas. «Cegar oponente» se resuelve antes del daño, permite
   resistir con Evadir o con un estilo que use un escudo equipado, admite repetir
   la resistencia con Suerte y aplica automáticamente Cegado durante 1d3 turnos
-  si no se resiste. El compendio procede de *Mythras básico
+  si no se resiste. «Ardid» permite preparar en secreto un efecto ofensivo
+  concreto contra el rival del intercambio: si este lo selecciona más adelante,
+  su efecto se sustituye antes de resolverlo y el defensor elige un efecto
+  defensivo extraordinario con éxito automático, sin consumir sus selecciones
+  ordinarias. Ese éxito omite las resistencias propias del efecto, pero conserva
+  requisitos materiales como daño, herida, arma, blanco o localización; las
+  consecuencias todavía guiadas mantienen la marca automática hasta su
+  confirmación manual. El compendio procede de *Mythras básico
   revisado*; cada efecto dispone de una hoja ancha y editable que presenta la
   descripción antes de la configuración, con selectores cerrados para restricciones de arma y tirada, casillas para sus estados
   booleanos y una sección avanzada para la ejecución. El daño muestra por

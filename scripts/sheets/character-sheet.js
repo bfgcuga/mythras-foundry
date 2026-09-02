@@ -74,7 +74,7 @@ import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, fatigueLevel,
   FATIGUE_LEVELS } from "../rules/fatigue.js";
-import { isLocationCrippled, worstWoundLevel,
+import { hitLocationDisplayName, isLocationCrippled, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
@@ -347,7 +347,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       armor,
       hitLocations,
       permanentWounds: hitLocations.filter(isLocationCrippled).map((item) => ({
-        item, ...item.system.permanentWound
+        item, displayName: hitLocationDisplayName(item), ...item.system.permanentWound
       })),
       canRemovePermanentWounds: this.isEditable && Boolean(game.user?.isGM),
       hitLocationTable,
@@ -595,7 +595,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const totals = armorPhysicalTotals(item, hitLocations);
     return {
       item,
-      coverageLabel: locations.map((location) => location.name).join(", ")
+      coverageLabel: locations.map((location) => hitLocationDisplayName(location)).join(", ")
         || game.i18n.localize("MYTHRASF.Armor.Unassigned"),
       profileLabel: item.system.profileName || item.name,
       showProfile: Boolean(item.system.profileName && item.system.profileName !== item.name),
@@ -2647,7 +2647,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const confirmed = await DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.PermanentWound.Remove") },
       content: `<p>${game.i18n.format("MYTHRASF.PermanentWound.RemoveConfirm", {
-        location: foundry.utils.escapeHTML(location.name)
+        location: foundry.utils.escapeHTML(hitLocationDisplayName(location))
       })}</p>`,
       yes: { label: game.i18n.localize("MYTHRASF.PermanentWound.Remove") },
       no: { label: game.i18n.localize("MYTHRASF.Cancel") }

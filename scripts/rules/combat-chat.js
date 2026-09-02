@@ -3,12 +3,13 @@ import { combatAttackHits, damageModifierFormula, difficultyTarget,
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "./weapon-modes.js";
 import { resolveActorConditions, actorLoadState } from "./actor-conditions.js";
 import { invertD100 } from "./skill-roll.js";
-import { findHitLocation, woundLocationKind } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName, woundLocationKind } from "./hit-locations.js";
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { canonicalCombatEffectStage, combatEffectCheckPhase, combatEffectRule,
-  combatEffectSelectionHighlight, eligibleCombatEffects, initialCombatEffectStatus,
+  combatEffectSelectionHighlight, combatRuseTargetEffects, eligibleCombatEffects,
+  eligibleCombatRuseReplacements, initialCombatEffectStatus,
   maximizeDamageFormulaDetails, mergeCombatEffectDocuments, opposedEffectWinner,
   selectedEffectCount, combatEffectSelectionsCompatible,
   combatWeaponDamagePlan } from "./combat-effects.js";
@@ -20,8 +21,9 @@ import { normalizeCatalogConfig } from "./catalog.js";
 import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
-import { consumePassiveBlock, coverFor, ensureEngagement, passiveBlockFor,
-  relationFor, tacticalState, validateReachAttack } from "./engagement-runtime.js";
+import { consumeMatchingCombatRuses, consumePassiveBlock, coverFor, ensureEngagement,
+  passiveBlockFor, registerCombatRuse, relationFor, tacticalState,
+  validateReachAttack } from "./engagement-runtime.js";
 import { engagementRestriction } from "./engagements.js";
 import { ammunitionState, canFireAmmunition,
   isAccidentalMeleeHit, parseRangeProfile, rangedAttackProfile, reducePowerCategory
@@ -44,13 +46,13 @@ import { registerCombatSocketRuntime } from "./combat-chat-runtime.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
 import { applyCombatDamageLuck, applyMajorWoundLuck, applyProposedCombatDamage,
   applyRolledCombatDamage, refreshCombatDamageProposal } from "./combat-damage-runtime.js";
-import { addManagedCombatStatus, applyCombatEffectCheckConsequence,
+import { addManagedCombatStatus, applyAutomaticCombatEffectChecks, applyCombatEffectCheckConsequence,
   applyImmediateCombatEffects, combatSideEntry } from "./combat-effect-runtime.js";
 import { advanceCombatExchange, applyCombatExchangeCancellation, applyDroppedCombatItem,
   closeTerminalCombatExchange, resolveCombatExchangeConsequence, resolveCombatExchangePending
 } from "./combat-exchange-runtime.js";
 import { applyAccidentalTargetTransition, applyCombatDefenseTransition, applyCombatEffectsTransition,
-  applyCombatLuckTransition
+  applyCombatLuckTransition, applyCombatRuseReplacementTransition
 } from "./combat-response-runtime.js";
 import { applyCombatCheckTransition } from "./combat-check-runtime.js";
 import { consumeSurpriseEffectBonus, consumeWeaponModeAmmunition, spendActorActionPoint,
@@ -72,11 +74,12 @@ const pendingAttackActors = new Set();
 
 function combatEffectRuntimeDependencies() {
   return { resolveActor: combatActor, combatById: (id) => game.combats.get(id), localize,
-    evaluateRoll: evaluateAnimatedRoll };
+    evaluateRoll: evaluateAnimatedRoll, registerRuse: registerCombatRuse };
 }
 
 function locationSnapshot(item) {
-  return { id: item.id, name: item.name, rangeStart: item.system.rangeStart,
+  return { id: item.id, name: item.name, nameKey: item.system.nameKey ?? "",
+    rangeStart: item.system.rangeStart,
     rangeEnd: item.system.rangeEnd, category: item.system.category, hpClass: item.system.hpClass,
     permanentWound: foundry.utils.deepClone(item.system.permanentWound ?? {}) };
 }
@@ -145,6 +148,7 @@ const effectView = (item) => {
 
 function effectContext(combat, side = combat.effects?.pendingSide ?? combat.resolution?.winner) {
   return { winner: side,
+    activeCombat: Boolean(combat.turnEconomy),
     attackResult: combat.resolution?.attack?.result,
     defenseResult: combat.resolution?.defense?.result,
     attackMode: combat.ranged ? "ranged" : "melee",
@@ -637,6 +641,8 @@ async function chooseCombatEffects(message, combat) {
   if (!actor || (!game.user.isGM && !actor.isOwner) || combat.status !== "awaitingEffects") return;
   const catalog = (await combatEffectDocuments()).map(effectView);
   const eligible = eligibleCombatEffects(catalog, effectContext(combat, side));
+  const ruseTargetOptions = combatRuseTargetEffects(catalog).map((effect) =>
+    `<option value="${escape(effect.key)}">${escape(effect.name)}</option>`).join("");
   const options = [`<option value="__waive__">${escape(localize("MYTHRASF.CombatEffect.Waive"))}</option>`,
     ...eligible.map((effect) => {
       const highlight = combatEffectSelectionHighlight(effect, side);
@@ -645,12 +651,13 @@ async function chooseCombatEffects(message, combat) {
     })]
     .join("");
   const locationOptions = (combat.defender.locations ?? []).map((location) =>
-    `<option value="${escape(location.id)}">${escape(location.name)}</option>`).join("");
+    `<option value="${escape(location.id)}">${escape(hitLocationDisplayName(location))}</option>`).join("");
   const slots = combat.effects.sideSlots?.[side] ?? combat.effects.slots;
   const rows = Array.from({ length: slots }, (_, index) =>
     `<fieldset data-combat-effect-slot="${index}"><legend>${escape(game.i18n.format("MYTHRASF.CombatEffect.Slot", { slot: index + 1 }))}</legend>
       <label><span>${escape(localize("MYTHRASF.Item.Name"))}</span><select name="effect-${index}">${options}</select></label>
       <label class="combat-effect-location" hidden><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location-${index}"><option value=""></option>${locationOptions}</select></label>
+      <label class="combat-effect-ruse-target" hidden><span>${escape(localize("MYTHRASF.CombatEffect.Ruse.Target"))}</span><select name="ruse-${index}"><option value=""></option>${ruseTargetOptions}</select></label>
       <div class="combat-effect-choice-description"><span>${escape(localize("MYTHRASF.Item.Description"))}</span>
         ${eligible.map((effect) => `<p class="sheet-field-readonly combat-effect-description" data-effect-description="${escape(effect.key)}" hidden>${escape(effect.description)}</p>`).join("")}
       </div>
@@ -664,6 +671,7 @@ async function chooseCombatEffects(message, combat) {
         Array.from({ length: slots }, (_, index) => ({
           key: button.form.elements[`effect-${index}`].value,
           locationId: button.form.elements[`location-${index}`].value,
+          effectKey: button.form.elements[`ruse-${index}`].value,
           note: ""
         })) }, { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
     render: (event, dialog) => {
@@ -692,6 +700,8 @@ async function chooseCombatEffects(message, combat) {
         const effect = eligible.find((entry) => entry.key === select.value);
         const location = slot?.querySelector(".combat-effect-location");
         if (location) location.hidden = effect?.ruleKey !== "chooseLocation";
+        const ruse = slot?.querySelector(".combat-effect-ruse-target");
+        if (ruse) ruse.hidden = effect?.key !== "ardid";
         slot?.querySelectorAll("[data-effect-description]").forEach((description) => {
           description.hidden = description.dataset.effectDescription !== select.value;
         });
@@ -712,7 +722,8 @@ async function chooseCombatEffects(message, combat) {
     if (selected.key === "__waive__") return { slot: index, waived: true };
     const effect = eligible.find((entry) => entry.key === selected.key);
     return { slot: index, waived: false, ...effect,
-      parameters: { locationId: selected.locationId, note: selected.note },
+      parameters: { locationId: selected.locationId, effectKey: selected.effectKey,
+        note: selected.note },
       status: initialCombatEffectStatus(effect) };
   });
   const request = { action: "combatEffects", messageId: message.id, revision: combat.revision,
@@ -727,9 +738,73 @@ async function applyCombatEffects(message, request) {
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     catalogDocuments: combatEffectDocuments, effectView, effectContext,
     warn: (text) => ui.notifications.warn(text), localize,
+    triggerRuses: (combat, selections) => consumeMatchingCombatRuses(
+      game.combats.get(combat.turnEconomy.combatId), {
+        ownerCombatantId: combat.turnEconomy.defenderCombatantId,
+        rivalCombatantId: combat.turnEconomy.combatantId, selections }),
     applyImmediateEffects: applyImmediateCombatEffects,
     immediateDependencies: combatEffectRuntimeDependencies, render: renderCombatExchange,
     advance: advanceCombatTurnForExchange });
+}
+
+async function chooseCombatRuseReplacement(message, combat) {
+  const actor = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  if (!actor || (!game.user.isGM && !actor.isOwner) || combat.status !== "awaitingRuse") return;
+  const catalog = (await combatEffectDocuments()).map(effectView);
+  const eligible = eligibleCombatRuseReplacements(catalog, effectContext(combat, "defender"));
+  const options = eligible.map((effect) =>
+    `<option value="${escape(effect.key)}">${escape(effect.name)}</option>`).join("");
+  const locationOptions = (combat.defender.locations ?? []).map((location) =>
+    `<option value="${escape(location.id)}">${escape(hitLocationDisplayName(location))}</option>`).join("");
+  const pending = combat.effects.pendingRuses ?? [];
+  const rows = pending.map((entry, index) => `<fieldset data-combat-effect-slot="${index}">
+    <legend>${escape(game.i18n.format("MYTHRASF.CombatEffect.Ruse.Blocked", {
+      effect: entry.blockedEffectName }))}</legend>
+    <label><span>${escape(localize("MYTHRASF.CombatEffect.Ruse.Replacement"))}</span>
+      <select name="effect-${index}">${options}</select></label>
+    <label class="combat-effect-location" hidden><span>${escape(localize(
+      "MYTHRASF.Combat.HitLocation"))}</span><select name="location-${index}">
+      <option value=""></option>${locationOptions}</select></label></fieldset>`).join("");
+  const result = await foundry.applications.api.DialogV2.wait({
+    window: { title: localize("MYTHRASF.CombatEffect.Ruse.Title") },
+    position: { width: 680 },
+    content: `<div class="mythras-foundry mythras-dialog combat-effect-dialog"><h2 class="mythras-launcher-title">${escape(localize("MYTHRASF.CombatEffect.Ruse.AutomaticPrompt"))}</h2>${rows}</div>`,
+    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.ConfirmSelection"),
+      icon: "fas fa-check", default: true, callback: (event, button) => pending.map((entry, index) => ({
+        key: button.form.elements[`effect-${index}`].value,
+        parameters: { locationId: button.form.elements[`location-${index}`].value }
+      })) }, { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
+    render: (event, dialog) => {
+      const form = dialog.element.querySelector("form");
+      const refresh = (select) => {
+        const effect = eligible.find((entry) => entry.key === select.value);
+        const location = select.closest("fieldset")?.querySelector(".combat-effect-location");
+        if (location) location.hidden = effect?.ruleKey !== "chooseLocation";
+      };
+      form?.querySelectorAll("select[name^='effect-']").forEach(refresh);
+      form?.addEventListener("change", (event) => {
+        if (event.target.matches("select[name^='effect-']")) refresh(event.target);
+      });
+    }, rejectClose: false
+  });
+  if (!result) return;
+  const request = { action: "combatRuseReplacement", messageId: message.id,
+    revision: combat.revision, userId: game.user.id, side: "defender", selections: result };
+  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
+    await applyCombatRuseReplacement(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+async function applyCombatRuseReplacement(message, request) {
+  return applyCombatRuseReplacementTransition(message, request, {
+    clone: foundry.utils.deepClone, flagScope: FLAG_SCOPE, resolveActor: combatActor,
+    userById: (id) => game.users.get(id), catalogDocuments: combatEffectDocuments,
+    effectView, effectContext, replacementEffects: eligibleCombatRuseReplacements,
+    warn: (text) => ui.notifications.warn(text), localize,
+    applyImmediateEffects: applyImmediateCombatEffects,
+    immediateDependencies: combatEffectRuntimeDependencies, render: renderCombatExchange,
+    advance: advanceCombatTurnForExchange
+  });
 }
 
 async function addManagedStatus(combat, effect, { key, statusId, turns = null,
@@ -742,7 +817,7 @@ async function addManagedStatus(combat, effect, { key, statusId, turns = null,
 async function cancelCombat(message, current, suppliedReason = "") {
   if (!game.user.isGM || !combatCanBeCancelled(current)) return;
   let reason = suppliedReason;
-  if (!suppliedReason && current.status === "awaitingEffects") {
+  if (!suppliedReason && ["awaitingEffects", "awaitingRuse"].includes(current.status)) {
     const result = await foundry.applications.api.DialogV2.wait({
       window: { title: localize("MYTHRASF.Contest.Cancel") },
       content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.CombatEffect.Reason"))}</span><textarea name="reason" required></textarea></label></div>`,
@@ -1183,7 +1258,10 @@ async function applyProposedDamage(message, request) {
         defender.items.filter((item) => item.type === "armor")),
     refreshProposal: refreshDamageProposal, render: renderCombatExchange,
     evaluateRoll: evaluateAnimatedRoll, format: game.i18n.format.bind(game.i18n),
-    applyWoundConsequences, combatById: (id) => game.combats.get(id), consumePassiveBlock,
+    applyWoundConsequences,
+    applyAutomaticEffectChecks: (combat) => applyAutomaticCombatEffectChecks(
+      combat, combatEffectRuntimeDependencies()),
+    combatById: (id) => game.combats.get(id), consumePassiveBlock,
     advance: advanceCombatTurnForExchange });
 }
 
@@ -1232,6 +1310,10 @@ export function activateCombatCard(message, html) {
     card.querySelectorAll("[data-combat-action='choose-effects']").forEach((button) => {
       button.hidden = !game.user.isGM && !actor?.isOwner;
     }));
+  combatActor(combat.defender.tokenUuid, combat.defender.actorUuid).then((actor) =>
+    card.querySelectorAll("[data-combat-action='choose-ruse-replacement']").forEach((button) => {
+      button.hidden = !game.user.isGM && !actor?.isOwner;
+    }));
   card.querySelectorAll("[data-combat-action='drop-held-item']").forEach(async (button) => {
     const consequence = combat.consequences?.[Number(button.dataset.consequenceIndex)];
     const entry = combatSideEntry(combat, consequence?.actorSide ?? "defender");
@@ -1256,6 +1338,7 @@ export function activateCombatCard(message, html) {
     if (action === "luck" && button.dataset.side === "damage") return requestDamageLuck(message, combat, manual);
     if (action === "luck") return spendCombatLuck(message, combat, button.dataset.side, manual);
     if (action === "choose-effects") return chooseCombatEffects(message, combat);
+    if (action === "choose-ruse-replacement") return chooseCombatRuseReplacement(message, combat);
     if (action === "open-effect") {
       const effect = await fromUuid(button.dataset.effectUuid).catch(() => null);
       return effect?.sheet?.render({ force: true });
@@ -1281,6 +1364,7 @@ export function registerCombatSocket() {
     handlers: {
       combatDefense: applyCombatDefense, combatLuck: applyCombatLuck,
       combatEffects: applyCombatEffects, combatDamage: applyCombatDamage,
+      combatRuseReplacement: applyCombatRuseReplacement,
       combatDamageLuck: applyDamageLuck, combatApplyDamage: applyProposedDamage,
       combatCheck: applyCombatCheck, combatWoundLuck: applyWoundLuck,
       combatDropHeldItem: applyDropHeldItem

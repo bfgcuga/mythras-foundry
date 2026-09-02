@@ -15,6 +15,7 @@ import { createResolvedReactionAttack } from "./combat-chat.js";
 import { recordAbilityFumble } from "./skills.js";
 import { actorDisplayName, tokenDisplayName } from "./document-names.js";
 import { evaluateSystemRoll } from "./system-roll.js";
+import { hitLocationDisplayName } from "./hit-locations.js";
 
 const SCOPE = "mythras-foundry"; const SOCKET = "system.mythras-foundry";
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
@@ -190,7 +191,10 @@ export function renderTacticalOverview(combat) {
   const blocks = Object.values(state.passiveBlocks ?? {}).map((block) => { const combatant = combat.combatants.get(block.combatantId);
     const canManage = Boolean(game.user?.isGM || combatant?.actor?.isOwner);
     return `<tr><td>${escape(combatantDisplayName(combatant))}</td><td>${escape(block.weaponName)}</td><td>${escape(
-    block.locationIds?.map((id) => combat.combatants.get(block.combatantId)?.actor?.items.get(id)?.name)
+    block.locationIds?.map((id) => {
+      const location = combat.combatants.get(block.combatantId)?.actor?.items.get(id);
+      return location ? hitLocationDisplayName(location) : "";
+    })
       .filter(Boolean).join(", "))}</td><td>${escape(block.status)}</td><td><div class="tactical-row-actions"><button type="button" data-tactical-action="deactivate-block" data-combatant-id="${escape(block.combatantId)}" ${canManage && block.status === "active" ? "" : "disabled"}>${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Cancel"))}</button><button type="button" data-tactical-action="reactivate-block" data-combatant-id="${escape(block.combatantId)}" ${canManage && block.status !== "active" ? "" : "disabled"}>${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Reactivate"))}</button><button type="button" data-tactical-action="modify-block" data-combatant-id="${escape(block.combatantId)}" ${canManage ? "" : "disabled"}>${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Modify"))}</button></div></td></tr>`; }).join("");
   const drafts = combatCoverDrafts(combat);
   const coverCombatants = combatants.filter((entry) => state.covers?.[entry.id]?.status === "active"
@@ -199,7 +203,8 @@ export function renderTacticalOverview(combat) {
     const cover = storedCover?.status === "active" ? storedCover : null;
     const draft = !cover && drafts.has(combatant.id);
     const canManage = Boolean(game.user?.isGM || combatant.actor?.isOwner);
-    const locationNames = cover?.locationIds?.map((id) => combatant.actor.items.get(id)?.name).filter(Boolean).join(", ") ?? "";
+    const locationNames = cover?.locationIds?.map((id) => combatant.actor.items.get(id))
+      .filter(Boolean).map((location) => hitLocationDisplayName(location)).join(", ") ?? "";
     return `<tr data-cover-row="${escape(combatant.id)}"><td>${draft ? `<select name="rowCoverCombatant">${combatants.filter((entry) => (game.user?.isGM || entry.actor?.isOwner) && (state.covers?.[entry.id]?.status !== "active" || entry.id === combatant.id)).map((entry) => `<option value="${escape(entry.id)}" ${entry.id === combatant.id ? "selected" : ""}>${escape(combatantDisplayName(entry))}</option>`).join("")}</select>` : escape(combatantDisplayName(combatant))}</td><td>${canManage ? `<input name="rowCoverSource" value="${escape(cover?.source)}">` : escape(cover?.source)}</td><td><div class="tactical-cover-location-cell"><span>${escape(locationNames)}</span>${canManage ? `<button type="button" class="sheet-icon-button" data-tactical-action="edit-cover-locations" data-combatant-id="${escape(combatant.id)}" title="${escape(game.i18n.localize("MYTHRASF.Ranged.EditCoverLocations"))}" aria-label="${escape(game.i18n.localize("MYTHRASF.Ranged.EditCoverLocations"))}"><i class="fas fa-list-check" aria-hidden="true"></i></button>` : ""}</div></td><td>${canManage ? `<input type="number" min="0" name="rowCoverProtection" value="${Number(cover?.protection ?? 0)}">` : Number(cover?.protection ?? 0)}</td><td>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverStatusActive"))}</td><td>${canManage ? `<input type="checkbox" class="sheet-state-box" name="rowCoverComplete" ${cover?.complete ? "checked" : ""}>` : cover?.complete ? escape(game.i18n.localize("MYTHRASF.Yes")) : escape(game.i18n.localize("MYTHRASF.No"))}</td><td><div class="tactical-row-actions"><button type="button" class="sheet-icon-button" data-tactical-action="save-cover-row" data-combatant-id="${escape(combatant.id)}" title="${escape(game.i18n.localize("MYTHRASF.Save"))}" aria-label="${escape(game.i18n.localize("MYTHRASF.Save"))}" ${canManage ? "" : "disabled"}><i class="fas fa-floppy-disk" aria-hidden="true"></i></button><button type="button" class="sheet-icon-button" data-tactical-action="remove-cover-row" data-combatant-id="${escape(combatant.id)}" title="${escape(game.i18n.localize("MYTHRASF.Ranged.RemoveCoverCorrection"))}" aria-label="${escape(game.i18n.localize("MYTHRASF.Ranged.RemoveCoverCorrection"))}" ${canManage ? "" : "disabled"}><i class="fas fa-trash" aria-hidden="true"></i></button></div></td></tr>`; }).join("");
   const title = (key) => `<h3 class="tactical-table-title">${escape(game.i18n.localize(key))}</h3>`;
   const addButton = (action, label) => { const enabled = game.user?.isGM || (action === "add-cover"
@@ -226,7 +231,7 @@ function coverLocationControls(combat, combatantId, selected = []) {
     .filter((item) => item.type === "hitLocation")
     .sort((a, b) => Number(a.system.rangeStart) - Number(b.system.rangeStart)) ?? [];
   return locations.map((location) => `<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="coverLocation" value="${escape(location.id)}" ${selected.includes(location.id)
-    ? "checked" : ""}>${escape(location.name)}</label>`).join("");
+    ? "checked" : ""}>${escape(hitLocationDisplayName(location))}</label>`).join("");
 }
 async function createRelationFromDialog(combat) {
   const combatants = combat.combatants.filter((entry) => entry.actor); if (combatants.length < 2) return;

@@ -232,8 +232,12 @@ si pierden un nivel, salvo que el ajuste mundial
 causan pérdida; fallo y pifia incrementan la Fatiga en un nivel.
 
 El estado táctico vive en `flags.mythras-foundry.tacticalState` del `Combat`.
-Contiene relaciones versionadas por pareja de combatientes y declaraciones de
-Bloqueo Pasivo por asalto. El alcance es relacional (`longer`, `shorter` o
+Contiene relaciones versionadas por pareja de combatientes, declaraciones de
+Bloqueo Pasivo por asalto, coberturas y la colección versionada `ruses`. Cada
+Ardid identifica propietario, rival, efecto vigilado, intercambio de origen,
+estado y revisión. Las versiones anteriores se normalizan con la colección
+vacía; al terminar el combate se elimina junto con el resto del estado táctico.
+El alcance es relacional (`longer`, `shorter` o
 `neutral`) y no se deriva de las coordenadas del lienzo. Cambiar Alcance se
 coordina mediante mensajes revisables y comparte coordinador y permisos con los
 intercambios de ataque. Cada lado de una relación conserva explícitamente el
@@ -416,9 +420,13 @@ La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
 `assets/Silueta`. El ajuste de mundo `silhouetteOrientation` decide si las
 localizaciones izquierdas y derechas se proyectan como vista frontal o dorsal.
 La vinculación usa rangos, categoría y clase de PG humanos, nunca nombres
-traducidos. Esos mismos datos estructurales permiten migrar al castellano solo
-los siete nombres humanos estándar conocidos en español o inglés; los nombres
-complejos y las anatomías personalizadas no se alteran. La lesión consolidada reside en
+traducidos. Las siete localizaciones estándar conservan en `system.nameKey` una
+clave anatómica estable y en `Item.name` su nombre canónico castellano;
+`hitLocationDisplayName` resuelve la etiqueta para el idioma de cada usuario sin
+reescribir el documento. La migración solo asigna la clave y normaliza nombres
+humanos exactos conocidos en español o inglés. Al editar la etiqueta localizada
+desde la hoja se elimina la clave y el nombre pasa a ser personalizado y literal;
+los nombres complejos y las anatomías personalizadas no se alteran. La lesión consolidada reside en
 `hitLocation.system.permanentWound`: conserva gravedad, tirada, máximo original,
 máximo efectivo, resultados del d20 anulados y descripción. El máximo operativo
 de la localización es siempre el efectivo; los recálculos por CON/TAM y la
@@ -579,7 +587,9 @@ esquema funcional del Item, no limitan el compendio del que puede proceder.
 El diálogo identifica la selección mediante el encabezado rojizo compartido,
 muestra en cada hueco el nombre y la descripción del efecto elegido, y solo
 presenta parámetros cuando la regla los necesita en esta fase (actualmente, la
-localización de «Elegir localización»); la selección no recoge notas libres.
+localización de «Elegir localización» y la clave secreta del efecto vigilado por
+«Ardid»); la selección no recoge notas libres. El coordinador valida esa clave
+contra el catálogo y nunca la presenta en la tarjeta pública.
 Las opciones restringidas a un crítico propio se resaltan en verde suave y las
 restringidas a una pifia del rival, en rojo suave; la clasificación procede de
 `rollRestriction` y del lado que realiza la selección, no del texto descriptivo.
@@ -587,6 +597,25 @@ Una Herida Crítica en una extremidad registra directamente el daño, la lesión
 permanente y sus estados mecánicos; no crea una confirmación narrativa
 pendiente. Si no queda otra resolución guiada, el intercambio se considera
 terminado y avanza automáticamente tras aplicar el daño.
+
+Al confirmar efectos ofensivos, el coordinador consume como máximo un Ardid
+activo que coincida por defensor, rival y clave. La selección ofensiva se mueve
+a `replacedSelections` para auditoría, deja de participar en compatibilidad y
+cálculos, y el intercambio entra en `awaitingRuse`. Solo el propietario o el DJ
+pueden confirmar la sustitución. Esta añade una selección defensiva
+extraordinaria, sin consumir diferencial ni permitir renuncia, con
+`automaticSuccess` y un `automaticSource` estructurado que referencia el Ardid.
+Después se reanuda cualquier selección defensiva ordinaria pendiente y, a
+continuación, el flujo normal de daño.
+
+`automaticSuccess` es una propiedad general de la selección, no una excepción
+del efecto Ardid. Los efectos inmediatos se ejecutan normalmente; sus tiradas de
+resistencia se registran como fallo automático, sin tirada ni Suerte. Los
+efectos condicionados esperan primero a que exista daño o herida y entonces
+omiten su resistencia. Los efectos cuya consecuencia aún es guiada conservan
+la marca automática visible y su cierre manual actual. La cancelación y el
+cierre forzado reconocen `awaitingRuse` para que ningún intercambio quede
+bloqueado.
 Mientras la prueba de Aguante de una Herida Crítica siga pendiente, el
 propietario de la víctima o el DJ puede gastar uno de sus puntos de Suerte para
 reducirla a Herida Grave. La propuesta eleva los PG de la localización a

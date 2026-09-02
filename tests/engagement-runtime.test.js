@@ -1,7 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { coverFor, deactivatePassiveBlock, removeCoverCorrection, removeRelation,
-  reactivatePassiveBlock, setCoverCorrection } from "../scripts/rules/engagement-runtime.js";
+import { consumeMatchingCombatRuses, coverFor, deactivatePassiveBlock,
+  registerCombatRuse, removeCoverCorrection, removeRelation,
+  reactivatePassiveBlock, setCoverCorrection, tacticalState
+} from "../scripts/rules/engagement-runtime.js";
+
+test("el estado táctico normaliza ardides y los consume uno a uno", async () => {
+  globalThis.foundry = { utils: { deepClone: structuredClone } };
+  globalThis.game = { user: { id: "gm" } };
+  let stored = { schemaVersion: 1, revision: 0, relations: {}, passiveBlocks: {}, covers: {} };
+  const combat = { started: true, getFlag: () => stored,
+    setFlag: async (scope, flag, value) => { stored = value; } };
+  assert.deepEqual(tacticalState(combat).ruses, {});
+  await registerCombatRuse(combat, { ownerCombatantId: "d", rivalCombatantId: "a",
+    effectKey: "desarmar-oponente", sourceSlot: 0 });
+  await registerCombatRuse(combat, { ownerCombatantId: "d", rivalCombatantId: "a",
+    effectKey: "desarmar-oponente", sourceSlot: 1 });
+  const selection = { key: "desarmar-oponente" };
+  const first = await consumeMatchingCombatRuses(combat, { ownerCombatantId: "d",
+    rivalCombatantId: "a", selections: [selection] });
+  assert.equal(first.length, 1);
+  assert.equal(first[0].selection, selection);
+  assert.equal(Object.values(stored.ruses).filter((ruse) => ruse.status === "active").length, 1);
+  const miss = await consumeMatchingCombatRuses(combat, { ownerCombatantId: "d",
+    rivalCombatantId: "a", selections: [{ key: "empujar" }] });
+  assert.equal(miss.length, 0);
+});
 
 test("eliminar una relación la suprime durante el encuentro para que no se recree", async () => {
   globalThis.foundry = { utils: { deepClone: structuredClone } };

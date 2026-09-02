@@ -72,7 +72,7 @@ export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
 ]);
 
 const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
-  "abrir-distancia", "aprovechar-la-ventaja", "aturdir-localizacion", "cegar-oponente",
+  "abrir-distancia", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
   "muerte-silenciosa", "retirada", "tumbar-oponente"
 ]));
@@ -194,6 +194,7 @@ export function combatEffectEligible(effect, context = {}) {
     if (!target) return false;
   }
   if (effect.key === "muerte-silenciosa" && !context.surpriseAttack) return false;
+  if (effect.key === "ardid" && !context.activeCombat) return false;
   if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
     combatWeaponType(context))) {
     if (context.completeCover) return false;
@@ -206,6 +207,16 @@ export function combatEffectEligible(effect, context = {}) {
 
 export function eligibleCombatEffects(effects, context) {
   return effects.filter((effect) => combatEffectEligible(effect, context));
+}
+
+export function combatRuseTargetEffects(effects = []) {
+  return effects.filter((effect) => effect?.key !== "ardid" && effect?.offensive
+    && effect?.target !== "self");
+}
+
+export function eligibleCombatRuseReplacements(effects = [], context = {}) {
+  return effects.filter((effect) => effect?.key !== "ardid" && effect?.defensive
+    && combatEffectEligible(effect, { ...context, winner: "defender" }));
 }
 
 export function combatEffectSelectionHighlight(effect, side) {

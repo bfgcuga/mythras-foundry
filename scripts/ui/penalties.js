@@ -3,6 +3,7 @@ import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
 import { activeStatusRules, STUNNED_STATUS_ID,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "../rules/timed-conditions.js";
+import { hitLocationDisplayName } from "../rules/hit-locations.js";
 
 export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
   woundLevel = "healthy" } = {}) {
@@ -39,7 +40,8 @@ export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
                 remaining: condition.remaining })
             : condition.unit === "round" ? game.i18n.localize("MYTHRASF.Status.UntilRoundEnd")
               : condition.durationNote ?? game.i18n.localize("MYTHRASF.Status.ManualDuration");
-          const location = condition.locationId ? actor.items.get(condition.locationId)?.name : "";
+          const item = condition.locationId ? actor.items.get(condition.locationId) : null;
+          const location = item ? hitLocationDisplayName(item) : "";
           const source = condition.sourceName ? game.i18n.format("MYTHRASF.Status.Source", {
             source: condition.sourceName }) : "";
           return [duration, location, source].filter(Boolean).join(" — ");

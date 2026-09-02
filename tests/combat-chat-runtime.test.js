@@ -46,3 +46,13 @@ test("el runtime enruta la elección del objeto soltado", async () => {
   await socket.callback({ action: "combatDropHeldItem", messageId: "m" });
   assert.equal(called, true);
 });
+
+test("el runtime enruta la respuesta extraordinaria de Ardid", async () => {
+  let called = false;
+  const socket = { on: (channel, callback) => { socket.callback = callback; } };
+  registerCombatSocketRuntime({ socket, messages: new Map([["m", {
+    getFlag: () => ({ authorUserId: "author" }) }]]), users: [], currentUserId: "gm",
+  coordinator: () => "gm", handlers: { combatRuseReplacement: () => { called = true; } } });
+  await socket.callback({ action: "combatRuseReplacement", messageId: "m" });
+  assert.equal(called, true);
+});

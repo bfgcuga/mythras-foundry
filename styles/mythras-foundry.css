@@ -3120,6 +3120,12 @@
   color: #6f42c1;
   font-weight: 700;
 }
+.mythras-chat-card .combat-effect-automatic {
+  display: inline-block;
+  margin-left: 0.3rem;
+  color: #2f6b3c;
+  font-weight: 700;
+}
 .mythras-foundry .combat-effect-advanced summary { cursor: pointer; font-weight: 700; }
 .mythras-foundry .combat-effect-advanced fieldset { margin-top: 0.55rem; }
 @media (max-width: 720px) {

@@ -45,5 +45,13 @@ export function resolvePendingExchangeSteps(combat, { note = "", userId = "",
     if (consequence.status !== "pending") continue;
     Object.assign(consequence, { status: "resolved", note: String(note), userId, resolvedAt });
   }
+  if (["awaitingEffects", "awaitingRuse"].includes(combat?.status)) {
+    combat.effects.pendingRuses = [];
+    combat.effects.pendingSide = null;
+    combat.effects.confirmed = true;
+    combat.effects.manualResolution = { ...manualResolution };
+    combat.status = "resolved";
+    combat.damage = { status: "unavailable" };
+  }
   return combat;
 }

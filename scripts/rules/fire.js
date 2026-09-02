@@ -1,6 +1,6 @@
 import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
-import { woundLevel } from "./hit-locations.js";
+import { hitLocationDisplayName, woundLevel } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 import { evaluateSystemRoll } from "./system-roll.js";
 
@@ -82,7 +82,7 @@ function validFormula(formula) {
 async function createFireChat(actor, token, configuration, results) {
   const profile = FIRE_PROFILES[configuration.intensity];
   const rows = results.map(({ location, roll, damage, hitPointsBefore, hitPointsAfter,
-    woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(location.name)}</legend>
+    woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(hitLocationDisplayName(location))}</legend>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fire.DamageRoll"))} (${escape(configuration.formula)})</span><strong class="mythras-chat-roll-value">${damage}</strong></div>
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fire.HitPoints"))}</span><strong>${hitPointsBefore} → ${hitPointsAfter}</strong></div>
       ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
@@ -152,7 +152,7 @@ export async function openFireDialog({ actor = null, token = null, defaults = nu
     content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fire.Target"))}</legend><div class="sheet-field-readonly">${escape(actorDisplayName(actor))}</div></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fire.IntensityLabel"))}</legend>${Object.entries(FIRE_PROFILES).map(([intensity, profile]) => `<label><input type="radio" class="sheet-state-box" name="intensity" value="${intensity}" ${Number(intensity) === initial.intensity ? "checked" : ""}><span>${intensity} — ${escape(game.i18n.localize(`MYTHRASF.Fire.Example.${profile.example}`))}: ${profile.damageFormula}, ${escape(game.i18n.localize("MYTHRASF.Fire.Ignition"))} ${escape(profile.ignitionFormula === "instant" ? game.i18n.localize("MYTHRASF.Fire.Instant") : profile.ignitionFormula)}</span></label>`).join("")}<p data-fire-guidance>${escape(locationGuidance(initial.intensity))}</p></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fire.DamageFormula"))}</legend><input class="sheet-field-editable" name="formula" value="${escape(initial.formula)}"></fieldset>
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fire.Locations"))}</legend>${locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${initial.locationIds.includes(location.id) ? "checked" : ""}><span>${escape(location.name)}</span></label>`).join("")}</fieldset>
+      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fire.Locations"))}</legend>${locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${initial.locationIds.includes(location.id) ? "checked" : ""}><span>${escape(hitLocationDisplayName(location))}</span></label>`).join("")}</fieldset>
       <label><input type="checkbox" class="sheet-state-box" name="keepBurning" ${initial.keepBurning ? "checked" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Fire.KeepBurning"))}</span></label></div>`,
     buttons: [{ action: "apply", label: game.i18n.localize("MYTHRASF.Fire.Apply"),
       icon: "fas fa-fire", default: true, callback: (event, button) => ({ action: "apply",

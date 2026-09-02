@@ -1,4 +1,4 @@
-import { findHitLocation, permanentWoundHitCheck, permanentWoundState, woundLevel,
+import { findHitLocation, hitLocationDisplayName, permanentWoundHitCheck, permanentWoundState, woundLevel,
   woundLocationKind } from "./hit-locations.js";
 import { damageLocationChoices, majorWoundLuckAdjustment,
   prepareDamageChecks } from "./combat-damage.js";
@@ -34,7 +34,7 @@ export async function applyCombatDamageDocument({ location, damage, targetType =
     const kind = woundLocationKind(location);
     const description = format(
       `MYTHRASF.PermanentWound.Suggested.${kind.extremity ? "extremity" : "other"}`,
-      { location: location.name, severity: effectiveSeverity });
+      { location: hitLocationDisplayName(location), severity: effectiveSeverity });
     const permanentWound = permanentWoundState(location,
       { severity: effectiveSeverity, roll: permanentRoll.total, description });
     locationUpdate["system.permanentWound"] = permanentWound;
@@ -53,7 +53,8 @@ export async function applyCombatDamageDocument({ location, damage, targetType =
 
 export async function applyProposedCombatDamage(message, request, { clone, flagScope,
   resolveActor, userById, armorPoints, refreshProposal, render, evaluateRoll, format,
-  applyWoundConsequences, combatById, consumePassiveBlock, advance } = {}) {
+  applyWoundConsequences, applyAutomaticEffectChecks, combatById, consumePassiveBlock,
+  advance } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
     || Number(request.revision) !== Number(combat.revision)) return false;
@@ -123,6 +124,7 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   if (targetType !== "weapon") {
     await applyWoundConsequences(combat, defender, location, { manual: request.manual });
   }
+  await applyAutomaticEffectChecks?.(combat);
   combat.damage.appliedBy = user.id;
   combat.damage.appliedAt = Date.now();
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
@@ -206,7 +208,7 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   prepareDamageChecks(combat, { location, resultingWound: resulting,
     penetratingDamage: calculation.penetratingDamage, weaponTarget });
   Object.assign(combat.damage, calculation, { status: "proposed", locationId: location.id,
-    locationName: location.name, armorSnapshot: armor, beforeHitPoints: before,
+    locationName: hitLocationDisplayName(location), armorSnapshot: armor, beforeHitPoints: before,
     maxHitPoints: Number(location.system.maxHitPoints ?? 1), afterHitPoints: after,
     previousWound: weaponTarget ? "healthy" : woundLevel(before, location.system.maxHitPoints),
     resultingWound: resulting });
@@ -267,7 +269,7 @@ export async function applyRolledCombatDamage(message, request, { clone, flagSco
     permanentWoundHitRoll: !requiresPermanentWoundRoll
       ? null : Number(request.permanentWoundHitRoll),
     permanentWoundLocationName: !requiresPermanentWoundRoll
-      ? "" : selectedLocation?.name ?? "",
+      ? "" : hitLocationDisplayName(selectedLocation),
     permanentWoundSeverity: !requiresPermanentWoundRoll
       ? 0 : Number(selectedLocationSystem.permanentWound?.severity ?? 0),
     permanentWoundHit,

@@ -1,5 +1,5 @@
 const COMBAT_SOCKET_ACTIONS = Object.freeze([
-  "combatDefense", "combatLuck", "combatEffects", "combatDamage", "combatDamageLuck",
+  "combatDefense", "combatLuck", "combatEffects", "combatRuseReplacement", "combatDamage", "combatDamageLuck",
   "combatApplyDamage", "combatCheck", "combatWoundLuck",
   "combatDropHeldItem"
 ]);

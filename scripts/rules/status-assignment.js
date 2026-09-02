@@ -4,6 +4,7 @@ import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { timedConditionSource, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { MYTHRAS_STATUS_EFFECTS } from "./statuses.js";
+import { hitLocationDisplayName } from "./hit-locations.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const locationStatuses = new Set(["stunnedLocation", "stunnedTorso"]);
@@ -121,7 +122,7 @@ export async function openStatusAssignmentDialog({ actor = null, token = null } 
         "MYTHRASF.StatusManager.Location"))}</legend>
         <select class="sheet-field-editable" name="locationId"><option value="">${escape(
           game.i18n.localize("MYTHRASF.StatusManager.NoLocation"))}</option>${locations.map(
-            (location) => `<option value="${escape(location.id)}">${escape(location.name)}</option>`
+            (location) => `<option value="${escape(location.id)}">${escape(hitLocationDisplayName(location))}</option>`
           ).join("")}</select></fieldset>
       <p class="status-assignment-configured" data-configured-help hidden>${escape(
         game.i18n.localize("MYTHRASF.StatusManager.ConfiguredHelp"))}</p>

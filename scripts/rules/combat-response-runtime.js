@@ -1,6 +1,6 @@
 import { combatAttackHits, resolveCombatExchange } from "./combat.js";
 import { canonicalCombatEffectStage, combatEffectSlotsBySide,
-  combatEffectSelectionsCompatible, initialCombatEffectStatus,
+  combatEffectSelectionsCompatible, combatRuseTargetEffects, initialCombatEffectStatus,
   validateEffectSelections, combatWeaponDamagePlan } from "./combat-effects.js";
 import { effectiveActionPointMaximum } from "./action-points.js";
 import { validateCombatResponse } from "./combat-exchange-state.js";
@@ -95,7 +95,7 @@ export async function applyCombatDefenseTransition(message, request, { clone, fl
 
 export async function applyCombatEffectsTransition(message, request, { clone, flagScope,
   resolveActor, userById, catalogDocuments, effectView, effectContext, warn, localize,
-  applyImmediateEffects, immediateDependencies, render, advance } = {}) {
+  applyImmediateEffects, immediateDependencies, triggerRuses, render, advance } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || combat.status !== "awaitingEffects"
     || Number(request.revision) !== Number(combat.revision)) return false;
@@ -110,6 +110,9 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
   const validation = validateEffectSelections({ slots, selections: request.selections,
     effects: catalog, context: effectContext(combat, side) });
   const catalogByKey = new Map(catalog.map((effect) => [effect.key, effect]));
+  const ruseTargets = new Set(combatRuseTargetEffects(catalog).map((effect) => effect.key));
+  const invalidRuse = request.selections.some((selection) => selection.key === "ardid"
+    && (!combat.turnEconomy || !ruseTargets.has(selection.parameters?.effectKey)));
   const combinedEffects = [...(combat.effects.selections ?? []).filter((entry) => !entry.waived),
     ...request.selections.filter((entry) => !entry.waived)
       .map((entry) => catalogByKey.get(entry.key)).filter(Boolean)];
@@ -117,7 +120,7 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     (counts.get(effect.key) ?? 0) + 1), new Map());
   const invalidCombinedStack = combinedEffects.some((effect) => !effect.stackable
     && combinedCounts.get(effect.key) > 1);
-  if (!validation.valid || invalidCombinedStack
+  if (!validation.valid || invalidRuse || invalidCombinedStack
     || !combatEffectSelectionsCompatible(combinedEffects)) {
     warn(localize("MYTHRASF.CombatEffect.Invalid")); return false;
   }
@@ -127,17 +130,98 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     return { slot: index, side, waived: false, ...effect,
       stage: canonicalCombatEffectStage(effect.stage),
       parameters: { locationId: String(selection.parameters?.locationId ?? ""),
+        effectKey: String(selection.parameters?.effectKey ?? ""),
         note: String(selection.parameters?.note ?? "") },
       status: initialCombatEffectStatus(effect) };
   });
   combat.effects.selections.push(...sideSelections);
   combat.effects.confirmations = { ...(combat.effects.confirmations ?? {}),
     [side]: { userId: user.id, confirmedAt: Date.now() } };
+  if (side === "attacker" && combat.turnEconomy) {
+    const matches = await triggerRuses?.(combat, sideSelections) ?? [];
+    if (matches.length) {
+      const blocked = new Set(matches.map((match) => match.selection));
+      combat.effects.selections = combat.effects.selections.filter((selection) =>
+        !blocked.has(selection));
+      combat.effects.replacedSelections = [...(combat.effects.replacedSelections ?? []),
+        ...matches.map((match) => ({ ...match.selection, status: "replaced",
+          replacedByRuseId: match.ruse.id }))];
+      combat.effects.pendingRuses = matches.map((match) => ({ ruseId: match.ruse.id,
+        blockedEffectKey: match.selection.key, blockedEffectName: match.selection.name }));
+      combat.effects.pendingSide = "defender";
+      combat.effects.confirmed = false;
+      combat.status = "awaitingRuse";
+      combat.damage = { status: "blocked" };
+      combat.revision += 1;
+      await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+      return true;
+    }
+  }
   const nextSide = side === "attacker" && Number(combat.effects.sideSlots?.defender ?? 0) > 0
     ? "defender" : null;
   combat.effects.pendingSide = nextSide;
   combat.effects.confirmed = !nextSide;
   if (!nextSide) {
+    combat.effects.confirmedBy = user.id;
+    combat.effects.confirmedAt = Date.now();
+    await applyImmediateEffects(combat, message, immediateDependencies());
+    combat.status = "resolved";
+    const attackHits = combatAttackHits(combat.resolution);
+    const damagesWeapon = Boolean(combatWeaponDamagePlan(combat));
+    combat.damage = { status: attackHits || damagesWeapon ? "ready" : "unavailable" };
+    if (!attackHits) combat.effects.selections.forEach((effect) => {
+      if (effect.requiresWound) effect.status = "notActivated";
+    });
+  }
+  combat.revision += 1;
+  await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+  await advance(message, combat);
+  return true;
+}
+
+export async function applyCombatRuseReplacementTransition(message, request, { clone, flagScope,
+  resolveActor, userById, catalogDocuments, effectView, effectContext, replacementEffects,
+  warn, localize, applyImmediateEffects, immediateDependencies, render, advance } = {}) {
+  const combat = clone(message.getFlag(flagScope, "combat"));
+  const pending = combat?.effects?.pendingRuses ?? [];
+  if (!combat || combat.status !== "awaitingRuse" || !pending.length
+    || Number(request.revision) !== Number(combat.revision)
+    || request.side !== "defender" || request.selections?.length !== pending.length) return false;
+  const actor = await resolveActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  const user = userById(request.userId);
+  if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return false;
+  const catalog = (await catalogDocuments()).map(effectView);
+  const eligible = replacementEffects(catalog, effectContext(combat, "defender"));
+  const eligibleByKey = new Map(eligible.map((effect) => [effect.key, effect]));
+  const chosen = request.selections.map((selection) => eligibleByKey.get(selection.key));
+  const combined = [...combat.effects.selections.filter((entry) => !entry.waived),
+    ...chosen.filter(Boolean)];
+  if (chosen.some((effect) => !effect) || !combatEffectSelectionsCompatible(combined)) {
+    warn(localize("MYTHRASF.CombatEffect.Invalid")); return false;
+  }
+  const counts = combined.reduce((map, effect) => map.set(effect.key,
+    (map.get(effect.key) ?? 0) + 1), new Map());
+  if (combined.some((effect) => !effect.stackable && counts.get(effect.key) > 1)) {
+    warn(localize("MYTHRASF.CombatEffect.Invalid")); return false;
+  }
+  let slot = Math.max(-1, ...combat.effects.selections.map((entry) => Number(entry.slot) || 0)) + 1;
+  const replacements = chosen.map((effect, index) => ({ ...effect, slot: slot++, side: "defender",
+    waived: false, stage: canonicalCombatEffectStage(effect.stage),
+    parameters: { locationId: String(request.selections[index].parameters?.locationId ?? ""),
+      note: "", effectKey: "" }, status: initialCombatEffectStatus(effect),
+    automaticSuccess: true,
+    automaticSource: { type: "ruse", ruseId: pending[index].ruseId,
+      blockedEffectKey: pending[index].blockedEffectKey } }));
+  combat.effects.selections.push(...replacements);
+  combat.effects.pendingRuses = [];
+  const normalDefenderSlots = Number(combat.effects.sideSlots?.defender ?? 0);
+  const defenderAlreadyConfirmed = Boolean(combat.effects.confirmations?.defender);
+  if (normalDefenderSlots > 0 && !defenderAlreadyConfirmed) {
+    combat.status = "awaitingEffects";
+    combat.effects.pendingSide = "defender";
+  } else {
+    combat.effects.pendingSide = null;
+    combat.effects.confirmed = true;
     combat.effects.confirmedBy = user.id;
     combat.effects.confirmedAt = Date.now();
     await applyImmediateEffects(combat, message, immediateDependencies());

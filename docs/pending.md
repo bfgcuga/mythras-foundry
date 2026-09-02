@@ -55,11 +55,6 @@ una resolución directa del Game Master.
 - Sustituir la edición directa del JSON de culturas y profesiones por un editor
   visual con menús y habilidades arrastrables.
 
-## Traducciones
-
-- Traducir los nombres de las localizaciones de impacto en todas las interfaces
-  que actualmente muestran el nombre interno sin localizar.
-
 ## Menús
 
 - Inventariar los menús del sistema e indicar cuáles tienen un encabezado con

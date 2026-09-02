@@ -38,6 +38,18 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
   combat.messageUuid = message.uuid;
   const selections = combat.effects.selections.filter((effect) => !effect.waived);
   for (const effect of selections) {
+    if (effect.key === "ardid" && combat.turnEconomy) {
+      const tracker = dependencies.combatById?.(combat.turnEconomy.combatId);
+      const ruse = await dependencies.registerRuse?.(tracker, {
+        ownerCombatantId: combat.turnEconomy.defenderCombatantId,
+        rivalCombatantId: combat.turnEconomy.combatantId,
+        effectKey: effect.parameters?.effectKey,
+        sourceMessageUuid: message.uuid,
+        sourceSlot: effect.slot
+      });
+      effect.status = ruse ? "resolved" : "notActivated";
+      if (ruse) effect.resolution = { ruseId: ruse.id, preparedAt: ruse.createdAt };
+    }
     if (effect.key === "aprovechar-la-ventaja") {
       await addManagedCombatStatus(combat, effect,
         { key: "pressed", statusId: "pressed", turns: 1 }, dependencies);
@@ -75,8 +87,22 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
       actorSide: combatEffectAffectedSide(effect),
       abilitySlugs: effect.key === "cegar-oponente" ? ["evadir"] : ["voluntad"],
       allowsShieldStyle: effect.key === "cegar-oponente",
-      opposedSide: effect.side, label: effect.name, status: "pending" });
+      opposedSide: effect.side, label: effect.name, status: "pending",
+      automaticFailure: Boolean(effect.automaticSuccess) });
     effect.status = "pending";
+  }
+  await applyAutomaticCombatEffectChecks(combat, dependencies);
+}
+
+export async function applyAutomaticCombatEffectChecks(combat, dependencies = {}) {
+  for (const check of combat.effects?.checks ?? []) {
+    if (check.status !== "pending" || !check.automaticFailure) continue;
+    const entry = combatSideEntry(combat, check.actorSide ?? "defender");
+    const actor = await dependencies.resolveActor?.(entry.tokenUuid, entry.actorUuid);
+    check.resolution = { manual: false, automaticFailure: true, result: "failure",
+      winner: "right", resolvedAt: Date.now() };
+    check.status = "resolved";
+    await applyCombatEffectCheckConsequence(combat, check, actor, dependencies);
   }
 }
 

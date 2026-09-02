@@ -16,6 +16,7 @@ import { ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, acidCondition, acidEff
 import { applyFireDamage, extinguishFire, fireEffectConfiguration,
   openFireDialog } from "./fire.js";
 import { uniqueActorEntries } from "./combat-turns.js";
+import { hitLocationDisplayName } from "./hit-locations.js";
 import { prepareSuffocationEntry } from "./suffocation.js";
 import { advanceCombatFatigue, COMBAT_FATIGUE_FLAG, COMBAT_FATIGUE_SCOPE,
   combatFatigueInterval, combatFatigueLoss } from "./combat-fatigue.js";
@@ -294,7 +295,8 @@ export function renderRoundConsequences(state) {
   const fatiguePanel = fatigueRows ? `<fieldset class="mythras-round-fatigue-panel"><legend>${escape(game.i18n.localize("MYTHRASF.Status.CombatFatigue"))}</legend>${fatigueRows}</fieldset>` : "";
   const blocks = state.queue.filter((entry) => entry.key === "passiveBlock").map((entry) => {
     const locationNames = (entry.resolution?.locationIds ?? []).map((id) =>
-      entry.locations.find((location) => location.id === id)?.name).filter(Boolean);
+      entry.locations.find((location) => location.id === id)).filter(Boolean)
+      .map((location) => hitLocationDisplayName(location));
     const actions = entry.status === "pending"
       ? `<div class="mythras-round-entry-actions"><button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button>${entry.previousSelection ? `<button type="button" data-round-action="repeat-block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Repeat"))}</button>` : ""}<button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button></div>` : "";
     const resolution = entry.resolution
@@ -497,7 +499,7 @@ async function requestPassiveBlock(message, state, entryId, { waive = false, rep
       const value = `${choice.weaponId}:${choice.modeKey}`;
       return `<option value="${escape(value)}" ${value === defaults?.weapon ? "selected" : ""}>${escape(choice.weaponName)} (${choice.capacity})</option>`;
     }).join("");
-    const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${defaults?.locationIds.includes(location.id) ? "checked" : ""}> ${escape(location.name)}</label>`).join("");
+    const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${defaults?.locationIds.includes(location.id) ? "checked" : ""}> ${escape(hitLocationDisplayName(location))}</label>`).join("");
     resolution = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Declare") },
       content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" class="sheet-state-box" name="crouched" ${defaults?.crouched ? "checked" : ""}> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
@@ -545,7 +547,7 @@ export async function openPassiveBlockCorrection(combat, combatantId) {
     return `<option value="${escape(value)}" ${choice.weaponId === current.weaponId
       && choice.modeKey === current.modeKey ? "selected" : ""}>${escape(choice.weaponName)} (${choice.capacity})</option>`;
   }).join("");
-  const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${current.locationIds?.includes(location.id) ? "checked" : ""}> ${escape(location.name)}</label>`).join("");
+  const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${current.locationIds?.includes(location.id) ? "checked" : ""}> ${escape(hitLocationDisplayName(location))}</label>`).join("");
   const resolution = await foundry.applications.api.DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Modify") },
     content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" class="sheet-state-box" name="crouched" ${current.crouched ? "checked" : ""}> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,

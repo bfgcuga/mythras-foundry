@@ -5,6 +5,7 @@ import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
   canonicalCombatEffectStage, combatEffectEligible, combatEffectResolutionPhase,
   combatEffectIsAutomated, combatEffectRule, combatEffectSelectionHighlight,
   combatEffectSelectionsCompatible, combatWeaponDamagePlan,
+  combatRuseTargetEffects, eligibleCombatRuseReplacements,
   combatEffectSlug, combatEffectSlotsBySide, initialCombatEffectStatus,
   maximizeDamageFormula, maximizeDamageFormulaDetails, mergeCombatEffectDocuments,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
@@ -41,6 +42,19 @@ test("Sorpresa puede conceder efectos ofensivos aunque gane la defensa", () => {
     surprise: 1 }), { attacker: 1, defender: 2 });
   assert.deepEqual(combatEffectSlotsBySide({ winner: "attacker", differential: 2,
     surprise: 1 }), { attacker: 3, defender: 0 });
+});
+
+test("Ardid exige combate activo y separa objetivos de sustituciones defensivas", () => {
+  const ruse = effects.find((effect) => effect.key === "ardid");
+  assert.equal(combatEffectEligible(ruse, { winner: "defender", activeCombat: false }), false);
+  assert.equal(combatEffectEligible(ruse, { winner: "defender", activeCombat: true }), true);
+  const targets = combatRuseTargetEffects(effects);
+  assert.ok(targets.some((effect) => effect.key === "aprovechar-la-ventaja"));
+  assert.ok(targets.every((effect) => effect.offensive && effect.key !== "ardid"
+    && effect.target !== "self"));
+  const replacements = eligibleCombatRuseReplacements(effects, { activeCombat: true });
+  assert.ok(replacements.length > 0);
+  assert.ok(replacements.every((effect) => effect.defensive && effect.key !== "ardid"));
 });
 
 test("Muerte Silenciosa solo es elegible en el ataque que consume Sorpresa", () => {

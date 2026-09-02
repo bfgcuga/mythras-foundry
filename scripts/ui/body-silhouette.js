@@ -1,4 +1,4 @@
-import { humanArmorFactors, isLocationCrippled, isLocationDisabled,
+import { hitLocationDisplayName, humanArmorFactors, isLocationCrippled, isLocationDisabled,
   locationWoundState } from "../rules/hit-locations.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "../rules/timed-conditions.js";
@@ -38,7 +38,7 @@ function tooltip(actor, location, armors) {
   const worn = wornArmorPoints(location, armors);
   const level = locationWoundState(location);
   const conditions = linkedConditions(actor, location);
-  return [location.name,
+  return [hitLocationDisplayName(location),
     game.i18n.format("MYTHRASF.Silhouette.HitPoints", { current: system.currentHitPoints,
       maximum: system.maxHitPoints }),
     game.i18n.format("MYTHRASF.Silhouette.Armor", { natural, worn,

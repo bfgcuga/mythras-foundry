@@ -8,6 +8,10 @@ export const HUMAN_HIT_LOCATIONS = Object.freeze([
   { nameKey: "head", name: "Cabeza", rangeStart: 19, rangeEnd: 20, category: "head", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 10 }
 ]);
 
+export const HUMAN_HIT_LOCATION_KEYS = Object.freeze(
+  HUMAN_HIT_LOCATIONS.map((location) => location.nameKey)
+);
+
 const HUMAN_HIT_LOCATION_ALIASES = Object.freeze({
   rightLeg: ["pierna derecha", "right leg"],
   leftLeg: ["pierna izquierda", "left leg"],
@@ -30,12 +34,36 @@ export function humanArmorFactors(location) {
     && system.hpClass === candidate.hpClass) ?? null;
 }
 
+export function humanHitLocationKey(location) {
+  const human = humanArmorFactors(location);
+  if (!human) return null;
+  const storedKey = String(location?.system?.nameKey ?? "");
+  if (storedKey === human.nameKey) return storedKey;
+  const aliases = HUMAN_HIT_LOCATION_ALIASES[human.nameKey].map(normalizedLocationName);
+  return aliases.includes(normalizedLocationName(location?.name)) ? human.nameKey : null;
+}
+
+export function hitLocationDisplayName(location, localize = (key) => game.i18n.localize(key)) {
+  const key = String(location?.system?.nameKey ?? location?.nameKey ?? "");
+  return HUMAN_HIT_LOCATION_KEYS.includes(key)
+    ? localize(`MYTHRASF.HitLocation.Name.${key}`)
+    : String(location?.name ?? "");
+}
+
+export function hitLocationNameEditUpdate(location, submittedName,
+  localize = (key) => game.i18n.localize(key)) {
+  const submitted = String(submittedName ?? "");
+  if (!location?.system?.nameKey) return { name: submitted };
+  if (submitted === hitLocationDisplayName(location, localize)) {
+    return { name: String(location.name ?? "") };
+  }
+  return { name: submitted, "system.nameKey": "" };
+}
+
 export function canonicalHumanHitLocationName(location) {
   const human = humanArmorFactors(location);
   if (!human) return null;
-  const aliases = HUMAN_HIT_LOCATION_ALIASES[human.nameKey]
-    .map(normalizedLocationName);
-  return aliases.includes(normalizedLocationName(location?.name)) ? human.name : null;
+  return humanHitLocationKey(location) ? human.name : null;
 }
 
 export function woundLocationKind(location) {
@@ -181,6 +209,7 @@ export function humanHitLocationData(actorSystem) {
       name: location.name,
       type: "hitLocation",
       system: {
+        nameKey: location.nameKey,
         rangeStart: location.rangeStart,
         rangeEnd: location.rangeEnd,
         category: location.category,

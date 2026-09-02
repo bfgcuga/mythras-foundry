@@ -1,7 +1,7 @@
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combatantForActor, tacticalState } from "../rules/engagement-runtime.js";
 import { isLocationCrippled, isLocationDisabled,
-  locationWoundState } from "../rules/hit-locations.js";
+  hitLocationDisplayName, locationWoundState } from "../rules/hit-locations.js";
 
 export function prepareHitLocationTable({ actor, armor = [], combat = null,
   armorPointLabel = "PA" } = {}) {
@@ -16,6 +16,7 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
     hasNaturalArmor: locations.some((item) => Number(item.system.armorPoints ?? 0) > 0),
     rows: locations.map((item) => ({
       item,
+      displayName: hitLocationDisplayName(item),
       naturalArmor: Number(item.system.armorPoints ?? 0),
       wornArmor: wornArmorPoints(item, equippedArmor),
       totalArmor: totalArmorPoints(item, equippedArmor),

@@ -1,5 +1,6 @@
 import { armorDefaultName } from "../data/armor.js";
 import { armorPieceTypeForLocation } from "../rules/armor.js";
+import { hitLocationDisplayName } from "../rules/hit-locations.js";
 
 export const ARMOR_PIECE_TYPES = Object.freeze([
   "helmet", "cuirass", "skirt", "greaves", "bracers", "other"
@@ -17,7 +18,7 @@ export async function configureNewArmorPiece(item) {
   const { DialogV2 } = foundry.applications.api;
   const locations = item.parent?.items.filter((candidate) => candidate.type === "hitLocation") ?? [];
   const options = locations.map((location) =>
-    `<option value="${escapeHtml(location.id)}">${escapeHtml(location.name)}</option>`).join("");
+    `<option value="${escapeHtml(location.id)}">${escapeHtml(hitLocationDisplayName(location))}</option>`).join("");
   const result = await DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Armor.Piece.ConfigureTitle") },
     content: `<div class="mythras-foundry armor-piece-config-dialog">

@@ -16,6 +16,7 @@ import { initializeExsanguinatingEffect } from "../rules/exsanguination.js";
 import { initializeDyingEffect } from "../rules/dying.js";
 import { activateReachCard, openTacticalOverview, registerReachSocket } from "../rules/reach-chat.js";
 import { registerTacticalSocket } from "../rules/engagement-runtime.js";
+import { hitLocationDisplayName } from "../rules/hit-locations.js";
 import { activateCombatActionCard, combatActionState,
   registerCombatActionSocket } from "../rules/combat-action-runtime.js";
 import { actorDisplayName, tokenDisplayName } from "../rules/document-names.js";
@@ -129,7 +130,10 @@ export function registerUiHooks() {
       const block = combat.getFlag("mythras-foundry", "tacticalState")
         ?.passiveBlocks?.[entry.id];
       if (block?.status === "active" && Number(block.round) === Number(combat.round)) {
-        const locations = (block.locationIds ?? []).map((id) => entry.actor.items.get(id)?.name)
+        const locations = (block.locationIds ?? []).map((id) => {
+          const location = entry.actor.items.get(id);
+          return location ? hitLocationDisplayName(location) : "";
+        })
           .filter(Boolean).join(", ");
         tactical.push(`${game.i18n.localize("MYTHRASF.Status.PassiveBlock")}: ${locations}`);
       }

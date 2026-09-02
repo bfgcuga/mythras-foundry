@@ -18,6 +18,8 @@ import {
   calculateLocationHitPoints,
   canonicalHumanHitLocationName,
   findHitLocation,
+  hitLocationDisplayName,
+  hitLocationNameEditUpdate,
   humanHitLocationData,
   hasSeriousWound,
   isLocationCrippled,
@@ -157,6 +159,8 @@ test("la tabla humana calcula los siete valores para CON 10 y TAM 10", () => {
   assert.equal(locations.length, 7);
   assert.deepEqual(locations.map((entry) => entry.name), ["Pierna derecha", "Pierna izquierda",
     "Abdomen", "Pecho", "Brazo derecho", "Brazo izquierdo", "Cabeza"]);
+  assert.deepEqual(locations.map((entry) => entry.system.nameKey), ["rightLeg", "leftLeg",
+    "abdomen", "chest", "rightArm", "leftArm", "head"]);
   assert.deepEqual(locations.map((entry) => entry.system.maxHitPoints), [4, 4, 5, 6, 3, 3, 4]);
   assert.equal(calculateLocationHitPoints(10, 10, "chest"), 6);
 });
@@ -164,9 +168,22 @@ test("la tabla humana calcula los siete valores para CON 10 y TAM 10", () => {
 test("solo los nombres humanos estándar admiten normalización al castellano", () => {
   const chest = humanHitLocationData({ constitution: 10, size: 10 })[3];
   assert.equal(canonicalHumanHitLocationName({ ...chest, name: "Chest" }), "Pecho");
-  assert.equal(canonicalHumanHitLocationName({ ...chest, name: "Pecho acorazado" }), null);
+  assert.equal(canonicalHumanHitLocationName({ ...chest, name: "Pecho acorazado",
+    system: { ...chest.system, nameKey: "" } }), null);
   assert.equal(canonicalHumanHitLocationName({ name: "Tórax", system: {
     ...chest.system, rangeStart: 8, rangeEnd: 13 } }), null);
+});
+
+test("las localizaciones estándar se presentan por idioma sin reescribir su nombre", () => {
+  const chest = humanHitLocationData({ constitution: 10, size: 10 })[3];
+  const english = (key) => ({ "MYTHRASF.HitLocation.Name.chest": "Chest" })[key];
+  assert.equal(hitLocationDisplayName(chest, english), "Chest");
+  assert.equal(chest.name, "Pecho");
+  assert.deepEqual(hitLocationNameEditUpdate(chest, "Chest", english), { name: "Pecho" });
+  assert.deepEqual(hitLocationNameEditUpdate(chest, "Upper torso", english),
+    { name: "Upper torso", "system.nameKey": "" });
+  const custom = { name: "Tórax superior", system: { nameKey: "" } };
+  assert.equal(hitLocationDisplayName(custom, english), "Tórax superior");
 });
 
 test("las localizaciones humanas separan carga y porcentaje de precio de armadura", () => {

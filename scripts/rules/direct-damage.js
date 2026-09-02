@@ -2,7 +2,7 @@ import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
-import { findHitLocation, woundLevel } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName, woundLevel } from "./hit-locations.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
@@ -32,7 +32,7 @@ function validFormula(formula) {
 async function createDirectDamageChat(actor, token, configuration, results) {
   const rows = results.map(({ location, damageRoll, locationRoll, damage, hitPointsBefore,
     hitPointsAfter, woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(
-    location.name)}</legend>
+    hitLocationDisplayName(location))}</legend>
       ${locationRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize(
         "MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${Number(
         locationRoll.total)}</strong></div>` : ""}
@@ -136,7 +136,7 @@ export async function openDirectDamageDialog({ actor = null, token = null,
         <label><input type="checkbox" class="sheet-state-box" name="randomLocation"><span>${escape(
           game.i18n.localize("MYTHRASF.DirectDamage.RandomLocation"))}</span></label>
         <div data-direct-locations>${locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(
-          location.id)}"><span>${escape(location.name)}</span></label>`).join("")}</div>
+          location.id)}"><span>${escape(hitLocationDisplayName(location))}</span></label>`).join("")}</div>
       </fieldset><p>${escape(game.i18n.localize("MYTHRASF.DirectDamage.ArmorHelp"))}</p></div>`,
     buttons: [{ action: "apply", label: game.i18n.localize("MYTHRASF.DirectDamage.Apply"),
       icon: "fas fa-heart-crack", default: true, callback: (event, button) => ({

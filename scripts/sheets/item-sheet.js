@@ -19,6 +19,7 @@ import { canonicalCombatEffectStage, COMBAT_EFFECT_ROLL_RESTRICTIONS,
   COMBAT_EFFECT_RULE_KEYS, COMBAT_EFFECT_STAGES,
   COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "../rules/combat-effects.js";
 import { weaponCanEquip } from "../rules/weapon-durability.js";
+import { hitLocationDisplayName, hitLocationNameEditUpdate } from "../rules/hit-locations.js";
 
 async function prepareTraitReferences(references = []) {
   return Promise.all(references.map(async (reference, referenceIndex) => {
@@ -89,6 +90,14 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static async _onSubmitForm(event, form, formData) {
     const update = foundry.utils.expandObject(formData.object);
+    if (this.item.type === "hitLocation" && this.item.system.nameKey) {
+      update.system ??= {};
+      const nameUpdate = hitLocationNameEditUpdate(this.item, update.name);
+      update.name = nameUpdate.name;
+      if (nameUpdate["system.nameKey"] !== undefined) {
+        update.system.nameKey = nameUpdate["system.nameKey"];
+      }
+    }
     if (["equipment", "weapon", "armor"].includes(this.item.type)
       && update.system?.parentContainerId !== undefined && this.item.actor) {
       const preview = { id: this.item.id, type: this.item.type,
@@ -181,6 +190,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const armorLocations = this.item.type === "armor" && this.item.actor
       ? this.item.actor.items.filter((candidate) => candidate.type === "hitLocation") : [];
     const selectedArmorLocations = new Set(this.item.system.coveredLocationIds ?? []);
+    const assignedArmorLocation = armorLocations.find((location) =>
+      selectedArmorLocations.has(location.id));
     const armorTotals = this.item.type === "armor"
       ? armorPhysicalTotals(this.item, armorLocations) : null;
     const combatStyleTraitReferences = this.item.type === "combatStyle"
@@ -202,6 +213,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         traitReferences: await prepareTraitReferences(weaponMode.traitRefs ?? []) }))) : [];
     return foundry.utils.mergeObject(context, {
       item: this.item,
+      itemName: this.item.type === "hitLocation"
+        ? hitLocationDisplayName(this.item) : this.item.name,
       editable: this.isEditable,
       creationMode: Boolean(this.creationMode),
       isSkill: this.item.type === "skill",
@@ -230,7 +243,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isArmor: this.item.type === "armor",
       armorLocations: armorLocations.map((location) => ({
         id: location.id,
-        name: location.name,
+        name: hitLocationDisplayName(location),
         encumbranceMultiplier: location.system.armorEncumbranceMultiplier,
         costPercentage: location.system.armorCostPercentage,
         selected: selectedArmorLocations.has(location.id)
@@ -238,8 +251,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       armorSelectedLocationId: Array.from(selectedArmorLocations)[0] ?? "",
       isSpecialArmor: this.item.type === "armor"
         && this.item.system.referenceLocation === "special",
-      armorAssignedLocationName: armorLocations.find((location) =>
-        selectedArmorLocations.has(location.id))?.name ?? "",
+      armorAssignedLocationName: assignedArmorLocation
+        ? hitLocationDisplayName(assignedArmorLocation) : "",
       armorPieceTypeLabel: this.item.type === "armor"
         ? game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${this.item.system.pieceType}`) : "",
       armorTotals,
@@ -263,7 +276,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         label: game.i18n.localize(`MYTHRASF.Trait.Type.${value}`) })),
       weaponLocationChoices: this.item.type === "weapon" && this.item.actor
         ? this.item.actor.items.filter((candidate) => candidate.type === "hitLocation")
-          .map((location) => ({ value: location.id, label: location.name })) : [],
+          .map((location) => ({ value: location.id,
+            label: hitLocationDisplayName(location) })) : [],
       weaponDurabilityHelp: this.item.type === "weapon"
         ? game.i18n.format(this.item.actor
           ? "MYTHRASF.Weapon.Durability.NaturalHelpActor"

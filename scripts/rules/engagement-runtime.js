@@ -4,16 +4,56 @@ import { findWeaponMode, weaponModes } from "./weapon-modes.js";
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { weaponCanEquip } from "./weapon-durability.js";
+import { hitLocationDisplayName } from "./hit-locations.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "tacticalState";
 const SOCKET = "system.mythras-foundry";
-export const TACTICAL_STATE_SCHEMA_VERSION = 1;
+export const TACTICAL_STATE_SCHEMA_VERSION = 2;
 
 export function detailedReachEnabled() { return Boolean(getSystemSetting(SETTING_KEYS.detailedReach)); }
 export function tacticalState(combat) {
-  return combat?.getFlag?.(SCOPE, FLAG) ?? { schemaVersion: TACTICAL_STATE_SCHEMA_VERSION,
-    revision: 0, relations: {}, passiveBlocks: {}, covers: {} };
+  const stored = combat?.getFlag?.(SCOPE, FLAG) ?? {};
+  return { ...stored, schemaVersion: TACTICAL_STATE_SCHEMA_VERSION,
+    revision: Number(stored.revision ?? 0), relations: stored.relations ?? {},
+    passiveBlocks: stored.passiveBlocks ?? {}, covers: stored.covers ?? {},
+    ruses: stored.ruses ?? {} };
+}
+
+export async function registerCombatRuse(combat, { ownerCombatantId, rivalCombatantId,
+  effectKey, sourceMessageUuid = "", sourceSlot = 0, userId = game.user.id } = {}) {
+  if (!combat?.started || !ownerCombatantId || !rivalCombatantId || !effectKey) return null;
+  const state = foundry.utils.deepClone(tacticalState(combat));
+  const id = `ruse-${ownerCombatantId}-${Date.now()}-${sourceSlot}`;
+  state.ruses[id] = { id, schemaVersion: 1, status: "active", ownerCombatantId,
+    rivalCombatantId, effectKey, sourceMessageUuid, sourceSlot, userId,
+    createdAt: Date.now(), revision: 1 };
+  state.revision += 1;
+  await combat.setFlag(SCOPE, FLAG, state);
+  return state.ruses[id];
+}
+
+export async function consumeMatchingCombatRuses(combat, { ownerCombatantId,
+  rivalCombatantId, selections = [] } = {}) {
+  if (!combat?.started) return [];
+  const state = foundry.utils.deepClone(tacticalState(combat));
+  const available = Object.values(state.ruses).filter((ruse) => ruse.status === "active"
+    && ruse.ownerCombatantId === ownerCombatantId
+    && ruse.rivalCombatantId === rivalCombatantId);
+  const matches = [];
+  for (const selection of selections.filter((entry) => !entry.waived)) {
+    const ruse = available.find((entry) => entry.status === "active"
+      && entry.effectKey === selection.key);
+    if (!ruse) continue;
+    Object.assign(ruse, { status: "consumed", consumedAt: Date.now(),
+      revision: Number(ruse.revision ?? 0) + 1 });
+    matches.push({ ruse: { ...ruse }, selection });
+  }
+  if (matches.length) {
+    state.revision += 1;
+    await combat.setFlag(SCOPE, FLAG, state);
+  }
+  return matches;
 }
 export function combatantForActor(combat, actor, tokenUuid = "") {
   return combat?.combatants?.find((entry) => entry.token?.uuid === tokenUuid
@@ -184,7 +224,7 @@ export async function openCoverDeclaration(actor) {
   const current = tacticalState(combat).covers?.[combatant.id];
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Ranged.DeclareCover") },
-    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${game.i18n.localize("MYTHRASF.Ranged.Cover")}</legend><label><span>${game.i18n.localize("MYTHRASF.Ranged.CoverSource")}</span><input name="source" value="${foundry.utils.escapeHTML(current?.source ?? "")}" required></label><label><span>${game.i18n.localize("MYTHRASF.Ranged.CoverProtection")}</span><input type="number" min="0" name="protection" value="${Number(current?.protection ?? 0)}"></label>${locations.map((location) => `<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="location" value="${location.id}" ${current?.locationIds?.includes(location.id) ? "checked" : ""}>${foundry.utils.escapeHTML(location.name)}</label>`).join("")}<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="complete" ${current?.complete ? "checked" : ""}>${game.i18n.localize("MYTHRASF.Ranged.CompleteCover")}</label></fieldset></div>`,
+  content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${game.i18n.localize("MYTHRASF.Ranged.Cover")}</legend><label><span>${game.i18n.localize("MYTHRASF.Ranged.CoverSource")}</span><input name="source" value="${foundry.utils.escapeHTML(current?.source ?? "")}" required></label><label><span>${game.i18n.localize("MYTHRASF.Ranged.CoverProtection")}</span><input type="number" min="0" name="protection" value="${Number(current?.protection ?? 0)}"></label>${locations.map((location) => `<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="location" value="${location.id}" ${current?.locationIds?.includes(location.id) ? "checked" : ""}>${foundry.utils.escapeHTML(hitLocationDisplayName(location))}</label>`).join("")}<label class="checkbox"><input type="checkbox" class="sheet-state-box" name="complete" ${current?.complete ? "checked" : ""}>${game.i18n.localize("MYTHRASF.Ranged.CompleteCover")}</label></fieldset></div>`,
     buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.CombatEffect.Confirm"),
       callback: (event, button) => ({ source: button.form.elements.source.value.trim(),
         protection: Number(button.form.elements.protection.value), complete: button.form.elements.complete.checked,

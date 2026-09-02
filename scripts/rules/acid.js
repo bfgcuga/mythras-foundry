@@ -1,5 +1,5 @@
 import { armorCoversLocation } from "./armor.js";
-import { findHitLocation, woundLevel } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName, woundLevel } from "./hit-locations.js";
 import { applyTimedCondition, timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
@@ -81,7 +81,7 @@ async function createAcidChat(actor, token, condition, results) {
     : game.i18n.format("MYTHRASF.Acid.Remaining", {
       count: Math.max(0, condition.applicationsRemaining ?? 0) });
   const rows = results.map(({ location, armorName, result, damageRoll, locationRoll,
-    woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(location.name)}</legend>
+    woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(hitLocationDisplayName(location))}</legend>
       ${locationRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Combat.LocationRoll"))} (1d20)</span><strong class="mythras-chat-roll-value">${Number(locationRoll.total)}</strong></div>` : ""}
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.DamageRoll"))} (${escape(condition.damageFormula)})</span><strong class="mythras-chat-roll-value">${result.damage}</strong></div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Armor"))}</span><strong>${escape(armorName ?? "—")} — ${result.armorBefore} → ${result.armorAfter}</strong></div>
@@ -237,7 +237,7 @@ export async function openAcidDialog({ actor = null, token = null, defaults = nu
     content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.Target"))}</legend><div class="sheet-field-readonly">${escape(actorDisplayName(actor))}</div></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.ConcentrationLabel"))}</legend>${Object.entries(ACID_CONCENTRATIONS).map(([key, profile]) => `<label><input type="radio" class="sheet-state-box" name="concentration" value="${key}" ${key === initial.concentration ? "checked" : ""} aria-label="${escape(concentrationLabel(key))}"><span>${escape(concentrationLabel(key))} — ${profile.damageFormula} / ${profile.durationFormula}</span></label>`).join("")}</fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.ExposureLabel"))}</legend><label><input type="radio" class="sheet-state-box" name="exposure" value="splash" ${initial.exposure === "splash" ? "checked" : ""} ${fixedExposure ? "disabled" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.Exposure.splash"))}</span></label><label><input type="radio" class="sheet-state-box" name="exposure" value="immersion" ${initial.exposure === "immersion" ? "checked" : ""} ${fixedExposure ? "disabled" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.Exposure.immersion"))}</span></label><input type="hidden" name="fixedExposure" value="${initial.exposure}"></fieldset>
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.Locations"))}</legend><label><input type="checkbox" class="sheet-state-box" name="randomLocation" ${initial.randomLocation ? "checked" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.RandomLocation"))}</span></label>${locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${initial.locationIds.includes(location.id) ? "checked" : ""}><span>${escape(location.name)}</span></label>`).join("")}</fieldset></div>`,
+      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Acid.Locations"))}</legend><label><input type="checkbox" class="sheet-state-box" name="randomLocation" ${initial.randomLocation ? "checked" : ""}><span>${escape(game.i18n.localize("MYTHRASF.Acid.RandomLocation"))}</span></label>${locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${initial.locationIds.includes(location.id) ? "checked" : ""}><span>${escape(hitLocationDisplayName(location))}</span></label>`).join("")}</fieldset></div>`,
     buttons: [{ action: "apply", label: game.i18n.localize("MYTHRASF.Acid.Apply"),
       icon: "fas fa-flask", default: true, callback: (event, button) => ({
         concentration: button.form.elements.concentration.value,

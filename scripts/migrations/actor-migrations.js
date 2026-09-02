@@ -1,6 +1,6 @@
 import { DEFAULT_HOME_DATA } from "../data/equipment.js";
 import { canonicalHumanHitLocationName, humanArmorFactors, humanHitLocationData,
-  permanentWoundState } from "../rules/hit-locations.js";
+  humanHitLocationKey, permanentWoundState } from "../rules/hit-locations.js";
 import { normalizeWeaponProfile } from "../rules/combat.js";
 import { ARMOR_MATERIAL_MODIFIERS, armorPieceTypeForLocation } from "../rules/armor.js";
 
@@ -12,7 +12,12 @@ export async function ensureHumanHitLocations(actor) {
 export function hitLocationNameMigrationUpdate(item) {
   if (item.type !== "hitLocation") return null;
   const name = canonicalHumanHitLocationName(item);
-  return name && name !== item.name ? { name } : null;
+  const nameKey = humanHitLocationKey(item);
+  if (!name || !nameKey) return null;
+  const update = {};
+  if (name !== item.name) update.name = name;
+  if (item.system?.nameKey !== nameKey) update["system.nameKey"] = nameKey;
+  return Object.keys(update).length ? update : null;
 }
 
 export async function migrateHitLocationName(item) {

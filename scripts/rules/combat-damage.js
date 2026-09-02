@@ -1,5 +1,5 @@
 import { combatEffectIsAutomated, selectedEffectCount } from "./combat-effects.js";
-import { woundLocationKind } from "./hit-locations.js";
+import { hitLocationDisplayName, woundLocationKind } from "./hit-locations.js";
 
 export function damageLocationChoices(combat) {
   const locations = combat.defender.locations ?? [];
@@ -49,6 +49,7 @@ export function prepareDamageChecks(combat, { location, resultingWound,
       allowsShieldStyle: effect.key === "cegar-oponente",
       opposedSide: effect.side ?? "attacker",
       label: effect.name, status: previousChecks.get(checkId)?.status ?? "pending",
+      automaticFailure: Boolean(effect.automaticSuccess),
       resolution: previousChecks.get(checkId)?.resolution,
       consequence: previousChecks.get(checkId)?.consequence
     });
@@ -56,7 +57,7 @@ export function prepareDamageChecks(combat, { location, resultingWound,
   if (!weaponTarget && ["serious", "major"].includes(resultingWound)) checks.push({
     id: `wound-${location.id}`, source: "wound", order: checks.length,
     label: resultingWound, woundSeverity: resultingWound, locationId: location.id,
-    locationName: location.name, locationKind: woundLocationKind(location),
+    locationName: hitLocationDisplayName(location), locationKind: woundLocationKind(location),
     actorSide: "defender", abilitySlugs: ["aguante"], opposedSide: "attacker",
     status: previousChecks.get(`wound-${location.id}`)?.status ?? "pending",
     resolution: previousChecks.get(`wound-${location.id}`)?.resolution

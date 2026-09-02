@@ -13,7 +13,7 @@
   {{#each table.rows as |row|}}
     <div class="combat-location-line {{#unless ../table.hasNaturalArmor}}without-natural-armor{{/unless}}" data-item-id="{{row.item.id}}">
       <span>{{row.item.system.rangeStart}}–{{row.item.system.rangeEnd}}</span>
-      <div class="combat-location-name"><button type="button" data-action="edit-item">{{row.item.name}}</button></div>
+      <div class="combat-location-name"><button type="button" data-action="edit-item">{{row.displayName}}</button></div>
       <label class="location-state-cell"><input type="checkbox" class="sheet-state-box" data-location-disabled {{checked row.disabled}} {{#unless row.showDisabledControl}}disabled{{/unless}} aria-label="{{localize "MYTHRASF.HitLocation.Disabled"}}"></label>
       <span class="location-state-cell"><input type="checkbox" class="sheet-state-box" {{checked row.crippled}} disabled aria-label="{{localize "MYTHRASF.HitLocation.Crippled"}}"></span>
       {{#if ../templateMode}}<input class="sheet-field-editable location-max" type="number" min="1" data-item-field="maxHitPoints" value="{{row.item.system.maxHitPoints}}">{{else}}<output class="location-max sheet-field-readonly penalized-value">{{row.maximumDisplay.base}}{{#if row.maximumDisplay.penalized}} <span class="penalized-value-modifier">({{row.maximumDisplay.effective}})</span>{{/if}}</output>{{/if}}

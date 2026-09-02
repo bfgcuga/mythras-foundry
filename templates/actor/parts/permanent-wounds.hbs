@@ -10,7 +10,7 @@
   </div>
   {{#each permanentWounds as |row|}}
     <div class="permanent-wound-row" data-item-id="{{row.item.id}}">
-      <button type="button" data-action="edit-item">{{row.item.name}}</button>
+      <button type="button" data-action="edit-item">{{row.displayName}}</button>
       <output class="sheet-field-readonly">{{row.severity}}</output>
       <output class="sheet-field-readonly penalized-value">{{row.originalMaxHitPoints}}
         <span class="penalized-value-modifier">({{row.effectiveMaxHitPoints}})</span></output>
