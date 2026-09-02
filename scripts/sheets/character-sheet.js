@@ -351,7 +351,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       })),
       canRemovePermanentWounds: this.isEditable && Boolean(game.user?.isGM),
       hitLocationTable,
-      canDeleteHitLocations: this._editMode,
+      canDeleteHitLocations: this.isEditable,
       hitLocationTemplateMode: false,
       npcLayout: false,
       combatStyleTemplateMode: false,

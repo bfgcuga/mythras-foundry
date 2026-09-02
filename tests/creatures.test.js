@@ -25,6 +25,18 @@ test("cada criatura cubre exactamente el d20 y conserva anatomía propia", () =>
   }
 });
 
+test("las localizaciones genéricas de criaturas usan claves traducibles", () => {
+  const expected = new Set(["rightLeg", "leftLeg", "abdomen", "chest", "rightArm",
+    "leftArm", "head"]);
+  for (const creature of CREATURE_SOURCES) {
+    for (const location of creature.items.filter((item) => item.type === "hitLocation")) {
+      if (expected.has(location.buildKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()))) {
+        assert.ok(location.system.nameKey, `${creature.name}: ${location.name}`);
+      }
+    }
+  }
+});
+
 test("las fórmulas de características usan solo dados y aritmética", () => {
   for (const creature of CREATURE_SOURCES) {
     for (const formula of Object.values(creature.system.characteristicFormulas).filter(Boolean)) {

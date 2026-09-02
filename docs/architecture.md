@@ -113,6 +113,18 @@ se excluyen del Inventario para ambos tipos de Actor. Esta clasificación solo
 decide la presentación del inventario: no crea automáticamente Puño/Patada ni
 concede por sí misma capacidad de ataque o parada.
 
+Las localizaciones humanas persisten una `nameKey` estable y la presentación la
+resuelve con el idioma del usuario. La migración versionada de Actor se ejecuta
+una vez por versión y es la fuente única para
+completar sus siete zonas, consolidar duplicados y reasignar referencias antes de
+eliminarlos. Las criaturas mantienen su tabla anatómica en `scripts/data/creatures.js`:
+las zonas equivalentes pueden reutilizar las mismas claves de presentación, pero
+la recuperación de zonas ausentes se realiza contra la criatura canónica y nunca
+inyecta una anatomía humana en un PNJ.
+La marca `flags.mythras-foundry.hitLocationMigrationVersion` separa esa reparación
+de la edición ordinaria: después de reconciliar un Actor, borrar, renombrar o
+añadir zonas personalizadas no provoca que el arranque las restaure o sustituya.
+
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las
 reglas de condición compartidas. Mientras exista una causa automática no puede

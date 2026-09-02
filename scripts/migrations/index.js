@@ -4,6 +4,7 @@ import { syncIncapacitatedStatus } from "../documents/mythras-actor.js";
 import { synchronizeFatigueDeath } from "../rules/death.js";
 import {
   ensureDefaultHome,
+  ensureCreatureHitLocations,
   ensureHumanHitLocations,
   migrateHitLocationName,
   migrateActorArmor,
@@ -36,6 +37,7 @@ export async function initializeCreatedActor(actor) {
     await ensureDefaultHome(actor);
     await actor.update({ "system.backgroundCreationEnabled": true });
   }
+  if (actor.type === "npc") await ensureCreatureHitLocations(actor);
   await syncIncapacitatedStatus(actor);
 }
 
@@ -82,6 +84,7 @@ export async function runWorldMigrations() {
       await ensureHumanHitLocations(actor);
       await ensureDefaultHome(actor);
     }
+    if (actor.type === "npc") await ensureCreatureHitLocations(actor);
     await migrateActorArmor(actor);
     await syncIncapacitatedStatus(actor);
     await synchronizeFatigueDeath(actor);

@@ -41,6 +41,9 @@ function npcSystem({ values, formulas, species, instinct = false, actionPoints =
 function location(buildKey, name, rangeStart, rangeEnd, armorPoints, maxHitPoints,
   category = "other", hpClass = "standard") {
   return { buildKey, name, type: "hitLocation", img: "icons/svg/blood.svg", system: {
+    nameKey: ["rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head"]
+      .includes(buildKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()))
+      ? buildKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()) : "",
     rangeStart, rangeEnd, category, hpClass, autoCalculate: false,
     maxHitPoints, maxHitPointsFormula: "", currentHitPoints: maxHitPoints,
     armorPoints, armorPointsFormula: "", armorEncumbranceMultiplier: 1,

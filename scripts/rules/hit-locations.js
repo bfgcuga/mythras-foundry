@@ -25,6 +25,14 @@ const HUMAN_HIT_LOCATION_ALIASES = Object.freeze({
 const normalizedLocationName = (value) => String(value ?? "").normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+export function genericHitLocationKey(location) {
+  const storedKey = String(location?.system?.nameKey ?? location?.nameKey ?? "");
+  if (HUMAN_HIT_LOCATION_KEYS.includes(storedKey)) return storedKey;
+  const normalized = normalizedLocationName(location?.name);
+  return HUMAN_HIT_LOCATION_KEYS.find((key) => HUMAN_HIT_LOCATION_ALIASES[key]
+    .some((alias) => normalizedLocationName(alias) === normalized)) ?? null;
+}
+
 export function humanArmorFactors(location) {
   const system = location?.system ?? location ?? {};
   return HUMAN_HIT_LOCATIONS.find((candidate) =>
@@ -37,10 +45,7 @@ export function humanArmorFactors(location) {
 export function humanHitLocationKey(location) {
   const human = humanArmorFactors(location);
   if (!human) return null;
-  const storedKey = String(location?.system?.nameKey ?? "");
-  if (storedKey === human.nameKey) return storedKey;
-  const aliases = HUMAN_HIT_LOCATION_ALIASES[human.nameKey].map(normalizedLocationName);
-  return aliases.includes(normalizedLocationName(location?.name)) ? human.nameKey : null;
+  return genericHitLocationKey(location) === human.nameKey ? human.nameKey : null;
 }
 
 export function hitLocationDisplayName(location, localize = (key) => game.i18n.localize(key)) {

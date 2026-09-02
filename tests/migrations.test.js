@@ -17,7 +17,8 @@ const {
   getDefaultSkillGroup,
   getLegacySkillUpdate
 } = await import("../scripts/migrations/content-migrations.js");
-const { defaultArmorFactors, hitLocationNameMigrationUpdate } = await import(
+const { defaultArmorFactors, ensureCreatureHitLocations, ensureHumanHitLocations,
+  hitLocationNameMigrationUpdate } = await import(
   "../scripts/migrations/actor-migrations.js");
 
 test("la migración de habilidades conserva su transformación idempotente", () => {
@@ -69,6 +70,57 @@ test("la migración traduce localizaciones humanas estándar y conserva nombres 
     system: { ...system, nameKey: "chest" } }), null);
   assert.equal(hitLocationNameMigrationUpdate({ type: "hitLocation",
     name: "Pecho superior", system }), null);
+  assert.deepEqual(hitLocationNameMigrationUpdate({ type: "hitLocation", name: "Head",
+    system: { rangeStart: 16, rangeEnd: 20, category: "head", hpClass: "standard" } }),
+  { name: "Cabeza", "system.nameKey": "head" });
+});
+
+test("la reparación humana elimina duplicados, conserva referencias y repone huecos", async () => {
+  const location = (id, name, start, end, armorPoints = 0) => ({ id, type: "hitLocation",
+    name, system: { nameKey: "", rangeStart: start, rangeEnd: end, category: "limb",
+      hpClass: "standard", armorPoints } });
+  const rightEnglish = location("right-en", "Right Leg", 1, 3, 2);
+  const rightSpanish = location("right-es", "Pierna derecha", 1, 3);
+  const wing = location("wing", "Ala derecha", 1, 3);
+  const armor = { id: "armor", type: "armor", system: { coveredLocationIds: ["right-es"] } };
+  const actor = { type: "character", system: { constitution: 10, size: 10 },
+    items: [rightEnglish, rightSpanish, wing, armor], batches: [],
+    getFlag() { return 0; }, async setFlag(scope, key, value) { this.migrationVersion = value; },
+    async updateEmbeddedDocuments(type, updates) { this.batches.push(["update", updates]);
+      for (const update of updates) { const item = this.items.find((entry) => entry.id === update._id);
+        if (item && update["system.coveredLocationIds"]) item.system.coveredLocationIds = update["system.coveredLocationIds"];
+        if (item && update["system.nameKey"]) item.system.nameKey = update["system.nameKey"]; } },
+    async deleteEmbeddedDocuments(type, ids) { this.batches.push(["delete", ids]); },
+    async createEmbeddedDocuments(type, data) { this.batches.push(["create", data]); } };
+  await ensureHumanHitLocations(actor);
+  assert.deepEqual(actor.batches.find(([kind]) => kind === "delete")[1], ["right-es"]);
+  assert.deepEqual(armor.system.coveredLocationIds, ["right-en"]);
+  assert.equal(actor.batches.find(([kind]) => kind === "create")[1].length, 6);
+  assert.equal(actor.migrationVersion, 1);
+});
+
+test("la reparación de criaturas restaura su anatomía y religa armas naturales", async () => {
+  const weapon = { id: "sting", type: "weapon", system: { profileKey: "sting",
+    linkedLocationId: "obsolete" } };
+  const actor = { type: "npc", name: "Hormiga gigante",
+    system: { identity: { species: "Hormiga gigante" } }, items: [weapon],
+    getFlag() { return 0; }, async setFlag(scope, key, value) { this.migrationVersion = value; },
+    async createEmbeddedDocuments(type, data) { return data.map((entry, index) => ({
+      id: `location-${index}`, ...entry
+    })); },
+    async updateEmbeddedDocuments(type, updates) { this.updates = updates; } };
+  await ensureCreatureHitLocations(actor);
+  assert.equal(actor.updates.find((update) => update._id === "sting")["system.linkedLocationId"],
+    "location-8");
+  assert.equal(actor.migrationVersion, 1);
+});
+
+test("una anatomía ya reconciliada queda bajo control del usuario", async () => {
+  let writes = 0;
+  const actor = { type: "character", items: [], system: {}, getFlag: () => 1,
+    createEmbeddedDocuments: async () => { writes += 1; } };
+  await ensureHumanHitLocations(actor);
+  assert.equal(writes, 0);
 });
 
 test("el entrypoint solo invoca el coordinador de migraciones", async () => {

@@ -35,9 +35,14 @@ El sistema incluye actualmente:
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
-- las siete localizaciones humanas se guardan con nombres canónicos en castellano
-  y se presentan en el idioma de cada usuario; las anatomías y los nombres
-  personalizados se conservan literalmente;
+- las siete localizaciones humanas usan claves canónicas y se presentan en el
+  idioma de cada usuario. Una migración versionada inicial recompone conjuntos incompletos, consolida
+  duplicados sin perder referencias de armas o armaduras y conserva el estado
+  mecánico de la variante relevante. Las criaturas oficiales recuperan desde su
+  catálogo cualquier localización ausente y vuelven a enlazar sus armas naturales;
+  sus zonas compartidas con la anatomía humana se traducen y los nombres propios
+  de cada monstruo se conservan literalmente. Una vez reconciliado el Actor, las
+  altas, cambios de nombre y bajas manuales de localizaciones se respetan;
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;
