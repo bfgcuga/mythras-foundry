@@ -187,6 +187,11 @@ export async function ensureDefaultHome(actor) {
   await actor.setFlag("mythras-foundry", "inventoryInitialized", true);
 }
 
+export async function ensureCharacterPrototypeTokenLink(actor) {
+  if (actor.type !== "character" || actor.prototypeToken?.actorLink) return;
+  await actor.update({ "prototypeToken.actorLink": true });
+}
+
 export function defaultArmorFactors(location) {
   if (location.system.category === "chest") return { encumbrance: 3, cost: 25 };
   if (location.system.category === "abdomen") return { encumbrance: 2, cost: 20 };

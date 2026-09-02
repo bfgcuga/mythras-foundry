@@ -54,6 +54,12 @@ duplicadas. El hook `ready` del entrypoint solo comprueba ese GM e invoca
 `runWorldMigrations`; las inicializaciones idempotentes de un Actor recién
 creado pasan por el mismo coordinador.
 
+Los personajes usan `prototypeToken.actorLink: true`: sus tokens de escena abren
+el mismo Actor persistente del directorio y no mantienen un `ActorDelta`
+independiente. La migración enlaza los tokens de personaje antiguos, por lo que su
+delta obsoleto deja de aplicarse. Los PNJ conservan `actorLink: false` porque cada token materializa
+una instancia propia de las fórmulas de su plantilla.
+
 ## Modelos y cálculos derivados
 
 La galería de personaje se persiste en `system.gallery` como una colección de

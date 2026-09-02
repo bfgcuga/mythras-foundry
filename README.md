@@ -173,7 +173,9 @@ El sistema incluye actualmente:
   desde Ajustes o una macro exclusiva del DJ; las armas y estilos continúan su
   edición en versiones acotadas de sus hojas completas;
 - PNJ y criaturas con anatomías configurables, valores manuales o derivados y
-  tokens no enlazados generados de forma independiente mediante fórmulas;
+  tokens no enlazados generados de forma independiente mediante fórmulas. Los
+  personajes usan siempre tokens enlazados al Actor del directorio, por lo que
+  hoja, Items y recursos son una única fuente de datos en directorio y escena;
 - gestor de grupos activos y macros que consumen la API pública del sistema;
 - macro lanzadora de DJ «Aplicación de daño o estados», con botones para daño
   directo, Ácido, Fuego, Caída, Fatiga, Ahogamiento/Asfixia, Desangrándose,

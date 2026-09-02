@@ -5,6 +5,7 @@ import { synchronizeFatigueDeath } from "../rules/death.js";
 import {
   ensureDefaultHome,
   ensureCreatureHitLocations,
+  ensureCharacterPrototypeTokenLink,
   ensureHumanHitLocations,
   migrateHitLocationName,
   migrateActorArmor,
@@ -13,6 +14,7 @@ import {
   migrateWorldArmor
 } from "./actor-migrations.js";
 import { migrateCombatItems, migrateWorldCombatItem } from "./combat-item-migrations.js";
+import { characterTokenLinkUpdates } from "../rules/token-linking.js";
 import {
   deduplicateBackgroundAbilities,
   getLegacyItemIconUpdate,
@@ -33,6 +35,7 @@ export function isPrimaryActiveGM() {
 export async function initializeCreatedActor(actor) {
   await ensureBasicSkills(actor);
   if (actor.type === "character") {
+    await ensureCharacterPrototypeTokenLink(actor);
     await ensureHumanHitLocations(actor);
     await ensureDefaultHome(actor);
     await actor.update({ "system.backgroundCreationEnabled": true });
@@ -81,6 +84,7 @@ export async function runWorldMigrations() {
     await migrateCombatItems(actor);
     await migrateActorPermanentWounds(actor);
     if (actor.type === "character") {
+      await ensureCharacterPrototypeTokenLink(actor);
       await ensureHumanHitLocations(actor);
       await ensureDefaultHome(actor);
     }
@@ -88,6 +92,11 @@ export async function runWorldMigrations() {
     await migrateActorArmor(actor);
     await syncIncapacitatedStatus(actor);
     await synchronizeFatigueDeath(actor);
+  }
+
+  for (const scene of game.scenes) {
+    const updates = characterTokenLinkUpdates(scene.tokens, game.actors);
+    if (updates.length) await scene.updateEmbeddedDocuments("Token", updates);
   }
 
   const worldIconUpdates = game.items.map(getLegacyItemIconUpdate).filter(Boolean);

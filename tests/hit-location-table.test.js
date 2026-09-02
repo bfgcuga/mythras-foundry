@@ -22,6 +22,11 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
   assert.match(registration, /templates\/actor\/parts\/hit-location-table\.hbs/);
 });
 
+test("el esquema permite nombres personalizados sin clave traducible", async () => {
+  const itemData = await readFile(new URL("../scripts/data/item-data.js", import.meta.url), "utf8");
+  assert.match(itemData, /nameKey: new StringField\([\s\S]*?initial: ""[\s\S]*?blank: true/);
+});
+
 test("d20 y Localización alinean igual sus cabeceras y datos", async () => {
   const styles = await readFile(new URL("../styles/mythras-foundry.css", import.meta.url), "utf8");
   assert.match(styles, /combat-location-head > span:nth-child\(2\)[\s\S]*?text-align: left/);

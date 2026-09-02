@@ -231,8 +231,9 @@ Hooks.on("createItem", async (item, options, userId) => {
 });
 
 Hooks.on("preCreateActor", (actor, data) => {
-  if ((data.type ?? actor.type) !== "npc") return;
-  actor.updateSource({ "prototypeToken.actorLink": false });
+  const type = data.type ?? actor.type;
+  if (type === "character") actor.updateSource({ "prototypeToken.actorLink": true });
+  if (type === "npc") actor.updateSource({ "prototypeToken.actorLink": false });
 });
 
 Hooks.on("createToken", async (token, options, userId) => {
