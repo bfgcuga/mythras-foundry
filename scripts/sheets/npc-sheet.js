@@ -2,6 +2,7 @@ import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
 import { fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { difficultyTarget } from "../rules/combat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
+import { weaponCanEquip } from "../rules/weapon-durability.js";
 import { findWeaponMode, weaponModes } from "../rules/weapon-modes.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
@@ -410,6 +411,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       await item.update({ "system.equipped": !Boolean(item.system.equipped) });
       return;
     }
+    if (!item.system.equipped && !weaponCanEquip(item)) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.Weapon.BrokenCannotEquip"));
     const modeKey = event.currentTarget.closest("[data-mode-key]")?.dataset.modeKey
       || item.system.activeModeKey || findWeaponMode(item)?.key;
     const samePrepared = item.system.equipped && item.system.activeModeKey === modeKey;

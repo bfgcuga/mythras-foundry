@@ -1,6 +1,7 @@
 import { combatAttackHits, resolveCombatExchange } from "./combat.js";
 import { canonicalCombatEffectStage, combatEffectSlotsBySide,
-  initialCombatEffectStatus, validateEffectSelections } from "./combat-effects.js";
+  combatEffectSelectionsCompatible, initialCombatEffectStatus,
+  validateEffectSelections, combatWeaponDamagePlan } from "./combat-effects.js";
 import { effectiveActionPointMaximum } from "./action-points.js";
 import { validateCombatResponse } from "./combat-exchange-state.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
@@ -108,10 +109,18 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
   const slots = combat.effects.sideSlots?.[side] ?? combat.effects.slots;
   const validation = validateEffectSelections({ slots, selections: request.selections,
     effects: catalog, context: effectContext(combat, side) });
-  if (!validation.valid) {
+  const catalogByKey = new Map(catalog.map((effect) => [effect.key, effect]));
+  const combinedEffects = [...(combat.effects.selections ?? []).filter((entry) => !entry.waived),
+    ...request.selections.filter((entry) => !entry.waived)
+      .map((entry) => catalogByKey.get(entry.key)).filter(Boolean)];
+  const combinedCounts = combinedEffects.reduce((counts, effect) => counts.set(effect.key,
+    (counts.get(effect.key) ?? 0) + 1), new Map());
+  const invalidCombinedStack = combinedEffects.some((effect) => !effect.stackable
+    && combinedCounts.get(effect.key) > 1);
+  if (!validation.valid || invalidCombinedStack
+    || !combatEffectSelectionsCompatible(combinedEffects)) {
     warn(localize("MYTHRASF.CombatEffect.Invalid")); return false;
   }
-  const catalogByKey = new Map(catalog.map((effect) => [effect.key, effect]));
   const sideSelections = request.selections.map((selection, index) => {
     if (selection.waived) return { slot: index, side, waived: true };
     const effect = catalogByKey.get(selection.key);
@@ -134,7 +143,8 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     await applyImmediateEffects(combat, message, immediateDependencies());
     combat.status = "resolved";
     const attackHits = combatAttackHits(combat.resolution);
-    combat.damage = { status: attackHits ? "ready" : "unavailable" };
+    const damagesWeapon = Boolean(combatWeaponDamagePlan(combat));
+    combat.damage = { status: attackHits || damagesWeapon ? "ready" : "unavailable" };
     if (!attackHits) combat.effects.selections.forEach((effect) => {
       if (effect.requiresWound) effect.status = "notActivated";
     });

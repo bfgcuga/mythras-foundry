@@ -49,7 +49,8 @@ test("el daño a un arma no crea lesiones permanentes", async () => {
   await applyCombatDamageDocument({ location: target,
     damage: { afterHitPoints: -2, resultingWound: "major" }, targetType: "weapon",
     evaluateRoll: async () => assert.fail("no debe tirar"), format: () => "" });
-  assert.deepEqual(target.updates, [{ "system.currentHitPoints": -2 }]);
+  assert.deepEqual(target.updates, [{ "system.currentHitPoints": 0,
+    "system.equipped": false }]);
 });
 
 function proposedDamageFixture({ currentHitPoints = 4, updateError = null,
@@ -216,4 +217,28 @@ test("una parada completa no aplica ni marca el bloqueo pasivo", async () => {
   await refreshCombatDamageProposal(combat, null, dependencies);
   assert.equal(combat.damage.afterParry, 0);
   assert.equal(combat.damage.passiveBlock, undefined);
+});
+
+test("la propuesta contra un arma usa su instancia, PA y limita sus PG a cero", async () => {
+  const weapon = location({ currentHitPoints: 5, maxHitPoints: 8, armorPoints: 3 });
+  weapon.id = "shield";
+  weapon.name = "Escudo";
+  weapon.type = "weapon";
+  const items = [weapon];
+  items.get = (id) => items.find((item) => item.id === id);
+  const combat = { attacker: { weaponSize: "medium" },
+    defender: { targetType: "actor", defense: { type: "parry" } },
+    resolution: { defense: { result: "success" } }, declarations: {},
+    effects: { selections: [], checks: [] }, damage: { rawRoll: 11,
+      locationId: "shield", targetType: "weapon", weaponTarget: {
+        sourceSide: "attacker", target: { actorUuid: "Actor.defender",
+          tokenUuid: "", weaponId: "shield" } } } };
+  await refreshCombatDamageProposal(combat, null, {
+    resolveActor: async () => ({ items, system: { size: 10 } }),
+    combatById: () => null, passiveBlockFor: () => null, coverFor: () => null
+  });
+  assert.equal(combat.damage.armorPoints, 3);
+  assert.equal(combat.damage.penetratingDamage, 8);
+  assert.equal(combat.damage.afterHitPoints, 0);
+  assert.equal(combat.damage.resultingWound, "broken");
 });

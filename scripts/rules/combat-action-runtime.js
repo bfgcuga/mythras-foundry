@@ -3,6 +3,7 @@ import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
 import { advanceActorTurnConditions } from "./timed-condition-runtime.js";
+import { weaponCanEquip } from "./weapon-durability.js";
 import { COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
   chargeEligibility, chargeModifiers, movementDeclaration,
   normalizeCombatActionState, combatActionPresentation } from "./combat-actions.js";
@@ -47,7 +48,8 @@ export function actionPresentation(actor) {
   const state = combatActionState(combat);
   const conditions = resolveActorConditions(actor, { baseAttributes:
     actor?.system?.baseAttributes ?? actor?.system?.attributes ?? {} });
-  const modes = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped)
+  const modes = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
+    && weaponCanEquip(item))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)) ?? [];
   return combatActionPresentation({ inCombat: Boolean(combat?.started && combatant),
     isActive: combat?.combatant?.id === combatant?.id, actionPoints: currentActionPoints(actor),
@@ -147,7 +149,7 @@ async function chooseMovement(context) {
 }
 
 async function chooseReadyWeapon(actor) {
-  const weapons = actor.items.filter((item) => item.type === "weapon");
+  const weapons = actor.items.filter((item) => item.type === "weapon" && weaponCanEquip(item));
   if (!weapons.length) return null;
   return foundry.applications.api.DialogV2.wait({ window: { title: localize("MYTHRASF.Action.readyWeapon") },
     content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weapons.map((weapon) => `<option value="${weapon.id}">${escape(weapon.name)}</option>`).join("")}</select></label><label><span>${escape(localize("MYTHRASF.Action.ReadyOperation"))}</span><select name="operation"><option value="ready">${escape(localize("MYTHRASF.Action.Ready"))}</option><option value="stow">${escape(localize("MYTHRASF.Action.Stow"))}</option><option value="pickup">${escape(localize("MYTHRASF.Action.Pickup"))}</option></select></label></div>`,
@@ -178,6 +180,10 @@ async function executeAction(combat, action) {
   } else if (current.key === "readyWeapon") {
     const weapon = actor.items.get(current.parameters.weaponId);
     if (!weapon) { current.status = "awaitingConfirmation"; current.note = localize("MYTHRASF.Action.MissingWeapon"); }
+    else if (!weaponCanEquip(weapon) && current.parameters.operation !== "stow") {
+      current.status = "awaitingConfirmation";
+      current.note = localize("MYTHRASF.Weapon.BrokenCannotEquip");
+    }
     else if (current.parameters.operation === "pickup") {
       const progress = Number(state.readyProgress[combatant.id]?.progress ?? 0) + 1;
       state.readyProgress[combatant.id] = { weaponId: weapon.id, progress, required: 2 };
@@ -223,7 +229,8 @@ export async function requestCombatAction(actor, key) {
     if (note == null) return; parameters.note = note;
   }
   if (key === "brace") {
-    const weapon = actor.items.find((item) => item.type === "weapon" && item.system.equipped);
+    const weapon = actor.items.find((item) => item.type === "weapon" && item.system.equipped
+      && weaponCanEquip(item));
     parameters.weaponId = weapon?.id ?? "";
   }
   if (key === "charge") {

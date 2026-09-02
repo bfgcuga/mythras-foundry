@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
   canonicalCombatEffectStage, combatEffectEligible, combatEffectResolutionPhase,
   combatEffectIsAutomated, combatEffectRule, combatEffectSelectionHighlight,
+  combatEffectSelectionsCompatible, combatWeaponDamagePlan,
   combatEffectSlug, combatEffectSlotsBySide, initialCombatEffectStatus,
   maximizeDamageFormula, maximizeDamageFormulaDetails, mergeCombatEffectDocuments,
   opposedEffectWinner, orderedCombatChecks, validateEffectSelections } from "../scripts/rules/combat-effects.js";
@@ -121,6 +122,45 @@ test("la selección admite renuncias y solo duplica efectos apilables", () => {
   assert.equal(validateEffectSelections({ slots: 2, selections: [
     { key: choose.key }, { waived: true }
   ], effects, context }).valid, true);
+});
+
+test("Dañar arma solo es elegible con una parada y un objetivo material", () => {
+  const effect = effects.find((entry) => entry.key === "danar-arma");
+  const base = { attackResult: "success", defenseResult: "success",
+    defenseType: "parry", attackerWeaponDurable: true, parryWeaponDurable: true };
+  assert.equal(combatEffectEligible(effect, { ...base, winner: "attacker" }), true);
+  assert.equal(combatEffectEligible(effect, { ...base, winner: "defender" }), true);
+  assert.equal(combatEffectEligible(effect, { ...base, winner: "attacker",
+    defenseType: "evade" }), false);
+  assert.equal(combatEffectEligible(effect, { ...base, winner: "attacker",
+    parryWeaponDurable: false }), false);
+  assert.equal(combatEffectEligible(effect, { ...base, winner: "defender",
+    attackerWeaponDurable: false }), false);
+});
+
+test("Dañar arma separa efectos de daño corporal de consecuencias independientes", () => {
+  const byKey = new Map(effects.map((effect) => [effect.key, effect]));
+  const compatible = ["maximizar-dano", "derribar-oponente", "agarrar",
+    "arrebatar-arma", "forzar-fallo", "abrir-distancia"];
+  const incompatible = ["desangrar", "empalar", "superar-armadura", "sortear-parada",
+    "hender-armadura", "muerte-silenciosa", "sortear-cobertura", "elegir-localizacion",
+    "tumbar-oponente", "herida-accidental"];
+  for (const key of compatible) assert.equal(combatEffectSelectionsCompatible([
+    byKey.get("danar-arma"), byKey.get(key)]), true, key);
+  for (const key of incompatible) assert.equal(combatEffectSelectionsCompatible([
+    byKey.get("danar-arma"), byKey.get(key)]), false, key);
+});
+
+test("Dañar arma conserva lados y dirige fuente y objetivo exactos", () => {
+  const combat = { attacker: { actorUuid: "a", weaponId: "sword", weaponName: "Espada" },
+    defender: { actorUuid: "d", defense: { type: "parry", weaponId: "shield",
+      modeKey: "shield" } }, effects: { selections: [{ key: "danar-arma",
+        side: "defender" }] } };
+  assert.deepEqual(combatWeaponDamagePlan(combat), {
+    effectSide: "defender", sourceSide: "defender", targetSide: "attacker",
+    sourceEntry: combat.defender, targetEntry: combat.attacker,
+    sourceWeaponId: "shield", sourceModeKey: "shield", targetWeaponId: "sword"
+  });
 });
 
 test("la selección resalta críticos propios y pifias del rival según el lado", () => {

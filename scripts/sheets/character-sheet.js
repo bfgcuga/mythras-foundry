@@ -64,6 +64,7 @@ import {
   parseWeaponProfileReferences
 } from "../rules/combat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
+import { weaponCanEquip } from "../rules/weapon-durability.js";
 import { inventoryCarried } from "../rules/inventory.js";
 import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
@@ -529,6 +530,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (item.type === "armor") {
       if (!item.system.equipped && !this.#canEquipArmor(item)) return;
       await item.update({ "system.equipped": !Boolean(item.system.equipped) });
+      return;
+    }
+    if (!item.system.equipped && !weaponCanEquip(item)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.BrokenCannotEquip"));
       return;
     }
     const modeKey = event.currentTarget.closest("[data-mode-key]")?.dataset.modeKey

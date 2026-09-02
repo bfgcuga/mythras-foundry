@@ -21,30 +21,50 @@ export const COMBAT_EFFECT_RULES = Object.freeze({
   alzarse: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   ardid: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   "cerrar-distancia": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  "danar-arma": { ruleKey: "damageWeapon", stage: "damageRoll", replacesDamage: true },
   "disparo-y-a-cubierto": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   liberarse: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
-  "mantenerse-firme": { ruleKey: "guided", stage: "afterPenetration", target: "self" },
+  "mantenerse-firme": { ruleKey: "guided", stage: "afterPenetration", target: "self",
+    damageTarget: "opponent" },
   "recarga-rapida": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   retirada: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
-  "elegir-localizacion": { ruleKey: "chooseLocation", stage: "beforeLocation" },
-  empalar: { ruleKey: "impale", stage: "damageRoll", requiresWound: true },
+  "elegir-localizacion": { ruleKey: "chooseLocation", stage: "beforeLocation",
+    damageTarget: "opponent" },
+  empalar: { ruleKey: "impale", stage: "damageRoll", requiresWound: true,
+    damageTarget: "opponent" },
   "maximizar-dano": { ruleKey: "maximizeDamage", stage: "damageRoll" },
-  "mejorar-parada": { ruleKey: "improveParry", stage: "beforeDamage" },
-  "sortear-parada": { ruleKey: "bypassParry", stage: "beforeDamage" },
-  "superar-armadura": { ruleKey: "bypassArmor", stage: "beforeArmor" },
-  "hender-armadura": { ruleKey: "guided", stage: "beforeArmor" },
-  "sortear-cobertura": { ruleKey: "guided", stage: "beforeArmor" },
-  golpetazo: { ruleKey: "bash", stage: "afterPenetration" },
-  "potenciar-penetracion": { ruleKey: "guided", stage: "afterPenetration" },
-  "tiro-apuntado": { ruleKey: "aimedShot", stage: "beforeLocation" },
-  "arruinar-conjuro": { ruleKey: "guided", stage: "afterDamage", requiresWound: true },
-  "forzar-rendicion": { ruleKey: "guided", stage: "beforeDamage", replacesDamage: true },
+  "mejorar-parada": { ruleKey: "improveParry", stage: "beforeDamage",
+    damageTarget: "opponent" },
+  "sortear-parada": { ruleKey: "bypassParry", stage: "beforeDamage",
+    damageTarget: "opponent" },
+  "superar-armadura": { ruleKey: "bypassArmor", stage: "beforeArmor",
+    damageTarget: "opponent" },
+  "hender-armadura": { ruleKey: "guided", stage: "beforeArmor", damageTarget: "opponent" },
+  "sortear-cobertura": { ruleKey: "guided", stage: "beforeArmor", damageTarget: "opponent" },
+  golpetazo: { ruleKey: "bash", stage: "afterPenetration", damageTarget: "opponent" },
+  "potenciar-penetracion": { ruleKey: "guided", stage: "afterPenetration",
+    damageTarget: "opponent" },
+  "tiro-apuntado": { ruleKey: "aimedShot", stage: "beforeLocation",
+    damageTarget: "opponent" },
+  "arruinar-conjuro": { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
+    damageTarget: "opponent" },
+  "forzar-rendicion": { ruleKey: "guided", stage: "beforeDamage", replacesDamage: true,
+    damageTarget: "opponent" },
   "aturdir-localizacion": { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
-    endurance: true },
+    endurance: true, damageTarget: "opponent" },
   desangrar: { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
-    endurance: true },
+    endurance: true, damageTarget: "opponent" },
   "tumbar-oponente": { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
-    endurance: true }
+    endurance: true, damageTarget: "opponent" },
+  enredar: { ruleKey: "guided", stage: "beforeDamage", damageTarget: "opponent" },
+  "escoger-objetivo": { ruleKey: "guided", stage: "beforeDamage",
+    damageTarget: "opponent" },
+  "herida-accidental": { ruleKey: "guided", stage: "beforeDamage",
+    damageTarget: "opponent" },
+  "marcar-enemigo": { ruleKey: "guided", stage: "beforeDamage",
+    damageTarget: "opponent" },
+  "muerte-silenciosa": { ruleKey: "guided", stage: "beforeDamage",
+    damageTarget: "opponent" }
 });
 
 export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
@@ -167,6 +187,12 @@ export function combatEffectEligible(effect, context = {}) {
   if (!effect || !["attacker", "defender"].includes(context.winner)) return false;
   if (context.winner === "attacker" && !effect.offensive) return false;
   if (context.winner === "defender" && !effect.defensive) return false;
+  if (effect.key === "danar-arma") {
+    if (context.defenseType !== "parry") return false;
+    const target = context.winner === "attacker"
+      ? context.parryWeaponDurable : context.attackerWeaponDurable;
+    if (!target) return false;
+  }
   if (effect.key === "muerte-silenciosa" && !context.surpriseAttack) return false;
   if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
     combatWeaponType(context))) {
@@ -204,7 +230,31 @@ export function validateEffectSelections({ slots = 0, selections = [], effects =
     if (count > 1 && !effect.stackable) return { valid: false, reason: "stacking" };
     counts.set(effect.key, count);
   }
+  const chosen = selections.filter((entry) => !entry?.waived)
+    .map((entry) => catalog.get(entry.key)).filter(Boolean);
+  if (!combatEffectSelectionsCompatible(chosen)) return { valid: false, reason: "compatibility" };
   return { valid: true, reason: null };
+}
+
+export function combatEffectSelectionsCompatible(effects = []) {
+  if (!effects.some((effect) => effect.key === "danar-arma")) return true;
+  return !effects.some((effect) => effect.key !== "danar-arma"
+    && effect.damageTarget === "opponent");
+}
+
+export function combatWeaponDamagePlan(combat) {
+  const effect = (combat?.effects?.selections ?? []).find((entry) =>
+    !entry.waived && entry.key === "danar-arma");
+  if (!effect || combat?.defender?.defense?.type !== "parry") return null;
+  const defensive = effect.side === "defender";
+  const sourceEntry = defensive ? combat.defender : combat.attacker;
+  const targetEntry = defensive ? combat.attacker : combat.defender;
+  const sourceWeaponId = defensive ? combat.defender.defense.weaponId : combat.attacker.weaponId;
+  const sourceModeKey = defensive ? combat.defender.defense.modeKey : combat.attacker.modeKey;
+  const targetWeaponId = defensive ? combat.attacker.weaponId : combat.defender.defense.weaponId;
+  return { effectSide: effect.side, sourceSide: effect.side,
+    targetSide: defensive ? "attacker" : "defender", sourceEntry, targetEntry,
+    sourceWeaponId, sourceModeKey, targetWeaponId };
 }
 
 export function selectedEffectCount(selections, ruleKey) {

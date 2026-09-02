@@ -257,7 +257,7 @@
       <fieldset class="weapon-situation-editor"><legend>{{localize "MYTHRASF.Weapon.CharacterSituation"}}</legend>
         {{#if item.actor}}
         <label>{{localize "MYTHRASF.Weapon.PreparedMode"}}</label><select name="system.activeModeKey">{{selectOptions weaponModes selected=item.system.activeModeKey labelAttr="displayName" valueAttr="key"}}</select>
-        <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}}>{{localize "MYTHRASF.Item.Equipped"}}</label>
+        <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.equipped" {{checked item.system.equipped}} {{#if weaponBroken}}disabled{{/if}}>{{localize "MYTHRASF.Item.Equipped"}}</label>
         {{#each weaponModes as |mode|}}<fieldset class="weapon-instance-mode"><legend>{{mode.displayName}}</legend><label>{{localize "MYTHRASF.Combat.SelectStyle"}}</label><select name="system.modes.{{@index}}.preferredCombatStyleId"><option value=""></option>{{selectOptions mode.combatStyleChoices selected=mode.preferredCombatStyleId labelAttr="name" valueAttr="id"}}</select><label>{{localize "MYTHRASF.Combat.Familiarity"}}</label><select name="system.modes.{{@index}}.familiarity">{{selectOptions ../familiarityChoices selected=mode.familiarity labelAttr="label" valueAttr="value"}}</select></fieldset>{{/each}}
         {{else}}<p class="weapon-situation-help">{{localize "MYTHRASF.Weapon.CharacterSituationTemplateHelp"}}</p>{{/if}}
       </fieldset>

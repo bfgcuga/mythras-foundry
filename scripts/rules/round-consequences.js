@@ -8,6 +8,7 @@ import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { isNaturalWeaponMode, passiveBlockCapacity, validatePassiveBlock } from "./passive-block.js";
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { findWeaponMode } from "./weapon-modes.js";
+import { weaponCanEquip } from "./weapon-durability.js";
 import { tacticalState } from "./engagement-runtime.js";
 import { actorDisplayName } from "./document-names.js";
 import { ACID_IMMERSION_STATUS_ID, ACID_SPLASH_STATUS_ID, acidCondition, acidEffects,
@@ -79,7 +80,8 @@ export function passiveBlockEntries(combat) {
   const previousBlocks = tacticalState(combat).passiveBlocks ?? {};
   for (const combatant of combat?.combatants ?? []) {
     const actor = combatant.actor; if (!actor || combatant.isDefeated) continue;
-    const prepared = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+    const prepared = actor.items.filter((item) => item.type === "weapon" && item.system.equipped
+      && weaponCanEquip(item))
       .map((weapon) => ({ weapon, mode: findWeaponMode(weapon) }))
       .filter(({ mode }) => Boolean(mode));
     const dualWield = prepared.filter(({ mode }) => !isNaturalWeaponMode(mode)

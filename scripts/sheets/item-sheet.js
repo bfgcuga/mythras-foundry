@@ -18,6 +18,7 @@ import { TRAIT_TYPES, mergeTraitReferences, removeTraitReference, traitReference
 import { canonicalCombatEffectStage, COMBAT_EFFECT_ROLL_RESTRICTIONS,
   COMBAT_EFFECT_RULE_KEYS, COMBAT_EFFECT_STAGES,
   COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "../rules/combat-effects.js";
+import { weaponCanEquip } from "../rules/weapon-durability.js";
 
 async function prepareTraitReferences(references = []) {
   return Promise.all(references.map(async (reference, referenceIndex) => {
@@ -224,6 +225,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           .map((candidate) => ({ value: candidate.id, label: candidate.name })) : [],
       isWeapon: this.item.type === "weapon",
       weaponModes: preparedWeaponModes,
+      weaponBroken: this.item.type === "weapon" && !weaponCanEquip(this.item),
       weaponTraitReferences,
       isArmor: this.item.type === "armor",
       armorLocations: armorLocations.map((location) => ({

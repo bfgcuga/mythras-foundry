@@ -2741,6 +2741,16 @@
 .mythras-foundry .equipment-state-toggle:not(.equipped):hover { color: rgb(61 57 51 / 48%); }
 .mythras-foundry .equipment-state-toggle.equipped { color: var(--mythras-accent); background: transparent !important; opacity: 1; }
 .mythras-foundry .equipment-state-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
+.mythras-foundry .weapon-durability-damaged,
+.mythras-foundry .weapon-durability-damaged .item-name,
+.mythras-foundry .weapon-durability-damaged button { color: #9f1d20; }
+.mythras-foundry .weapon-durability-broken,
+.mythras-foundry .weapon-durability-broken .item-name,
+.mythras-foundry .weapon-durability-broken button,
+.mythras-chat-card .weapon-durability-broken { color: #b65312; }
+.mythras-chat-card .weapon-durability-damaged { color: #9f1d20; }
+.mythras-chat-card .weapon-durability-unharmed { color: var(--mythras-ink); }
+.mythras-foundry .equipment-state-toggle:disabled { cursor: not-allowed; opacity: 0.75; }
 .mythras-foundry .armor-toggle { font-size: 1rem; }
 
 .mythras-foundry .wound-healthy { color: var(--mythras-wound-healthy); }

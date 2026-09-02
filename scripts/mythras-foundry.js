@@ -24,6 +24,7 @@ import { registerSystemInitialization } from "./system/registration.js";
 import { registerUiHooks } from "./system/ui-hooks.js";
 import { clearAim } from "./rules/ranged-actions.js";
 import { resolveActorConditions } from "./rules/actor-conditions.js";
+import { weaponCanEquip } from "./rules/weapon-durability.js";
 import { synchronizeFatigueDeath } from "./rules/death.js";
 import { initializeCreatedActor, isPrimaryActiveGM,
   runWorldMigrations } from "./migrations/index.js";
@@ -44,11 +45,24 @@ Hooks.on("createActiveEffect", (effect, options, userId) => {
 });
 
 Hooks.on("preUpdateItem", (item, changed) => {
-  if (item.type !== "hitLocation"
-    || !foundry.utils.hasProperty(changed, "system.currentHitPoints")) return;
-  const nextHitPoints = foundry.utils.getProperty(changed, "system.currentHitPoints");
-  if (recoversDisabledLocation(item, nextHitPoints)) {
-    foundry.utils.setProperty(changed, "system.disabled", false);
+  if (item.type === "weapon") {
+    const currentHitPoints = foundry.utils.hasProperty(changed, "system.currentHitPoints")
+      ? foundry.utils.getProperty(changed, "system.currentHitPoints")
+      : item.system.currentHitPoints;
+    const maxHitPoints = foundry.utils.hasProperty(changed, "system.maxHitPoints")
+      ? foundry.utils.getProperty(changed, "system.maxHitPoints") : item.system.maxHitPoints;
+    if (!weaponCanEquip({ currentHitPoints, maxHitPoints })) {
+      foundry.utils.setProperty(changed, "system.currentHitPoints", 0);
+      foundry.utils.setProperty(changed, "system.equipped", false);
+    }
+    return;
+  }
+  if (item.type === "hitLocation"
+    && foundry.utils.hasProperty(changed, "system.currentHitPoints")) {
+    const nextHitPoints = foundry.utils.getProperty(changed, "system.currentHitPoints");
+    if (recoversDisabledLocation(item, nextHitPoints)) {
+      foundry.utils.setProperty(changed, "system.disabled", false);
+    }
   }
 });
 

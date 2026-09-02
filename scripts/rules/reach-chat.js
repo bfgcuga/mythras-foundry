@@ -9,6 +9,7 @@ import { combatantForActor, deactivatePassiveBlock, ensureEngagement, longestPre
   setRelationWeapons, submitCoverDeclaration, tacticalState } from "./engagement-runtime.js";
 import { openPassiveBlockCorrection } from "./round-consequences.js";
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
+import { weaponCanEquip } from "./weapon-durability.js";
 import { difficultyTarget, resolveWeaponStyle } from "./combat.js";
 import { createResolvedReactionAttack } from "./combat-chat.js";
 import { recordAbilityFumble } from "./skills.js";
@@ -48,7 +49,8 @@ export async function requestReachChange(actor, { manual = false } = {}) {
   const combat = game.combat; const active = combatantForActor(combat, actor, actor.token?.uuid);
   if (!combat?.started || combat.combatant?.id !== active?.id || currentActionPoints(actor) < 1) return;
   const opponents = combat.combatants.filter((entry) => entry.id !== active.id && entry.actor);
-  const weapons = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+  const weapons = actor.items.filter((item) => item.type === "weapon" && item.system.equipped
+    && weaponCanEquip(item))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType))
       .map((mode) => ({ weapon, mode })));
   if (!opponents.length || !weapons.length || !evade(actor)) return ui.notifications.warn(

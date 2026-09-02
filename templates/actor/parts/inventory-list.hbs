@@ -11,11 +11,11 @@
   <ol class="item-list">
     {{#each items as |entry|}}
       {{#if ../weaponTable}}
-        <li data-item-id="{{entry.item.id}}">
+        <li data-item-id="{{entry.item.id}}" class="weapon-durability-{{entry.durabilityState}}">
           <button type="button" class="item-name" data-action="edit-item">{{entry.item.name}}</button>
           {{#if entry.hasMultipleModes}}<select data-active-weapon-mode aria-label="{{localize "MYTHRASF.Weapon.PreparedMode"}}">{{selectOptions entry.modeOptions selected=entry.activeModeKey labelAttr="displayName" valueAttr="key"}}</select>{{else}}<span>—</span>{{/if}}
           <span>{{entry.item.system.armorPoints}} / {{entry.item.system.currentHitPoints}}–{{entry.item.system.maxHitPoints}}</span>
-          <button type="button" data-action="toggle-equipped" data-hands="{{entry.handsRequired}}" class="sheet-icon-button equip-toggle equipment-state-toggle hand-toggle {{#if entry.item.system.equipped}}equipped{{/if}}" aria-pressed="{{entry.item.system.equipped}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand"></i><i class="fas fa-hand"></i></button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{entry.handsRequired}}" class="sheet-icon-button equip-toggle equipment-state-toggle hand-toggle {{#if entry.item.system.equipped}}equipped{{/if}}" aria-pressed="{{entry.item.system.equipped}}" aria-label="{{#if entry.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" title="{{#if entry.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" {{#if entry.broken}}disabled{{/if}}><i class="fas {{#if entry.broken}}fa-hand-slash{{else}}fa-hand{{/if}}" aria-hidden="true"></i>{{#unless entry.broken}}<i class="fas fa-hand" aria-hidden="true"></i>{{/unless}}</button>
           {{#if @root.editable}}<button type="button" class="sheet-icon-button inventory-delete" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
         </li>
       {{else}}

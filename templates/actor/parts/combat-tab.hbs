@@ -23,10 +23,10 @@
       <span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>%</span><span></span>
     </div>
     {{#each meleeCombatWeapons as |row|}}
-      <div class="combat-weapon-line combat-weapon-melee" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
+      <div class="combat-weapon-line combat-weapon-melee weapon-durability-{{row.durabilityState}}" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
           <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{localize "MYTHRASF.Weapon.ToggleHands"}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand" aria-hidden="true"></i><i class="fas fa-hand" aria-hidden="true"></i></button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" title="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" {{#if row.broken}}disabled{{/if}}><i class="fas {{#if row.broken}}fa-hand-slash{{else}}fa-hand{{/if}}" aria-hidden="true"></i>{{#unless row.broken}}<i class="fas fa-hand" aria-hidden="true"></i>{{/unless}}</button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span>
         <span>{{row.mode.grip}}</span><span class="combat-effects">{{row.mode.effects}}</span>
@@ -58,10 +58,10 @@
       <span>{{localize "MYTHRASF.Weapon.APHP"}}</span><span>{{localize "MYTHRASF.Combat.Style"}}</span><span>%</span><span></span>
     </div>
     {{#each rangedCombatWeapons as |row|}}
-      <div class="combat-weapon-line combat-weapon-ranged" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
+      <div class="combat-weapon-line combat-weapon-ranged weapon-durability-{{row.durabilityState}}" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
           <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
-          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{localize "MYTHRASF.Weapon.ToggleHands"}}" title="{{localize "MYTHRASF.Weapon.ToggleHands"}}"><i class="fas fa-hand" aria-hidden="true"></i><i class="fas fa-hand" aria-hidden="true"></i></button>
+          <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" title="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" {{#if row.broken}}disabled{{/if}}><i class="fas {{#if row.broken}}fa-hand-slash{{else}}fa-hand{{/if}}" aria-hidden="true"></i>{{#unless row.broken}}<i class="fas fa-hand" aria-hidden="true"></i>{{/unless}}</button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.damageModifierLabel}}</span><span>{{row.mode.range}}</span>
         <span>{{row.mode.reload}}{{#if row.mode.ammoTracking}} · {{row.mode.ammoLoaded}}/{{row.mode.ammoReserve}}{{/if}}</span><span class="combat-effects">{{row.mode.effects}}</span>

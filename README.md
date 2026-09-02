@@ -28,6 +28,10 @@ El sistema incluye actualmente:
   la propia hoja;
 - Maximizar Daño automatizado sobre los dados propios del arma, priorizando los
   de más caras e identificando visualmente los valores sustituidos;
+- Dañar Arma automatizado cuando existe una parada: el uso ofensivo daña el arma
+  de parada y el defensivo usa el daño del arma de parada contra el arma atacante;
+  la tarjeta aplica los PA y PG de la instancia concreta, y las armas rotas se
+  desequipan y quedan inutilizables hasta ser reparadas;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;

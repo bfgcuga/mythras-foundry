@@ -529,7 +529,7 @@ permanente, pero ni activa visualmente la casilla de inutilizada ni incorpora la
 localización a la consulta de tiradas salvo que `system.disabled` también esté
 marcado.
 
-La transacción de combate usa el esquema 8 e intercala `awaitingEffects` entre
+La transacción de combate usa el esquema 9 e intercala `awaitingEffects` entre
 la defensa y el daño. El número de huecos procede de la ventaja diferencial;
 el propietario del ganador o el DJ selecciona efectos válidos o renuncias; esa
 selección bloquea la suerte de ataque y defensa. Cuando no existen huecos, la
@@ -540,6 +540,26 @@ contiene únicamente metadatos de ejecución, filtros y ayudantes puros. El text
 reglamentario canónico reside en `data/mythras_efectos_combate.json` y genera el
 compendio `combat-effects`, incluido el cuadro de empalamiento dentro del Item
 Empalar. La fuente oficial de esas entradas es `Mythras básico revisado`. Las
+referencias de atacante y defensor no cambian al aplicar «Dañar Arma».
+`damage.weaponTarget` registra por separado los actores e Items que originan y
+reciben el daño: ofensivamente usa el arma atacante contra el arma de parada;
+defensivamente usa el arma de parada y el modificador de su portador contra el
+arma atacante. El objetivo se vuelve a resolver por ID y sus PA y PG se validan
+antes de actualizarlo. Los estados `intact`, `damaged` y `broken` se derivan en
+`scripts/rules/weapon-durability.js`; no se persisten. Una rotura limita los PG
+a cero y desequipa el Item, mientras una reparación por encima de cero vuelve a
+permitir equiparlo.
+
+La compatibilidad de «Dañar Arma» no depende de que el otro efecto tenga como
+objetivo al oponente, sino de que participe en el conducto de daño corporal o
+en las defensas que protegen de ese golpe. Esos efectos declaran
+`damageTarget: opponent` en los metadatos de ejecución y son incompatibles al
+redirigirse el daño al arma. Las consecuencias independientes —por ejemplo
+Agarrar, Arrebatar Arma o Derribar Oponente— siguen siendo compatibles, igual
+que Maximizar Daño, cuyos dados sí pueden aplicarse al arma. Tumbar Oponente es
+incompatible porque su regla exige que el rival sufra al menos una Herida Leve.
+
+Las
 restricciones persistidas usan exclusivamente identificadores estables e
 independientes del idioma. El constructor del compendio rechaza cualquier valor
 fuera de los catálogos cerrados; la hoja y el creador homebrew solo ofrecen los

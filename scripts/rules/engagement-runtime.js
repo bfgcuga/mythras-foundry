@@ -3,6 +3,7 @@ import { engagementId, engagementRestriction, relationSnapshot, reachIndex,
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
+import { weaponCanEquip } from "./weapon-durability.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "tacticalState";
@@ -19,7 +20,8 @@ export function combatantForActor(combat, actor, tokenUuid = "") {
     || entry.actor?.uuid === actor?.uuid) ?? null;
 }
 export function preparedMeleeWeapons(actor) {
-  return actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped)
+  return actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
+    && weaponCanEquip(item))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType))
       .map((mode) => ({ weapon, mode }))) ?? [];
 }

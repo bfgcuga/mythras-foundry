@@ -3,6 +3,7 @@ import { itemEncumbrance } from "../rules/encumbrance.js";
 import { inventoryLocation, inventoryRows, inventorySections } from "../rules/inventory.js";
 import { isNaturalWeaponMode } from "../rules/passive-block.js";
 import { weaponModes } from "../rules/weapon-modes.js";
+import { weaponDurabilityState } from "../rules/weapon-durability.js";
 
 export function isNaturalWeapon(weapon) {
   if (weapon?.type !== "weapon") return false;
@@ -26,6 +27,9 @@ export function prepareInventoryView(items = []) {
       ? game.i18n.localize("MYTHRASF.Item.Carried")
       : inventoryLocation(row.item, inventoryItems),
     groupLabel: game.i18n.localize(`MYTHRASF.Inventory.Category.${row.groupKey}`),
+    durabilityState: row.isWeapon ? weaponDurabilityState(row.item) : "",
+    broken: row.isWeapon && weaponDurabilityState(row.item) === "broken",
+    damaged: row.isWeapon && weaponDurabilityState(row.item) === "damaged",
     categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
       : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
         : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`)

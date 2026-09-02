@@ -10,7 +10,9 @@ import { classifyContestRoll } from "./contest-rolls.js";
 import { canonicalCombatEffectStage, combatEffectCheckPhase, combatEffectRule,
   combatEffectSelectionHighlight, eligibleCombatEffects, initialCombatEffectStatus,
   maximizeDamageFormulaDetails, mergeCombatEffectDocuments, opposedEffectWinner,
-  selectedEffectCount } from "./combat-effects.js";
+  selectedEffectCount, combatEffectSelectionsCompatible,
+  combatWeaponDamagePlan } from "./combat-effects.js";
+import { weaponCanEquip, weaponHasDurability } from "./weapon-durability.js";
 import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
 import { getActionPointRules, getSystemSetting, PERMANENT_WOUND_HIT_LOCATION_RULES,
   SETTING_KEYS } from "../settings.js";
@@ -61,7 +63,7 @@ export { preferredCombatCoordinator, validateCombatResponse } from "./combat-exc
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const localize = (key) => game.i18n.localize(key);
 const actorIdentity = (actor) => actor?.parent?.actorId ?? actor?.token?.actorId ?? actor?.id ?? null;
@@ -151,7 +153,10 @@ function effectContext(combat, side = combat.effects?.pendingSide ?? combat.reso
     surpriseAttack: Boolean(combat.surprise?.consumed), rangedBand: combat.ranged?.band,
     rangedTargetStationary: Boolean(combat.ranged?.targetStationary),
     rangedTargetUnaware: Boolean(combat.ranged?.targetUnaware),
-    completeCover: Boolean(combat.ranged?.completeCover) };
+    completeCover: Boolean(combat.ranged?.completeCover),
+    defenseType: combat.defender.defense?.type,
+    attackerWeaponDurable: Boolean(combat.attacker.weaponDurable),
+    parryWeaponDurable: Boolean(combat.defender.defense?.weaponDurable) };
 }
 
 async function combatActor(uuid, actorUuid) {
@@ -223,6 +228,8 @@ function collectAttackSetup(form) {
 
 export async function createAttackMessage({ actor, weapon, mode, resolution, target = null,
   manual = false }) {
+  if (!weaponCanEquip(weapon)) return ui.notifications.warn(
+    localize("MYTHRASF.Weapon.BrokenCannotEquip"));
   if (pendingAttackActors.has(actor.uuid)) return null;
   pendingAttackActors.add(actor.uuid);
   try {
@@ -377,6 +384,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       extraordinaryDamage: setup.extraordinaryDamage },
     attacker: { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: actorDisplayName(actor),
       tokenUuid: actor.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
+      weaponDurable: weaponHasDurability(weapon),
       modeKey: mode.key, modeName: mode.name, styleId: resolution.style?.id ?? "", styleName,
       difficulty: resolution.difficulty,
       baseTarget: resolution.rollConfiguration?.baseTarget ?? resolution.target,
@@ -426,6 +434,7 @@ export async function createResolvedReactionAttack({ tracker, attackerCombatantI
     predeclared: false, declarations: { containedBlow: false, extraordinaryDamage: "0" },
     attacker: { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: actorDisplayName(actor),
       tokenUuid: attackerEntry.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
+      weaponDurable: weaponHasDurability(weapon),
       modeKey: mode.key, modeName: mode.name, styleId: "", styleName: "",
       difficulty: "standard", baseTarget: attackTarget, target: attackTarget,
       damage: mode.damage, damageModifierMode: mode.damageModifierMode, weaponSize: mode.size,
@@ -455,7 +464,8 @@ function effectiveDifficulty(actor, baseDifficulty = "standard") {
 
 function parryChoices(actor, combatData = null) {
   const styles = actor.items.filter((item) => item.type === "combatStyle");
-  const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+  const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped
+    && weaponCanEquip(item))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)
       .flatMap((mode) => styles.map((style) => {
         if (combatData?.ranged && mode.weaponType !== "shield") return null;
@@ -470,7 +480,8 @@ function parryChoices(actor, combatData = null) {
         const difficulty = effectiveDifficulty(actor, resolved.difficulty);
         if (difficulty === "impossible") return null;
         return { value: `${weapon.id}:${mode.key}:${resolved.style?.id ?? ""}`,
-          weaponId: weapon.id, weaponName: weapon.name, modeKey: mode.key,
+          weaponId: weapon.id, weaponName: weapon.name, weaponDurable: weaponHasDurability(weapon),
+          modeKey: mode.key, damage: mode.damage, damageModifierMode: mode.damageModifierMode,
           modeName: weaponModeDisplayName(weapon, mode), styleId: resolved.style?.id ?? "",
           styleName: resolved.usesBase ? localize("MYTHRASF.Combat.BaseStyle") : resolved.style?.name ?? "",
           difficulty, baseTarget: resolved.target, target: difficultyTarget(resolved.target, difficulty),
@@ -481,7 +492,8 @@ function parryChoices(actor, combatData = null) {
 
 function shieldResistanceChoices(actor) {
   const styles = actor.items.filter((item) => item.type === "combatStyle");
-  return actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+  return actor.items.filter((item) => item.type === "weapon" && item.system.equipped
+    && weaponCanEquip(item))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) =>
       mode.key === weapon.system.activeModeKey && mode.weaponType === "shield")
       .flatMap((mode) => styles.map((style) => {
@@ -656,6 +668,25 @@ async function chooseCombatEffects(message, combat) {
         })) }, { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times" }],
     render: (event, dialog) => {
       const form = dialog.element.querySelector("form");
+      const fixedEffects = (combat.effects?.selections ?? []).filter((entry) => !entry.waived);
+      const refreshCompatibility = () => {
+        const selects = [...(form?.querySelectorAll("select[name^='effect-']") ?? [])];
+        const selectedKeys = selects.map((select) => select.value)
+          .filter((key) => key !== "__waive__");
+        for (const select of selects) {
+          for (const option of select.options) {
+            if (option.value === "__waive__" || option.value === select.value) continue;
+            const candidates = [...fixedEffects,
+              ...selectedKeys.filter((key) => key !== select.value)
+                .map((key) => eligible.find((entry) => entry.key === key)).filter(Boolean),
+              eligible.find((entry) => entry.key === option.value)].filter(Boolean);
+            const incompatible = !combatEffectSelectionsCompatible(candidates);
+            option.disabled = incompatible;
+            option.title = incompatible
+              ? localize("MYTHRASF.CombatEffect.Incompatible") : option.title;
+          }
+        }
+      };
       const refreshSlot = (select) => {
         const slot = select.closest("[data-combat-effect-slot]");
         const effect = eligible.find((entry) => entry.key === select.value);
@@ -666,8 +697,12 @@ async function chooseCombatEffects(message, combat) {
         });
       };
       form?.querySelectorAll("select[name^='effect-']").forEach(refreshSlot);
+      refreshCompatibility();
       form?.addEventListener("change", (change) => {
-        if (change.target.matches("select[name^='effect-']")) refreshSlot(change.target);
+        if (change.target.matches("select[name^='effect-']")) {
+          refreshSlot(change.target);
+          refreshCompatibility();
+        }
       });
     },
     rejectClose: false
@@ -838,19 +873,27 @@ async function applyCombatLuck(message, request) {
 }
 
 async function requestCombatDamage(message, combat, manual = false) {
-  const actor = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+  const weaponPlan = combatWeaponDamagePlan(combat);
+  const sourceEntry = weaponPlan?.sourceEntry ?? combat.attacker;
+  const actor = await combatActor(sourceEntry.tokenUuid, sourceEntry.actorUuid);
   const guidedPending = (combat.effects?.selections ?? []).some((effect) =>
     effect.status === "pending" && !effect.requiresWound);
   if (!actor || (!game.user.isGM && !actor.isOwner) || combat.damage?.status !== "ready"
     || guidedPending) return;
-  const weapon = actor.items.get(combat.attacker.weaponId);
-  const mode = weapon ? findWeaponMode(weapon, combat.attacker.modeKey) : null;
+  const weaponId = weaponPlan?.sourceWeaponId ?? combat.attacker.weaponId;
+  const modeKey = weaponPlan?.sourceModeKey ?? combat.attacker.modeKey;
+  const weapon = actor.items.get(weaponId);
+  const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
   if (!weapon || !mode) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
+  if (!weaponCanEquip(weapon)) return ui.notifications.warn(
+    localize("MYTHRASF.Weapon.BrokenCannotEquip"));
   const modifier = damageModifierFormula(actor.system.attributes?.damageModifier, mode.damageModifierMode) || "0";
-  const extraordinary = combat.declarations?.extraordinaryDamage || "0";
+  const extraordinary = weaponPlan?.sourceSide === "defender"
+    ? "0" : combat.declarations?.extraordinaryDamage || "0";
   const maximizeCount = selectedEffectCount(combat.effects?.selections ?? [], "maximizeDamage");
   const maximizedDamage = maximizeDamageFormulaDetails(
-    combat.attacker.damage || mode.damage || "0", maximizeCount);
+    (weaponPlan?.sourceSide === "defender" ? mode.damage : combat.attacker.damage)
+      || mode.damage || "0", maximizeCount);
   const weaponDamage = maximizedDamage.formula;
   const formula = `max(0, (${weaponDamage}) + (${modifier}) + (${extraordinary}))`;
   let roll;
@@ -869,9 +912,11 @@ async function requestCombatDamage(message, combat, manual = false) {
     if (!choice) return;
     if (choice === "second") [roll, alternateRoll] = [alternateRoll, roll];
   }
-  let chosenLocation = combat.defender.targetType === "weapon" ? combat.defender.targetWeaponId
-    : (combat.effects?.selections ?? []).find((entry) =>
-    entry.ruleKey === "chooseLocation")?.parameters?.locationId;
+  const targetsWeapon = Boolean(weaponPlan) || combat.defender.targetType === "weapon";
+  let chosenLocation = weaponPlan?.targetWeaponId
+    ?? (combat.defender.targetType === "weapon" ? combat.defender.targetWeaponId
+      : (combat.effects?.selections ?? []).find((entry) =>
+        entry.ruleKey === "chooseLocation")?.parameters?.locationId);
   const locationRoll = chosenLocation ? null : await evaluateSystemRoll("1d20", { manual });
   const permanentWoundRule = getSystemSetting(SETTING_KEYS.permanentWoundHitLocationRule);
   const checkEveryMutilatedHit = permanentWoundRule
@@ -911,7 +956,7 @@ async function requestCombatDamage(message, combat, manual = false) {
     system: { category: selectedLocation.category, hpClass: selectedLocation.hpClass,
       permanentWound: selectedLocation.permanentWound } } : null;
   const chosenByEffect = Boolean(chosenLocation && !locationRoll);
-  const requiresPermanentWoundRoll = combat.defender.targetType !== "weapon"
+  const requiresPermanentWoundRoll = !targetsWeapon
     && woundLocationKind(selectedLocationModel).extremity
     && Number(selectedLocation?.permanentWound?.severity ?? 0) > 0
     && (checkEveryMutilatedHit || chosenByEffect);
@@ -943,7 +988,8 @@ async function applyCombatDamage(message, request) {
 }
 
 async function requestDamageLuck(message, combat, manual = false) {
-  const actor = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+  const source = combat.damage?.weaponTarget?.source ?? combat.attacker;
+  const actor = await combatActor(source.tokenUuid, source.actorUuid);
   if (!actor || (!game.user.isGM && !actor.isOwner)
     || Number(actor.system.resources?.luckPoints?.value ?? 0) < 1
     || !["proposed", "stale"].includes(combat.damage?.status)) return;
@@ -973,7 +1019,8 @@ async function refreshDamageProposal(combat, requestedLocationId = null) {
 }
 
 async function requestApplyDamage(message, combat, locationId, manual = false) {
-  const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  const target = combat.damage?.weaponTarget?.target ?? combat.defender;
+  const defender = await combatActor(target.tokenUuid, target.actorUuid);
   if (!defender || (!game.user.isGM && !defender.isOwner)) return;
   const request = { action: "combatApplyDamage", messageId: message.id, revision: combat.revision,
     userId: game.user.id, locationId, manual };

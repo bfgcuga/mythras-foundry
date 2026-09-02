@@ -7,6 +7,7 @@ import { canActorAttack } from "../rules/statuses.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes,
   weaponModeView } from "../rules/weapon-modes.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
+import { weaponCanEquip, weaponDurabilityState } from "../rules/weapon-durability.js";
 
 export function prepareCombatStyleViews(styles, difficulty = "standard") {
   return styles.map((item) => {
@@ -32,10 +33,13 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
   const candidates = resolution.matching.length ? resolution.matching : styles;
   const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
   const durability = npcWeaponDurability(weapon, hitLocations);
+  const durabilityState = weaponDurabilityState(durability);
   return {
     item: weapon, mode, displayName: weaponModeDisplayName(weapon, mode),
     handsRequired: weaponHandsRequired(weapon, mode),
-    prepared: Boolean(weapon.system.equipped && weapon.system.activeModeKey === mode.key),
+    prepared: Boolean(weaponCanEquip(durability) && weapon.system.equipped
+      && weapon.system.activeModeKey === mode.key),
+    durabilityState, broken: durabilityState === "broken", damaged: durabilityState === "damaged",
     styleOptions: [
       ...candidates.map((style) => ({ id: style.id, name: style.name,
         selected: style.id === resolution.style?.id })),
@@ -55,7 +59,8 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
     baseTarget: resolution.target, effectiveTarget,
     hasTargetPenalty: effectiveTarget !== resolution.target,
     canAttack: canActorAttack(actor.statuses) && resolution.difficulty !== "impossible"
-      && weapon.system.equipped && weapon.system.activeModeKey === mode.key
+      && weaponCanEquip(durability) && weapon.system.equipped
+      && weapon.system.activeModeKey === mode.key
       && (Boolean(resolution.style) || resolution.usesBase),
     durabilityDisplay: `${durability.armorPoints} / ${durability.currentHitPoints}–${durability.maxHitPoints}`
   };
@@ -156,7 +161,8 @@ export class CombatSheetController {
     const row = event.currentTarget.closest("[data-item-id]");
     const weapon = this.actor.items.get(row?.dataset.itemId);
     const mode = weapon ? findWeaponMode(weapon, row.dataset.modeKey) : null;
-    if (!weapon || !mode || !weapon.system.equipped || weapon.system.activeModeKey !== mode.key) {
+    if (!weapon || !mode || !weaponCanEquip(weapon) || !weapon.system.equipped
+      || weapon.system.activeModeKey !== mode.key) {
       return ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.ModeNotPrepared"));
     }
     const resolution = resolveWeaponStyle({

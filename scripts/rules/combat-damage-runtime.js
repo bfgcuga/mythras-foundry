@@ -4,8 +4,9 @@ import { damageLocationChoices, majorWoundLuckAdjustment,
   prepareDamageChecks } from "./combat-damage.js";
 import { parryReduction, resolveDamage } from "./combat.js";
 import { totalArmorPoints } from "./armor.js";
-import { selectedEffectCount } from "./combat-effects.js";
+import { combatWeaponDamagePlan, selectedEffectCount } from "./combat-effects.js";
 import { applyLongRangeDamage } from "./ranged-combat.js";
+import { weaponCanEquip, weaponDamageResult } from "./weapon-durability.js";
 
 export function combatDamageDocumentIsCurrent({ location, damage, armorPoints }) {
   if (!location || !damage) return false;
@@ -18,7 +19,11 @@ export async function applyCombatDamageDocument({ location, damage, targetType =
   if (!location?.update || !damage || typeof evaluateRoll !== "function"
     || typeof format !== "function") throw new TypeError("invalid-combat-damage-runtime");
   const appliedDamage = { ...damage };
-  const locationUpdate = { "system.currentHitPoints": appliedDamage.afterHitPoints };
+  const finalHitPoints = targetType === "weapon"
+    ? Math.max(0, Number(appliedDamage.afterHitPoints) || 0) : appliedDamage.afterHitPoints;
+  appliedDamage.afterHitPoints = finalHitPoints;
+  const locationUpdate = { "system.currentHitPoints": finalHitPoints };
+  if (targetType === "weapon" && finalHitPoints <= 0) locationUpdate["system.equipped"] = false;
   let serializedPermanentWoundRoll = null;
 
   if (targetType !== "weapon" && appliedDamage.resultingWound === "major"
@@ -52,12 +57,14 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
     || Number(request.revision) !== Number(combat.revision)) return false;
-  const defender = await resolveActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  const targetEntry = combat.damage?.weaponTarget?.target ?? combat.defender;
+  const defender = await resolveActor(targetEntry.tokenUuid, targetEntry.actorUuid);
   const user = userById(request.userId);
   if (!defender || !user || (!user.isGM && !defender.testUserPermission(user, "OWNER"))) {
     return false;
   }
-  if (!damageLocationChoices(combat).some((location) => location.id === request.locationId)) {
+  if (combat.damage?.targetType !== "weapon"
+    && !damageLocationChoices(combat).some((location) => location.id === request.locationId)) {
     return false;
   }
   if (request.locationId !== combat.damage.locationId) {
@@ -80,8 +87,9 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
     return true;
   }
   const selectedLocation = defender.items.get(request.locationId);
+  const targetType = combat.damage?.targetType ?? combat.defender.targetType;
   const currentArmor = selectedLocation
-    ? armorPoints(selectedLocation, defender, combat.defender.targetType) : null;
+    ? armorPoints(selectedLocation, defender, targetType) : null;
   if (!selectedLocation || !combatDamageDocumentIsCurrent({
     location: selectedLocation, damage: combat.damage, armorPoints: currentArmor })) {
     combat.damage.status = "stale";
@@ -98,7 +106,7 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   let damageApplication;
   try {
     damageApplication = await applyCombatDamageDocument({ location, damage: combat.damage,
-      targetType: combat.defender.targetType, manual: request.manual, evaluateRoll, format });
+      targetType, manual: request.manual, evaluateRoll, format });
   } catch (error) {
     combat.damage.status = "proposed";
     await message.update({ content: render(combat),
@@ -112,7 +120,7 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
       combat.turnEconomy.defenderCombatantId, combat.damage.passiveBlock.weaponId,
       "damage");
   }
-  if (combat.defender.targetType !== "weapon") {
+  if (targetType !== "weapon") {
     await applyWoundConsequences(combat, defender, location, { manual: request.manual });
   }
   combat.damage.appliedBy = user.id;
@@ -124,10 +132,12 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
 
 export async function refreshCombatDamageProposal(combat, requestedLocationId = null,
   { resolveActor, combatById, passiveBlockFor, coverFor } = {}) {
-  const defender = await resolveActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+  const targetEntry = combat.damage?.weaponTarget?.target ?? combat.defender;
+  const defender = await resolveActor(targetEntry.tokenUuid, targetEntry.actorUuid);
   const locationId = requestedLocationId ?? combat.damage.locationId;
   const location = defender?.items.get(locationId);
-  const weaponTarget = combat.defender.targetType === "weapon";
+  const weaponTarget = combat.damage?.targetType === "weapon"
+    || combat.defender.targetType === "weapon";
   if (!defender || !location || (!weaponTarget && location.type !== "hitLocation")
     || (weaponTarget && location.type !== "weapon")) {
     combat.damage.status = "stale";
@@ -138,7 +148,7 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   const defense = combat.defender.defense;
   const activeParry = defense?.type === "parry"
     && ["success", "critical"].includes(combat.resolution.defense.result);
-  let parry = activeParry
+  let parry = weaponTarget ? { type: "none" } : activeParry
     ? parryReduction(combat.attacker.weaponSize, defense.weaponSize) : { type: "none" };
   const improveParry = selectedEffectCount(combat.effects?.selections ?? [], "improveParry");
   const bypassParry = selectedEffectCount(combat.effects?.selections ?? [], "bypassParry");
@@ -154,12 +164,15 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
       weaponSize: passive.weaponSize, locationId: location.id };
   } else delete combat.damage.passiveBlock;
   const effectiveArmor = selectedEffectCount(combat.effects?.selections ?? [], "bypassArmor") ? 0 : armor;
-  const rangeAdjustedDamage = applyLongRangeDamage(combat.damage.rawRoll, combat.ranged?.band);
+  const rangeAdjustedDamage = weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
+    ? Number(combat.damage.rawRoll) : applyLongRangeDamage(combat.damage.rawRoll, combat.ranged?.band);
   const cover = !weaponTarget && defense?.type === "cover" && tracker ? coverFor(tracker,
     combat.turnEconomy.defenderCombatantId, location.id) : null;
   const coverProtection = Math.max(0, Number(cover?.protection ?? 0));
   const calculation = resolveDamage({ rolledDamage: rangeAdjustedDamage,
-    containedBlow: combat.declarations?.containedBlow, parry, passiveBlock: passiveParry,
+    containedBlow: weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
+      ? false : combat.declarations?.containedBlow,
+    parry, passiveBlock: passiveParry,
     coverPoints: coverProtection,
     armorPoints: effectiveArmor, targetSize: defender.system.size });
   calculation.activeParry = activeParry && !bypassParry;
@@ -168,11 +181,17 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   calculation.cover = cover ? { source: cover.source, protection: coverProtection,
     absorbed: Math.min(coverProtection, calculation.afterPassiveBlock) } : null;
   const before = Number(location.system.currentHitPoints ?? 0);
-  let after = before - calculation.penetratingDamage;
+  let after = weaponTarget
+    ? weaponDamageResult({ currentHitPoints: before, armorPoints: effectiveArmor,
+      damage: rangeAdjustedDamage }).afterHitPoints
+    : before - calculation.penetratingDamage;
   if (!selectedEffectCount(combat.effects?.selections ?? [], "bash")) {
     calculation.push = { triggered: false, excess: 0, distance: 0 };
   }
-  let resulting = weaponTarget ? "healthy" : woundLevel(after, location.system.maxHitPoints);
+  let resulting = combat.damage?.targetType === "weapon"
+    ? (after <= 0 ? "broken" : after < before ? "damaged" : "unharmed")
+    : weaponTarget ? "healthy"
+    : woundLevel(after, location.system.maxHitPoints);
   if (!weaponTarget && combat.damage.woundLuck?.locationId === location.id
     && resulting === "major") {
     const adjustment = majorWoundLuckAdjustment({ beforeHitPoints: before,
@@ -200,21 +219,35 @@ export async function applyRolledCombatDamage(message, request, { clone, flagSco
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || combat.damage?.status !== "ready"
     || Number(request.revision) !== Number(combat.revision)) return false;
-  const actor = await resolveActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+  const weaponPlan = combatWeaponDamagePlan(combat);
+  const sourceEntry = weaponPlan?.sourceEntry ?? combat.attacker;
+  const actor = await resolveActor(sourceEntry.tokenUuid, sourceEntry.actorUuid);
   const user = userById(request.userId);
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return false;
+  if (weaponPlan && !weaponCanEquip(actor.items.get(weaponPlan.sourceWeaponId))) return false;
   const checkEveryMutilatedHit = permanentWoundRule !== "reduceD20Range";
-  const selectedLocation = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
+  let selectedLocation = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
     entry.id === request.locationId) : findHitLocation((combat.defender.locations ?? []).map((entry) => ({
     id: entry.id, name: entry.name, system: { rangeStart: entry.rangeStart,
       rangeEnd: entry.rangeEnd, category: entry.category, hpClass: entry.hpClass,
       permanentWound: entry.permanentWound }
   })), request.locationRoll, { ignorePermanentWounds: checkEveryMutilatedHit });
+  if (weaponPlan) {
+    const targetActor = await resolveActor(weaponPlan.targetEntry.tokenUuid,
+      weaponPlan.targetEntry.actorUuid);
+    const targetWeapon = targetActor?.items.get(weaponPlan.targetWeaponId);
+    if (!targetWeapon || targetWeapon.type !== "weapon" || !weaponCanEquip(targetWeapon)
+      || Number(targetWeapon.system.maxHitPoints ?? 0) <= 0) return false;
+    selectedLocation = { id: targetWeapon.id, name: targetWeapon.name,
+      armorPoints: Number(targetWeapon.system.armorPoints ?? 0),
+      currentHitPoints: Number(targetWeapon.system.currentHitPoints ?? 0),
+      maxHitPoints: Number(targetWeapon.system.maxHitPoints ?? 0) };
+  }
   const selectedLocationSystem = selectedLocation?.system ?? selectedLocation ?? {};
   const selectedLocationModel = selectedLocation ? { ...selectedLocation,
     system: selectedLocationSystem } : null;
   const chosenByEffect = selectedEffectCount(combat.effects?.selections ?? [], "chooseLocation") > 0;
-  const requiresPermanentWoundRoll = combat.defender.targetType !== "weapon"
+  const requiresPermanentWoundRoll = !weaponPlan && combat.defender.targetType !== "weapon"
     && woundLocationKind(selectedLocationModel).extremity
     && Number(selectedLocationSystem.permanentWound?.severity ?? 0) > 0
     && (checkEveryMutilatedHit || chosenByEffect);
@@ -237,11 +270,20 @@ export async function applyRolledCombatDamage(message, request, { clone, flagSco
       ? "" : selectedLocation?.name ?? "",
     permanentWoundSeverity: !requiresPermanentWoundRoll
       ? 0 : Number(selectedLocationSystem.permanentWound?.severity ?? 0),
-    permanentWoundHit };
+    permanentWoundHit,
+    ...(weaponPlan ? { targetType: "weapon", weaponTarget: {
+      sourceSide: weaponPlan.sourceSide,
+      source: { actorUuid: weaponPlan.sourceEntry.actorUuid,
+        tokenUuid: weaponPlan.sourceEntry.tokenUuid, weaponId: weaponPlan.sourceWeaponId,
+        weaponName: weaponPlan.sourceSide === "attacker" ? combat.attacker.weaponName
+          : combat.defender.defense.weaponName },
+      target: { actorUuid: weaponPlan.targetEntry.actorUuid,
+        tokenUuid: weaponPlan.targetEntry.tokenUuid, weaponId: weaponPlan.targetWeaponId,
+        weaponName: selectedLocation.name } } } : {}) };
   const rolls = appendRolls(message, request.serializedRoll,
     request.alternateRoll?.serializedRoll, request.serializedLocationRoll,
     request.serializedPermanentWoundHitRoll);
-  if (!location && combat.defender.targetType !== "weapon") {
+  if (!location && !weaponPlan && combat.defender.targetType !== "weapon") {
     combat.damage.status = "missedLocation";
     combat.revision += 1;
     await message.update({ content: render(combat), rolls, [`flags.${flagScope}.combat`]: combat });
@@ -259,7 +301,8 @@ export async function applyCombatDamageLuck(message, request, { clone, flagScope
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
     || Number(request.revision) !== Number(combat.revision)) return false;
-  const actor = await resolveActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+  const source = combat.damage?.weaponTarget?.source ?? combat.attacker;
+  const actor = await resolveActor(source.tokenUuid, source.actorUuid);
   const user = userById(request.userId);
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return false;
   combat.damage.luckHistory = [...(combat.damage.luckHistory ?? []), combat.damage.rawRoll];

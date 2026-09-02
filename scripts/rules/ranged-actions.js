@@ -2,6 +2,7 @@ import { currentActionPoints, effectiveActionPointMaximum } from "./action-point
 import { getActionPointRules } from "../settings.js";
 import { advanceReload, ammunitionState } from "./ranged-combat.js";
 import { weaponModes } from "./weapon-modes.js";
+import { weaponCanEquip } from "./weapon-durability.js";
 
 const SCOPE = "mythras-foundry";
 const AIM = "rangedAim";
@@ -22,7 +23,8 @@ async function spend(actor) {
 }
 
 function rangedChoices(actor) {
-  return actor.items.filter((item) => item.type === "weapon" && item.system.equipped)
+  return actor.items.filter((item) => item.type === "weapon" && item.system.equipped
+    && weaponCanEquip(item))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey
       && ["ranged", "siege"].includes(mode.weaponType)).map((mode) => ({ weapon, mode })));
 }
