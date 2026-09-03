@@ -137,6 +137,10 @@ elimina las zonas anteriores. Si una herida permanente pertenece a una zona no
 reconocible, la operación se bloquea para no perderla. Las referencias a IDs ya
 inexistentes se detectan en la preparación compartida de inventario y combate y
 se presentan con un fondo rojo semántico.
+Las declaraciones de Bloqueo Pasivo almacenan una instantánea para representar el
+estado del asalto, pero el diálogo y su validación reconstruyen las opciones desde
+las localizaciones actuales del Actor combatiente. De este modo, una reparación de
+anatomía realizada con el asalto ya preparado no vuelve a ofrecer IDs eliminados.
 
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las

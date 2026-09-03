@@ -76,6 +76,15 @@ export function periodicConditionEntries(combat) {
   return entries;
 }
 
+export function passiveBlockLocations(actor) {
+  return Array.from(actor?.items ?? [])
+    .filter((item) => item.type === "hitLocation")
+    .sort((left, right) => Number(left.system.rangeStart) - Number(right.system.rangeStart))
+    .map((item) => ({ id: item.id, name: item.name, nameKey: item.system.nameKey,
+      rangeStart: item.system.rangeStart, rangeEnd: item.system.rangeEnd,
+      category: item.system.category, hpClass: item.system.hpClass }));
+}
+
 export function passiveBlockEntries(combat) {
   const entries = [];
   const previousBlocks = tacticalState(combat).passiveBlocks ?? {};
@@ -108,10 +117,7 @@ export function passiveBlockEntries(combat) {
     entries.push({ id: `${combatant.id}:passive-block`, combatantId: combatant.id,
       actorUuid: actor.uuid, actorName: actorDisplayName(actor), key: "passiveBlock",
       automatic: false, status: "pending", previousSelection,
-      choices, locations: actor.items.filter((item) => item.type === "hitLocation")
-        .sort((a, b) => Number(a.system.rangeStart) - Number(b.system.rangeStart))
-        .map((item) => ({ id: item.id, name: item.name, rangeStart: item.system.rangeStart,
-          category: item.system.category, hpClass: item.system.hpClass })) });
+      choices, locations: passiveBlockLocations(actor) });
   }
   return entries;
 }
@@ -487,7 +493,7 @@ async function applyRoundFatigueLuck(message, request) {
 
 async function requestPassiveBlock(message, state, entryId, { waive = false, repeat = false } = {}) {
   const entry = state.queue.find((candidate) => candidate.id === entryId);
-  const actor = entry ? await fromUuid(entry.actorUuid).catch(() => null) : null;
+  const actor = entry ? await roundConsequenceActor(entry) : null;
   if (!entry || entry.key !== "passiveBlock" || (!game.user.isGM && !actor?.isOwner)) return;
   let resolution = repeat && entry.previousSelection
     ? { waived: false, ...entry.previousSelection } : { waived: true };
@@ -499,7 +505,7 @@ async function requestPassiveBlock(message, state, entryId, { waive = false, rep
       const value = `${choice.weaponId}:${choice.modeKey}`;
       return `<option value="${escape(value)}" ${value === defaults?.weapon ? "selected" : ""}>${escape(choice.weaponName)} (${choice.capacity})</option>`;
     }).join("");
-    const locations = entry.locations.map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${defaults?.locationIds.includes(location.id) ? "checked" : ""}> ${escape(hitLocationDisplayName(location))}</label>`).join("");
+    const locations = passiveBlockLocations(actor).map((location) => `<label><input type="checkbox" class="sheet-state-box" name="location" value="${escape(location.id)}" ${defaults?.locationIds.includes(location.id) ? "checked" : ""}> ${escape(hitLocationDisplayName(location))}</label>`).join("");
     resolution = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize("MYTHRASF.PassiveBlock.Declare") },
       content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weaponOptions}</select></label><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</legend>${locations}</fieldset><label><input type="checkbox" class="sheet-state-box" name="crouched" ${defaults?.crouched ? "checked" : ""}> ${escape(game.i18n.localize("MYTHRASF.Status.CrouchedBehindShield"))}</label></div>`,
@@ -606,7 +612,9 @@ async function applyPassiveBlock(message, request) {
     resolution.crouched = Boolean(resolution.crouched && mode?.weaponType === "shield");
     const choice = entry.choices?.find((candidate) => candidate.weaponId === weaponId
       && candidate.modeKey === modeKey);
-    const locations = entry.locations; const valid = validatePassiveBlock({ mode, locations,
+    const locations = passiveBlockLocations(actor);
+    entry.locations = locations;
+    const valid = validatePassiveBlock({ mode, locations,
       selectedIds: resolution.locationIds ?? [], crouched: resolution.crouched,
       baseCapacity: choice?.capacity ?? 0,
       checkContiguity: Boolean(getSystemSetting(SETTING_KEYS.passiveBlockContiguity)) });

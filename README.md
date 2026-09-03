@@ -70,6 +70,9 @@ El sistema incluye actualmente:
   al parar se preselecciona otra arma válida para conservar el bloqueo si existe;
   sin PA, Parar y Evadir se retiran antes de abrir sus diálogos y la tarjeta
   identifica directamente que no quedan puntos de acción;
+  el diálogo reconstruye sus localizaciones desde el Actor vivo, por lo que una
+  reparación anatómica posterior a la preparación del asalto no conserva zonas
+  antiguas en el selector;
   las tablas de localizaciones de personaje y PNJ muestran
   además qué zonas conserva protegidas;
 - combate a distancia con distancia manual, bandas y penalización por TAM y

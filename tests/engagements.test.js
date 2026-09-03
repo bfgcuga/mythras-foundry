@@ -4,7 +4,8 @@ import { engagementId, engagementRestriction, initialReachPosition, reachDiffere
   relationSituationReach, shiftedWeaponSize } from "../scripts/rules/engagements.js";
 import { contiguousLocationIds, isNaturalWeaponMode, passiveBlockCapacity,
   validatePassiveBlock } from "../scripts/rules/passive-block.js";
-import { passiveBlockEntries, renderRoundConsequences } from "../scripts/rules/round-consequences.js";
+import { passiveBlockEntries, passiveBlockLocations,
+  renderRoundConsequences } from "../scripts/rules/round-consequences.js";
 
 test("las relaciones usan una identidad estable y el alcance largo con dos grados", () => {
   assert.equal(engagementId("b", "a"), "a::b");
@@ -92,6 +93,20 @@ test("el bloqueo pasivo propone primero el escudo sin ocultar otras armas", () =
   const [entry] = passiveBlockEntries({ combatants: [{ id: "fighter", actor,
     isDefeated: false }] });
   assert.deepEqual(entry.choices.map((choice) => choice.weaponId), ["shield", "sword"]);
+});
+
+test("el bloqueo pasivo reconstruye las localizaciones desde el Actor vivo", () => {
+  const actor = { items: [
+    { id: "old-head", name: "Head", type: "hitLocation",
+      system: { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head" } },
+    { id: "sword", name: "Espada", type: "weapon", system: {} }
+  ] };
+  const stale = passiveBlockLocations(actor);
+  actor.items[0] = { id: "new-head", name: "Cabeza", type: "hitLocation",
+    system: { nameKey: "head", rangeStart: 19, rangeEnd: 20, category: "head" } };
+  assert.deepEqual(stale.map((location) => location.id), ["old-head"]);
+  assert.deepEqual(passiveBlockLocations(actor).map((location) => location.id), ["new-head"]);
+  assert.equal(passiveBlockLocations(actor)[0].nameKey, "head");
 });
 
 test("el bloqueo pasivo reutiliza la declaración del asalto anterior", () => {
