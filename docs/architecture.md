@@ -142,7 +142,8 @@ de la edición ordinaria: después de reconciliar un Actor, borrar, renombrar o
 añadir zonas personalizadas no provoca que el arranque las restaure o sustituya.
 Las hojas ofrecen una selección de morfología separada de su aplicación: cambiar
 el selector solo guarda la elección. En modo edición del personaje, o desde el
-PNJ fuente editable y nunca desde un token sintético, «Aplicar morfología» crea
+PNJ fuente en su propio modo de edición y nunca desde un token sintético,
+«Aplicar morfología» crea
 primero el conjunto canónico, conserva por clave las heridas permanentes, el
 estado compatible y la armadura natural, y reasigna armaduras, armas naturales,
 efectos activos, Bloqueo Pasivo y Cobertura; solo después elimina las zonas

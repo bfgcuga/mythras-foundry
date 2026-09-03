@@ -17,6 +17,9 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
   }
   assert.match(characterSheet, /canDeleteHitLocations: this\.isEditable && Boolean\(this\._editMode\)/);
   assert.match(characterSheet, /canManageMorphology: this\.isEditable && Boolean\(this\._editMode\)/);
+  assert.match(npcSheet, /canManageMorphology: !this\.actor\.isToken && this\.isEditable && Boolean\(this\._editMode\)/);
+  assert.match(npcSheet, /data-action='toggle-edit-mode'/);
+  assert.match(npcTemplate, /data-action="toggle-edit-mode"/);
   assert.match(characterTemplate, /templates\/actor\/parts\/hit-location-table\.hbs/);
   assert.match(characterSheet, /data-action='apply-morphology'/);
   const hitLocationPartial = await read("templates/actor/parts/hit-location-table.hbs");

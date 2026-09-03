@@ -185,12 +185,14 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       combatWeapons,
       ...combatWeaponGroups,
       inventorySections: inventoryView.sections,
-      canDeleteHitLocations: this.actor.isToken ? false : this.isEditable,
-      canManageMorphology: !this.actor.isToken && this.isEditable,
+      editMode: Boolean(this._editMode),
+      canToggleEditMode: !this.actor.isToken && this.isEditable,
+      canDeleteHitLocations: !this.actor.isToken && this.isEditable && Boolean(this._editMode),
+      canManageMorphology: !this.actor.isToken && this.isEditable && Boolean(this._editMode),
       canApplyMorphology: Boolean(MORPHOLOGIES[this.actor.system.morphologyKey]),
       morphologyChoices: MORPHOLOGY_KEYS.map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Morphology.${value}`) })),
-      hitLocationTemplateMode: !this.actor.isToken,
+      hitLocationTemplateMode: !this.actor.isToken && Boolean(this._editMode),
       npcLayout: true,
       combatStyleTemplateMode: !this.actor.isToken,
       penalties,
@@ -225,6 +227,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ?.addEventListener("click", () => this.#viewPortrait());
     this.element.querySelector("[data-action='regenerate-npc']")
       ?.addEventListener("click", (event) => this.#regenerate(event));
+    this.element.querySelector("[data-action='toggle-edit-mode']")
+      ?.addEventListener("click", () => this.#toggleEditMode());
     this.element.querySelectorAll("[data-action='create-item']").forEach((button) =>
       button.addEventListener("click", (event) => this.#createItem(event)));
     this.element.querySelectorAll("[data-action='edit-item']").forEach((button) =>
@@ -289,6 +293,12 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       panel.classList.toggle("active", panel.dataset.tabContent === tab));
   }
 
+  async #toggleEditMode() {
+    if (!this.isEditable || this.actor.isToken) return;
+    this._editMode = !this._editMode;
+    await this.render({ force: true });
+  }
+
   async #choosePortrait() {
     if (!this.isEditable) return;
     const directory = `worlds/${game.world.id}`;
@@ -313,7 +323,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #applyMorphology() {
-    if (!this.isEditable || this.actor.isToken) return;
+    if (!this.isEditable || this.actor.isToken || !this._editMode) return;
     const morphologyKey = this.element.querySelector("select[name='system.morphologyKey']")?.value
       ?? this.actor.system.morphologyKey;
     if (!MORPHOLOGIES[morphologyKey]) return;
