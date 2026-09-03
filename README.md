@@ -43,6 +43,9 @@ El sistema incluye actualmente:
   sus zonas compartidas con la anatomía humana se traducen y los nombres propios
   de cada monstruo se conservan literalmente. Una vez reconciliado el Actor, las
   altas, cambios de nombre y bajas manuales de localizaciones se respetan;
+  en modo edición puede restaurarse explícitamente la anatomía humana, conservando
+  las heridas permanentes reconocibles y reparando las referencias de equipo. Los
+  objetos que apuntan a IDs de localización eliminados se resaltan en rojo;
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
   Cegado y Derribado imponen sus dificultades mínimas desde el HUD o la hoja;

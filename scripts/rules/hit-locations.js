@@ -233,3 +233,43 @@ export function humanHitLocationData(actorSystem) {
     };
   });
 }
+
+export function hasBrokenHitLocationReference(item, locations = []) {
+  const locationIds = new Set((locations ?? [])
+    .filter((location) => location?.type === "hitLocation")
+    .map((location) => location.id ?? location._id).filter(Boolean));
+  const system = item?.system ?? {};
+  if (item?.type === "armor") {
+    return Array.from(system.coveredLocationIds ?? [])
+      .some((locationId) => Boolean(locationId) && !locationIds.has(locationId));
+  }
+  return item?.type === "weapon" && system.durabilitySource === "hitLocation"
+    && Boolean(system.linkedLocationId) && !locationIds.has(system.linkedLocationId);
+}
+
+export function restoredHumanHitLocationData(actorSystem, existingLocations = []) {
+  const sources = humanHitLocationData(actorSystem);
+  for (const source of sources) {
+    const candidates = (existingLocations ?? []).filter((location) =>
+      genericHitLocationKey(location) === source.system.nameKey);
+    const wounded = candidates.sort((left, right) =>
+      Number(right.system?.permanentWound?.severity ?? 0)
+      - Number(left.system?.permanentWound?.severity ?? 0))[0];
+    const severity = Number(wounded?.system?.permanentWound?.severity ?? 0);
+    if (!severity) continue;
+    const previous = wounded.system.permanentWound ?? {};
+    const wound = permanentWoundState(source, {
+      severity,
+      roll: previous.roll,
+      description: previous.description
+    });
+    source.system.permanentWound = wound;
+    source.system.maxHitPoints = wound.effectiveMaxHitPoints;
+    source.system.currentHitPoints = Math.min(
+      Number(wounded.system.currentHitPoints ?? wound.effectiveMaxHitPoints),
+      wound.effectiveMaxHitPoints
+    );
+    source.system.disabled = Boolean(wounded.system.disabled);
+  }
+  return sources;
+}

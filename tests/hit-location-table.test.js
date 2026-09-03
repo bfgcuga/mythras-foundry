@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { prepareHitLocationTable } from "../scripts/ui/hit-location-table.js";
+import { hasBrokenHitLocationReference, restoredHumanHitLocationData }
+  from "../scripts/rules/hit-locations.js";
 
 test("personaje y PNJ consumen un único preparador y un único parcial de localizaciones", async () => {
   const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -13,13 +15,61 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
     assert.match(source, /prepareHitLocationTable\(\{ actor: this\.actor/);
     assert.doesNotMatch(source, /passiveBlockLocationIds|hitLocations\.map\(\(item\) => \(\{/);
   }
-  assert.match(characterSheet, /canDeleteHitLocations: this\.isEditable/);
+  assert.match(characterSheet, /canDeleteHitLocations: this\.isEditable && Boolean\(this\._editMode\)/);
+  assert.match(characterSheet, /canRestoreHumanHitLocations: this\.isEditable && Boolean\(this\._editMode\)/);
   assert.match(characterTemplate, /templates\/actor\/parts\/hit-location-table\.hbs/);
+  assert.match(characterSheet, /data-action='restore-human-hit-locations'/);
   assert.match(npcTemplate, /templates\/actor\/parts\/combat-tab\.hbs/);
   for (const source of [characterTemplate, npcTemplate]) {
     assert.doesNotMatch(source, /class="combat-location-line/);
   }
   assert.match(registration, /templates\/actor\/parts\/hit-location-table\.hbs/);
+});
+
+test("las referencias de localización rotas reciben el indicador visual compartido", async () => {
+  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  const [tree, list, combat, styles] = await Promise.all([
+    read("templates/actor/parts/inventory-tree.hbs"),
+    read("templates/actor/parts/inventory-list.hbs"),
+    read("templates/actor/parts/combat-tab.hbs"),
+    read("styles/mythras-foundry.css")
+  ]);
+  for (const template of [tree, list, combat]) {
+    assert.match(template, /broken-location-reference/);
+    assert.match(template, /MYTHRASF\.HitLocation\.BrokenReference/);
+  }
+  assert.match(styles, /\.broken-location-reference[\s\S]*?background:/);
+});
+
+test("restaurar anatomía humana conserva la herida permanente reconocible", () => {
+  const existing = [{ id: "old-head", name: "Cabeza", type: "hitLocation", system: {
+    nameKey: "head", rangeStart: 19, rangeEnd: 20, maxHitPoints: 2,
+    currentHitPoints: -1, disabled: true, permanentWound: {
+      severity: 2, roll: 2, originalMaxHitPoints: 6, effectiveMaxHitPoints: 2,
+      lostHitResults: 0, description: "Cicatriz"
+    }
+  } }];
+  const restored = restoredHumanHitLocationData({ constitution: 12, size: 13 }, existing);
+  const head = restored.find((location) => location.system.nameKey === "head");
+  assert.equal(head.system.permanentWound.severity, 2);
+  assert.equal(head.system.permanentWound.description, "Cicatriz");
+  assert.equal(head.system.maxHitPoints, 2);
+  assert.equal(head.system.currentHitPoints, -1);
+  assert.equal(head.system.disabled, true);
+});
+
+test("detecta armaduras y armas que apuntan a IDs de localización borrados", () => {
+  const locations = [{ id: "head", type: "hitLocation", system: {} }];
+  const helmet = { type: "armor", system: { coveredLocationIds: ["deleted"] } };
+  const sword = { type: "weapon", system: { durabilitySource: "independent",
+    linkedLocationId: "deleted" } };
+  const horn = { type: "weapon", system: { durabilitySource: "hitLocation",
+    linkedLocationId: "deleted" } };
+  assert.equal(hasBrokenHitLocationReference(helmet, locations), true);
+  assert.equal(hasBrokenHitLocationReference(sword, locations), false);
+  assert.equal(hasBrokenHitLocationReference(horn, locations), true);
+  helmet.system.coveredLocationIds = ["head"];
+  assert.equal(hasBrokenHitLocationReference(helmet, locations), false);
 });
 
 test("el esquema permite nombres personalizados sin clave traducible", async () => {

@@ -4,6 +4,7 @@ import { inventoryLocation, inventoryRows, inventorySections } from "../rules/in
 import { isNaturalWeaponMode } from "../rules/passive-block.js";
 import { weaponModes } from "../rules/weapon-modes.js";
 import { weaponDurabilityState } from "../rules/weapon-durability.js";
+import { hasBrokenHitLocationReference } from "../rules/hit-locations.js";
 
 export function isNaturalWeapon(weapon) {
   if (weapon?.type !== "weapon") return false;
@@ -18,7 +19,9 @@ export function inventoryItemsForActor(items = []) {
 
 export function prepareInventoryView(items = []) {
   const inventoryItems = inventoryItemsForActor(items);
+  const hitLocations = Array.from(items).filter((item) => item.type === "hitLocation");
   const prepareRows = (sectionItems) => inventoryRows(sectionItems).map((row) => ({ ...row,
+    brokenLocationReference: hasBrokenHitLocationReference(row.item, hitLocations),
     handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
     encumbrance: itemEncumbrance(row.item),
     priceLabel: `${Number(row.system.value ?? 0)} ${game.i18n.localize(

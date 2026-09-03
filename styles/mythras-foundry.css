@@ -2030,6 +2030,20 @@
   right: 0.55rem;
 }
 
+.mythras-foundry .combat-panel-actions {
+  position: absolute;
+  top: -0.35rem;
+  right: 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.mythras-foundry .broken-location-reference {
+  background: rgba(166, 35, 35, 0.28);
+  border-radius: 0.2rem;
+}
+
 .mythras-foundry .combat-location-head,
 .mythras-foundry .combat-location-line {
   display: grid;

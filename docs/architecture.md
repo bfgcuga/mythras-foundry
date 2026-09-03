@@ -130,6 +130,13 @@ inyecta una anatomía humana en un PNJ.
 La marca `flags.mythras-foundry.hitLocationMigrationVersion` separa esa reparación
 de la edición ordinaria: después de reconciliar un Actor, borrar, renombrar o
 añadir zonas personalizadas no provoca que el arranque las restaure o sustituya.
+La hoja de personaje ofrece en modo edición una reparación manual destructiva de
+la anatomía humana. Primero crea el conjunto canónico, conserva por clave las
+heridas permanentes y reasigna las referencias de armaduras y armas; solo después
+elimina las zonas anteriores. Si una herida permanente pertenece a una zona no
+reconocible, la operación se bloquea para no perderla. Las referencias a IDs ya
+inexistentes se detectan en la preparación compartida de inventario y combate y
+se presentan con un fondo rojo semántico.
 
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las

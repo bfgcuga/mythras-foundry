@@ -11,7 +11,7 @@
     <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button>
   </div></fieldset>
   {{> "systems/mythras-foundry/templates/actor/parts/hit-location-table.hbs"
-    table=hitLocationTable editable=editable canDelete=canDeleteHitLocations
+    table=hitLocationTable editable=editable canDelete=canDeleteHitLocations canRestoreHuman=canRestoreHumanHitLocations
     templateMode=hitLocationTemplateMode npcLayout=npcLayout}}
 
   <fieldset class="combat-paper-panel combat-paper-melee-weapons">
@@ -25,7 +25,7 @@
     {{#each meleeCombatWeapons as |row|}}
       <div class="combat-weapon-line combat-weapon-melee weapon-durability-{{row.durabilityState}}" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
-          <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
+          <button type="button" class="{{#if row.brokenLocationReference}}broken-location-reference{{/if}}" data-action="edit-item" title="{{#if row.brokenLocationReference}}{{localize 'MYTHRASF.HitLocation.BrokenReference'}}{{else}}{{row.displayName}}{{/if}}">{{row.displayName}}</button>
           <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" title="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" {{#if row.broken}}disabled{{/if}}><i class="fas {{#if row.broken}}fa-hand-slash{{else}}fa-hand{{/if}}" aria-hidden="true"></i>{{#unless row.broken}}<i class="fas fa-hand" aria-hidden="true"></i>{{/unless}}</button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.mode.reach}}</span>
@@ -60,7 +60,7 @@
     {{#each rangedCombatWeapons as |row|}}
       <div class="combat-weapon-line combat-weapon-ranged weapon-durability-{{row.durabilityState}}" data-item-id="{{row.item.id}}" data-mode-key="{{row.mode.key}}">
         <div class="combat-weapon-name">
-          <button type="button" data-action="edit-item" title="{{row.displayName}}">{{row.displayName}}</button>
+          <button type="button" class="{{#if row.brokenLocationReference}}broken-location-reference{{/if}}" data-action="edit-item" title="{{#if row.brokenLocationReference}}{{localize 'MYTHRASF.HitLocation.BrokenReference'}}{{else}}{{row.displayName}}{{/if}}">{{row.displayName}}</button>
           <button type="button" data-action="toggle-equipped" data-hands="{{row.handsRequired}}" class="sheet-icon-button equipment-state-toggle hand-toggle {{#if row.prepared}}equipped{{/if}}" aria-pressed="{{row.prepared}}" aria-label="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" title="{{#if row.broken}}{{localize "MYTHRASF.Weapon.BrokenCannotEquip"}}{{else}}{{localize "MYTHRASF.Weapon.ToggleHands"}}{{/if}}" {{#if row.broken}}disabled{{/if}}><i class="fas {{#if row.broken}}fa-hand-slash{{else}}fa-hand{{/if}}" aria-hidden="true"></i>{{#unless row.broken}}<i class="fas fa-hand" aria-hidden="true"></i>{{/unless}}</button>
         </div>
         <span>{{row.mode.damage}}</span><span>{{row.mode.size}}</span><span>{{row.damageModifierLabel}}</span><span>{{row.mode.range}}</span>

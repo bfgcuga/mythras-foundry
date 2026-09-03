@@ -8,6 +8,7 @@ import { findWeaponMode, weaponModeDisplayName, weaponModes,
   weaponModeView } from "../rules/weapon-modes.js";
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { weaponCanEquip, weaponDurabilityState } from "../rules/weapon-durability.js";
+import { hasBrokenHitLocationReference } from "../rules/hit-locations.js";
 
 export function prepareCombatStyleViews(styles, difficulty = "standard") {
   return styles.map((item) => {
@@ -40,6 +41,7 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
     prepared: Boolean(weaponCanEquip(durability) && weapon.system.equipped
       && weapon.system.activeModeKey === mode.key),
     durabilityState, broken: durabilityState === "broken", damaged: durabilityState === "damaged",
+    brokenLocationReference: hasBrokenHitLocationReference(weapon, hitLocations),
     styleOptions: [
       ...candidates.map((style) => ({ id: style.id, name: style.name,
         selected: style.id === resolution.style?.id })),
