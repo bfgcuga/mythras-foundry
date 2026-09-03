@@ -11,7 +11,9 @@
     <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button>
   </div></fieldset>
   {{> "systems/mythras-foundry/templates/actor/parts/hit-location-table.hbs"
-    table=hitLocationTable editable=editable canDelete=canDeleteHitLocations canRestoreHuman=canRestoreHumanHitLocations
+    table=hitLocationTable editable=editable canDelete=canDeleteHitLocations
+    canManageMorphology=canManageMorphology morphologyChoices=morphologyChoices
+    morphologyKey=actor.system.morphologyKey canApplyMorphology=canApplyMorphology
     templateMode=hitLocationTemplateMode npcLayout=npcLayout}}
 
   <fieldset class="combat-paper-panel combat-paper-melee-weapons">

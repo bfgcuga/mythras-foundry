@@ -28,6 +28,22 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 - Realizar la revisión estética final del menú de situación táctica cuando sus
   controles, permisos y operaciones estén estabilizados.
 
+## Armaduras y morfologías
+
+- Revisar si las piezas anatómicas humanas —yelmos, petos, faldares, brazales y
+  grebas— deben poder utilizarse en morfologías no humanas cuando exista una
+  zona semánticamente equivalente. Si se admite parcialmente, definir una
+  matriz explícita de compatibilidad entre tipo de pieza y morfología, evitando
+  equivalencias absurdas como asignar automáticamente un yelmo humano a la
+  cabeza de una araña gigante. Valorar como solución un rasgo explícito
+  «Humanoide», independiente de `system.morphologyKey`: la morfología seguiría
+  definiendo la tabla anatómica y el rasgo permitiría usar piezas humanas solo
+  en las zonas que declaren una equivalencia compatible (`head`, `chest`,
+  `abdomen`, brazos o piernas). La compatibilidad no debe deducirse únicamente
+  del nombre o del rango d20. Hasta resolverlo, estas piezas solo se asignan
+  automáticamente a anatomías humanoides y las demás emplean «Pieza de
+  armadura» vinculada a una localización concreta.
+
 ## Estados y tiempo
 
 - Revisar conjuntamente el catálogo del sistema y los estados nativos de

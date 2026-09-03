@@ -1,4 +1,5 @@
 import { weaponHandsRequired } from "../rules/equipment.js";
+import { MORPHOLOGY_KEYS, MORPHOLOGY_LOCATION_KEYS } from "../rules/morphologies.js";
 
 const {
   ArrayField,
@@ -313,9 +314,13 @@ export class ArmorData extends EquipmentData {
 export class HitLocationData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
+      morphologyKey: new StringField({ required: true, nullable: false, initial: "custom",
+        choices: MORPHOLOGY_KEYS }),
+      locationKey: new StringField({ required: true, nullable: false, initial: "", blank: true,
+        choices: ["", ...MORPHOLOGY_LOCATION_KEYS] }),
       nameKey: new StringField({ required: true, nullable: false, initial: "",
         blank: true,
-        choices: ["", "rightLeg", "leftLeg", "abdomen", "chest", "rightArm", "leftArm", "head"] }),
+        choices: ["", ...MORPHOLOGY_LOCATION_KEYS] }),
       rangeStart: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 1, max: 20 }),
       rangeEnd: new NumberField({ required: true, nullable: false, integer: true, initial: 1, min: 1, max: 20 }),
       category: new StringField({ required: true, nullable: false, initial: "other",

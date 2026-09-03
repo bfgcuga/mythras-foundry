@@ -90,12 +90,19 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static async _onSubmitForm(event, form, formData) {
     const update = foundry.utils.expandObject(formData.object);
-    if (this.item.type === "hitLocation" && this.item.system.nameKey) {
+    if (this.item.type === "hitLocation"
+      && (this.item.system.locationKey || this.item.system.nameKey)) {
       update.system ??= {};
       const nameUpdate = hitLocationNameEditUpdate(this.item, update.name);
       update.name = nameUpdate.name;
       if (nameUpdate["system.nameKey"] !== undefined) {
         update.system.nameKey = nameUpdate["system.nameKey"];
+      }
+      if (nameUpdate["system.locationKey"] !== undefined) {
+        update.system.locationKey = nameUpdate["system.locationKey"];
+      }
+      if (nameUpdate["system.morphologyKey"] !== undefined) {
+        update.system.morphologyKey = nameUpdate["system.morphologyKey"];
       }
     }
     if (["equipment", "weapon", "armor"].includes(this.item.type)

@@ -35,16 +35,25 @@ El sistema incluye actualmente:
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
-- las siete localizaciones humanas usan claves canónicas y se presentan en el
-  idioma de cada usuario. Una migración versionada inicial recompone conjuntos incompletos, consolida
+- los personajes y PNJ declaran una morfología estable: humanoide, las trece
+  anatomías no humanas de *Mythras básico revisado* o personalizada. Sus
+  localizaciones canónicas usan claves semánticas y se presentan en el idioma
+  de cada usuario sin alterar los nombres personalizados. Una migración
+  versionada identifica únicamente tablas exactas y nunca reconstruye una
+  anatomía por asignarle una morfología. La reparación inicial anterior recompone conjuntos incompletos, consolida
   duplicados sin perder referencias de armas o armaduras y conserva el estado
   mecánico de la variante relevante. Las criaturas oficiales recuperan desde su
   catálogo cualquier localización ausente y vuelven a enlazar sus armas naturales;
   sus zonas compartidas con la anatomía humana se traducen y los nombres propios
   de cada monstruo se conservan literalmente. Una vez reconciliado el Actor, las
   altas, cambios de nombre y bajas manuales de localizaciones se respetan;
-  en modo edición puede restaurarse explícitamente la anatomía humana, conservando
-  las heridas permanentes reconocibles y reparando las referencias de equipo. Los
+  en modo edición puede aplicarse explícitamente la plantilla seleccionada,
+  conservando las heridas permanentes y la armadura natural compatibles y
+  reparando referencias de equipo, efectos, Bloqueo Pasivo y Cobertura. Las
+  heridas permanentes sin equivalencia bloquean la operación; `custom` nunca
+  sustituye localizaciones. Las piezas humanas se autoasignan solo sobre una
+  anatomía humanoide; otras zonas se protegen con la pieza genérica vinculada a
+  su ID concreto. Los
   objetos que apuntan a IDs de localización eliminados se resaltan en rojo;
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras
@@ -95,8 +104,8 @@ El sistema incluye actualmente:
   comparten también las vistas operativas de Combate e Inventario; los ataques
   naturales permanecen en Combate sin tratarse como objetos transportados. La
   hoja de personaje añade Trasfondo narrativo y una silueta humana interactiva
-  vinculada por datos
-  canónicos a sus localizaciones de golpe;
+  vinculada por datos canónicos a sus localizaciones de golpe cuando la
+  morfología es humanoide;
 - antes de cada tirada física, personaje y PNJ permiten decidir si una Herida
   Grave aumenta su dificultad y si una localización marcada como inutilizada
   hace imposible esa acción concreta; una lesión permanente no participa en

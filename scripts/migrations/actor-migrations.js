@@ -4,10 +4,13 @@ import { HUMAN_HIT_LOCATIONS, humanArmorFactors, humanHitLocationData,
   genericHitLocationKey, permanentWoundState } from "../rules/hit-locations.js";
 import { normalizeWeaponProfile } from "../rules/combat.js";
 import { ARMOR_MATERIAL_MODIFIERS, armorPieceTypeForLocation } from "../rules/armor.js";
+import { identifyMorphology, semanticLocationKey } from "../rules/morphologies.js";
 
 const LOCATION_MIGRATION_SCOPE = "mythras-foundry";
 const LOCATION_MIGRATION_FLAG = "hitLocationMigrationVersion";
 const LOCATION_MIGRATION_VERSION = 1;
+const MORPHOLOGY_MIGRATION_FLAG = "morphologyMigrationVersion";
+const MORPHOLOGY_MIGRATION_VERSION = 1;
 
 const locationMigrationComplete = (actor) => Number(
   actor.getFlag?.(LOCATION_MIGRATION_SCOPE, LOCATION_MIGRATION_FLAG) ?? 0
@@ -92,6 +95,24 @@ export async function ensureCreatureHitLocations(actor) {
   await markLocationMigrationComplete(actor);
 }
 
+export async function ensureActorMorphology(actor) {
+  if (!["character", "npc"].includes(actor.type)
+    || Number(actor.getFlag?.(LOCATION_MIGRATION_SCOPE, MORPHOLOGY_MIGRATION_FLAG) ?? 0)
+      >= MORPHOLOGY_MIGRATION_VERSION) return;
+  const locations = actor.items.filter((item) => item.type === "hitLocation");
+  const morphologyKey = identifyMorphology(locations);
+  const updates = locations.map((location) => {
+    const locationKey = semanticLocationKey(location, morphologyKey);
+    return { _id: location.id, "system.morphologyKey": morphologyKey,
+      "system.locationKey": locationKey,
+      ...(locationKey ? { "system.nameKey": locationKey } : {}) };
+  });
+  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+  await actor.update({ "system.morphologyKey": morphologyKey });
+  await actor.setFlag(LOCATION_MIGRATION_SCOPE, MORPHOLOGY_MIGRATION_FLAG,
+    MORPHOLOGY_MIGRATION_VERSION);
+}
+
 function locationPreservationScore(location) {
   return (Number(location.system.armorPoints ?? 0) * 20)
     + (location.system.disabled ? 10 : 0)
@@ -127,6 +148,8 @@ export function hitLocationNameMigrationUpdate(item) {
   const update = {};
   if (name !== item.name) update.name = name;
   if (item.system?.nameKey !== nameKey) update["system.nameKey"] = nameKey;
+  if (item.system?.locationKey !== nameKey) update["system.locationKey"] = nameKey;
+  if (item.system?.morphologyKey !== "humanoid") update["system.morphologyKey"] = "humanoid";
   return Object.keys(update).length ? update : null;
 }
 

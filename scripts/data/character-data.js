@@ -7,6 +7,7 @@ import { getActionPointRules } from "../settings.js";
 import { resolveActorConditions } from "../rules/actor-conditions.js";
 import { CHARACTER_GENERATION_METHODS } from "../rules/character-generation.js";
 import { UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { MORPHOLOGY_KEYS } from "../rules/morphologies.js";
 
 const {
   ArrayField,
@@ -58,6 +59,8 @@ export class CharacterData extends foundry.abstract.TypeDataModel {
     );
 
     return {
+      morphologyKey: new StringField({ required: true, nullable: false, initial: "humanoid",
+        choices: MORPHOLOGY_KEYS }),
       characteristicsGenerated: new BooleanField({
         required: true,
         nullable: false,

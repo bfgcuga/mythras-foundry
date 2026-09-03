@@ -49,8 +49,9 @@ export function humanHitLocationKey(location) {
 }
 
 export function hitLocationDisplayName(location, localize = (key) => game.i18n.localize(key)) {
-  const key = String(location?.system?.nameKey ?? location?.nameKey ?? "");
-  return HUMAN_HIT_LOCATION_KEYS.includes(key)
+  const key = String(location?.system?.locationKey ?? location?.locationKey
+    ?? location?.system?.nameKey ?? location?.nameKey ?? "");
+  return key
     ? localize(`MYTHRASF.HitLocation.Name.${key}`)
     : String(location?.name ?? "");
 }
@@ -58,11 +59,12 @@ export function hitLocationDisplayName(location, localize = (key) => game.i18n.l
 export function hitLocationNameEditUpdate(location, submittedName,
   localize = (key) => game.i18n.localize(key)) {
   const submitted = String(submittedName ?? "");
-  if (!location?.system?.nameKey) return { name: submitted };
+  if (!location?.system?.locationKey && !location?.system?.nameKey) return { name: submitted };
   if (submitted === hitLocationDisplayName(location, localize)) {
     return { name: String(location.name ?? "") };
   }
-  return { name: submitted, "system.nameKey": "" };
+  return { name: submitted, "system.nameKey": "", "system.locationKey": "",
+    "system.morphologyKey": "custom" };
 }
 
 export function canonicalHumanHitLocationName(location) {
@@ -214,6 +216,8 @@ export function humanHitLocationData(actorSystem) {
       name: location.name,
       type: "hitLocation",
       system: {
+        morphologyKey: "humanoid",
+        locationKey: location.nameKey,
         nameKey: location.nameKey,
         rangeStart: location.rangeStart,
         rangeEnd: location.rangeEnd,

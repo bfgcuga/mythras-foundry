@@ -2039,6 +2039,19 @@
   gap: 0.25rem;
 }
 
+.mythras-foundry .combat-paper-locations.has-morphology-controls > legend {
+  max-width: calc(100% - 15rem);
+}
+
+.mythras-foundry .combat-morphology-control {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--mythras-font-size-table);
+}
+
+.mythras-foundry .combat-morphology-control select { width: 10rem; }
+
 .mythras-foundry .broken-location-reference {
   background: rgba(166, 35, 35, 0.28);
   border-radius: 0.2rem;

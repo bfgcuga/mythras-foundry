@@ -1,17 +1,19 @@
 import { getTraitSource } from "./traits.js";
+import { semanticLocationKey } from "../rules/morphologies.js";
 
 const sourceFlags = { "mythras-foundry": { source: "mythras-imperative-srd" } };
 
 const characteristicKeys = ["strength", "constitution", "size", "dexterity",
   "intelligence", "power", "charisma"];
 
-function npcSystem({ values, formulas, species, instinct = false, actionPoints = 2,
+function npcSystem({ values, formulas, species, morphologyKey = "custom", instinct = false, actionPoints = 2,
   movement = 6, magicPoints = null, damageModifier = "", description = "",
   magicNotes = "Ninguna", armorNotes = "" }) {
   const system = Object.fromEntries(characteristicKeys.map((key) => [key, values[key] ?? 1]));
   system.characteristicFormulas = Object.fromEntries(
     characteristicKeys.map((key) => [key, formulas[key] ?? ""]));
   system.identity = { species };
+  system.morphologyKey = morphologyKey;
   system.intelligenceKind = instinct ? "instinct" : "intelligence";
   system.description = description;
   system.magicNotes = magicNotes;
@@ -102,7 +104,11 @@ function passion(buildKey, name, value) {
 }
 
 function creature(buildKey, name, system, items, img = "icons/svg/mystery-man.svg") {
-  return { buildKey, name, type: "npc", img, system, items, prototypeToken: {
+  const preparedItems = items.map((item) => item.type !== "hitLocation" ? item : ({ ...item,
+    system: { ...item.system, morphologyKey: system.morphologyKey,
+      locationKey: semanticLocationKey(item, system.morphologyKey),
+      nameKey: semanticLocationKey(item, system.morphologyKey) } }));
+  return { buildKey, name, type: "npc", img, system, items: preparedItems, prototypeToken: {
     actorLink: false, name, texture: { src: img }, disposition: -1,
     displayName: 20, displayBars: 20, bar1: { attribute: "resources.actionPoints" },
     bar2: { attribute: "resources.magicPoints" }
@@ -122,7 +128,7 @@ const commonAnimalSkills = (values) => Object.entries(values)
 
 export const CREATURE_SOURCES = Object.freeze([
   creature("lizard-man", "Hombre lagarto", npcSystem({
-    species: "Hombre lagarto", values: { strength: 16, constitution: 13, size: 16,
+    species: "Hombre lagarto", morphologyKey: "tailedBiped", values: { strength: 16, constitution: 13, size: 16,
       dexterity: 13, intelligence: 13, power: 11, charisma: 7 },
     formulas: { strength: "2d6+9", constitution: "2d6+6", size: "2d6+9",
       dexterity: "2d6+6", intelligence: "2d6+6", power: "3d6", charisma: "2d6" },
@@ -147,7 +153,7 @@ export const CREATURE_SOURCES = Object.freeze([
     passion("tribal-loyalty", "Lealtad a la tribu", 90), passion("enemy-hatred", "Odio a enemigos", 80)
   ]),
   creature("giant-ant", "Hormiga gigante", npcSystem({
-    species: "Hormiga gigante", instinct: true, values: { strength: 14, constitution: 17,
+    species: "Hormiga gigante", morphologyKey: "insect", instinct: true, values: { strength: 14, constitution: 17,
       size: 14, dexterity: 13, intelligence: 9, power: 4, charisma: 1 },
     formulas: { strength: "4d6", constitution: "3d6+6", size: "4d6", dexterity: "2d6+6",
       intelligence: "2d6+2", power: "1d6" }, actionPoints: 2, movement: 12,
@@ -160,13 +166,13 @@ export const CREATURE_SOURCES = Object.freeze([
     weapon("bite", "Mordisco", { damage: "1d6", reach: "T", ap: 1, hp: 2 }),
     weapon("sting", "Aguijón", { damage: "1d4", linkedLocationKey: "head", effects: "Veneno" }),
     location("rear-right", "Pata trasera derecha", 1, 1, 4, 6, "limb"), location("rear-left", "Pata trasera izquierda", 2, 2, 4, 6, "limb"),
-    location("middle-right", "Pata central derecha", 3, 3, 4, 6, "limb"), location("middle-left", "Pata central izquierda", 4, 4, 4, 6, "limb"),
+    location("middle-right", "Pata media derecha", 3, 3, 4, 6, "limb"), location("middle-left", "Pata media izquierda", 4, 4, 4, 6, "limb"),
     location("abdomen", "Abdomen", 5, 9, 4, 8, "abdomen", "abdomen"), location("thorax", "Tórax", 10, 13, 4, 9, "chest", "chest"),
     location("front-right", "Pata delantera derecha", 14, 14, 4, 6, "limb"), location("front-left", "Pata delantera izquierda", 15, 15, 4, 6, "limb"),
     location("head", "Cabeza", 16, 20, 4, 7, "head")
   ]),
   creature("manticore", "Mantícora", npcSystem({
-    species: "Mantícora", instinct: true, values: { strength: 22, constitution: 16,
+    species: "Mantícora", morphologyKey: "tailedQuadruped", instinct: true, values: { strength: 22, constitution: 16,
       size: 25, dexterity: 17, intelligence: 14, power: 11, charisma: 1 },
     formulas: { strength: "2d6+15", constitution: "2d6+9", size: "2d6+18",
       dexterity: "3d6+6", intelligence: "2d6+7", power: "3d6" },
@@ -204,7 +210,7 @@ export const CREATURE_SOURCES = Object.freeze([
     location("head", "Cabeza", 19, 20, 3, 10, "head")
   ]),
   creature("xenomorph", "Xenomorfo", npcSystem({
-    species: "Xenomorfo", instinct: true, values: { strength: 22, constitution: 13,
+    species: "Xenomorfo", morphologyKey: "tailedBiped", instinct: true, values: { strength: 22, constitution: 13,
       size: 16, dexterity: 25, intelligence: 11, power: 11, charisma: 1 },
     formulas: { strength: "2d6+15", constitution: "2d6+6", size: "2d6+9",
       dexterity: "2d6+18", intelligence: "2d6+4", power: "3d6" },

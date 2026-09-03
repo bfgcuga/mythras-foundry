@@ -29,6 +29,8 @@ import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponView
   splitCombatWeapons } from "../ui/combat-sheet.js";
 import { rollSpecial } from "../rules/special-roll.js";
 import { updateActorFromSheet } from "../rules/document-names.js";
+import { MORPHOLOGIES, MORPHOLOGY_KEYS } from "../rules/morphologies.js";
+import { replaceActorMorphology } from "../rules/morphology-replacement.js";
 
 const { ActorSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -184,6 +186,10 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ...combatWeaponGroups,
       inventorySections: inventoryView.sections,
       canDeleteHitLocations: this.actor.isToken ? false : this.isEditable,
+      canManageMorphology: !this.actor.isToken && this.isEditable,
+      canApplyMorphology: Boolean(MORPHOLOGIES[this.actor.system.morphologyKey]),
+      morphologyChoices: MORPHOLOGY_KEYS.map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.Morphology.${value}`) })),
       hitLocationTemplateMode: !this.actor.isToken,
       npcLayout: true,
       combatStyleTemplateMode: !this.actor.isToken,
@@ -225,6 +231,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#editItem(event)));
     this.element.querySelectorAll("[data-action='delete-item']").forEach((button) =>
       button.addEventListener("click", (event) => this.#deleteItem(event)));
+    this.element.querySelector("[data-action='apply-morphology']")
+      ?.addEventListener("click", () => this.#applyMorphology());
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) =>
       button.addEventListener("click", (event) => this.#rollSkill(event)));
     this.element.querySelector("[data-action='roll-special']")
@@ -302,6 +310,29 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     if (!confirmed) return;
     await regenerateNpcActor(this.actor, { manual: event.shiftKey });
+  }
+
+  async #applyMorphology() {
+    if (!this.isEditable || this.actor.isToken) return;
+    const morphologyKey = this.element.querySelector("select[name='system.morphologyKey']")?.value
+      ?? this.actor.system.morphologyKey;
+    if (!MORPHOLOGIES[morphologyKey]) return;
+    if (morphologyKey !== this.actor.system.morphologyKey) {
+      await this.actor.update({ "system.morphologyKey": morphologyKey });
+    }
+    const confirmed = await DialogV2.confirm({
+      window: { title: game.i18n.localize("MYTHRASF.Morphology.Apply") },
+      content: `<p>${game.i18n.localize("MYTHRASF.Morphology.ApplyConfirm")}</p>`,
+      yes: { label: game.i18n.localize("MYTHRASF.Morphology.Apply") },
+      no: { label: game.i18n.localize("MYTHRASF.Cancel") }
+    });
+    if (!confirmed) return;
+    const result = await replaceActorMorphology(this.actor, morphologyKey);
+    if (!result.valid) return ui.notifications.error(game.i18n.format(
+      "MYTHRASF.Morphology.IncompatibleWounds", {
+        locations: result.incompatibleWounds.map((location) => location.name).join(", ")
+      }));
+    ui.notifications.info(game.i18n.localize("MYTHRASF.Morphology.Applied"));
   }
 
   async #createItem(event, forcedType = "") {

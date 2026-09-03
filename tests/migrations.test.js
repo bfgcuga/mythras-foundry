@@ -17,7 +17,7 @@ const {
   getDefaultSkillGroup,
   getLegacySkillUpdate
 } = await import("../scripts/migrations/content-migrations.js");
-const { defaultArmorFactors, ensureCreatureHitLocations, ensureHumanHitLocations,
+const { defaultArmorFactors, ensureActorMorphology, ensureCreatureHitLocations, ensureHumanHitLocations,
   hitLocationNameMigrationUpdate } = await import(
   "../scripts/migrations/actor-migrations.js");
 
@@ -65,14 +65,17 @@ test("los valores por defecto migrados se resuelven por dominio", () => {
 test("la migración traduce localizaciones humanas estándar y conserva nombres complejos", () => {
   const system = { rangeStart: 10, rangeEnd: 12, category: "chest", hpClass: "chest" };
   assert.deepEqual(hitLocationNameMigrationUpdate({ type: "hitLocation", name: "Chest", system }),
-    { name: "Pecho", "system.nameKey": "chest" });
+    { name: "Pecho", "system.nameKey": "chest", "system.locationKey": "chest",
+      "system.morphologyKey": "humanoid" });
   assert.deepEqual(hitLocationNameMigrationUpdate({ type: "hitLocation", name: "Pecho",
-    system: { ...system, nameKey: "chest" } }), null);
+    system: { ...system, nameKey: "chest" } }),
+  { "system.locationKey": "chest", "system.morphologyKey": "humanoid" });
   assert.equal(hitLocationNameMigrationUpdate({ type: "hitLocation",
     name: "Pecho superior", system }), null);
   assert.deepEqual(hitLocationNameMigrationUpdate({ type: "hitLocation", name: "Head",
     system: { rangeStart: 16, rangeEnd: 20, category: "head", hpClass: "standard" } }),
-  { name: "Cabeza", "system.nameKey": "head" });
+  { name: "Cabeza", "system.nameKey": "head", "system.locationKey": "head",
+    "system.morphologyKey": "humanoid" });
 });
 
 test("la reparación humana elimina duplicados, conserva referencias y repone huecos", async () => {
@@ -121,6 +124,21 @@ test("una anatomía ya reconciliada queda bajo control del usuario", async () =>
     createEmbeddedDocuments: async () => { writes += 1; } };
   await ensureHumanHitLocations(actor);
   assert.equal(writes, 0);
+});
+
+test("la migración tipa anatomías exactas sin reconstruirlas y deja ambiguas como custom", async () => {
+  const locations = [{ id: "head", type: "hitLocation", name: "Cabeza", system: {
+    rangeStart: 19, rangeEnd: 20, locationKey: "head" } }];
+  const actor = { type: "npc", system: {}, items: locations, flags: {},
+    getFlag: () => 0,
+    async updateEmbeddedDocuments(type, updates) { this.itemUpdates = updates; },
+    async update(update) { this.actorUpdate = update; },
+    async setFlag(scope, key, value) { this.flags[key] = value; } };
+  await ensureActorMorphology(actor);
+  assert.deepEqual(actor.actorUpdate, { "system.morphologyKey": "custom" });
+  assert.equal(actor.itemUpdates[0]["system.morphologyKey"], "custom");
+  assert.equal(actor.flags.morphologyMigrationVersion, 1);
+  assert.equal(actor.created, undefined);
 });
 
 test("el entrypoint solo invoca el coordinador de migraciones", async () => {

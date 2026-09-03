@@ -70,13 +70,15 @@ import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
 import { effectiveModeProfileKey, findWeaponMode,
   weaponModeDisplayName, weaponModes } from "../rules/weapon-modes.js";
-import { armorCoverageLocations, armorFitsWearer, armorLocationForReference, armorPhysicalTotals,
+import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty } from "../rules/armor.js";
 import { applyFatigue, combinedConditionLevel, fatigueLevel,
   FATIGUE_LEVELS } from "../rules/fatigue.js";
-import { genericHitLocationKey, hasBrokenHitLocationReference, hitLocationDisplayName,
-  isLocationCrippled, restoredHumanHitLocationData, worstWoundLevel,
+import { hasBrokenHitLocationReference, hitLocationDisplayName,
+  isLocationCrippled, worstWoundLevel,
   woundPenaltyKey } from "../rules/hit-locations.js";
+import { MORPHOLOGIES, MORPHOLOGY_KEYS } from "../rules/morphologies.js";
+import { replaceActorMorphology } from "../rules/morphology-replacement.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
@@ -353,7 +355,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       canRemovePermanentWounds: this.isEditable && Boolean(game.user?.isGM),
       hitLocationTable,
       canDeleteHitLocations: this.isEditable && Boolean(this._editMode),
-      canRestoreHumanHitLocations: this.isEditable && Boolean(this._editMode),
+      canManageMorphology: this.isEditable && Boolean(this._editMode),
+      canApplyMorphology: Boolean(MORPHOLOGIES[this.actor.system.morphologyKey]),
+      morphologyChoices: MORPHOLOGY_KEYS.map((value) => ({ value,
+        label: game.i18n.localize(`MYTHRASF.Morphology.${value}`) })),
       hitLocationTemplateMode: false,
       npcLayout: false,
       combatStyleTemplateMode: false,
@@ -425,8 +430,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='create-item']", "click", (event) => this.#createItem(event)],
       ["[data-action='edit-item']", "click", (event) => this.#editItem(event)],
       ["[data-action='delete-item']", "click", (event) => this.#deleteItem(event)],
-      ["[data-action='restore-human-hit-locations']", "click", () =>
-        this.#restoreHumanHitLocations()],
+      ["[data-action='apply-morphology']", "click", () => this.#applyMorphology()],
       ["[data-action='remove-permanent-wound']", "click", (event) =>
         this.#removePermanentWound(event)],
       ["[data-action='toggle-equipped']", "click", (event) => this.#toggleEquipped(event)],
@@ -609,55 +613,30 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     };
   }
 
-  async #restoreHumanHitLocations() {
+  async #applyMorphology() {
     if (!this.isEditable || !this._editMode) return;
+    const morphologyKey = this.element.querySelector("select[name='system.morphologyKey']")?.value
+      ?? this.actor.system.morphologyKey;
+    if (!MORPHOLOGIES[morphologyKey]) return;
+    if (morphologyKey !== this.actor.system.morphologyKey) {
+      await this.actor.update({ "system.morphologyKey": morphologyKey });
+    }
     const confirmed = await DialogV2.confirm({
-      window: { title: game.i18n.localize("MYTHRASF.HitLocation.RestoreHuman") },
-      content: `<p>${game.i18n.localize("MYTHRASF.HitLocation.RestoreHumanConfirm")}</p>`,
-      yes: { label: game.i18n.localize("MYTHRASF.HitLocation.RestoreHuman") },
+      window: { title: game.i18n.localize("MYTHRASF.Morphology.Apply") },
+      content: `<p>${game.i18n.localize("MYTHRASF.Morphology.ApplyConfirm")}</p>`,
+      yes: { label: game.i18n.localize("MYTHRASF.Morphology.Apply") },
       no: { label: game.i18n.localize("MYTHRASF.Cancel") }
     });
     if (!confirmed) return;
-
-    const previousLocations = this.actor.items
-      .filter((item) => item.type === "hitLocation");
-    const unrecognizedWounds = previousLocations.filter((location) =>
-      Number(location.system.permanentWound?.severity ?? 0) > 0
-      && !genericHitLocationKey(location));
-    if (unrecognizedWounds.length) {
+    const result = await replaceActorMorphology(this.actor, morphologyKey);
+    if (!result.valid) {
       ui.notifications.error(game.i18n.format(
-        "MYTHRASF.HitLocation.RestoreHumanUnrecognizedWounds", {
-          locations: unrecognizedWounds.map((location) => location.name).join(", ")
+        "MYTHRASF.Morphology.IncompatibleWounds", {
+          locations: result.incompatibleWounds.map((location) => location.name).join(", ")
         }));
       return;
     }
-    const previousById = new Map(previousLocations.map((location) => [location.id, location]));
-    const created = await this.actor.createEmbeddedDocuments("Item",
-      restoredHumanHitLocationData(this.actor.system, previousLocations));
-    const createdByKey = new Map(created.map((location) =>
-      [location.system.nameKey, location]));
-    const updates = [];
-    for (const item of this.actor.items) {
-      if (item.type === "armor") {
-        const oldId = Array.from(item.system.coveredLocationIds ?? [])[0];
-        const oldKey = genericHitLocationKey(previousById.get(oldId));
-        const referenceKey = item.system.referenceLocation === "special"
-          ? oldKey : item.system.referenceLocation;
-        const replacement = createdByKey.get(referenceKey)
-          ?? armorLocationForReference(referenceKey, created);
-        updates.push({ _id: item.id,
-          "system.coveredLocationIds": replacement ? [replacement.id] : [],
-          ...(!replacement && item.system.equipped ? { "system.equipped": false } : {}) });
-      } else if (item.type === "weapon" && item.system.durabilitySource === "hitLocation") {
-        const oldKey = genericHitLocationKey(previousById.get(item.system.linkedLocationId));
-        updates.push({ _id: item.id,
-          "system.linkedLocationId": createdByKey.get(oldKey)?.id ?? "" });
-      }
-    }
-    if (updates.length) await this.actor.updateEmbeddedDocuments("Item", updates);
-    if (previousLocations.length) await this.actor.deleteEmbeddedDocuments("Item",
-      previousLocations.map((location) => location.id));
-    ui.notifications.info(game.i18n.localize("MYTHRASF.HitLocation.RestoreHumanDone"));
+    ui.notifications.info(game.i18n.localize("MYTHRASF.Morphology.Applied"));
   }
 
   async #prepareWeaponMode(event) {

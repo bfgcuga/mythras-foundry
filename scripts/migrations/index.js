@@ -5,6 +5,7 @@ import { synchronizeFatigueDeath } from "../rules/death.js";
 import {
   ensureDefaultHome,
   ensureCreatureHitLocations,
+  ensureActorMorphology,
   ensureCharacterPrototypeTokenLink,
   ensureHumanHitLocations,
   migrateHitLocationName,
@@ -89,6 +90,7 @@ export async function runWorldMigrations() {
       await ensureDefaultHome(actor);
     }
     if (actor.type === "npc") await ensureCreatureHitLocations(actor);
+    await ensureActorMorphology(actor);
     await migrateActorArmor(actor);
     await syncIncapacitatedStatus(actor);
     await synchronizeFatigueDeath(actor);

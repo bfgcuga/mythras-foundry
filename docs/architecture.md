@@ -119,8 +119,18 @@ se excluyen del Inventario para ambos tipos de Actor. Esta clasificación solo
 decide la presentación del inventario: no crea automáticamente Puño/Patada ni
 concede por sí misma capacidad de ataque o parada.
 
-Las localizaciones humanas persisten una `nameKey` estable y la presentación la
-resuelve con el idioma del usuario. La migración versionada de Actor se ejecuta
+Cada Actor persiste `system.morphologyKey`. Los personajes parten de `humanoid`,
+los PNJ de `custom`, y las criaturas oficiales declaran una morfología cuando su
+tabla coincide inequívocamente. `scripts/rules/morphologies.js` es el catálogo
+canónico del humanoide y las trece morfologías no humanas del manual. Cada Item
+de localización conserva `morphologyKey + locationKey` como identidad semántica;
+`nameKey` permanece como compatibilidad y la presentación se resuelve con el
+idioma del usuario. Las zonas personalizadas conservan nombre literal y claves
+vacías.
+
+La migración versionada de morfología solo identifica coincidencias exactas,
+marca el resto como `custom` y nunca reconstruye ni elimina Items. La migración
+versionada anterior de Actor se ejecuta
 una vez por versión y es la fuente única para
 completar sus siete zonas, consolidar duplicados y reasignar referencias antes de
 eliminarlos. Las criaturas mantienen su tabla anatómica en `scripts/data/creatures.js`:
@@ -130,13 +140,25 @@ inyecta una anatomía humana en un PNJ.
 La marca `flags.mythras-foundry.hitLocationMigrationVersion` separa esa reparación
 de la edición ordinaria: después de reconciliar un Actor, borrar, renombrar o
 añadir zonas personalizadas no provoca que el arranque las restaure o sustituya.
-La hoja de personaje ofrece en modo edición una reparación manual destructiva de
-la anatomía humana. Primero crea el conjunto canónico, conserva por clave las
-heridas permanentes y reasigna las referencias de armaduras y armas; solo después
-elimina las zonas anteriores. Si una herida permanente pertenece a una zona no
-reconocible, la operación se bloquea para no perderla. Las referencias a IDs ya
+Las hojas ofrecen una selección de morfología separada de su aplicación: cambiar
+el selector solo guarda la elección. En modo edición del personaje, o desde el
+PNJ fuente editable y nunca desde un token sintético, «Aplicar morfología» crea
+primero el conjunto canónico, conserva por clave las heridas permanentes, el
+estado compatible y la armadura natural, y reasigna armaduras, armas naturales,
+efectos activos, Bloqueo Pasivo y Cobertura; solo después elimina las zonas
+anteriores. Si una herida permanente pertenece a una zona sin equivalencia, la
+operación se bloquea. `custom` no tiene plantilla aplicable. Mensajes e
+intercambios históricos mantienen sus instantáneas y pueden quedar obsoletos de
+forma segura. Las referencias a IDs ya
 inexistentes se detectan en la preparación compartida de inventario y combate y
 se presentan con un fondo rojo semántico.
+Las piezas humanas (`Yelmo`, `Peto`, `Faldar`, `Brazal` y `Greba`) solo se
+autoasignan por referencia semántica a zonas `humanoid`; el rango histórico se
+mantiene como compatibilidad. Para morfologías no humanas se usa la `Pieza de
+armadura`, cuya cobertura guarda directamente el ID de la zona escogida. Una
+aplicación de morfología conserva las piezas genéricas cuando puede mapear su ID
+anterior a una zona semánticamente equivalente. Al pasar a una morfología no
+humana, las piezas humanas quedan sin asignar y desequipadas.
 Las declaraciones de Bloqueo Pasivo almacenan una instantánea para representar el
 estado del asalto, pero el diálogo y su validación reconstruyen las opciones desde
 las localizaciones actuales del Actor combatiente. De este modo, una reparación de
@@ -451,13 +473,13 @@ bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
 La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
 `assets/Silueta`. El ajuste de mundo `silhouetteOrientation` decide si las
 localizaciones izquierdas y derechas se proyectan como vista frontal o dorsal.
-La vinculación usa rangos, categoría y clase de PG humanos, nunca nombres
-traducidos. Las siete localizaciones estándar conservan en `system.nameKey` una
-clave anatómica estable y en `Item.name` su nombre canónico castellano;
+La vinculación solo se activa para `humanoid` y usa rangos, categoría y clase de
+PG humanos, nunca nombres traducidos. Las localizaciones canónicas conservan en
+`system.locationKey` su clave anatómica estable y en `Item.name` su nombre
+canónico castellano;
 `hitLocationDisplayName` resuelve la etiqueta para el idioma de cada usuario sin
-reescribir el documento. La migración solo asigna la clave y normaliza nombres
-humanos exactos conocidos en español o inglés. Al editar la etiqueta localizada
-desde la hoja se elimina la clave y el nombre pasa a ser personalizado y literal;
+reescribir el documento. Al editar la etiqueta localizada desde la hoja se
+eliminan las claves y el nombre pasa a ser personalizado y literal;
 los nombres complejos y las anatomías personalizadas no se alteran. La lesión consolidada reside en
 `hitLocation.system.permanentWound`: conserva gravedad, tirada, máximo original,
 máximo efectivo, resultados del d20 anulados y descripción. El máximo operativo

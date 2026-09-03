@@ -181,7 +181,8 @@ test("las localizaciones estándar se presentan por idioma sin reescribir su nom
   assert.equal(chest.name, "Pecho");
   assert.deepEqual(hitLocationNameEditUpdate(chest, "Chest", english), { name: "Pecho" });
   assert.deepEqual(hitLocationNameEditUpdate(chest, "Upper torso", english),
-    { name: "Upper torso", "system.nameKey": "" });
+    { name: "Upper torso", "system.nameKey": "", "system.locationKey": "",
+      "system.morphologyKey": "custom" });
   const custom = { name: "Tórax superior", system: { nameKey: "" } };
   assert.equal(hitLocationDisplayName(custom, english), "Tórax superior");
 });

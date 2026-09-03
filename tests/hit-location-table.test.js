@@ -16,9 +16,9 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
     assert.doesNotMatch(source, /passiveBlockLocationIds|hitLocations\.map\(\(item\) => \(\{/);
   }
   assert.match(characterSheet, /canDeleteHitLocations: this\.isEditable && Boolean\(this\._editMode\)/);
-  assert.match(characterSheet, /canRestoreHumanHitLocations: this\.isEditable && Boolean\(this\._editMode\)/);
+  assert.match(characterSheet, /canManageMorphology: this\.isEditable && Boolean\(this\._editMode\)/);
   assert.match(characterTemplate, /templates\/actor\/parts\/hit-location-table\.hbs/);
-  assert.match(characterSheet, /data-action='restore-human-hit-locations'/);
+  assert.match(characterSheet, /data-action='apply-morphology'/);
   assert.match(npcTemplate, /templates\/actor\/parts\/combat-tab\.hbs/);
   for (const source of [characterTemplate, npcTemplate]) {
     assert.doesNotMatch(source, /class="combat-location-line/);

@@ -23,6 +23,15 @@ test("las piezas normales resuelven automáticamente su localización humana", (
   assert.equal(armorLocationForReference("special", locations), null);
 });
 
+test("las piezas humanas usan claves semánticas solo en anatomías humanoides", () => {
+  const repairedHuman = { id: "human-head", system: { morphologyKey: "humanoid",
+    locationKey: "head", rangeStart: 18, rangeEnd: 20 } };
+  const avian = { id: "avian-head", system: { morphologyKey: "wingedBiped",
+    locationKey: "head", rangeStart: 19, rangeEnd: 20 } };
+  assert.equal(armorLocationForReference("head", [repairedHuman])?.id, "human-head");
+  assert.equal(armorLocationForReference("head", [avian]), null);
+});
+
 test("varias capas aplican solo el PA más alto y conservan la armadura natural", () => {
   const chest = location("chest", 1);
   const padding = piece("padding", 2, ["chest"]);

@@ -55,7 +55,8 @@ export async function renderBodySilhouette(actor, root) {
   if (!container) return;
   try { container.innerHTML = await svgText(); }
   catch (error) { console.warn("Mythras Foundry | Silhouette unavailable", error); return; }
-  const locations = actor.items.filter((item) => item.type === "hitLocation");
+  const locations = actor.system.morphologyKey === "humanoid"
+    ? actor.items.filter((item) => item.type === "hitLocation") : [];
   const armors = actor.items.filter((item) => item.type === "armor" && item.system.equipped);
   const orientation = getSystemSetting(SETTING_KEYS.silhouetteOrientation);
   const byRegion = new Map(locations.map((location) => {

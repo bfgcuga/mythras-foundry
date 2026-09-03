@@ -15,9 +15,15 @@ const HUMAN_ARMOR_LOCATION_RANGES = Object.freeze({
 });
 
 export function armorLocationForReference(referenceLocation, locations = []) {
+  const semantic = locations.find((location) =>
+    location.system?.morphologyKey === "humanoid"
+    && [location.system?.locationKey, location.system?.nameKey].includes(referenceLocation));
+  if (semantic) return semantic;
   const range = HUMAN_ARMOR_LOCATION_RANGES[referenceLocation];
   if (!range) return null;
-  return locations.find((location) => Number(location.system?.rangeStart) === range[0]
+  return locations.find((location) => ["", "humanoid"].includes(
+    String(location.system?.morphologyKey ?? ""))
+    && Number(location.system?.rangeStart) === range[0]
     && Number(location.system?.rangeEnd) === range[1]) ?? null;
 }
 

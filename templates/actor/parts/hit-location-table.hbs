@@ -1,8 +1,8 @@
-<fieldset class="combat-paper-panel combat-paper-locations {{#if npcLayout}}npc-locations-panel{{/if}}">
+<fieldset class="combat-paper-panel combat-paper-locations {{#if npcLayout}}npc-locations-panel{{/if}} {{#if canManageMorphology}}has-morphology-controls{{/if}}">
   <legend>{{localize "MYTHRASF.HitLocations"}}</legend>
   {{#if editable}}<div class="combat-panel-actions">
-    {{#if canRestoreHuman}}<button type="button" class="sheet-icon-button" data-action="restore-human-hit-locations"
-      aria-label="{{localize 'MYTHRASF.HitLocation.RestoreHuman'}}" title="{{localize 'MYTHRASF.HitLocation.RestoreHuman'}}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button>{{/if}}
+    {{#if canManageMorphology}}<label class="combat-morphology-control"><span>{{localize "MYTHRASF.Morphology.Label"}}</span><select name="system.morphologyKey" aria-label="{{localize 'MYTHRASF.Morphology.Label'}}">{{selectOptions morphologyChoices selected=morphologyKey labelAttr="label" valueAttr="value"}}</select></label><button type="button" class="sheet-icon-button" data-action="apply-morphology" {{#unless canApplyMorphology}}disabled{{/unless}}
+      aria-label="{{localize 'MYTHRASF.Morphology.Apply'}}" title="{{localize 'MYTHRASF.Morphology.Apply'}}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button>{{/if}}
     <button type="button" class="sheet-add-button" data-action="create-item"
       data-type="hitLocation" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
   </div>{{/if}}

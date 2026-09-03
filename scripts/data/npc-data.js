@@ -3,6 +3,7 @@ import { FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { calculateNpcAttributes, NPC_OVERRIDE_KEYS } from "../rules/npc.js";
 import { actorLoadState, resolveActorConditions } from "../rules/actor-conditions.js";
 import { UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
+import { MORPHOLOGY_KEYS } from "../rules/morphologies.js";
 
 const { BooleanField, HTMLField, NumberField, SchemaField, StringField } = foundry.data.fields;
 
@@ -38,6 +39,8 @@ export class NpcData extends foundry.abstract.TypeDataModel {
     );
 
     return {
+      morphologyKey: new StringField({ required: true, nullable: false, initial: "custom",
+        choices: MORPHOLOGY_KEYS }),
       ...characteristics,
       characteristicFormulas: new SchemaField(characteristicFormulas),
       identity: new SchemaField({ species: textField() }),
