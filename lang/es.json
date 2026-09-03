@@ -969,6 +969,7 @@
   "MYTHRASF.Morphology.ApplyConfirm": "Se sustituirán todas las localizaciones por la plantilla seleccionada. Las heridas y referencias compatibles se conservarán.",
   "MYTHRASF.Morphology.Applied": "La morfología se ha aplicado correctamente.",
   "MYTHRASF.Morphology.IncompatibleWounds": "No se puede aplicar la morfología porque se perderían heridas permanentes de estas localizaciones: {locations}.",
+  "MYTHRASF.HitLocation.Add": "Añadir localización",
   "MYTHRASF.HitLocation.RestoreHuman": "Restaurar localizaciones humanas",
   "MYTHRASF.HitLocation.RestoreHumanConfirm": "Se sustituirán todas las localizaciones por las siete localizaciones humanas predeterminadas. Se conservarán las heridas permanentes reconocibles y se repararán las referencias de armaduras y armas cuando sea posible.",
   "MYTHRASF.HitLocation.RestoreHumanDone": "Se han restaurado las localizaciones humanas.",

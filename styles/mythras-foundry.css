@@ -2030,17 +2030,13 @@
   right: 0.55rem;
 }
 
-.mythras-foundry .combat-panel-actions {
-  position: absolute;
-  top: -0.35rem;
-  right: 0.55rem;
+.mythras-foundry .combat-location-editor {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.mythras-foundry .combat-paper-locations.has-morphology-controls > legend {
-  max-width: calc(100% - 15rem);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  margin-bottom: 0.55rem;
 }
 
 .mythras-foundry .combat-morphology-control {
@@ -2051,6 +2047,16 @@
 }
 
 .mythras-foundry .combat-morphology-control select { width: 10rem; }
+
+.mythras-foundry .combat-location-editor-button {
+  display: inline-flex;
+  width: auto;
+  min-height: 1.7rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.35rem;
+  font-size: var(--mythras-font-size-table);
+}
 
 .mythras-foundry .broken-location-reference {
   background: rgba(166, 35, 35, 0.28);

@@ -1,10 +1,11 @@
-<fieldset class="combat-paper-panel combat-paper-locations {{#if npcLayout}}npc-locations-panel{{/if}} {{#if canManageMorphology}}has-morphology-controls{{/if}}">
+<fieldset class="combat-paper-panel combat-paper-locations {{#if npcLayout}}npc-locations-panel{{/if}}">
   <legend>{{localize "MYTHRASF.HitLocations"}}</legend>
-  {{#if editable}}<div class="combat-panel-actions">
-    {{#if canManageMorphology}}<label class="combat-morphology-control"><span>{{localize "MYTHRASF.Morphology.Label"}}</span><select name="system.morphologyKey" aria-label="{{localize 'MYTHRASF.Morphology.Label'}}">{{selectOptions morphologyChoices selected=morphologyKey labelAttr="label" valueAttr="value"}}</select></label><button type="button" class="sheet-icon-button" data-action="apply-morphology" {{#unless canApplyMorphology}}disabled{{/unless}}
-      aria-label="{{localize 'MYTHRASF.Morphology.Apply'}}" title="{{localize 'MYTHRASF.Morphology.Apply'}}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button>{{/if}}
-    <button type="button" class="sheet-add-button" data-action="create-item"
-      data-type="hitLocation" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>
+  {{#if canManageMorphology}}<div class="combat-location-editor">
+    <label class="combat-morphology-control"><span>{{localize "MYTHRASF.Morphology.Label"}}</span><select name="system.morphologyKey" aria-label="{{localize 'MYTHRASF.Morphology.Label'}}">{{selectOptions morphologyChoices selected=morphologyKey labelAttr="label" valueAttr="value"}}</select></label>
+    <button type="button" class="sheet-icon-button combat-location-editor-button" data-action="apply-morphology" {{#unless canApplyMorphology}}disabled{{/unless}}
+      aria-label="{{localize 'MYTHRASF.Morphology.Apply'}}" title="{{localize 'MYTHRASF.Morphology.Apply'}}"><i class="fas fa-rotate-left" aria-hidden="true"></i><span>{{localize "MYTHRASF.Morphology.Apply"}}</span></button>
+    <button type="button" class="sheet-icon-button combat-location-editor-button" data-action="create-item"
+      data-type="hitLocation" aria-label="{{localize 'MYTHRASF.HitLocation.Add'}}" title="{{localize 'MYTHRASF.HitLocation.Add'}}"><i class="fas fa-plus" aria-hidden="true"></i><span>{{localize "MYTHRASF.HitLocation.Add"}}</span></button>
   </div>{{/if}}
   <div class="combat-location-head {{#unless table.hasNaturalArmor}}without-natural-armor{{/unless}}" aria-hidden="true">
     <span>d20</span><span>{{localize "MYTHRASF.HitLocation.Location"}}</span>

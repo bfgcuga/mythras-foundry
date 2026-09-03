@@ -19,6 +19,10 @@ test("personaje y PNJ consumen un único preparador y un único parcial de local
   assert.match(characterSheet, /canManageMorphology: this\.isEditable && Boolean\(this\._editMode\)/);
   assert.match(characterTemplate, /templates\/actor\/parts\/hit-location-table\.hbs/);
   assert.match(characterSheet, /data-action='apply-morphology'/);
+  const hitLocationPartial = await read("templates/actor/parts/hit-location-table.hbs");
+  assert.match(hitLocationPartial, /\{\{#if canManageMorphology\}\}<div class="combat-location-editor">/);
+  assert.match(hitLocationPartial, /MYTHRASF\.Morphology\.Apply[\s\S]*MYTHRASF\.HitLocation\.Add/);
+  assert.doesNotMatch(hitLocationPartial, /sheet-add-button/);
   assert.match(npcTemplate, /templates\/actor\/parts\/combat-tab\.hbs/);
   for (const source of [characterTemplate, npcTemplate]) {
     assert.doesNotMatch(source, /class="combat-location-line/);

@@ -53,7 +53,8 @@ El sistema incluye actualmente:
   heridas permanentes sin equivalencia bloquean la operación; `custom` nunca
   sustituye localizaciones. Las piezas humanas se autoasignan solo sobre una
   anatomía humanoide; otras zonas se protegen con la pieza genérica vinculada a
-  su ID concreto. Los
+  su ID concreto. Los controles de morfología y de alta de localizaciones se
+  muestran juntos sobre la tabla únicamente durante la edición anatómica. Los
   objetos que apuntan a IDs de localización eliminados se resaltan en rojo;
   el estado Incapacitado se refleja en
   el token y conserva por separado sus causas automáticas y manuales, mientras

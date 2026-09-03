@@ -969,6 +969,7 @@
   "MYTHRASF.Morphology.ApplyConfirm": "All hit locations will be replaced by the selected template. Compatible wounds and references will be preserved.",
   "MYTHRASF.Morphology.Applied": "The morphology has been applied successfully.",
   "MYTHRASF.Morphology.IncompatibleWounds": "The morphology cannot be applied because permanent wounds on these locations would be lost: {locations}.",
+  "MYTHRASF.HitLocation.Add": "Add hit location",
   "MYTHRASF.HitLocation.RestoreHuman": "Restore human hit locations",
   "MYTHRASF.HitLocation.RestoreHumanConfirm": "All hit locations will be replaced with the seven default human locations. Recognizable permanent wounds will be preserved and armor and weapon references will be repaired whenever possible.",
   "MYTHRASF.HitLocation.RestoreHumanDone": "Human hit locations have been restored.",
