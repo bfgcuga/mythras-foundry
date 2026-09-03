@@ -141,6 +141,9 @@ Las declaraciones de Bloqueo Pasivo almacenan una instantánea para representar 
 estado del asalto, pero el diálogo y su validación reconstruyen las opciones desde
 las localizaciones actuales del Actor combatiente. De este modo, una reparación de
 anatomía realizada con el asalto ya preparado no vuelve a ofrecer IDs eliminados.
+Para Actors sintéticos, la resolución prioriza el documento vivo expuesto por el
+combatiente y solo usa el UUID persistido como respaldo, pues el UUID de una
+instancia de token no siempre se materializa como un Actor al resolverlo.
 
 El estado Incapacitado de Foundry es una representación semántica y visual, no
 una segunda fuente de cambios numéricos. Sus consecuencias proceden de las

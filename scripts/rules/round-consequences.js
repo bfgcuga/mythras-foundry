@@ -36,6 +36,10 @@ async function roundConsequenceActor(entry) {
   return document?.actor ?? document;
 }
 
+export function liveRoundCombatantActor(state, entry, combats = game.combats) {
+  return combats?.get?.(state?.combatId)?.combatants?.get?.(entry?.combatantId)?.actor ?? null;
+}
+
 async function roundFatigueLuckContext(user, state, entryId, { requirePoints = true } = {}) {
   const entry = state?.queue?.find((candidate) => candidate.id === entryId
     && candidate.key === "combatFatigue" && candidate.resolution?.rawRoll != null);
@@ -493,7 +497,9 @@ async function applyRoundFatigueLuck(message, request) {
 
 async function requestPassiveBlock(message, state, entryId, { waive = false, repeat = false } = {}) {
   const entry = state.queue.find((candidate) => candidate.id === entryId);
-  const actor = entry ? await roundConsequenceActor(entry) : null;
+  const actor = entry
+    ? liveRoundCombatantActor(state, entry) ?? await roundConsequenceActor(entry)
+    : null;
   if (!entry || entry.key !== "passiveBlock" || (!game.user.isGM && !actor?.isOwner)) return;
   let resolution = repeat && entry.previousSelection
     ? { waived: false, ...entry.previousSelection } : { waived: true };

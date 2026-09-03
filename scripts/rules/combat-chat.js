@@ -1012,7 +1012,7 @@ async function requestCombatDamage(message, combat, manual = false) {
     const adjacent = locations.filter((entry, candidate) => Math.abs(candidate - index) <= 1);
     chosenLocation = await foundry.applications.api.DialogV2.wait({
       window: { title: localize("MYTHRASF.CombatEffect.ChooseLocation") },
-      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location">${adjacent.map((entry) => `<option value="${escape(entry.id)}" ${entry.id === rolledLocationId ? "selected" : ""}>${escape(entry.name)}</option>`).join("")}</select></label></div>`,
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location">${adjacent.map((entry) => `<option value="${escape(entry.id)}" ${entry.id === rolledLocationId ? "selected" : ""}>${escape(hitLocationDisplayName(entry))}</option>`).join("")}</select></label></div>`,
       buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.Confirm"),
         callback: (event, button) => button.form.elements.location.value }], rejectClose: false
     });

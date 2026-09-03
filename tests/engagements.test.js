@@ -4,7 +4,7 @@ import { engagementId, engagementRestriction, initialReachPosition, reachDiffere
   relationSituationReach, shiftedWeaponSize } from "../scripts/rules/engagements.js";
 import { contiguousLocationIds, isNaturalWeaponMode, passiveBlockCapacity,
   validatePassiveBlock } from "../scripts/rules/passive-block.js";
-import { passiveBlockEntries, passiveBlockLocations,
+import { liveRoundCombatantActor, passiveBlockEntries, passiveBlockLocations,
   renderRoundConsequences } from "../scripts/rules/round-consequences.js";
 
 test("las relaciones usan una identidad estable y el alcance largo con dos grados", () => {
@@ -107,6 +107,15 @@ test("el bloqueo pasivo reconstruye las localizaciones desde el Actor vivo", () 
   assert.deepEqual(stale.map((location) => location.id), ["old-head"]);
   assert.deepEqual(passiveBlockLocations(actor).map((location) => location.id), ["new-head"]);
   assert.equal(passiveBlockLocations(actor)[0].nameKey, "head");
+});
+
+test("el diálogo resuelve el Actor sintético desde el combatiente activo", () => {
+  const actor = { uuid: "Scene.scene.Token.token.Actor.synthetic", items: [] };
+  const combats = new Map([["combat", { combatants: new Map([["fighter", { actor }]]) }]]);
+  assert.equal(liveRoundCombatantActor({ combatId: "combat" },
+    { combatantId: "fighter" }, combats), actor);
+  assert.equal(liveRoundCombatantActor({ combatId: "missing" },
+    { combatantId: "fighter" }, combats), null);
 });
 
 test("el bloqueo pasivo reutiliza la declaración del asalto anterior", () => {

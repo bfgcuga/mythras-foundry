@@ -60,6 +60,13 @@ test("la localización aparece inmediatamente después de su tirada", () => {
     /damage\.locationRoll != null[\s\S]*?\$\{locationRow\}\$\{permanentWoundHitRow\}/);
 });
 
+test("Elegir localización presenta las instantáneas con el nombre localizado", () => {
+  const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url),
+    "utf8");
+  assert.match(source,
+    /adjacent\.map\(\(entry\) =>[\s\S]*?hitLocationDisplayName\(entry\)/);
+});
+
 test("cancelar el selector de parada no produce una defensa parcial", () => {
   const choices = [{ value: "sword", weaponId: "sword" }];
   assert.equal(selectedParryChoice(choices, "sword"), choices[0]);
