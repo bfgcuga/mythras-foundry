@@ -1,3 +1,5 @@
+import { weaponIsPinned } from "./weapon-pinning.js";
+
 export function preferredCombatCoordinator(users, authorUserId) {
   const gm = Array.from(users ?? []).filter((user) => user.active && user.isGM)
     .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
@@ -11,6 +13,8 @@ export function validateCombatResponse(combat, request, { actor, user }) {
   if (!user || user.id !== request.userId
     || (!user.isGM && !actor?.testUserPermission(user, "OWNER"))) return "ownership";
   if (!["parry", "evade", "cover", "none"].includes(request.defense?.type)) return "invalid";
+  if (request.defense.type === "parry"
+    && weaponIsPinned(actor?.items?.get?.(request.defense.weaponId), actor)) return "invalid";
   return null;
 }
 

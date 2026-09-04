@@ -49,7 +49,8 @@ import { applyCombatDamageLuck, applyMajorWoundLuck, applyProposedCombatDamage,
 import { addManagedCombatStatus, applyAutomaticCombatEffectChecks, applyCombatEffectCheckConsequence,
   applyImmediateCombatEffects, combatSideEntry } from "./combat-effect-runtime.js";
 import { advanceCombatExchange, applyCombatExchangeCancellation, applyDroppedCombatItem,
-  closeTerminalCombatExchange, resolveCombatExchangeConsequence, resolveCombatExchangePending
+  applyDisarmChoice, closeTerminalCombatExchange, resolveCombatExchangeConsequence,
+  resolveCombatExchangePending
 } from "./combat-exchange-runtime.js";
 import { applyAccidentalTargetTransition, applyCombatDefenseTransition, applyCombatEffectsTransition,
   applyCombatLuckTransition, applyCombatRuseReplacementTransition
@@ -59,6 +60,8 @@ import { consumeSurpriseEffectBonus, consumeWeaponModeAmmunition, spendActorActi
   spendActorLuckPoint } from "./combat-resource-runtime.js";
 import { applyCombatWoundConsequences, heldCombatItemChoices
 } from "./combat-wound-runtime.js";
+import { disarmResistanceTarget } from "./combat-disarm.js";
+import { weaponIsPinned, weaponPins } from "./weapon-pinning.js";
 
 export { renderCombatExchange, woundCheckOutcomeKey } from "./combat-chat-renderer.js";
 export { preferredCombatCoordinator, validateCombatResponse } from "./combat-exchange-state.js";
@@ -232,6 +235,7 @@ function collectAttackSetup(form) {
 
 export async function createAttackMessage({ actor, weapon, mode, resolution, target = null,
   manual = false }) {
+  if (weaponIsPinned(weapon, actor)) return ui.notifications.warn(localize("MYTHRASF.Pin.Blocked"));
   if (!weaponCanEquip(weapon)) return ui.notifications.warn(
     localize("MYTHRASF.Weapon.BrokenCannotEquip"));
   if (pendingAttackActors.has(actor.uuid)) return null;
@@ -469,7 +473,7 @@ function effectiveDifficulty(actor, baseDifficulty = "standard") {
 function parryChoices(actor, combatData = null) {
   const styles = actor.items.filter((item) => item.type === "combatStyle");
   const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped
-    && weaponCanEquip(item))
+    && weaponCanEquip(item) && !weaponIsPinned(item, actor))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)
       .flatMap((mode) => styles.map((style) => {
         if (combatData?.ranged && mode.weaponType !== "shield") return null;
@@ -491,13 +495,22 @@ function parryChoices(actor, combatData = null) {
           difficulty, baseTarget: resolved.target, target: difficultyTarget(resolved.target, difficulty),
           weaponSize: mode.size, weaponType: mode.weaponType };
       }).filter(Boolean)));
+  if (weaponPins(actor).length && !combatData?.ranged) {
+    const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "pelea");
+    const difficulty = effectiveDifficulty(actor);
+    if (skill && difficulty !== "impossible") choices.push({ value: `unarmed:${skill.id}`,
+      abilityId: skill.id, abilityName: skill.name, styleName: skill.name, modeName: skill.name,
+      weaponName: skill.name, weaponId: "", weaponDurable: false, weaponSize: "P",
+      difficulty, baseTarget: Number(skill.system.total ?? 0),
+      target: difficultyTarget(skill.system.total, difficulty) });
+  }
   return [...new Map(choices.map((choice) => [choice.value, choice])).values()];
 }
 
 function shieldResistanceChoices(actor) {
   const styles = actor.items.filter((item) => item.type === "combatStyle");
   return actor.items.filter((item) => item.type === "weapon" && item.system.equipped
-    && weaponCanEquip(item))
+    && weaponCanEquip(item) && !weaponIsPinned(item, actor))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) =>
       mode.key === weapon.system.activeModeKey && mode.weaponType === "shield")
       .flatMap((mode) => styles.map((style) => {
@@ -883,6 +896,21 @@ async function requestDropHeldItem(message, current, index, itemId) {
   } else game.socket.emit(SOCKET, request);
 }
 
+async function requestDisarmChoice(message, current, index, choice) {
+  const consequence = current.consequences?.[Number(index)];
+  if (!consequence || consequence.key !== "disarmChoice" || consequence.status !== "pending") return;
+  const entry = combatSideEntry(current, consequence.actorSide ?? "attacker");
+  const actor = await combatActor(entry.tokenUuid, entry.actorUuid);
+  if (!actor || (!game.user.isGM && !actor.isOwner)) return;
+  const request = { action: "combatDisarmChoice", messageId: message.id,
+    revision: current.revision, userId: game.user.id, consequenceIndex: Number(index), choice };
+  if (preferredCombatCoordinator(game.users, current.authorUserId) === game.user.id) {
+    await applyDisarmChoice(message, request, { clone: foundry.utils.deepClone,
+      flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
+      render: renderCombatExchange, advance: advanceCombatTurnForExchange });
+  } else game.socket.emit(SOCKET, request);
+}
+
 async function applyDropHeldItem(message, request) {
   return applyDroppedCombatItem(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
@@ -1125,8 +1153,9 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
       winner: "right", opposed: { rawRoll: combat.resolution.attack.rawRoll,
         target: combat.resolution.attack.target, result: combat.resolution.attack.result } };
   } else {
-    const skills = defender.items.filter((item) => item.type === "skill"
-      && (check.abilitySlugs ?? ["aguante"]).includes(item.system.slug)).map((skill) => ({
+    const skills = defender.items.filter((item) => check.combatStyle
+      ? item.type === "combatStyle" : item.type === "skill"
+        && (check.abilitySlugs ?? ["aguante"]).includes(item.system.slug)).map((skill) => ({
       ability: skill, name: skill.name, target: Number(skill.system.total ?? 0)
     }));
     const shieldStyles = check.allowsShieldStyle ? shieldResistanceChoices(defender) : [];
@@ -1134,27 +1163,40 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
       .map((choice) => [choice.ability.id, choice])).values()];
     if (!choices.length) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
     let selected = choices[0];
-    if (choices.length > 1) {
-      const abilityId = await foundry.applications.api.DialogV2.wait({
+    const weaponChoices = check.combatStyle ? (check.weaponChoices ?? []) : [];
+    if (choices.length > 1 || weaponChoices.length > 1) {
+      const selection = await foundry.applications.api.DialogV2.wait({
         window: { title: localize("MYTHRASF.Combat.CheckChooseAbility") },
         content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(localize(
           "MYTHRASF.Combat.CheckTest"))}</legend><label><span>${escape(localize(
             "MYTHRASF.Combat.CheckAbility"))}</span><select name="ability">${choices.map((choice) =>
-              `<option value="${escape(choice.ability.id)}">${escape(choice.name)} (${choice.target}%)</option>`).join("")}</select></label></fieldset></div>`,
+            `<option value="${escape(choice.ability.id)}">${escape(choice.name)} (${choice.target}%)</option>`).join("")}</select></label>${weaponChoices.length > 1 ? `<label><span>${escape(localize(
+              "MYTHRASF.Combat.Disarm.TargetWeapon"))}</span><select name="weapon">${weaponChoices.map(
+                (weapon) => `<option value="${escape(weapon.id)}">${escape(weapon.name)}</option>`).join("")}</select></label>` : ""}</fieldset></div>`,
         buttons: [{ action: "roll", label: localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20",
-          default: true, callback: (event, button) => button.form.elements.ability.value },
+          default: true, callback: (event, button) => ({ abilityId: button.form.elements.ability.value,
+            weaponId: button.form.elements.weapon?.value ?? weaponChoices[0]?.id ?? "" }) },
         { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times",
           callback: () => null }], rejectClose: false
       });
-      if (!abilityId) return;
-      selected = choices.find((choice) => choice.ability.id === abilityId);
+      if (!selection) return;
+      selected = choices.find((choice) => choice.ability.id === selection.abilityId);
+      check.selectedWeaponId = selection.weaponId;
     }
     const skill = selected.ability;
     const roll = await evaluateAnimatedRoll("1d100", { manual });
-    const target = selected.target;
+    const selectedWeaponId = check.selectedWeaponId ?? weaponChoices[0]?.id ?? "";
+    const selectedWeapon = selectedWeaponId ? defender.items.get(selectedWeaponId) : null;
+    const targetWeaponMode = selectedWeapon ? findWeaponMode(selectedWeapon) : null;
+    const adjusted = check.combatStyle ? disarmResistanceTarget(selected.target,
+      check.sourceWeaponSize, targetWeaponMode?.size) : null;
+    const target = adjusted?.target ?? selected.target;
     await recordAbilityFumble(skill, classifyContestRoll(roll.total, target));
     resolution = { manual: false, abilityId: skill.id, abilityName: skill.name,
-      target, rawRoll: roll.total, serializedRoll: roll.toJSON(),
+      target, baseTarget: adjusted?.baseTarget ?? selected.target,
+      difficulty: adjusted?.difficulty ?? "standard", difficultySteps: adjusted?.steps ?? 0,
+      weaponId: selectedWeaponId, weaponName: selectedWeapon?.name ?? "",
+      weaponSize: targetWeaponMode?.size ?? "", rawRoll: roll.total, serializedRoll: roll.toJSON(),
       result: classifyContestRoll(roll.total, target) };
     const opposed = check.opposedSide === "defender"
       ? combat.resolution.defense : combat.resolution.attack;
@@ -1320,6 +1362,13 @@ export function activateCombatCard(message, html) {
     const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
     button.hidden = !game.user.isGM && !actor?.isOwner;
   });
+  card.querySelectorAll("[data-combat-action='disarm-take'],[data-combat-action='disarm-throw']")
+    .forEach(async (button) => {
+      const consequence = combat.consequences?.[Number(button.dataset.consequenceIndex)];
+      const entry = combatSideEntry(combat, consequence?.actorSide ?? "attacker");
+      const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
+      button.hidden = !game.user.isGM && !actor?.isOwner;
+    });
   card.querySelectorAll("[data-gm-only]").forEach((button) => { button.hidden = !game.user.isGM; });
   const gm = card.querySelector("[data-combat-gm-actions]"); if (gm) gm.hidden = !game.user.isGM;
   card.addEventListener("click", async (event) => {
@@ -1335,6 +1384,9 @@ export function activateCombatCard(message, html) {
     if (action === "drop-held-item") return requestDropHeldItem(message, combat,
       button.dataset.consequenceIndex, card.querySelector(
         `[data-drop-held-item="${button.dataset.consequenceIndex}"]`)?.value);
+    if (action === "disarm-take" || action === "disarm-throw") return requestDisarmChoice(
+      message, combat, button.dataset.consequenceIndex,
+      action === "disarm-take" ? "take" : "throw");
     if (action === "luck" && button.dataset.side === "damage") return requestDamageLuck(message, combat, manual);
     if (action === "luck") return spendCombatLuck(message, combat, button.dataset.side, manual);
     if (action === "choose-effects") return chooseCombatEffects(message, combat);
@@ -1367,7 +1419,11 @@ export function registerCombatSocket() {
       combatRuseReplacement: applyCombatRuseReplacement,
       combatDamageLuck: applyDamageLuck, combatApplyDamage: applyProposedDamage,
       combatCheck: applyCombatCheck, combatWoundLuck: applyWoundLuck,
-      combatDropHeldItem: applyDropHeldItem
+      combatDropHeldItem: applyDropHeldItem,
+      combatDisarmChoice: (message, request) => applyDisarmChoice(message, request, {
+        clone: foundry.utils.deepClone, flagScope: FLAG_SCOPE, resolveActor: combatActor,
+        userById: (id) => game.users.get(id), render: renderCombatExchange,
+        advance: advanceCombatTurnForExchange })
     }
   });
 }

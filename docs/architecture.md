@@ -622,6 +622,32 @@ Agarrar, Arrebatar Arma o Derribar Oponente— siguen siendo compatibles, igual
 que Maximizar Daño, cuyos dados sí pueden aplicarse al arma. Tumbar Oponente es
 incompatible porque su regla exige que el rival sufra al menos una Herida Leve.
 
+«Desarmar oponente» reutiliza el conducto de pruebas enfrentadas y Suerte. La
+prueba conserva el arma elegida y el ajuste de dificultad derivado de ambos
+Tamaños, y se cancela automáticamente si la FUE de la víctima supera el doble
+de la del ganador. Al fallar la resistencia se desequipa el arma y se evalúa el
+Modificador de Daño. Si existe una mano libre, una consecuencia persistente de
+la tarjeta permite transferir el Item o arrojarlo; el coordinador vuelve a
+validar documentos, permisos y capacidad de manos antes de la transferencia.
+
+«Inmovilizar arma» guarda una condición `weaponPinned` por arma en los
+ActiveEffects del portador: `timedCondition.weaponId` identifica el Item y
+`sourceActorUuid`/`sourceTokenUuid` identifican al captor. No cambia `equipped`
+ni duplica el estado en el Item. `weapon-pinning.js` ofrece las consultas puras
+para hojas, ataques, paradas, bloqueo pasivo y acciones; un efecto desactivado
+o cuyo Item desapareció no bloquea otras armas. La tarjeta del intercambio
+ofrece al ganador elegir el arma, bajo revisión y permisos del coordinador.
+`weapon-pin-runtime.js` mantiene una tarjeta `weaponRelease` persistente: cobra
+1 PA al iniciar en el turno propio, cada propietario elige Músculo o Pelea y
+el DJ coordinador tira y compara con la reducción compartida por encima de
+100 %. Solo ganar elimina esa condición; empate o fallo la conservan. La otra
+parte no paga PA. Las solicitudes se serializan y un intento pendiente impide
+iniciar otro para el mismo actor. Requiere un DJ conectado. Cambiar una relación
+a destrabada, eliminarla o aplicar Retirada elimina las inmovilizaciones entre
+esos dos actores, conservando las de terceros. El efecto figura como automatizado.
+El gestor de estados usa la asignación configurada `weaponPin` para elegir
+arma y captor; no crea una condición genérica sin vínculo al Item.
+
 Las
 restricciones persistidas usan exclusivamente identificadores estables e
 independientes del idioma. El constructor del compendio rechaza cualquier valor

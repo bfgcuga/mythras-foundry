@@ -58,6 +58,10 @@ async function applySimpleStatus(actor, status, { duration, locationId = "" } = 
 }
 
 async function applyConfiguredStatus(status, actor, token) {
+  if (status.assignment === "weaponPin") {
+    const { openWeaponPinAssignment } = await import("./weapon-pin-runtime.js");
+    return openWeaponPinAssignment(actor);
+  }
   if (status.assignment === "incapacitated") {
     await actor.toggleStatusEffect(INCAPACITATED_STATUS_ID, { active: true });
     return true;

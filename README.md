@@ -143,7 +143,16 @@ El sistema incluye actualmente:
   heridas. «Cegar oponente» se resuelve antes del daño, permite
   resistir con Evadir o con un estilo que use un escudo equipado, admite repetir
   la resistencia con Suerte y aplica automáticamente Cegado durante 1d3 turnos
-  si no se resiste. «Ardid» permite preparar en secreto un efecto ofensivo
+  si no se resiste. «Desarmar oponente» enfrenta el Estilo de Combate con la
+  tirada original, ajusta la dificultad por Tamaño, aplica el límite de FUE,
+  permite Suerte y resuelve si el arma se toma con una mano libre o vuela la
+  distancia automática del Modificador de Daño. «Inmovilizar arma» permite elegir
+  un arma o escudo del rival tras obtener un crítico; permanece equipado, con la
+  mano roja, pero no puede atacar, parar ni bloquear pasivamente. «Liberar arma»
+  aparece primero en las acciones de combate cuando existe una inmovilización:
+  cuesta 1 PA en el turno propio y ambos participantes eligen Músculo o Pelea
+  para la enfrentada. Destrabarse del captor también libera las armas.
+  «Ardid» permite preparar en secreto un efecto ofensivo
   concreto contra el rival del intercambio: si este lo selecciona más adelante,
   su efecto se sustituye antes de resolverlo y el defensor elige un efecto
   defensivo extraordinario con éxito automático, sin consumir sus selecciones

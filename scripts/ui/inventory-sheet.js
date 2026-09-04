@@ -1,4 +1,5 @@
 import { weaponHandsRequired } from "../rules/equipment.js";
+import { weaponIsPinned } from "../rules/weapon-pinning.js";
 import { itemEncumbrance } from "../rules/encumbrance.js";
 import { inventoryLocation, inventoryRows, inventorySections } from "../rules/inventory.js";
 import { isNaturalWeaponMode } from "../rules/passive-block.js";
@@ -21,6 +22,7 @@ export function prepareInventoryView(items = []) {
   const inventoryItems = inventoryItemsForActor(items);
   const hitLocations = Array.from(items).filter((item) => item.type === "hitLocation");
   const prepareRows = (sectionItems) => inventoryRows(sectionItems).map((row) => ({ ...row,
+    pinned: row.isWeapon && weaponIsPinned(row.item),
     brokenLocationReference: hasBrokenHitLocationReference(row.item, hitLocations),
     handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
     encumbrance: itemEncumbrance(row.item),

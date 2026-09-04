@@ -1,4 +1,5 @@
 import { activateContestResponseDialog, activateSkillRollDialog } from "../apps/skill-roll-dialog.js";
+import { activateWeaponPinCard, registerWeaponPinSocket } from "../rules/weapon-pin-runtime.js";
 import { activateCombatCard, registerCombatSocket } from "../rules/combat-chat.js";
 import { activateContestCard, registerContestSocket } from "../rules/contest-chat.js";
 import { activateSkillRollCard } from "../rules/skill-roll-chat.js";
@@ -24,6 +25,7 @@ import { activateFatigueCheckCard, registerFatigueCheckSocket }
   from "../rules/fatigue-check-chat.js";
 
 function activateChatCards(message, html) {
+  activateWeaponPinCard(message, html);
   activateCombatCard(message, html);
   activateRoundConsequenceCard(message, html);
   activateReachCard(message, html);
@@ -50,6 +52,7 @@ export function registerUiHooks() {
   Hooks.once("ready", async () => {
     registerContestSocket();
     registerCombatSocket();
+    registerWeaponPinSocket();
     registerRoundConsequenceSocket();
     registerReachSocket();
     registerTacticalSocket();

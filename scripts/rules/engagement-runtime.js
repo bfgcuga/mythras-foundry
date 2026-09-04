@@ -5,6 +5,7 @@ import { getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { weaponCanEquip } from "./weapon-durability.js";
 import { hitLocationDisplayName } from "./hit-locations.js";
+import { clearWeaponPinsBetween, weaponIsPinned } from "./weapon-pinning.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "tacticalState";
@@ -61,7 +62,7 @@ export function combatantForActor(combat, actor, tokenUuid = "") {
 }
 export function preparedMeleeWeapons(actor) {
   return actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
-    && weaponCanEquip(item))
+    && weaponCanEquip(item) && !weaponIsPinned(item, actor))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType))
       .map((mode) => ({ weapon, mode }))) ?? [];
 }
@@ -105,7 +106,12 @@ export async function setRelationPosition(combat, relationId, position, { userId
   if (!relation) return null;
   Object.assign(relation, { position, status, userId, reason, updatedAt: Date.now(),
     revision: Number(relation.revision ?? 0) + 1 }); state.revision += 1;
-  await combat.setFlag(SCOPE, FLAG, state); return relation;
+  await combat.setFlag(SCOPE, FLAG, state);
+  if (status === "disengaged") {
+    const actors = Object.keys(relation.sides ?? {}).map((id) => combat.combatants.get(id)?.actor);
+    await clearWeaponPinsBetween(actors[0], actors[1]);
+  }
+  return relation;
 }
 export async function setRelationWeapons(combat, relationId, selections, userId = game.user.id) {
   const state = foundry.utils.deepClone(tacticalState(combat)); const relation = state.relations?.[relationId];
@@ -126,6 +132,8 @@ export async function removeRelation(combat, relationId) {
   const state = foundry.utils.deepClone(tacticalState(combat));
   const relation = state.relations?.[relationId];
   if (!relation || relation.status === "removed") return false;
+  const actors = Object.keys(relation.sides ?? {}).map((id) => combat.combatants.get(id)?.actor);
+  await clearWeaponPinsBetween(actors[0], actors[1]);
   Object.assign(relation, { status: "removed", reason: "gmRemoval", userId: game.user.id,
     updatedAt: Date.now(), revision: Number(relation.revision ?? 0) + 1 });
   state.revision += 1; await combat.setFlag(SCOPE, FLAG, state); return true;
@@ -174,6 +182,8 @@ export async function consumePassiveBlock(combat, combatantId, weaponId, reason)
 }
 export function passiveBlockFor(combat, combatantId, locationId) {
   const block = tacticalState(combat).passiveBlocks?.[combatantId];
+  const actor = combat?.combatants?.get?.(combatantId)?.actor;
+  if (weaponIsPinned(actor?.items?.get?.(block?.weaponId), actor)) return null;
   return block?.status === "active" && Number(block.round) === Number(combat.round)
     && block.locationIds?.includes(locationId) ? block : null;
 }

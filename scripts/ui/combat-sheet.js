@@ -9,6 +9,7 @@ import { findWeaponMode, weaponModeDisplayName, weaponModes,
 import { createAttackMessage } from "../rules/combat-chat.js";
 import { weaponCanEquip, weaponDurabilityState } from "../rules/weapon-durability.js";
 import { hasBrokenHitLocationReference } from "../rules/hit-locations.js";
+import { weaponIsPinned } from "../rules/weapon-pinning.js";
 
 export function prepareCombatStyleViews(styles, difficulty = "standard") {
   return styles.map((item) => {
@@ -37,6 +38,7 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
   const durabilityState = weaponDurabilityState(durability);
   return {
     item: weapon, mode, displayName: weaponModeDisplayName(weapon, mode),
+    pinned: weaponIsPinned(weapon, actor),
     handsRequired: weaponHandsRequired(weapon, mode),
     prepared: Boolean(weaponCanEquip(durability) && weapon.system.equipped
       && weapon.system.activeModeKey === mode.key),
@@ -61,6 +63,7 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
     baseTarget: resolution.target, effectiveTarget,
     hasTargetPenalty: effectiveTarget !== resolution.target,
     canAttack: canActorAttack(actor.statuses) && resolution.difficulty !== "impossible"
+      && !weaponIsPinned(weapon, actor)
       && weaponCanEquip(durability) && weapon.system.equipped
       && weapon.system.activeModeKey === mode.key
       && (Boolean(resolution.style) || resolution.usesBase),
@@ -163,7 +166,7 @@ export class CombatSheetController {
     const row = event.currentTarget.closest("[data-item-id]");
     const weapon = this.actor.items.get(row?.dataset.itemId);
     const mode = weapon ? findWeaponMode(weapon, row.dataset.modeKey) : null;
-    if (!weapon || !mode || !weaponCanEquip(weapon) || !weapon.system.equipped
+    if (!weapon || !mode || !weaponCanEquip(weapon) || weaponIsPinned(weapon, this.actor) || !weapon.system.equipped
       || weapon.system.activeModeKey !== mode.key) {
       return ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.ModeNotPrepared"));
     }

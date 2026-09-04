@@ -32,6 +32,9 @@ test("todos los efectos oficiales tienen una fase canónica de resolución", () 
   assert.equal(combatEffectRule({ key: "forzar-rendicion" }).replacesDamage, true);
   assert.equal(combatEffectResolutionPhase({ stage: "afterEffect" }), "afterDamage");
   assert.equal(combatEffectIsAutomated({ key: "cegar-oponente", ruleKey: "guided" }), true);
+  assert.equal(combatEffectIsAutomated({ key: "desarmar-oponente", ruleKey: "guided" }), true);
+  assert.equal(initialCombatEffectStatus({ key: "desarmar-oponente", ruleKey: "guided" }),
+    "active");
   assert.equal(combatEffectIsAutomated({ key: "agarrar", ruleKey: "guided" }), false);
   assert.equal(initialCombatEffectStatus({ key: "agarrar", ruleKey: "guided" }),
     "notAutomated");
@@ -42,6 +45,16 @@ test("Sorpresa puede conceder efectos ofensivos aunque gane la defensa", () => {
     surprise: 1 }), { attacker: 1, defender: 2 });
   assert.deepEqual(combatEffectSlotsBySide({ winner: "attacker", differential: 2,
     surprise: 1 }), { attacker: 3, defender: 0 });
+});
+
+test("Inmovilizar arma se automatiza en ambos lados y exige el crítico propio", () => {
+  const pin = effects.find((effect) => effect.key === "inmovilizar-arma");
+  assert.equal(combatEffectIsAutomated(pin), true);
+  for (const winner of ["attacker", "defender"]) {
+    const resultKey = winner === "attacker" ? "attackResult" : "defenseResult";
+    assert.equal(combatEffectEligible(pin, { winner, [resultKey]: "success" }), false);
+    assert.equal(combatEffectEligible(pin, { winner, [resultKey]: "critical" }), true);
+  }
 });
 
 test("Ardid exige combate activo y separa objetivos de sustituciones defensivas", () => {

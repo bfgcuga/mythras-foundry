@@ -64,7 +64,9 @@ export const COMBAT_EFFECT_RULES = Object.freeze({
   "marcar-enemigo": { ruleKey: "guided", stage: "beforeDamage",
     damageTarget: "opponent" },
   "muerte-silenciosa": { ruleKey: "guided", stage: "beforeDamage",
-    damageTarget: "opponent" }
+    damageTarget: "opponent" },
+  "desarmar-oponente": { ruleKey: "guided", stage: "beforeDamage", target: "opponent" },
+  "inmovilizar-arma": { ruleKey: "guided", stage: "beforeDamage", target: "opponent" }
 });
 
 export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
@@ -74,7 +76,7 @@ export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
 const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
   "abrir-distancia", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
-  "muerte-silenciosa", "retirada", "tumbar-oponente"
+  "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente"
 ]));
 
 export function combatEffectIsAutomated(effect) {

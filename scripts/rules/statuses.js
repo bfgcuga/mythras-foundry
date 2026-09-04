@@ -23,6 +23,8 @@ export const SUFFOCATING_STATUS_ID = "suffocating";
 export const DYING_STATUS_ID = "dying";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
+  { id: "weaponPinned", name: "MYTHRASF.Status.WeaponPinned", img: "icons/svg/net.svg",
+    assignment: "weaponPin" },
   { id: BLINDED_STATUS_ID, name: "MYTHRASF.Status.Blinded",
     img: "icons/svg/blind.svg", skillDifficulty: "herculean" },
   { id: PRONE_STATUS_ID, name: "MYTHRASF.Status.Prone",

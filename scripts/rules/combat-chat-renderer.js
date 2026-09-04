@@ -1,4 +1,5 @@
 import { evasionWinner } from "./combat.js";
+import { pinConsequenceHtml } from "./weapon-pin-runtime.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
 import { actorDisplayName, tokenDisplayName } from "./document-names.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
@@ -125,10 +126,21 @@ function combatCheckHtml(check, combat) {
       : check.consequence?.key === "suppressed"
         ? game.i18n.format("MYTHRASF.Combat.EffectConsequence.suppressed", {
           turns: Number(check.consequence.turns ?? 1) })
-        : localize("MYTHRASF.Combat.EffectConsequence.resisted");
+        : check.consequence?.key === "disarmTooStrong"
+          ? localize("MYTHRASF.Combat.EffectConsequence.disarmTooStrong")
+          : check.consequence?.key === "disarmResisted"
+            ? localize("MYTHRASF.Combat.EffectConsequence.disarmResisted")
+            : ["disarmChoice", "disarmThrown", "disarmTaken"].includes(check.consequence?.key)
+              ? game.i18n.format(`MYTHRASF.Combat.EffectConsequence.${check.consequence.key}`, {
+                weapon: check.consequence.weaponName, distance: check.consequence.distance })
+              : localize("MYTHRASF.Combat.EffectConsequence.resisted");
   const outcome = outcomeKey ? localize(`MYTHRASF.Combat.WoundCheck.Outcome.${outcomeKey}`)
     : effectConsequence;
-  const abilityRoll = resolution.automaticFailure
+  const abilityRoll = resolution.automaticResistance
+    ? `<div class="mythras-chat-row"><span>${escape(localize(
+      "MYTHRASF.Combat.Disarm.StrengthLimit"))}</span><strong class="mythras-chat-result--failure">${escape(localize(
+        "MYTHRASF.Combat.EffectConsequence.disarmTooStrong"))}</strong></div>`
+    : resolution.automaticFailure
     ? `<div class="mythras-chat-row"><span>${escape(localize(
       "MYTHRASF.Suffocation.Endurance"))}</span><strong class="combat-roll-outcome mythras-chat-result--failure">${escape(localize(
         "MYTHRASF.Combat.WoundCheck.AutomaticFailure"))}</strong></div>`
@@ -139,6 +151,11 @@ function combatCheckHtml(check, combat) {
   const luckHistory = (resolution.luckHistory ?? []).map((attempt) => `<small class="mythras-chat-luck-spent">${Number(attempt.rawRoll)} — ${escape(game.i18n.format("MYTHRASF.Luck.SpentBy", { actor: attempt.spenderName }))}</small>`).join("");
   return `<article class="combat-check-entry"><header><strong>${escape(title)}</strong>${help}</header>
     ${abilityRoll}
+    ${resolution.weaponName ? `<div class="mythras-chat-row"><span>${escape(localize(
+      "MYTHRASF.Combat.Disarm.TargetWeapon"))}</span><strong>${escape(resolution.weaponName)} (${escape(
+        resolution.weaponSize)})</strong></div><div class="mythras-chat-row"><span>${escape(localize(
+          "MYTHRASF.Chat.Difficulty"))}</span><strong>${escape(localize(
+            `MYTHRASF.Difficulty.${resolution.difficulty ?? "standard"}`))}</strong></div>` : ""}
     ${luckHistory}
     <div class="mythras-chat-row"><span>${escape(localize(
       "MYTHRASF.Combat.WoundCheck.OpposedAttack"))}</span>${rollOutcome(
@@ -151,7 +168,23 @@ function combatCheckHtml(check, combat) {
 }
 
 function combatConsequenceHtml(entry, index) {
+  if (entry.key === "pinWeapon") return pinConsequenceHtml(entry, index);
   const label = escape(localize(`MYTHRASF.Combat.Consequence.${entry.key}`));
+  if (["disarmChoice", "disarmTaken", "disarmThrown"].includes(entry.key)) {
+    if (entry.status === "pending") return `<div class="combat-disarm-choice"><p>${escape(
+      game.i18n.format("MYTHRASF.Combat.Disarm.ChoicePrompt", { weapon: entry.weaponName }))}</p>
+      <div class="combat-check-actions"><button type="button" data-combat-action="disarm-take"
+        data-consequence-index="${index}" title="${escape(localize(
+          "MYTHRASF.Combat.Disarm.Take"))}">${escape(localize("MYTHRASF.Combat.Disarm.Take"))}</button>
+      <button type="button" data-combat-action="disarm-throw" data-consequence-index="${index}"
+        title="${escape(localize("MYTHRASF.Combat.Disarm.Throw"))}">${escape(localize(
+          "MYTHRASF.Combat.Disarm.Throw"))}</button></div></div>`;
+    const key = entry.key === "disarmTaken" ? "disarmTaken" : "disarmThrown";
+    return `<div class="mythras-chat-total mythras-chat-result--success"><span>${escape(localize(
+      "MYTHRASF.Combat.Disarm.Summary"))}</span><strong>${escape(game.i18n.format(
+        `MYTHRASF.Combat.EffectConsequence.${key}`, { weapon: entry.weaponName,
+          distance: entry.distance }))}</strong></div>`;
+  }
   if (entry.key === "dropHeldItem") {
     if (entry.status === "resolved") {
       const item = entry.itemName || localize("MYTHRASF.Combat.DropHeldItem.None");

@@ -2,6 +2,7 @@ import { currentActionPoints } from "./action-points.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
 import { exchangeTerminal, resolvePendingExchangeSteps } from "./combat-exchange-state.js";
 import { combatSideEntry } from "./combat-effect-runtime.js";
+import { disarmHasFreeHand } from "./combat-disarm.js";
 
 export async function advanceCombatExchange(message, combat, { force = false, combatById,
   render, flagScope = "mythras-foundry" } = {}) {
@@ -101,6 +102,46 @@ export async function applyDroppedCombatItem(message, request, { clone, flagScop
   if (item?.system.equipped) await item.update({ "system.equipped": false });
   Object.assign(consequence, { status: "resolved", itemId, itemName: choice?.name ?? "",
     resolvedBy: user.id, resolvedAt: Date.now() });
+  combat.revision += 1;
+  await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+  await advance(message, combat);
+  return true;
+}
+
+export async function applyDisarmChoice(message, request, { clone, flagScope,
+  resolveActor, userById, render, advance } = {}) {
+  const combat = clone(message.getFlag(flagScope, "combat"));
+  if (!combat || Number(request.revision) !== Number(combat.revision)
+    || !["take", "throw"].includes(request.choice)) return false;
+  const consequence = combat.consequences?.[Number(request.consequenceIndex)];
+  if (!consequence || consequence.key !== "disarmChoice" || consequence.status !== "pending") {
+    return false;
+  }
+  const takerEntry = combatSideEntry(combat, consequence.actorSide);
+  const victimEntry = combatSideEntry(combat, consequence.victimSide);
+  const taker = await resolveActor(takerEntry.tokenUuid, takerEntry.actorUuid);
+  const victim = await resolveActor(victimEntry.tokenUuid, victimEntry.actorUuid);
+  const user = userById(request.userId);
+  if (!taker || !victim || !user || (!user.isGM && !taker.testUserPermission(user, "OWNER"))) {
+    return false;
+  }
+  const weapon = victim.items.get(consequence.weaponId);
+  if (!weapon || weapon.type !== "weapon") return false;
+  if (request.choice === "take") {
+    if (!disarmHasFreeHand(taker)) return false;
+    const data = weapon.toObject();
+    delete data._id;
+    data.system = { ...data.system, equipped: true };
+    await taker.createEmbeddedDocuments("Item", [data]);
+    await victim.deleteEmbeddedDocuments("Item", [weapon.id]);
+  }
+  Object.assign(consequence, { status: "resolved", choice: request.choice,
+    key: request.choice === "take" ? "disarmTaken" : "disarmThrown",
+    resolvedBy: user.id, resolvedAt: Date.now() });
+  const check = (combat.effects?.checks ?? []).find((entry) =>
+    entry.consequence?.key === "disarmChoice"
+    && entry.consequence.weaponId === consequence.weaponId);
+  if (check) check.consequence = { ...consequence };
   combat.revision += 1;
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
   await advance(message, combat);

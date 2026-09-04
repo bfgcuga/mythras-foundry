@@ -30,6 +30,17 @@
   color: var(--mythras-ink);
 }
 
+.mythras-foundry .equipment-state-toggle.weapon-pinned,
+.mythras-foundry .equipment-state-toggle.equipped.weapon-pinned {
+  color: var(--mythras-wound-major);
+  opacity: 1;
+}
+.mythras-foundry .sheet-action-attention,
+.mythras-foundry .sheet-action-attention:not(:disabled) {
+  color: var(--mythras-header-accent);
+  border-color: var(--mythras-header-accent);
+}
+
 /* Keep system window titles legible independently of Foundry's active theme. */
 .mythras-foundry .window-header .window-title {
   color: var(--mythras-header-ink) !important;

@@ -1,4 +1,6 @@
 import { currentActionPoints } from "./action-points.js";
+import { weaponPins, weaponIsPinned } from "./weapon-pinning.js";
+import { requestWeaponRelease } from "./weapon-pin-runtime.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
@@ -49,7 +51,7 @@ export function actionPresentation(actor) {
   const conditions = resolveActorConditions(actor, { baseAttributes:
     actor?.system?.baseAttributes ?? actor?.system?.attributes ?? {} });
   const modes = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
-    && weaponCanEquip(item))
+    && weaponCanEquip(item) && !weaponIsPinned(item, actor))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)) ?? [];
   return combatActionPresentation({ inCombat: Boolean(combat?.started && combatant),
     isActive: combat?.combatant?.id === combatant?.id, actionPoints: currentActionPoints(actor),
@@ -59,6 +61,7 @@ export function actionPresentation(actor) {
     prone: actor?.statuses?.has?.("prone"), hasRangedWeapon: modes.some((mode) =>
       ["ranged", "siege"].includes(mode.weaponType)), hasPreparedWeapon: modes.length > 0,
     hasRestraint: restraintEffects(actor).length > 0,
+    hasPinnedWeapon: weaponPins(actor).length > 0,
     hasDelay: state.delays[combatant?.id]?.status === "reserved",
     canCharge: chargeEligibility(state.movements[combatant?.id], combat?.round).eligible });
 }
@@ -68,7 +71,7 @@ export function decorateCombatActionButtons(actor, root) {
   root?.querySelectorAll?.("[data-combat-action-key]").forEach((button) => {
     const key = button.dataset.combatActionKey;
     const state = presentation[key] ?? { available: false, cost: 1, reason: "unavailable" };
-    button.hidden = false;
+    button.hidden = key === "releaseWeapon" && !weaponPins(actor).length;
     button.disabled = !state.available;
     button.setAttribute("aria-disabled", String(!state.available));
     const reason = state.reason ? localize(`MYTHRASF.Action.Unavailable.${state.reason}`) : "";
@@ -149,7 +152,8 @@ async function chooseMovement(context) {
 }
 
 async function chooseReadyWeapon(actor) {
-  const weapons = actor.items.filter((item) => item.type === "weapon" && weaponCanEquip(item));
+  const weapons = actor.items.filter((item) => item.type === "weapon" && weaponCanEquip(item)
+    && !weaponIsPinned(item, actor));
   if (!weapons.length) return null;
   return foundry.applications.api.DialogV2.wait({ window: { title: localize("MYTHRASF.Action.readyWeapon") },
     content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Weapon.Name"))}</span><select name="weapon">${weapons.map((weapon) => `<option value="${weapon.id}">${escape(weapon.name)}</option>`).join("")}</select></label><label><span>${escape(localize("MYTHRASF.Action.ReadyOperation"))}</span><select name="operation"><option value="ready">${escape(localize("MYTHRASF.Action.Ready"))}</option><option value="stow">${escape(localize("MYTHRASF.Action.Stow"))}</option><option value="pickup">${escape(localize("MYTHRASF.Action.Pickup"))}</option></select></label></div>`,
@@ -179,7 +183,7 @@ async function executeAction(combat, action) {
     current.status = "resolved";
   } else if (current.key === "readyWeapon") {
     const weapon = actor.items.get(current.parameters.weaponId);
-    if (!weapon) { current.status = "awaitingConfirmation"; current.note = localize("MYTHRASF.Action.MissingWeapon"); }
+    if (!weapon || weaponIsPinned(weapon, actor)) { current.status = "awaitingConfirmation"; current.note = localize("MYTHRASF.Action.MissingWeapon"); }
     else if (!weaponCanEquip(weapon) && current.parameters.operation !== "stow") {
       current.status = "awaitingConfirmation";
       current.note = localize("MYTHRASF.Weapon.BrokenCannotEquip");
@@ -220,6 +224,7 @@ export async function requestCombatAction(actor, key) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.turn"));
   }
   let parameters = {};
+  if (key === "releaseWeapon") return requestWeaponRelease(actor);
   if (key === "move") { parameters = await chooseMovement(context); if (!parameters) return; }
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }
   if (["mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {

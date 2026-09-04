@@ -18,7 +18,9 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
   cobertura de automatización de los efectos de combate.
 - Ampliar las consecuencias persistentes de efectos que todavía dependen de
   geometría o decisiones narrativas, incluidos Alcance, Cambiar Alcance,
-  Retirada, Bloqueo Pasivo y fuentes liberables.
+  Retirada, Bloqueo Pasivo y fuentes liberables. La inmovilización de armas ya
+  identifica el Item y su captor, resuelve su liberación enfrentada y se limpia
+  al destrabarse; quedan fuera de esta ampliación las demás fuentes de agarre.
 - Completar la automatización de magia y monturas cuando existan esos
   subsistemas; hasta entonces sus efectos figuran como no automatizados y no
   interrumpen el intercambio.
