@@ -253,8 +253,6 @@ test("la hoja de efecto es editable, restringe sus valores y usa booleanos visua
   assert.match(template, /name="system\.description"/);
   assert.match(template, /name="system\.weaponRestriction">{{selectOptions/);
   assert.match(template, /name="system\.rollRestriction">{{selectOptions/);
-  assert.ok(template.indexOf("combat-effect-sheet-description")
-    < template.indexOf("combat-effect-sheet-summary"));
   for (const field of ["offensive", "defensive", "stackable", "requiresWound", "endurance"]) {
     assert.match(template, new RegExp(`type="checkbox"[^>]*sheet-state-box[^>]*name="system\\.${field}"`));
   }

@@ -267,7 +267,7 @@ determinista antes de validar o empaquetar una versión.
 
 ## Desarrollo
 
-Requisitos: Node.js y npm. Instala las dependencias y ejecuta:
+Requisitos: Node.js 24.19 o posterior y npm. Instala las dependencias y ejecuta:
 
 ```powershell
 npm install
@@ -278,6 +278,18 @@ npm run check
 
 - `npm test` ejecuta las pruebas unitarias y las comprobaciones de catálogo,
   manifiesto, localización, estilos e iconos.
+  El [inventario de pruebas](docs/test-inventory.md) enumera los casos y su propósito
+  en una instantánea fechada; los archivos de `tests/` son la fuente vigente.
+  La [revisión de estructura y estilos](docs/test-review.md) documenta una
+  ejecución de referencia y los límites de las comprobaciones estáticas.
+  Su [clasificación](docs/test-classification.md) distingue qué conservar,
+  mejorar, fusionar o eliminar; incluye los destinos implementados y la verificación final.
+  Las pruebas de interfaz usan Handlebars, jsdom y PostCSS, con dobles de Foundry
+  y mocks de módulos de Node (API experimental habilitada por `npm test`).
+  Para una ejecución focalizada: `node --experimental-test-module-mocks --test tests/<archivo>.test.js`.
+  La [política de pruebas](docs/testing-policy.md) establece cuándo ejecutar casos
+  concretos, ampliar a la suite completa y validar el proyecto; también define
+  qué pruebas aportan valor y cómo comunicar sus límites.
 - `npm run build:packs` genera `.build/packs-src/` y compila `packs/` mediante la
   CLI oficial de Foundry VTT.
 - `npm run check` comprueba la sintaxis JavaScript, los recursos declarados en

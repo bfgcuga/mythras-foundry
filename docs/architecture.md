@@ -815,7 +815,18 @@ fuentes requiere ejecutar `npm run build:packs` antes de `npm run check`.
 
 ## Validación y publicación
 
-`npm test` es la comprobación funcional principal. `npm run check` valida la
+La selección y mantenimiento de pruebas siguen [docs/testing-policy.md](testing-policy.md).
+
+`npm test` es la comprobación funcional principal. Requiere Node 24.19 o posterior.
+Las pruebas de interfaz compilan las plantillas reales con Handlebars, ejercitan
+controladores y eventos en jsdom y analizan reglas CSS activas con PostCSS.
+`tests/helpers/ui.js` proporciona dobles de las fronteras de Foundry; no replica
+su validación de modelos ni sustituye la comprobación visual en una partida.
+Los mocks de módulos usan la API experimental del runner de Node.
+El filtrado del equipo inicial por perfiles de cualquier modo, clase social y
+dotación reside en el helper puro `startingEquipmentWeapons`, consumido por la hoja.
+
+`npm run check` valida la
 sintaxis de todos los módulos, los recursos del manifiesto, los JSON de idioma,
 la presencia de compendios y la URL versionada de descarga.
 

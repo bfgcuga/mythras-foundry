@@ -1,48 +1,29 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { ARMOR_SOURCES } from "../scripts/data/armor.js";
-import { EQUIPMENT_SOURCES } from "../scripts/data/equipment.js";
-import { WEAPON_SOURCES } from "../scripts/data/weapons.js";
-
-const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const localPath = (img) => resolve(root, img.replace("systems/mythras-foundry/", ""));
-
-test("todas las imágenes asignadas a armaduras existen", () => {
-  const illustrated = ARMOR_SOURCES.filter((source) => (
-    source.system.referenceLocation !== "special"
-  ));
-  assert.equal(illustrated.length, 56);
-  for (const source of illustrated) assert.equal(existsSync(localPath(source.img)), true,
-    `${source.name}: ${source.img}`);
-});
-
-test("todas las armas reciben una imagen existente", () => {
-  const illustrated = WEAPON_SOURCES;
-  assert.equal(illustrated.length, 64);
-  for (const source of illustrated) {
-    if (source.img.startsWith("icons/")) {
-      assert.equal(source.img, "icons/svg/fist.svg", source.name);
-      continue;
-    }
-    assert.equal(existsSync(localPath(source.img)), true, `${source.name}: ${source.img}`);
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+import {resolve,relative,isAbsolute} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {ARMOR_SOURCES} from '../scripts/data/armor.js';
+import {EQUIPMENT_SOURCES} from '../scripts/data/equipment.js';
+import {WEAPON_SOURCES} from '../scripts/data/weapons.js';
+import {defaultItemIcon} from '../scripts/data/item-icons.js';
+const root=fileURLToPath(new URL('..',import.meta.url));
+function localImage(source){
+  assert.equal(typeof source.img,'string',source.name);
+  assert.ok(source.img.startsWith('systems/mythras-foundry/'),`${source.name}: ${source.img}`);
+  const file=resolve(root,source.img.slice('systems/mythras-foundry/'.length));const child=relative(root,file);
+  assert.ok(!child.startsWith('..')&&!isAbsolute(child),source.img);assert.ok(existsSync(file),`${source.name}: ${source.img}`);
+}
+test('cada pieza anatómica tiene una ilustración local existente',()=>{
+  assert.ok(ARMOR_SOURCES.length);for(const source of ARMOR_SOURCES){
+    localImage(source);if(source.system.referenceLocation!=='special')assert.notEqual(source.img,defaultItemIcon('armor'),source.name);
   }
 });
-
-test("las nuevas imagenes de equipo se asignan a entradas existentes", () => {
-  const illustrated = EQUIPMENT_SOURCES.filter((source) => (
-    source.img.includes("/imagenes_256x256/")
-  ));
-  assert.equal(illustrated.length, 117);
-  for (const source of illustrated) assert.equal(existsSync(localPath(source.img)), true,
-    `${source.name}: ${source.img}`);
+test('cada arma tiene una ilustración existente o la excepción explícita de Puño/Patada',()=>{
+  assert.ok(WEAPON_SOURCES.length);for(const source of WEAPON_SOURCES){
+    if(source.system.profileKey==='puno-patada'){assert.equal(source.img,'icons/svg/fist.svg');continue;}localImage(source);assert.notEqual(source.img,defaultItemIcon('weapon'),source.name);
+  }
 });
-
-test("ningun objeto del compendio conserva un icono generico", () => {
-  const generic = EQUIPMENT_SOURCES.filter((source) => (
-    !source.img.includes("/imagenes_256x256/")
-  ));
-  assert.equal(generic.length, 0);
+test('todo el equipo tiene ilustración local sin depender de una carpeta o cantidad fija',()=>{
+  assert.ok(EQUIPMENT_SOURCES.length);for(const source of EQUIPMENT_SOURCES){localImage(source);assert.notEqual(source.img,defaultItemIcon(source.type),source.name);}
 });

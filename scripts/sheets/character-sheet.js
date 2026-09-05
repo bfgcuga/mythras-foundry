@@ -60,7 +60,6 @@ import { calculateResourceValue } from "../rules/resources.js";
 import { calculatePassionBase, PASSION_OBJECT_TYPES, PASSION_VERBS } from "../rules/passions.js";
 import {
   difficultyTarget,
-  normalizeWeaponProfile,
   parseWeaponProfileReferences
 } from "../rules/combat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
@@ -68,7 +67,7 @@ import { weaponCanEquip } from "../rules/weapon-durability.js";
 import { inventoryCarried } from "../rules/inventory.js";
 import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
-import { effectiveModeProfileKey, findWeaponMode,
+import { findWeaponMode,
   weaponModeDisplayName, weaponModes } from "../rules/weapon-modes.js";
 import { armorCoverageLocations, armorFitsWearer, armorPhysicalTotals,
   armorInitiativePenalty } from "../rules/armor.js";
@@ -98,7 +97,7 @@ import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponView
 import { bindSheetEvents } from "../ui/sheet-events.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
 import { updateActorFromSheet } from "../rules/document-names.js";
-import { replaceFormula, SIMPLE_WEAPON_KEYS, startingEquipmentRule,
+import { replaceFormula, startingEquipmentWeapons, startingEquipmentRule,
   validateStartingEquipment } from "../rules/starting-equipment.js";
 import {
   NEW_SKILL_EXPERIENCE_COST,
@@ -2303,18 +2302,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       draft.startingEquipment = { rolls };
       await this.#saveBackgroundDraft(draft);
     }
-    const learnedProfiles = new Set(this.actor.items
-      .filter((item) => item.type === "combatStyle")
-      .flatMap((item) => item.system.weaponProfiles ?? [])
-      .map((profile) => normalizeWeaponProfile(profile.key || profile.name))
-      .filter(Boolean));
-    const weapons = WEAPON_SOURCES.filter((source) => (
-      Number(source.system.crewMinimum ?? 0) === 0
-      && (rule.weaponTier !== "simple" || SIMPLE_WEAPON_KEYS.has(source.buildKey))
-      && weaponModes(source).some((mode) => learnedProfiles.has(
-        normalizeWeaponProfile(effectiveModeProfileKey(source, mode))
-      ))
-    )).sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
+    const weapons = startingEquipmentWeapons(WEAPON_SOURCES, [...this.actor.items], rule)
+      .sort((left, right) => left.name.localeCompare(right.name, game.i18n.lang));
     if (rolls.weaponCount > 0 && weapons.length === 0) {
       ui.notifications.warn(game.i18n.localize(
         "MYTHRASF.StartingEquipment.NoStyleWeapons"

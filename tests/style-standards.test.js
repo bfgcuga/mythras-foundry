@@ -1,288 +1,102 @@
-import test from "node:test";
+import test, { after } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import postcss from "postcss";
+import { css, dom } from "./helpers/ui.js";
 
-const css = readFileSync(new URL("../styles/mythras-foundry.css", import.meta.url), "utf8");
-const chatScript = readFileSync(
-  new URL("../scripts/rules/combat-chat.js", import.meta.url), "utf8"
-);
-const standards = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8");
-const characterTemplate = readFileSync(
-  new URL("../templates/actor/character-sheet.hbs", import.meta.url), "utf8"
-);
-const characteristicsTemplate = readFileSync(
-  new URL("../templates/actor/parts/characteristics.hbs", import.meta.url), "utf8"
-);
-const combatTemplate = readFileSync(
-  new URL("../templates/actor/parts/combat-tab.hbs", import.meta.url), "utf8"
-);
-const penaltiesTemplate = readFileSync(
-  new URL("../templates/actor/parts/penalties-tab.hbs", import.meta.url), "utf8"
-);
-const npcTemplate = readFileSync(
-  new URL("../templates/actor/npc-sheet.hbs", import.meta.url), "utf8"
-);
-const itemTemplate = readFileSync(
-  new URL("../templates/item/item-sheet.hbs", import.meta.url), "utf8"
-);
-const tooltipScript = readFileSync(new URL("../scripts/ui/tooltips.js", import.meta.url), "utf8");
-const itemData = readFileSync(new URL("../scripts/data/item-data.js", import.meta.url), "utf8");
-const sheetSources = ["character-sheet.js", "npc-sheet.js", "item-sheet.js"]
-  .map((name) => readFileSync(new URL(`../scripts/sheets/${name}`, import.meta.url), "utf8"));
-const systemScript = readFileSync(new URL("../scripts/mythras-foundry.js", import.meta.url), "utf8");
-const registrationScript = readFileSync(
-  new URL("../scripts/system/registration.js", import.meta.url), "utf8"
-);
-const uiHooksScript = readFileSync(
-  new URL("../scripts/system/ui-hooks.js", import.meta.url), "utf8"
-);
-const rollDialog = readFileSync(new URL("../scripts/apps/skill-roll-dialog.js", import.meta.url), "utf8");
-const rollChat = readFileSync(new URL("../scripts/rules/skill-roll-chat.js", import.meta.url), "utf8");
-const es = JSON.parse(readFileSync(new URL("../lang/es.json", import.meta.url), "utf8"));
+const page = dom(`<div class="mythras-foundry mythras-paper-sheet"><div class="window-content">
+<div class="sheet-header"><label>Nombre</label><input></div>
+<input><select><option>Valor</option></select><textarea></textarea><output class="sheet-field-readonly">42</output>
+<div class="item-sheet-content weapon-item-sheet"><fieldset><legend>Arma</legend><input class="sheet-field-editable"><textarea></textarea></fieldset></div>
+<div class="item-sheet-content combat-style-item-sheet"><input></div><div class="homebrew-creator-content"><fieldset><legend>Crear</legend><textarea></textarea></fieldset></div>
+<div class="skill-roll-modifier"><span>Origen</span><strong class="skill-roll-modifier-effect--penalty">-1</strong><strong class="skill-roll-modifier-effect--bonus">+1</strong></div>
+<div class="catalog-header"></div><ul class="catalog-results"><li></li></ul>
+<div class="inventory-tree-head"></div><div class="inventory-tree"><ul class="item-list"><li></li></ul></div>
+<table class="penalties-table"><thead><tr><th>Fuente</th></tr></thead><tbody><tr><td>Dato</td></tr></tbody></table>
+<div class="combat-location-head"><span></span><span>Localización</span></div><div class="combat-location-line"><span>d20</span></div>
+<div class="mythras-foundry tactical-overview-menu"><table><thead><tr><th>Cabecera</th></tr></thead><tbody><tr><td>Dato</td></tr></tbody></table></div>
+</div></div><li class="chat-message mythras-chat-message"><section class="mythras-chat-card"></section></li>`, css);
+after(()=>page.window.close());
+const element = selector => { const node=page.window.document.querySelector(selector); assert.ok(node,selector); return node; };
+const style = selector => page.window.getComputedStyle(element(selector));
+const transparent = selector => assert.equal(style(selector).backgroundColor,"rgba(0, 0, 0, 0)",selector);
 
-test("hojas y mensajes Mythras comparten la superficie de papel", () => {
-  assert.match(css, /--mythras-paper-texture:/);
-  assert.match(css, /\.mythras-foundry \.window-content/);
-  assert.match(css, /\.mythras-paper-sheet \.window-content/);
-  assert.match(css, /\.chat-message\.mythras-chat-message/);
-  assert.match(chatScript, /classList\.add\("mythras-chat-message"\)/);
-  assert.ok(sheetSources.every((source) => source.includes('"mythras-paper-sheet"')));
-});
-
-test("los diálogos Mythras aplican la superficie de papel a la ventana completa", () => {
-  assert.match(rollDialog, /mythras-dialog skill-roll-dialog/);
-  assert.match(rollChat, /mythras-dialog luck-spend-dialog/);
-  assert.match(uiHooksScript, /querySelector\?\.\("\.mythras-dialog"\)/);
-  assert.match(uiHooksScript, /classList\.add\("mythras-foundry", "mythras-paper-sheet"\)/);
-});
-
-test("la suerte simple es repetible y usa el personaje participante del grupo activo", () => {
-  assert.doesNotMatch(rollChat, /data\.luckSpent/);
-  assert.doesNotMatch(rollChat, /skillRoll\.luckSpent/);
-  assert.match(rollChat, /getActiveParty\?\.\(\)/);
-  assert.match(rollChat, /flags\.mythras-foundry\.skillRoll\.rolls/);
-  assert.match(css, /mythras-chat-simple-roll-attempt/);
-});
-
-test("el diálogo de tirada separa origen, efecto y dificultad final", () => {
-  assert.match(css, /skill-roll-modifier > span \{ color: var\(--mythras-ink\) !important/);
-  assert.match(css, /skill-roll-modifier-effect--penalty \{ color: #a1241b !important/);
-  assert.match(css, /skill-roll-modifier-effect--bonus \{ color: #3f7138 !important/);
-  assert.match(rollDialog, /data-effective-difficulty/);
-  assert.match(rollDialog, /data-base-target-value/);
-  assert.match(rollDialog, /data-final-target-value/);
-  assert.match(rollDialog, /penalized-value/);
-  assert.match(rollDialog, /targets\.target === targets\.baseTarget/);
-  assert.match(css, /skill-roll-target--penalty \{ color: #a1241b !important/);
-  assert.match(css, /skill-roll-target--bonus \{ color: #3f7138 !important/);
-  assert.match(standards, /penalizaciones se muestran en rojo y los bonificadores en verde/);
-});
-
-test("el ataque reutiliza los ajustes porcentuales sin configurar un concurso", () => {
-  assert.match(rollDialog, /export function openAttackRollDialog/);
-  assert.match(rollDialog, /includeContest: false/);
-  assert.match(rollDialog, /if \(!includeContest\) return \{ difficulty:/);
-  assert.match(chatScript, /await openAttackRollDialog/);
-  assert.match(chatScript, /additionalContent: setupFields, collectAdditional: collectAttackSetup/);
-  assert.doesNotMatch(chatScript, /async function chooseAttackSetup/);
-  assert.match(chatScript, /configured\.targets\.adjustedTarget/);
-  assert.match(chatScript, /if \(!configured\) return null;[\s\S]*spendActionPoint/);
-  assert.match(chatScript, /rollConfiguration/);
-  assert.match(rollDialog, /action: "cancel"[\s\S]*?callback: \(\) => null/);
-  assert.match(rollDialog, /if \(!result \|\| typeof result !== "object"\) return null/);
-  assert.match(chatScript, /if \(exchangeTerminal\(current\)\)[\s\S]*advanceCombatTurnForExchange/);
-});
-
-test("el daño maximizado se identifica y la hoja de efecto apila sus secciones", () => {
-  assert.match(chatScript, /weaponFormulaParts: maximizedDamage\.parts/);
-  assert.match(css, /combat-damage-maximized/);
-  assert.match(es["MYTHRASF.Combat.DamageMaximized"], /\{maximized\}/);
-  assert.equal(es["MYTHRASF.CombatEffect.Characteristics"], "Características");
-  assert.match(itemTemplate, /combat-effect-sheet-description[\s\S]*combat-effect-sheet-summary/);
-  assert.match(css, /combat-effect-sheet-description,[\s\S]*combat-effect-sheet-summary \{ grid-column: 1 \/ -1/);
-});
-
-test("la familiaridad de combate muestra descriptores localizados y solo penaliza cuando procede", () => {
-  for (const key of ["included", "untrained", "similar", "broadlySimilar",
-    "reasonablyDifferent", "substantiallyDifferent"]) {
-    assert.ok(es[`MYTHRASF.Familiarity.${key}`]);
+test("las ventanas y mensajes tienen las capas compartidas de papel activas",()=>{
+  for(const selector of [".window-content",".chat-message"]){
+    assert.match(style(selector).backgroundImage,/--mythras-paper-overlay/);
+    assert.match(style(selector).backgroundImage,/--mythras-paper-texture/);
   }
-  assert.match(es["MYTHRASF.Familiarity.included"], /sin penalización/);
-  assert.match(chatScript, /!\["included", "similar", "untrained"\]\.includes/);
+});
+test("campos y recuadros conservan transparencia en cada tipo de hoja",()=>{
+  for(const selector of [".window-content > input",".window-content > select",".window-content > textarea",".sheet-field-readonly",
+    ".weapon-item-sheet input",".weapon-item-sheet textarea",".combat-style-item-sheet input",".homebrew-creator-content textarea",".item-sheet-content fieldset",".homebrew-creator-content fieldset"]) transparent(selector);
+  const rules=postcss.parse(css); let border; rules.walkRules(rule=>{ if(rule.selectors?.includes(".mythras-foundry .item-sheet-content fieldset")) rule.walkDecls("border",decl=>border=decl.value); }); assert.equal(border?.split(/\s+/)[0],"1px");
+});
+test("origen y modificadores tienen estilos distintos en los elementos correspondientes",()=>{
+  assert.match(style(".skill-roll-modifier > span").color,/mythras-ink/);
+  assert.equal(style(".skill-roll-modifier-effect--penalty").color,"rgb(161, 36, 27)");
+  assert.equal(style(".skill-roll-modifier-effect--bonus").color,"rgb(63, 113, 56)");
+});
+test("cabeceras y filas comparten cuadrícula en catálogo e inventario",()=>{
+  for(const [header,row]of [[".catalog-header",".catalog-results li"],[".inventory-tree-head",".inventory-tree .item-list li"]]){
+    assert.notEqual(style(header).gridTemplateColumns,"");
+    assert.equal(style(header).gridTemplateColumns,style(row).gridTemplateColumns);
+  }
+});
+test("la tabla de penalizaciones conserva tipografía y texto multilínea",()=>{
+  assert.match(style(".penalties-table").fontSize,/mythras-font-size-table/);
+  assert.equal(style(".penalties-table td").whiteSpace,"normal");
+  transparent(".penalties-table td");
+});
+test("d20 y localización mantienen la alineación de su columna",()=>{
+  assert.equal(style(".combat-location-head > span:nth-child(2)").textAlign,"left");
+  assert.equal(style(".combat-location-line > span:first-child").textAlign,"center");
+});
+test("las tablas tácticas no añaden superficie y distinguen su cabecera",()=>{
+  transparent(".tactical-overview-menu table");
+  assert.equal(style(".tactical-overview-menu table").backgroundImage,"none");
+  const active=postcss.parse(css);let background;active.walkRules(rule=>{if(rule.selectors?.includes(".mythras-foundry.tactical-overview-menu thead th"))rule.walkDecls("background-color",decl=>background=decl.value);});assert.equal(background,"var(--mythras-header-accent)");
+});
+test("el contrato de papel detecta CSS comentado y admite formato equivalente",()=>{
+  const reformatted=postcss.parse(css).toResult({map:false}).css.replaceAll(": ",":  ");
+  for(const [sheet,expected]of [[reformatted,true],[`/*${css.replaceAll("*/","* /")}*/`,false]]){
+    const sample=dom('<div class="mythras-foundry"><div class="window-content"></div></div>',sheet);
+    const background=sample.window.getComputedStyle(sample.window.document.querySelector('.window-content')).backgroundImage;
+    assert.equal(background.includes("mythras-paper-texture"),expected);
+    sample.window.close();
+  }
 });
 
-test("la superficie compartida queda registrada como estándar visual", () => {
-  assert.match(standards, /Superficie estándar de papel/);
-  assert.match(standards, /Toda hoja de documento/);
-  assert.match(standards, /no sustituye la superficie de papel/);
+test("pestañas activas e inactivas conservan superficies distintas en cada navegación",()=>{
+  const sheet=postcss.parse(css);
+  for(const [group,attribute]of [['sheet-tabs','data-tab'],['weapon-sheet-tabs','data-weapon-tab'],['combat-style-sheet-tabs','data-combat-style-tab'],['armor-sheet-tabs','data-armor-tab']]){
+    const sample=dom(`<div class="mythras-foundry"><nav class="${group}"><button ${attribute}="one"></button><button class="active" ${attribute}="two"></button></nav></div>`);
+    try{
+      const backgrounds=[...sample.window.document.querySelectorAll('button')].map(button=>{
+        let value;sheet.walkRules(rule=>{if(rule.selectors.some(selector=>button.matches(selector)))rule.nodes.filter(n=>n.type==='decl'&&n.prop==='background').forEach(n=>value=n.value);});return value;
+      });
+      assert.deepEqual(backgrounds,['var(--mythras-tab-inactive)','var(--mythras-paper)']);
+    }finally{sample.window.close();}
+  }
 });
 
-test("todos los campos editables son transparentes y el estándar prohíbe fondos coloreados", () => {
-  assert.match(css, /input:not\(\[type="checkbox"\]\),[^}]*textarea[^}]*background: transparent !important/s);
-  assert.match(css, /\.sheet-field-editable \{[^}]*background: transparent !important/s);
-  assert.doesNotMatch(css, /mythras-field-editable/);
-  assert.match(standards, /input`, `select` y `textarea` son transparentes/);
-  assert.match(standards, /nunca introduce una superficie coloreada/);
+test("las cabeceras declaran tinta y borde propios sobre su superficie oscura",()=>{
+  const sheet=postcss.parse(css);
+  for(const type of ['character','npc']){
+    const sample=dom(`<div class="mythras-foundry"><div class="${type}-sheet-content"><header class="sheet-header"><label>Nombre</label><input><button class="portrait-edit">Editar</button></header></div></div>`);
+    try{
+      for(const node of sample.window.document.querySelectorAll('label,input,button')){
+        const declarations=[];sheet.walkRules(rule=>{if(rule.selectors.some(selector=>node.matches(selector)))declarations.push(...rule.nodes.filter(n=>n.type==='decl'));});
+        assert.ok(declarations.some(d=>d.prop==='color'&&d.value==='var(--mythras-header-ink)'&&d.important));
+        if(node.tagName!=='LABEL')assert.ok(declarations.some(d=>d.prop==='border-color'&&d.value==='var(--mythras-header-line)'));
+      }
+    }finally{sample.window.close();}
+  }
 });
 
-test("todos los atributos derivados ofrecen el tooltip retrasado compartido", () => {
-  const attributeTooltips = characterTemplate.match(/data-mythras-tooltip="{{attributeTooltips\./g) ?? [];
-  assert.equal(attributeTooltips.length, 8);
-  assert.match(tooltipScript, /button, \[data-mythras-tooltip\]/);
-  assert.match(tooltipScript, /TOOLTIP_DELAY_MS = 1100/);
-});
-
-test("los cuatro métodos de características comparten fila y libre usa campos editables", () => {
-  assert.match(css, /\.generation-methods \{[^}]*repeat\(4, minmax\(0, 1fr\)\)/s);
-  assert.match(characteristicsTemplate, /isFreeAllocation/);
-  assert.match(characteristicsTemplate, /class="sheet-field-editable characteristic-free-input"/);
-  assert.match(characteristicsTemplate, /min="\{\{characteristic\.minimum\}\}"/);
-});
-
-test("catálogo e inventario alinean cabeceras y filas con la misma cuadrícula", () => {
-  assert.match(css, /\.catalog-header,\s*\n\.mythras-foundry \.catalog-results li[^}]*grid-template-columns:/);
-  assert.match(css, /\.inventory-tree-head,\s*\n\.mythras-foundry \.inventory-tree \.item-list li[^}]*grid-template-columns:/);
-  assert.match(css, /\.inventory-tree-head \{[^}]*text-align: left/);
-});
-
-test("la pestaña de penalizaciones usa una tabla semántica y tipografía compartida", () => {
-  assert.match(characterTemplate, /data-tab="penalties"/);
-  assert.match(characterTemplate, /data-tab-content="penalties"/);
-  assert.match(penaltiesTemplate, /<table class="penalties-table">/);
-  assert.match(penaltiesTemplate, /<th scope="col">/);
-  assert.match(penaltiesTemplate, /<th scope="row">/);
-  assert.match(css, /\.penalties-table \{[^}]*font-size: var\(--mythras-font-size-table\)/);
-  assert.match(css, /\.penalties-table th,\s*\n\.mythras-foundry \.penalties-table td[^}]*white-space: normal/s);
-  assert.match(penaltiesTemplate, /data-status-toggle="{{status.id}}"/);
-  assert.match(penaltiesTemplate, /hasActiveStatusControls/);
-  assert.match(penaltiesTemplate, /penalties\.hasRows/);
-  assert.match(characterTemplate, /parts\/penalties-tab\.hbs/);
-  assert.match(npcTemplate, /data-tab="penalties"/);
-  assert.match(npcTemplate, /data-tab-content="penalties"/);
-  assert.match(npcTemplate, /parts\/penalties-tab\.hbs/);
-  assert.match(css, /\.penalties-table td \{ color: var\(--mythras-ink\); background: transparent; \}/);
-  assert.match(registrationScript, /CONFIG\.Actor\.documentClass = MythrasActor/);
-  assert.match(registrationScript, /MYTHRAS_STATUS_EFFECTS/);
-  assert.match(systemScript, /preDeleteActiveEffect/);
-  assert.match(systemScript, /preUpdateActiveEffect/);
-  assert.match(systemScript, /deleteActiveEffect/);
-  assert.match(systemScript, /automatic\.length/);
-});
-
-test("la ficha de arma separa modos por tipo y expone parámetros de rasgo", () => {
-  assert.match(css, /\.weapon-mode-fields-melee/);
-  assert.match(css, /\.weapon-mode-fields-ranged/);
-  assert.match(css, /\.weapon-mode-fields-siege/);
-  assert.match(css, /\.weapon-item-sheet textarea \{[^}]*background: transparent !important/s);
-  assert.match(itemTemplate, /data-action="view-item-image"/);
-  assert.match(itemTemplate, /traitRefs\.\{\{\.\.\/referenceIndex\}\}\.parameters/);
-  assert.match(itemTemplate, /weapon-advanced-fields/);
-});
-
-test("la ficha de arma envía una sola moneda y combate muestra los PG actuales", () => {
-  const armorStart = itemTemplate.indexOf("{{#if isArmor}}");
-  const weaponSection = itemTemplate.slice(itemTemplate.lastIndexOf("{{#if isWeapon}}", armorStart),
-    armorStart);
-  assert.equal((weaponSection.match(/name="system\.currency"/g) ?? []).length, 1);
-  assert.doesNotMatch(weaponSection, /name="system\.(parentContainerId|location|quantityFormula)"/);
-  const locationTemplate = readFileSync(new URL("../templates/actor/parts/hit-location-table.hbs", import.meta.url), "utf8");
-  assert.match(locationTemplate, /row\.item\.system\.currentHitPoints/);
-});
-
-test("las acciones de modo y rasgo son distintas y la durabilidad natural se explica", () => {
-  assert.match(itemTemplate, /weapon-modes-toolbar[^]*sheet-add-button/);
-  assert.match(itemTemplate, /class="weapon-trait-add"[^]*fa-tag/);
-  assert.doesNotMatch(itemTemplate, /class="sheet-add-button weapon-trait-add"/);
-  assert.match(itemTemplate, /MYTHRASF\.Weapon\.NaturalWeaponDurability/);
-  assert.match(itemTemplate, /weaponDurabilityHelp/);
-});
-
-test("la configuración de arma separa ejemplar y situación del personaje", () => {
-  assert.match(itemTemplate, /weapon-copy-editor[^]*system\.quantity[^]*system\.currentHitPoints/);
-  assert.match(itemTemplate, /weapon-situation-editor[^]*system\.activeModeKey[^]*system\.equipped/);
-  assert.ok(itemTemplate.indexOf("weapon-copy-editor")
-    < itemTemplate.indexOf("weapon-situation-editor"));
-});
-
-test("la ficha de estilo resume asociaciones y separa el cálculo no editable", () => {
-  assert.match(itemTemplate, /combat-style-name-summary[^]*combatStyleWeaponProfiles/);
-  assert.match(itemTemplate, /combat-style-name-summary[^]*combatStyleTraitReferences/);
-  assert.match(itemTemplate, /data-combat-style-tab-content="calculation"[^]*<output class="sheet-field-readonly">/);
-  assert.match(itemTemplate, /combat-style-advanced-state/);
-  assert.match(itemTemplate, /combat-style-experience-variables[^]*system\.trained[^]*system\.fumbled/);
-  assert.doesNotMatch(itemTemplate, /name="system\.(weapons|traits|bonus)"/);
-  assert.match(css, /\.combat-style-item-sheet input,[^}]*background: transparent/s);
-
-  const styleSchema = itemData.slice(itemData.indexOf("export class CombatStyleData"),
-    itemData.indexOf("export class BackgroundData"));
-  assert.doesNotMatch(styleSchema, /\b(weapons|traits): textField/);
-  assert.match(styleSchema, /\.\.\.super\.defineSchema\(\)/);
-});
-
-test("el asistente crea o importa estilos y delega armas y rasgos en su hoja", () => {
-  const wizard = readFileSync(new URL(
-    "../templates/actor/parts/background-wizard.hbs", import.meta.url), "utf8");
-  const characterSheet = readFileSync(new URL(
-    "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
-  assert.match(wizard, /data-background-style-action="select-learned"/);
-  assert.match(wizard, /data-background-style-action="select-pack"/);
-  assert.match(wizard, /data-background-style-action="create"/);
-  assert.match(wizard, /data-background-style-action="edit"/);
-  assert.doesNotMatch(wizard, /data-background-style-field="weapons"/);
-  assert.match(characterSheet, /pack\.getIndex\(\{ fields: \["type"\] \}\)/);
-  const createStyle = characterSheet.slice(
-    characterSheet.indexOf("async #createBackgroundCombatStyle"),
-    characterSheet.indexOf("async #rollStartingMoney")
-  );
-  assert.match(createStyle,
-    /await this\.#saveBackgroundDraft\(draft\)[^]*this\.actor\.items\.find/);
-  assert.match(createStyle, /created\.sheet\?\.render\(true\)/);
-  assert.doesNotMatch(createStyle, /createEmbeddedDocuments/);
-  assert.match(characterSheet, /NoLearnedStyles/);
-  assert.match(characterSheet, /getPhaseAbilities\(getCulture\(draft\.cultureKey\), draft, "culture"\)/);
-  assert.match(characterSheet, /#ensureProfessionalStyleDefaults\(draft\)/);
-  assert.match(characterSheet,
-    /import \{[^}]*parseWeaponProfileReferences[^}]*\} from "\.\.\/rules\/combat\.js";/s);
-  const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
-    characterSheet.indexOf("#backgroundItemsNeedSync"));
-  assert.doesNotMatch(syncItems, /"system\.traitRefs"/);
-});
-
-test("los mensajes de chat usan exclusivamente el hook HTML compatible", () => {
-  const uiHooks = readFileSync(new URL(
-    "../scripts/system/ui-hooks.js", import.meta.url), "utf8");
-  assert.match(uiHooks, /Hooks\.on\("renderChatMessageHTML", activateChatCards\)/);
-  assert.doesNotMatch(uiHooks, /Hooks\.on\("renderChatMessage",/);
-});
-
-test("equipo inicial y pasiones respetan asociaciones y cuadrículas compartidas", () => {
-  const characterSheet = readFileSync(new URL(
-    "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
-  assert.match(characterSheet, /learnedProfiles[^]*effectiveModeProfileKey\(source, mode\)/);
-  assert.match(characterSheet,
-    /mythras-foundry mythras-dialog starting-equipment-dialog/);
-  assert.match(characterSheet, /position: \{ width: 720 \}/);
-  assert.match(css, /\.paper-passion-header \{[^}]*text-align: center/s);
-});
-
-test("las pasiones validadas se materializan durante el asistente", () => {
-  const wizard = readFileSync(new URL(
-    "../templates/actor/parts/background-wizard.hbs", import.meta.url), "utf8");
-  const characterSheet = readFileSync(new URL(
-    "../scripts/sheets/character-sheet.js", import.meta.url), "utf8");
-  const syncItems = characterSheet.slice(characterSheet.indexOf("async #syncBackgroundItems"),
-    characterSheet.indexOf("async #syncBackgroundPassions"));
-  assert.match(syncItems, /await this\.#syncBackgroundPassions\(draft\)/);
-  assert.match(characterSheet, /!\["culture", "passions"\]\.includes\(draft\.stage\)/);
-  assert.match(characterSheet,
-    /expectsPassions[^]*culturalPassions\.length !== draft\.passions\.length/);
-  assert.doesNotMatch(characterSheet, /showPassionSummary/);
-  assert.doesNotMatch(wizard, /background-passion-summary/);
-  assert.match(wizard, /wizard\.isPassions[^]*data-background-passion-field/);
-  assert.match(wizard, /wizard\.isReview[^]*wizard\.passionRows/);
-});
-
-test("las hojas de Item y el creador usan recuadros discretos sin superficie propia", () => {
-  assert.match(css, /\.item-sheet-content fieldset,[^}]*\.homebrew-creator-content fieldset[^}]*background: transparent/s);
-  assert.match(css, /\.item-sheet-content input,[^}]*\.homebrew-creator-content textarea[^}]*background: transparent !important/s);
+test("cabecera y filas de pasiones comparten distribución y tamaño de tabla",()=>{
+  const sample=dom('<div class="mythras-foundry"><div class="paper-passion-header"></div><div class="paper-passion-row"></div></div>',css);
+  try{
+    const [header,row]=[...sample.window.document.querySelectorAll('.paper-passion-header,.paper-passion-row')].map(n=>sample.window.getComputedStyle(n));
+    assert.notEqual(header.gridTemplateColumns,'');assert.equal(header.gridTemplateColumns,row.gridTemplateColumns);assert.match(header.fontSize,/mythras-font-size-table/);
+  }finally{sample.window.close();}
 });

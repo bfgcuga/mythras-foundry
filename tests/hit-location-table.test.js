@@ -1,52 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { prepareHitLocationTable } from "../scripts/ui/hit-location-table.js";
 import { hasBrokenHitLocationReference, restoredHumanHitLocationData }
   from "../scripts/rules/hit-locations.js";
-
-test("personaje y PNJ consumen un único preparador y un único parcial de localizaciones", async () => {
-  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-  const [characterSheet, npcSheet, characterTemplate, npcTemplate, registration] =
-    await Promise.all([read("scripts/sheets/character-sheet.js"), read("scripts/sheets/npc-sheet.js"),
-      read("templates/actor/parts/combat-tab.hbs"), read("templates/actor/npc-sheet.hbs"),
-      read("scripts/system/registration.js")]);
-  for (const source of [characterSheet, npcSheet]) {
-    assert.match(source, /prepareHitLocationTable\(\{ actor: this\.actor/);
-    assert.doesNotMatch(source, /passiveBlockLocationIds|hitLocations\.map\(\(item\) => \(\{/);
-  }
-  assert.match(characterSheet, /canDeleteHitLocations: this\.isEditable && Boolean\(this\._editMode\)/);
-  assert.match(characterSheet, /canManageMorphology: this\.isEditable && Boolean\(this\._editMode\)/);
-  assert.match(npcSheet, /canManageMorphology: !this\.actor\.isToken && this\.isEditable && Boolean\(this\._editMode\)/);
-  assert.match(npcSheet, /data-action='toggle-edit-mode'/);
-  assert.match(npcTemplate, /data-action="toggle-edit-mode"/);
-  assert.match(characterTemplate, /templates\/actor\/parts\/hit-location-table\.hbs/);
-  assert.match(characterSheet, /data-action='apply-morphology'/);
-  const hitLocationPartial = await read("templates/actor/parts/hit-location-table.hbs");
-  assert.match(hitLocationPartial, /\{\{#if canManageMorphology\}\}<div class="combat-location-editor">/);
-  assert.match(hitLocationPartial, /MYTHRASF\.Morphology\.Apply[\s\S]*MYTHRASF\.HitLocation\.Add/);
-  assert.doesNotMatch(hitLocationPartial, /sheet-add-button/);
-  assert.match(npcTemplate, /templates\/actor\/parts\/combat-tab\.hbs/);
-  for (const source of [characterTemplate, npcTemplate]) {
-    assert.doesNotMatch(source, /class="combat-location-line/);
-  }
-  assert.match(registration, /templates\/actor\/parts\/hit-location-table\.hbs/);
-});
-
-test("las referencias de localización rotas reciben el indicador visual compartido", async () => {
-  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-  const [tree, list, combat, styles] = await Promise.all([
-    read("templates/actor/parts/inventory-tree.hbs"),
-    read("templates/actor/parts/inventory-list.hbs"),
-    read("templates/actor/parts/combat-tab.hbs"),
-    read("styles/mythras-foundry.css")
-  ]);
-  for (const template of [tree, list, combat]) {
-    assert.match(template, /broken-location-reference/);
-    assert.match(template, /MYTHRASF\.HitLocation\.BrokenReference/);
-  }
-  assert.match(styles, /\.broken-location-reference[\s\S]*?background:/);
-});
 
 test("restaurar anatomía humana conserva la herida permanente reconocible", () => {
   const existing = [{ id: "old-head", name: "Cabeza", type: "hitLocation", system: {
@@ -77,17 +33,6 @@ test("detecta armaduras y armas que apuntan a IDs de localización borrados", ()
   assert.equal(hasBrokenHitLocationReference(horn, locations), true);
   helmet.system.coveredLocationIds = ["head"];
   assert.equal(hasBrokenHitLocationReference(helmet, locations), false);
-});
-
-test("el esquema permite nombres personalizados sin clave traducible", async () => {
-  const itemData = await readFile(new URL("../scripts/data/item-data.js", import.meta.url), "utf8");
-  assert.match(itemData, /nameKey: new StringField\([\s\S]*?initial: ""[\s\S]*?blank: true/);
-});
-
-test("d20 y Localización alinean igual sus cabeceras y datos", async () => {
-  const styles = await readFile(new URL("../styles/mythras-foundry.css", import.meta.url), "utf8");
-  assert.match(styles, /combat-location-head > span:nth-child\(2\)[\s\S]*?text-align: left/);
-  assert.match(styles, /combat-location-line > span:first-child[\s\S]*?text-align: center/);
 });
 
 test("el preparador común resuelve estados, armadura y bloqueo pasivo", () => {

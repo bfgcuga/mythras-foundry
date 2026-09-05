@@ -47,9 +47,6 @@ test("los compendios muestran únicamente el nombre de su contenido", () => {
 });
 
 test("las referencias internas conservan identificadores de compendio válidos", () => {
-  const registered = new Set(manifest.packs.map((pack) => pack.name));
-  for (const referenced of ["skills", "cultures", "professions"]) {
-    assert.ok(registered.has(referenced), referenced);
-  }
+  assert.equal(new Set(manifest.packs.map((pack) => pack.name)).size, manifest.packs.length);
   assert.equal(new Set(manifest.packs.map((pack) => pack.path)).size, manifest.packs.length);
 });

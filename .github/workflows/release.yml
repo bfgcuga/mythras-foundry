@@ -16,6 +16,11 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Instalar herramientas de desarrollo
         run: npm install --no-audit --no-fund
 

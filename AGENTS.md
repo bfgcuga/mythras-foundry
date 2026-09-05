@@ -94,6 +94,17 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - En listas y tablas de inventario, la acción de eliminar ocupa siempre la última columna y queda alineada al extremo derecho, independientemente de las columnas opcionales del tipo de Item.
 - Todo estado nuevo se registra en el catálogo canónico `MYTHRAS_STATUS_EFFECTS` y añade su explicación `MYTHRASF.Status.Description.<id>` en español e inglés. El gestor y los macros de asignación de estados consumen ese catálogo; no se mantienen listas paralelas.
 
+## Política de pruebas
+
+Aplicar [docs/testing-policy.md](docs/testing-policy.md) al elegir, añadir o revisar
+pruebas. Durante el desarrollo, ejecutar primero las comprobaciones del área
+afectada y ampliar según el impacto. No ejecutar toda la suite tras cada edición
+ni repetir comprobaciones satisfactorias sin cambios o dudas nuevas. Los cambios
+transversales y la validación integral requieren la suite completa; antes de
+publicar, son obligatorios todos los tests y la validación indicada abajo.
+Al cerrar la tarea, distinguir comprobaciones focalizadas, suite completa y
+verificación visual o de integración realmente realizadas.
+
 ## Publicación de versiones
 
 - En este repositorio, «publicar» significa completar el flujo hasta crear y subir la etiqueta de versión; subir únicamente los commits a `main` no publica una versión instalable.

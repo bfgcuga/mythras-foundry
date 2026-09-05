@@ -5,9 +5,15 @@
   "scripts": {
     "build:packs": "node scripts/dev/build-packs.mjs",
     "check": "node scripts/dev/validate-project.mjs",
-    "test": "node --test tests/*.test.js"
+    "test": "node --experimental-test-module-mocks --test tests/*.test.js"
   },
   "devDependencies": {
-    "@foundryvtt/foundryvtt-cli": "3.0.4"
+    "@foundryvtt/foundryvtt-cli": "3.0.4",
+    "handlebars": "4.7.9",
+    "jsdom": "30.0.1",
+    "postcss": "8.5.28"
+  },
+  "engines": {
+    "node": ">=24.19.0"
   }
 }

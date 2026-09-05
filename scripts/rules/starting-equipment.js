@@ -1,3 +1,6 @@
+import { normalizeWeaponProfile } from "./combat.js";
+import { effectiveModeProfileKey, weaponModes } from "./weapon-modes.js";
+
 export const STARTING_EQUIPMENT_BY_CLASS = Object.freeze({
   outcast: Object.freeze({
     clothing: "Una muda de ropa harapienta y probablemente sucia.",
@@ -55,4 +58,20 @@ export function validateStartingEquipment(selection, rolls) {
   if (armor.length !== rolls.armorLocations || armor.some((value) => !value)
     || new Set(armor).size !== armor.length) return false;
   return !rolls.transportRequired || Boolean(selection?.transport);
+}
+
+// A weapon is available when any mode belongs to a learned style.
+export function startingEquipmentWeapons(sources, items, rule) {
+  const learnedProfiles = new Set(items
+    .filter((item) => item.type === "combatStyle")
+    .flatMap((item) => item.system.weaponProfiles ?? [])
+    .map((profile) => normalizeWeaponProfile(profile.key || profile.name))
+    .filter(Boolean));
+  return sources.filter((source) => (
+    Number(source.system.crewMinimum ?? 0) === 0
+    && (rule.weaponTier !== "simple" || SIMPLE_WEAPON_KEYS.has(source.buildKey))
+    && weaponModes(source).some((mode) => learnedProfiles.has(
+      normalizeWeaponProfile(effectiveModeProfileKey(source, mode))
+    ))
+  ));
 }
