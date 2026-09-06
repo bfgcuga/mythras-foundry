@@ -772,6 +772,15 @@ de este efecto.
 «Tumbar Oponente» está completamente implementado con la resistencia de Aguante
 y la aplicación de Incapacitado. La duración manual es intencionada: el efecto
 no debe gestionar la recuperación ni necesita automatizarla para estar completo.
+«Enredar» crea una condición manual por fuente y localización después de resolver
+el impacto. Sus metadatos estables conservan captor, arma de enredo, localización,
+clase anatómica y, en un brazo, el Item sostenido. `entanglement.js` centraliza
+las consultas: las piernas anulan movimiento, las zonas vitales aumentan un grado
+la dificultad general y los brazos bloquean el Item y participan en la consulta
+previa de todas las tiradas. La víctima puede iniciar una enfrentada de Músculo
+por 1 PA y el captor obtiene en su siguiente turno la acción destacada para usar
+la tirada original en un intento de Derribar Oponente. Dañar o desarmar el arma
+fuente elimina su traba; «Liberarse» elimina Enredar, Agarrar e Inmovilizar Arma.
 Empalar
 participa en `damageRoll`, aplica su doble tirada automáticamente y no crea una
 confirmación narrativa posterior.

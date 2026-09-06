@@ -22,6 +22,7 @@ import { backgroundEventResult,
   composeBackgroundEventHistory } from "../data/background-events.js";
 import { COMBAT_STYLE_TRAIT_SOURCES } from "../data/traits.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
+import { weaponIsPinned } from "../rules/weapon-pinning.js";
 import { renderBodySilhouette } from "../ui/body-silhouette.js";
 import { askWoundRollImpact } from "../ui/wound-roll-dialog.js";
 import { traitReference } from "../rules/traits.js";
@@ -529,6 +530,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
+    if (item.type === "weapon" && weaponIsPinned(item, this.actor)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Pin.Blocked"));
+      return;
+    }
     if (!item.system.equipped && !inventoryCarried(item, this.actor.items.filter((candidate) =>
       ["equipment", "weapon", "armor"].includes(candidate.type)))) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Item.StoredCannotEquip"));
@@ -807,7 +812,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #resolveSituationalDifficulty(baseDifficulty, physical = false) {
     const impact = await askWoundRollImpact(this.actor);
-    if (impact.unusableMember) return "impossible";
+    if (impact.unusableMember || impact.entangledMember) return "impossible";
     return this.#conditionResolution({ baseDifficulty, physical,
       situational: impact.seriousPenalty }).difficulty;
   }

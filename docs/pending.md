@@ -24,7 +24,9 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
   La inmovilización de armas ya
   identifica el Item y su captor, resuelve su liberación enfrentada y se limpia
   al destrabarse. Agarrar ya vincula captor, bloquea distancia y retirada y
-  resuelve la liberación enfrentada; quedan pendientes las fuentes de Enredar.
+  resuelve la liberación enfrentada. Enredar ya conserva su fuente y localización,
+  bloquea movimiento u objetos, aplica su dificultad y resuelve liberación y
+  derribo posterior.
 - Completar la automatización de magia y monturas cuando existan esos
   subsistemas; hasta entonces sus efectos figuran como no automatizados y no
   interrumpen el intercambio.

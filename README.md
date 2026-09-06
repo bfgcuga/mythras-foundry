@@ -171,6 +171,13 @@ El sistema incluye actualmente:
   modificar documentos ni pedir pruebas adicionales. «Muerte Silenciosa» está
   completo: solo se ofrece si el Estilo de Combate usado en el ataque tiene el
   rasgo Asesinato (`asesinato`), además de cumplir Sorpresa y arma pequeña.
+  «Enredar» conserva la localización, el arma de enredo y el captor: una pierna
+  impide desplazarse, una zona vital aumenta un grado todas las habilidades y
+  un brazo bloquea el objeto elegido sin desequiparlo. La hoja consulta los
+  brazos enredados antes de cualquier tirada. La víctima puede gastar 1 PA para
+  liberarse mediante una enfrentada de Músculo, mientras el captor puede intentar
+  Derribar Oponente desde su turno posterior. Dañar o desarmar el arma de enredo
+  y el efecto crítico «Liberarse» retiran las condiciones correspondientes.
   «Ardid» permite preparar en secreto un efecto ofensivo
   concreto contra el rival del intercambio: si este lo selecciona más adelante,
   su efecto se sustituye antes de resolverlo y el defensor elige un efecto

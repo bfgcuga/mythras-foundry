@@ -3,6 +3,7 @@ import { fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
 import { difficultyTarget } from "../rules/combat.js";
 import { assessWeaponEquip } from "../rules/equipment.js";
 import { weaponCanEquip } from "../rules/weapon-durability.js";
+import { weaponIsPinned } from "../rules/weapon-pinning.js";
 import { findWeaponMode, weaponModes } from "../rules/weapon-modes.js";
 import { calculateResourceValue } from "../rules/resources.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
@@ -431,7 +432,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #resolveSituationalDifficulty(baseDifficulty, physical = false) {
     const impact = await askWoundRollImpact(this.actor);
-    if (impact.unusableMember) return "impossible";
+    if (impact.unusableMember || impact.entangledMember) return "impossible";
     return this.#conditionResolution({ baseDifficulty, physical,
       situational: impact.seriousPenalty }).difficulty;
   }
@@ -447,6 +448,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
+    if (item.type === "weapon" && weaponIsPinned(item, this.actor)) return ui.notifications.warn(
+      game.i18n.localize("MYTHRASF.Pin.Blocked"));
     if (item.type === "armor") {
       if (!item.system.equipped && !this.#canEquipArmor(item)) return;
       await item.update({ "system.equipped": !Boolean(item.system.equipped) });

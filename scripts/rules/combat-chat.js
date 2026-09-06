@@ -48,7 +48,8 @@ import { combatCanBeCancelled } from "./combat-cancellation.js";
 import { applyCombatDamageLuck, applyMajorWoundLuck, applyProposedCombatDamage,
   applyRolledCombatDamage, refreshCombatDamageProposal } from "./combat-damage-runtime.js";
 import { addManagedCombatStatus, applyAutomaticCombatEffectChecks, applyCombatEffectCheckConsequence,
-  applyImmediateCombatEffects, combatSideEntry } from "./combat-effect-runtime.js";
+  applyImmediateCombatEffects, applyPostDamageCombatEffects,
+  combatSideEntry } from "./combat-effect-runtime.js";
 import { advanceCombatExchange, applyCombatExchangeCancellation, applyDroppedCombatItem,
   applyDisarmChoice, closeTerminalCombatExchange, resolveCombatExchangeConsequence,
   resolveCombatExchangePending
@@ -65,6 +66,7 @@ import { chooseBypassArmor } from "./combat-bypass-armor.js";
 import { chooseTripResistance } from "./combat-trip.js";
 import { disarmResistanceTarget } from "./combat-disarm.js";
 import { weaponIsPinned, weaponPins } from "./weapon-pinning.js";
+import { activeEntanglements } from "./entanglement.js";
 
 export { renderCombatExchange, woundCheckOutcomeKey } from "./combat-chat-renderer.js";
 export { preferredCombatCoordinator, validateCombatResponse } from "./combat-exchange-state.js";
@@ -80,7 +82,21 @@ const pendingAttackActors = new Set();
 
 function combatEffectRuntimeDependencies() {
   return { resolveActor: combatActor, combatById: (id) => game.combats.get(id), localize,
-    evaluateRoll: evaluateAnimatedRoll, registerRuse: registerCombatRuse };
+    evaluateRoll: evaluateAnimatedRoll, registerRuse: registerCombatRuse,
+    chooseEntangledItem: async (actor, location, choices) => {
+      if (!choices.length) return "";
+      if (choices.length === 1) return choices[0].id;
+      return foundry.applications.api.DialogV2.wait({
+        window: { title: localize("MYTHRASF.Entangle.ChooseHeldItem") },
+        content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(
+          localize("MYTHRASF.Entangle.HeldItem"))}</span><select name="item"><option value="">${escape(
+          localize("MYTHRASF.Combat.DropHeldItem.None"))}</option>${choices.map((item) => `<option value="${escape(
+            item.id)}">${escape(item.name)}</option>`).join("")}</select></label></div>`,
+        buttons: [{ action: "confirm", label: localize("MYTHRASF.Confirm"), default: true,
+          callback: (event, button) => button.form.elements.item.value }],
+        close: () => "", rejectClose: false
+      });
+    } };
 }
 
 function locationSnapshot(item) {
@@ -156,6 +172,8 @@ async function effectContext(combat, side = combat.effects?.pendingSide ?? comba
   const entry = side === "attacker" ? combat.attacker : combat.defender;
   const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
   return { winner: side, grabbed: isGrabbed(actor),
+    hasRestraint: isGrabbed(actor) || weaponPins(actor).length > 0
+      || activeEntanglements(actor).length > 0,
     activeCombat: Boolean(combat.turnEconomy),
     silentDeathAllowed: side === "attacker"
       && combatStyleAllowsSilentDeath(actor, combat.attacker.styleId),
@@ -1323,6 +1341,8 @@ async function applyProposedDamage(message, request) {
     refreshProposal: refreshDamageProposal, render: renderCombatExchange,
     evaluateRoll: evaluateAnimatedRoll, format: game.i18n.format.bind(game.i18n),
     applyWoundConsequences,
+    applyPostDamageEffects: (combat) => applyPostDamageCombatEffects(combat,
+      combatEffectRuntimeDependencies()),
     applyAutomaticEffectChecks: (combat) => applyAutomaticCombatEffectChecks(
       combat, combatEffectRuntimeDependencies()),
     combatById: (id) => game.combats.get(id), consumePassiveBlock,

@@ -66,7 +66,7 @@ export const COMBAT_EFFECT_RULES = Object.freeze({
     endurance: true, damageTarget: "opponent" },
   "tumbar-oponente": { ruleKey: "guided", stage: "afterDamage", requiresWound: true,
     endurance: true, damageTarget: "opponent" },
-  enredar: { ruleKey: "guided", stage: "beforeDamage", damageTarget: "opponent" },
+  enredar: { ruleKey: "guided", stage: "afterDamage", damageTarget: "opponent" },
   "escoger-objetivo": { ruleKey: "guided", stage: "beforeDamage",
     damageTarget: "opponent" },
   "herida-accidental": { ruleKey: "guided", stage: "beforeDamage",
@@ -87,7 +87,8 @@ const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
   "agarrar", "arrebatar-arma", "derribar-oponente", "marcar-enemigo",
   "abrir-distancia", "alzarse", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
-  "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente"
+  "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente",
+  "enredar", "liberarse"
 ]));
 
 export function combatEffectIsAutomated(effect) {
@@ -198,6 +199,7 @@ function matchesRollRestriction(restriction, context) {
 
 export function combatEffectEligible(effect, context = {}) {
   if (context.grabbed && ["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect?.key)) return false;
+  if (effect?.key === "liberarse" && !context.hasRestraint) return false;
   if (!effect || !["attacker", "defender"].includes(context.winner)) return false;
   if (context.winner === "attacker" && !effect.offensive) return false;
   if (context.winner === "defender" && !effect.defensive) return false;

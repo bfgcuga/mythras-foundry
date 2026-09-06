@@ -8,6 +8,9 @@ import { disarmHasFreeHand, disarmStrengthAllowed, disarmWeaponChoices, takeWeap
 } from "./combat-disarm.js";
 import { findWeaponMode } from "./weapon-modes.js";
 import { pinnableWeapons, clearWeaponPinsBetween } from "./weapon-pinning.js";
+import { clearEntanglements, clearEntanglementsFromWeapon,
+  entanglementKind } from "./entanglement.js";
+import { weaponHandsRequired } from "./equipment.js";
 
 export function combatSideEntry(combat, side) {
   return side === "attacker" ? combat.attacker : combat.defender;
@@ -68,6 +71,21 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
         condition.statuses?.has?.("prone"));
       if (prone.length) {
         await actor.deleteEmbeddedDocuments("ActiveEffect", prone.map((condition) => condition.id));
+        combat.consequencesApplied = true;
+      }
+      effect.status = "resolved";
+    }
+    if (effect.key === "liberarse") {
+      const entry = combatSideEntry(combat, effect.side);
+      const actor = await dependencies.resolveActor?.(entry.tokenUuid, entry.actorUuid);
+      if (actor) {
+        const restraintIds = Array.from(actor.effects ?? []).filter((condition) => {
+          const data = condition.getFlag?.("mythras-foundry", "timedCondition")
+            ?? condition.flags?.["mythras-foundry"]?.timedCondition;
+          return ["grabbed", "weaponPinned"].includes(data?.key);
+        }).map((condition) => condition.id);
+        if (restraintIds.length) await actor.deleteEmbeddedDocuments("ActiveEffect", restraintIds);
+        await clearEntanglements(actor);
         combat.consequencesApplied = true;
       }
       effect.status = "resolved";
@@ -158,6 +176,36 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
     effect.status = "pending";
   }
   await applyAutomaticCombatEffectChecks(combat, dependencies);
+}
+
+export async function applyPostDamageCombatEffects(combat, dependencies = {}) {
+  const effect = (combat.effects?.selections ?? []).find((entry) =>
+    !entry.waived && entry.key === "enredar" && entry.status !== "resolved");
+  if (!effect || combat.damage?.targetType === "weapon") return false;
+  const targetEntry = combatSideEntry(combat, combatEffectAffectedSide(effect));
+  const sourceEntry = combatSideEntry(combat, effect.side);
+  const actor = await dependencies.resolveActor?.(targetEntry.tokenUuid, targetEntry.actorUuid);
+  const location = actor?.items?.get?.(combat.damage?.locationId);
+  if (!actor || !location) { effect.status = "notActivated"; return false; }
+  const kind = entanglementKind(location);
+  const held = Array.from(actor.items ?? []).filter((item) =>
+    ["weapon", "equipment"].includes(item.type) && item.system?.equipped);
+  const forced = kind === "arm" && held.find((item) => weaponHandsRequired(item) >= 2);
+  const weaponId = kind === "arm" ? forced?.id
+    ?? await dependencies.chooseEntangledItem?.(actor, location, held) ?? "" : "";
+  await addManagedCombatStatus(combat, effect, { key: "entangled", statusId: "entangled",
+    unit: "manual", phase: "manual", locationId: location.id,
+    metadata: { kind, weaponId,
+      sourceWeaponId: sourceEntry.weaponId ?? sourceEntry.defense?.weaponId ?? "",
+      sourceRoll: Number(effect.side === "attacker" ? combat.resolution?.attack?.rawRoll
+        : combat.resolution?.defense?.rawRoll),
+      sourceTarget: Number(effect.side === "attacker" ? combat.resolution?.attack?.target
+        : combat.resolution?.defense?.target),
+      sourceResult: effect.side === "attacker" ? combat.resolution?.attack?.result
+        : combat.resolution?.defense?.result } }, dependencies);
+  effect.status = "resolved";
+  effect.resolution = { locationId: location.id, kind, weaponId };
+  return true;
 }
 
 export async function applyAutomaticCombatEffectChecks(combat, dependencies = {}) {
@@ -262,6 +310,10 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
       { manual });
     const weapon = actor.items.get(check.resolution?.weaponId ?? check.weaponChoices?.[0]?.id);
     if (weapon?.system?.equipped) await weapon.update({ "system.equipped": false });
+    const victimEntry = combatSideEntry(combat, effect.side);
+    const entangledVictim = await dependencies.resolveActor?.(victimEntry.tokenUuid,
+      victimEntry.actorUuid);
+    await clearEntanglementsFromWeapon(entangledVictim, actor, weapon?.id);
     const canTake = Boolean(weapon && disarmHasFreeHand(sourceActor));
     check.consequence = { key: canTake ? "disarmChoice" : "disarmThrown",
       status: canTake ? "pending" : "resolved", actorSide: effect.side,

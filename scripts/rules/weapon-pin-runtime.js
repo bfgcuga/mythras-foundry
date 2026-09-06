@@ -11,15 +11,22 @@ import { evaluateSystemRoll } from "./system-roll.js";
 import { appendSerializedRolls } from "./dice-animation.js";
 import { recordAbilityFumble } from "./skills.js";
 import { actorDisplayName } from "./document-names.js";
+import { activeEntanglements, entanglementData } from "./entanglement.js";
 
 const localize = (key) => game.i18n.localize(`MYTHRASF.Pin.${key}`);
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const queues = new Map();
-const restraints = (actor, kind) => kind === "grab" ? activeGrabs(actor) : weaponPins(actor);
-const choiceName = (kind) => localize(kind === "grab" ? "Holder" : "ChooseWeapon");
-const releaseName = (kind) => kind === "grab" ? game.i18n.localize("MYTHRASF.Grab.Release") : localize("Release");
+const restraints = (actor, kind) => kind === "grab" ? activeGrabs(actor)
+  : kind === "entangle" ? activeEntanglements(actor) : weaponPins(actor);
+const restraintData = (effect, kind) => kind === "grab" ? grabData(effect)
+  : kind === "entangle" ? entanglementData(effect) : weaponPinData(effect);
+const choiceName = (kind) => localize(kind === "weapon" ? "ChooseWeapon" : "Holder");
+const releaseName = (kind) => kind === "grab" ? game.i18n.localize("MYTHRASF.Grab.Release")
+  : kind === "entangle" ? game.i18n.localize("MYTHRASF.Entangle.Release") : localize("Release");
 const coordinator = () => game.users.filter((user) => user.active && user.isGM)
   .sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
+const releaseSkills = (actor, kind) => releaseWeaponSkills(actor).filter((skill) =>
+  kind !== "entangle" || skill.system.slug === "musculo");
 const entryFor = (combat, side) => side === "attacker" ? combat?.attacker : combat?.defender;
 async function resolveActor(entry) {
   const token = entry?.tokenUuid ? await fromUuid(entry.tokenUuid) : null;
@@ -84,6 +91,7 @@ function renderRelease(state) {
 }
 
 export const requestGrabRelease = (actor) => requestWeaponRelease(actor, "grab");
+export const requestEntangleRelease = (actor) => requestWeaponRelease(actor, "entangle");
 
 export async function requestWeaponRelease(actor, kind = "weapon") {
   if (!actor?.isOwner && !game.user.isGM) return;
@@ -91,7 +99,7 @@ export async function requestWeaponRelease(actor, kind = "weapon") {
   if (!pins.length) return;
   const selected = await foundry.applications.api.DialogV2.wait({
     window: { title: releaseName(kind) },
-    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(choiceName(kind))}</legend><select name="pin" aria-label="${escape(choiceName(kind))}">${pins.map((effect) => `<option value="${escape(effect.id)}">${escape(kind === "grab" ? grabData(effect).sourceName : actor.items.get(weaponPinData(effect).weaponId)?.name)}</option>`).join("")}</select></fieldset></div>`,
+    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(choiceName(kind))}</legend><select name="pin" aria-label="${escape(choiceName(kind))}">${pins.map((effect) => { const data = restraintData(effect, kind); return `<option value="${escape(effect.id)}">${escape(kind === "weapon" ? actor.items.get(data.weaponId)?.name : data.sourceName)}</option>`; }).join("")}</select></fieldset></div>`,
     buttons: [{ action: "start", label: releaseName(kind), callback: (event, button) => button.form.elements.pin.value },
       { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), callback: () => null }], rejectClose: false });
   if (!selected) return;
@@ -112,14 +120,14 @@ async function startRelease(request, user) {
   const active = combat?.combatant;
   if (!actor || !combat?.started || active?.actor?.uuid !== actor.uuid
     || (!user.isGM && !actor.testUserPermission(user, "OWNER")) || currentActionPoints(actor) < 1) return;
-  const kind = request.kind === "grab" ? "grab" : "weapon";
+  const kind = ["grab", "entangle"].includes(request.kind) ? request.kind : "weapon";
   const effect = restraints(actor, kind).find((entry) => entry.id === request.effectId);
   if (!effect) return;
   if (!resolveActorConditions(actor, { baseAttributes: actor.system.baseAttributes
     ?? actor.system.attributes ?? {} }).capabilities.canTakeProactiveTurn) return;
-  const data = weaponPinData(effect);
+  const data = restraintData(effect, kind);
   const holder = await resolveActor({ actorUuid: data.sourceActorUuid, tokenUuid: data.sourceTokenUuid });
-  if (!holder || !releaseWeaponSkills(holder).length || !releaseWeaponSkills(actor).length) {
+  if (!holder || !releaseSkills(holder, kind).length || !releaseSkills(actor, kind).length) {
     return ui.notifications.warn(localize("MissingSkill"));
   }
   if (game.messages.some((message) => { const state = message.getFlag(PIN_SCOPE, "weaponRelease");
@@ -127,7 +135,9 @@ async function startRelease(request, user) {
       && restraints(actor, state.kind).some((pin) => pin.id === state.effectId);
   })) return;
   const state = { revision: 0, status: "pending", kind, effectId: effect.id,
-    weaponName: kind === "grab" ? actorDisplayName(holder) : actor.items.get(data.weaponId).name, combatId: combat.id,
+    weaponName: kind === "weapon" ? actor.items.get(data.weaponId).name
+      : kind === "entangle" ? actor.items.get(data.locationId)?.name ?? actorDisplayName(holder)
+        : actorDisplayName(holder), combatId: combat.id,
     combatantId: active.id, round: combat.round, turn: combat.turn,
     victim: { actorUuid: actor.uuid, tokenUuid: actor.token?.uuid ?? "", name: actorDisplayName(actor) },
     holder: { actorUuid: holder.uuid, tokenUuid: data.sourceTokenUuid, name: actorDisplayName(holder) } };
@@ -169,7 +179,7 @@ export async function applyWeaponPinRequest(request) {
   if (!actor || entry.roll || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
   const victimNow = await resolveActor(state.victim);
   if (!restraints(victimNow, state.kind).some((effect) => effect.id === state.effectId)) return;
-  const skill = releaseWeaponSkills(actor).find((item) => item.id === request.skillId);
+  const skill = releaseSkills(actor, state.kind).find((item) => item.id === request.skillId);
   if (!skill) return;
   const roll = await evaluateSystemRoll("1d100");
   const conditions = resolveActorConditions(actor, { baseAttributes: actor.system.baseAttributes
@@ -228,7 +238,7 @@ export function activateWeaponPinCard(message, html) {
       if (button.disabled) return;
       if (button.dataset.pinAction === "pin") return submit({ operation: "pin", messageId: message.id,
         revision: combat.revision, index, weaponId: root.querySelector(`[data-pin-weapon="${index}"]`)?.value });
-      const skills = releaseWeaponSkills(actor);
+      const skills = releaseSkills(actor, release?.kind);
       const skillId = await foundry.applications.api.DialogV2.wait({ window: { title: localize("ChooseSkill") },
         content: `<div class="mythras-foundry mythras-dialog"><label>${escape(localize("ChooseSkill"))}<select name="skill">${skills.map((skill) => `<option value="${escape(skill.id)}">${escape(skill.name)} (${Number(skill.system.total ?? 0)}%)</option>`).join("")}</select></label></div>`,
         buttons: [{ action: "roll", label: game.i18n.localize("MYTHRASF.Roll"), callback: (event, control) => control.form.elements.skill.value },

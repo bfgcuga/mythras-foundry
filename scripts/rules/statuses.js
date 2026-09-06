@@ -21,8 +21,11 @@ export const ACID_IMMERSION_STATUS_ID = "acidImmersion";
 export const BURNING_STATUS_ID = "burning";
 export const SUFFOCATING_STATUS_ID = "suffocating";
 export const DYING_STATUS_ID = "dying";
+export const ENTANGLED_STATUS_ID = "entangled";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
+  { id: ENTANGLED_STATUS_ID, name: "MYTHRASF.Status.Entangled",
+    img: "icons/svg/net.svg" },
   { id: "grabbed", name: "MYTHRASF.Status.Grabbed", img: "icons/svg/net.svg",
     assignment: "grab" },
   { id: "weaponPinned", name: "MYTHRASF.Status.WeaponPinned", img: "icons/svg/net.svg",

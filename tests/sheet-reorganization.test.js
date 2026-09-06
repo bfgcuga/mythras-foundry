@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { askWoundRollImpact, woundRollRisks } from "../scripts/ui/wound-roll-dialog.js";
 import { silhouetteRegionId } from "../scripts/ui/body-silhouette.js";
 
@@ -44,5 +45,12 @@ test("la consulta de heridas no descarta tiradas mediante una clasificación fí
   } finally {
     globalThis.foundry = previousFoundry;
     globalThis.game = previousGame;
+  }
+});
+
+test("los ataques tratan una extremidad enredada elegida como imposible", () => {
+  for (const path of ["../scripts/sheets/character-sheet.js", "../scripts/sheets/npc-sheet.js"]) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    assert.match(source, /impact\.unusableMember \|\| impact\.entangledMember/);
   }
 });

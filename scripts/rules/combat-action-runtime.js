@@ -1,7 +1,14 @@
 import { isGrabbed } from "./grappling.js";
 import { currentActionPoints } from "./action-points.js";
 import { weaponPins, weaponIsPinned } from "./weapon-pinning.js";
-import { requestGrabRelease, requestWeaponRelease } from "./weapon-pin-runtime.js";
+import { requestEntangleRelease, requestGrabRelease, requestWeaponRelease } from "./weapon-pin-runtime.js";
+import { activeEntanglements, actorIsRooted, entanglementsHeldBy } from "./entanglement.js";
+import { chooseTripResistance } from "./combat-trip.js";
+import { evaluateSystemRoll } from "./system-roll.js";
+import { classifyContestRoll } from "./contest-rolls.js";
+import { opposedEffectWinner } from "./combat-effects.js";
+import { applyTimedCondition } from "./timed-condition-runtime.js";
+import { actorDisplayName } from "./document-names.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
@@ -54,6 +61,10 @@ export function actionPresentation(actor) {
   const modes = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
     && weaponCanEquip(item) && !weaponIsPinned(item, actor))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)) ?? [];
+  const heldEntanglements = entanglementsHeldBy(actor,
+    Array.from(combat?.combatants ?? []).map((entry) => entry.actor).filter(Boolean))
+    .filter((entry) => Number(combat?.round) > Number(entry.appliedRound)
+      || Number(combat?.turn) !== Number(entry.appliedTurn));
   return combatActionPresentation({ inCombat: Boolean(combat?.started && combatant),
     isActive: combat?.combatant?.id === combatant?.id, actionPoints: currentActionPoints(actor),
     canTakeProactiveTurn: conditions.capabilities.canTakeProactiveTurn,
@@ -63,6 +74,9 @@ export function actionPresentation(actor) {
       ["ranged", "siege"].includes(mode.weaponType)), hasPreparedWeapon: modes.length > 0,
     hasRestraint: restraintEffects(actor).length > 0,
     grabbed: isGrabbed(actor),
+    entangled: activeEntanglements(actor).length > 0,
+    holdsEntanglement: heldEntanglements.length > 0,
+    rooted: actorIsRooted(actor),
     hasPinnedWeapon: weaponPins(actor).length > 0,
     hasDelay: state.delays[combatant?.id]?.status === "reserved",
     canCharge: chargeEligibility(state.movements[combatant?.id], combat?.round).eligible });
@@ -74,7 +88,9 @@ export function decorateCombatActionButtons(actor, root) {
     const key = button.dataset.combatActionKey;
     const state = presentation[key] ?? { available: false, cost: 1, reason: "unavailable" };
     button.hidden = (key === "releaseWeapon" && !weaponPins(actor).length)
-      || (key === "releaseGrab" && !isGrabbed(actor));
+      || (key === "releaseGrab" && !isGrabbed(actor))
+      || (key === "releaseEntangle" && !activeEntanglements(actor).length)
+      || (key === "entangleTrip" && !presentation.entangleTrip?.available);
     button.disabled = !state.available;
     button.setAttribute("aria-disabled", String(!state.available));
     const reason = state.reason ? localize(`MYTHRASF.Action.Unavailable.${state.reason}`) : "";
@@ -91,6 +107,45 @@ async function spend(actor, cost = 1) {
   if (current < cost) return false;
   await actor.update({ "system.resources.actionPoints.value": current - cost });
   return true;
+}
+
+async function requestEntangleTrip(actor) {
+  const context = activeContext(actor);
+  if (!context || currentActionPoints(actor) < 1) return;
+  const candidates = entanglementsHeldBy(actor,
+    Array.from(context.combat.combatants ?? []).map((entry) => entry.actor).filter(Boolean))
+    .filter((entry) => Number(context.combat.round) > Number(entry.appliedRound)
+      || Number(context.combat.turn) !== Number(entry.appliedTurn));
+  if (!candidates.length) return;
+  const chosen = candidates.length === 1 ? candidates[0] : await foundry.applications.api.DialogV2.wait({
+    window: { title: localize("MYTHRASF.Entangle.Trip") },
+    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize(
+      "MYTHRASF.Combat.Defender"))}</span><select name="target">${candidates.map((entry, index) =>
+      `<option value="${index}">${escape(actorDisplayName(entry.actor))}</option>`).join("")}</select></label></div>`,
+    buttons: [{ action: "confirm", label: localize("MYTHRASF.Confirm"), default: true,
+      callback: (event, button) => candidates[Number(button.form.elements.target.value)] }],
+    close: () => null, rejectClose: false
+  });
+  if (!chosen) return;
+  const resistance = await chooseTripResistance(chosen.actor, "standard", {
+    Dialog: foundry.applications.api.DialogV2, localize, escape });
+  if (!resistance || !await spend(actor, 1)) return;
+  const roll = await evaluateSystemRoll("1d100");
+  const right = { result: classifyContestRoll(roll.total, resistance.target), rawRoll: roll.total };
+  const left = { result: chosen.sourceResult ?? "success", rawRoll: chosen.sourceRoll };
+  const tripped = opposedEffectWinner(left, right) === "left";
+  if (tripped) await applyTimedCondition(chosen.actor, { key: "prone", statusId: "prone",
+    name: localize("MYTHRASF.Status.Prone"), img: "icons/svg/falling.svg",
+    source: { actorUuid: actor.uuid, name: actorDisplayName(actor) },
+    duration: { unit: "manual", phase: "manual" } });
+  await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }),
+    content: `<section class="mythras-chat-card"><h3 class="mythras-chat-title">${escape(localize(
+      "MYTHRASF.Entangle.Trip"))}</h3><div class="mythras-chat-row"><span>${escape(
+      resistance.name)}</span><strong class="mythras-chat-result--${tripped ? "failure" : "success"}"><span class="mythras-chat-roll-value">${roll.total}</span></strong></div><div class="mythras-chat-total"><span>${escape(localize(
+      "MYTHRASF.Pin.Outcome"))}</span><strong>${escape(localize(tripped
+        ? "MYTHRASF.Entangle.Tripped" : "MYTHRASF.Entangle.Resisted"))}</strong></div></section>`,
+    rolls: [roll] });
+  await context.combat.nextTurn();
 }
 
 function eligibleDelays(combat, state, actorCombatantId) {
@@ -229,6 +284,8 @@ export async function requestCombatAction(actor, key) {
   let parameters = {};
   if (key === "releaseGrab") return requestGrabRelease(actor);
   if (key === "releaseWeapon") return requestWeaponRelease(actor);
+  if (key === "releaseEntangle") return requestEntangleRelease(actor);
+  if (key === "entangleTrip") return requestEntangleTrip(actor);
   if (key === "move") { parameters = await chooseMovement(context); if (!parameters) return; }
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }
   if (["mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {

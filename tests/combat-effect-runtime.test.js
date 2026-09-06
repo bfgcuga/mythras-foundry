@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { combatEffectRule, initialCombatEffectStatus } from "../scripts/rules/combat-effects.js";
 import { addManagedCombatStatus, applyCombatEffectCheckConsequence,
-  applyAutomaticCombatEffectChecks, applyImmediateCombatEffects, combatEffectAffectedSide
+  applyAutomaticCombatEffectChecks, applyImmediateCombatEffects, applyPostDamageCombatEffects,
+  combatEffectAffectedSide
 } from "../scripts/rules/combat-effect-runtime.js";
 
 function combat(selections = []) {
@@ -165,4 +166,27 @@ test("Marcar Enemigo se resuelve como narración sin pruebas ni cambios en docum
   assert.equal(effect.status, "resolved");
   assert.deepEqual(state.effects.checks, []);
   assert.equal(state.consequencesApplied, undefined);
+});
+
+test("Enredar aplica a la localización impactada y bloquea el objeto elegido en un brazo", async () => {
+  const effects = [];
+  const sword = { id: "sword", type: "weapon", system: { equipped: true, handsRequired: 1 } };
+  const arm = { id: "arm", type: "hitLocation", system: { category: "limb", hpClass: "arm" } };
+  const items = new Map([[sword.id, sword], [arm.id, arm]]);
+  items[Symbol.iterator] = items.values.bind(items);
+  const defender = { uuid: "Actor.defender", items, effects,
+    async createEmbeddedDocuments(type, sources) { effects.push(...sources.map((source, index) => ({
+      id: `effect-${index}`, ...source, getFlag(scope, key) { return this.flags?.[scope]?.[key]; }
+    }))); } };
+  const state = combat([{ key: "enredar", side: "attacker", slot: 0, status: "active" }]);
+  state.damage.locationId = arm.id;
+  await applyPostDamageCombatEffects(state, { resolveActor: async (token, uuid) =>
+    uuid === defender.uuid ? defender : { uuid }, localize: (key) => key,
+  chooseEntangledItem: async () => sword.id });
+  const data = effects[0].getFlag("mythras-foundry", "timedCondition");
+  assert.equal(data.key, "entangled");
+  assert.equal(data.kind, "arm");
+  assert.equal(data.weaponId, sword.id);
+  assert.equal(data.locationId, arm.id);
+  assert.equal(state.effects.selections[0].status, "resolved");
 });

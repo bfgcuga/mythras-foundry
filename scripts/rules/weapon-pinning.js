@@ -1,6 +1,7 @@
 import { applyStrengthContestPenalties } from "./strength-contests.js";
 import { weaponHandsRequired } from "./equipment.js";
 import { applySharedOver100Penalty, compareOpposed } from "./contest-rolls.js";
+import { weaponIsEntangled } from "./entanglement.js";
 
 export const PIN_SCOPE = "mythras-foundry";
 export function weaponPinData(effect) {
@@ -14,7 +15,7 @@ export function weaponPins(actor) {
 }
 export function weaponIsPinned(weapon, actor = weapon?.actor ?? weapon?.parent) {
   return Boolean(weapon && weaponPins(actor).some((effect) =>
-    weaponPinData(effect).weaponId === weapon.id));
+    weaponPinData(effect).weaponId === weapon.id)) || weaponIsEntangled(weapon, actor);
 }
 export function pinnableWeapons(actor) {
   return actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped

@@ -7,6 +7,7 @@ import { bypassArmorProtection } from "./combat-bypass-armor.js";
 import { totalArmorPoints } from "./armor.js";
 import { combatWeaponDamagePlan, selectedEffectCount } from "./combat-effects.js";
 import { applyLongRangeDamage } from "./ranged-combat.js";
+import { clearEntanglementsFromWeapon } from "./entanglement.js";
 import { weaponCanEquip, weaponDamageResult } from "./weapon-durability.js";
 
 export function combatDamageDocumentIsCurrent({ location, damage, armorPoints }) {
@@ -55,7 +56,7 @@ export async function applyCombatDamageDocument({ location, damage, targetType =
 export async function applyProposedCombatDamage(message, request, { clone, flagScope,
   resolveActor, userById, armorPoints, refreshProposal, render, evaluateRoll, format,
   applyWoundConsequences, applyAutomaticEffectChecks, combatById, consumePassiveBlock,
-  advance } = {}) {
+  applyPostDamageEffects, advance } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || !["proposed", "stale"].includes(combat.damage?.status)
     || Number(request.revision) !== Number(combat.revision)) return false;
@@ -117,6 +118,12 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   }
   combat.damage = damageApplication.damage;
   combat.damage.status = "applied";
+  if (targetType === "weapon") {
+    const otherEntry = [combat.attacker, combat.defender].find((entry) =>
+      entry?.actorUuid && entry.actorUuid !== defender.uuid);
+    const victim = otherEntry ? await resolveActor(otherEntry.tokenUuid, otherEntry.actorUuid) : null;
+    await clearEntanglementsFromWeapon(victim, defender, location.id);
+  }
   if (combat.damage.passiveBlock && combat.turnEconomy) {
     await consumePassiveBlock(combatById(combat.turnEconomy.combatId),
       combat.turnEconomy.defenderCombatantId, combat.damage.passiveBlock.weaponId,
@@ -124,6 +131,7 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   }
   if (targetType !== "weapon") {
     await applyWoundConsequences(combat, defender, location, { manual: request.manual });
+    await applyPostDamageEffects?.(combat);
   }
   await applyAutomaticEffectChecks?.(combat);
   combat.damage.appliedBy = user.id;

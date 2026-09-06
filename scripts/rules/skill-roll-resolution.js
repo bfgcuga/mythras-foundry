@@ -47,8 +47,12 @@ export function resolveSkillRollConditions(actor, item, { woundImpact = {},
     source: localize("MYTHRASF.Wound.UnusableMember"),
     effect: localize("MYTHRASF.Fatigue.NoActivity"), type: "penalty"
   });
+  if (woundImpact.entangledMember) modifiers.push({
+    source: localize("MYTHRASF.Status.Entangled"),
+    effect: localize("MYTHRASF.Fatigue.NoActivity"), type: "penalty"
+  });
 
-  return Object.freeze({ difficulty: woundImpact.unusableMember
+  return Object.freeze({ difficulty: woundImpact.unusableMember || woundImpact.entangledMember
     ? "impossible" : resolution.difficulty, modifiers: Object.freeze(modifiers),
   physical, resolution });
 }
