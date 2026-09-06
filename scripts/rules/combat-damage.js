@@ -23,11 +23,22 @@ export function majorWoundLuckAdjustment({ beforeHitPoints, maxHitPoints,
     penetratingDamage: reducedDamage, resultingWound: "serious" });
 }
 
+export function independentCombatEffectChecks(combat) {
+  const ids = new Set((combat.effects?.selections ?? [])
+    .filter((effect) => !effect.waived && !effect.requiresWound)
+    .map((effect) => `effect-${effect.side ?? combat.effects.winner}-${effect.slot}`));
+  return (combat.effects?.checks ?? []).filter((check) =>
+    check.source === "effect" && ids.has(check.id));
+}
+
 export function prepareDamageChecks(combat, { location, resultingWound,
   penetratingDamage, weaponTarget = false } = {}) {
   const previousChecks = new Map((combat.effects?.checks ?? []).map((check) => [check.id, check]));
+  const independentChecks = new Map(independentCombatEffectChecks(combat)
+    .map((check) => [check.id, check]));
   const checks = [];
   (combat.effects?.selections ?? []).forEach((effect, order) => {
+    if (effect.waived) return;
     if (effect.requiresWound) {
       const checkedAutomatically = combatEffectIsAutomated(effect) && effect.endurance;
       const activatedStatus = checkedAutomatically && effect.status !== "resolved"
@@ -35,6 +46,11 @@ export function prepareDamageChecks(combat, { location, resultingWound,
       effect.status = !weaponTarget && penetratingDamage > 0 ? activatedStatus : "notActivated";
     }
     const checkId = `effect-${effect.side ?? combat.effects.winner}-${effect.slot}`;
+    if (independentChecks.has(checkId)) {
+      checks.push({ allowsShieldStyle: effect.key === "cegar-oponente",
+        ...independentChecks.get(checkId) });
+      return;
+    }
     const unconditionalCheck = ["cegar-oponente", "disparo-de-supresion"].includes(effect.key);
     if (unconditionalCheck || (!weaponTarget && combatEffectIsAutomated(effect)
       && effect.endurance && penetratingDamage > 0)) checks.push({

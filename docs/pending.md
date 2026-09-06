@@ -18,7 +18,10 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
   cobertura de automatización de los efectos de combate.
 - Ampliar las consecuencias persistentes de efectos que todavía dependen de
   geometría o decisiones narrativas, incluidos Alcance, Cambiar Alcance,
-  Retirada, Bloqueo Pasivo y fuentes liberables. La inmovilización de armas ya
+  Bloqueo Pasivo y fuentes liberables. Los efectos Abrir Distancia, Cerrar
+  Distancia y Retirada están completos y quedan fuera de este pendiente;
+  no requieren movimiento de tokens ni comprobaciones de geometría adicionales.
+  La inmovilización de armas ya
   identifica el Item y su captor, resuelve su liberación enfrentada y se limpia
   al destrabarse. Agarrar ya vincula captor, bloquea distancia y retirada y
   resuelve la liberación enfrentada; quedan pendientes las fuentes de Enredar.

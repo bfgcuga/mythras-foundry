@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
   canonicalCombatEffectStage, combatEffectEligible, combatEffectResolutionPhase,
-  combatEffectIsAutomated, combatEffectRule, combatEffectSelectionHighlight,
+  combatStyleAllowsSilentDeath, combatEffectIsAutomated, combatEffectRule, combatEffectSelectionHighlight,
   combatEffectSelectionsCompatible, combatWeaponDamagePlan,
   combatRuseTargetEffects, eligibleCombatRuseReplacements,
   combatEffectSlug, combatEffectSlotsBySide, initialCombatEffectStatus,
@@ -70,12 +70,29 @@ test("Ardid exige combate activo y separa objetivos de sustituciones defensivas"
   assert.ok(replacements.every((effect) => effect.defensive && effect.key !== "ardid"));
 });
 
-test("Muerte Silenciosa solo es elegible en el ataque que consume Sorpresa", () => {
-  const effect = { key: "muerte-silenciosa", offensive: true, defensive: false,
-    weaponRestriction: "", rollRestriction: "" };
-  assert.equal(combatEffectEligible(effect, { winner: "attacker", surpriseAttack: false }), false);
-  assert.equal(combatEffectEligible(effect, { winner: "attacker", surpriseAttack: true }), true);
+test("Muerte Silenciosa exige Asesinato en el estilo usado y conserva Sorpresa y arma pequeña", () => {
+  const effect = effects.find((entry) => entry.key === "muerte-silenciosa");
+  const styles = new Map([
+    ["assassin", { type: "combatStyle", name: "Renombrado", system: {
+      traitRefs: [{ key: "asesinato", name: "Otro nombre" }] } }],
+    ["ordinary", { type: "combatStyle", name: "Asesino", system: { traitRefs: [] } }],
+    ["wrong", { type: "combatStyle", system: { traitRefs: [{ key: "asesino" }] } }]
+  ]);
+  const actor = { items: styles };
+  for (const id of ["assassin", "ordinary", "wrong", "missing", ""]) {
+    const silentDeathAllowed = combatStyleAllowsSilentDeath(actor, id);
+    assert.equal(Boolean(silentDeathAllowed), id === "assassin");
+    for (const surpriseAttack of [true, false]) for (const size of ["P", "G"]) {
+      const context = { winner: "attacker", surpriseAttack, silentDeathAllowed,
+        weaponMode: { size, weaponType: "melee" } };
+      const expected = id === "assassin" && surpriseAttack && size === "P";
+      assert.equal(combatEffectEligible(effect, context), expected);
+      assert.equal(validateEffectSelections({ slots: 1, selections: [{ key: effect.key }],
+        effects: [effect], context }).valid, expected);
+    }
+  }
 });
+
 
 test("el catálogo canónico contiene 44 efectos y la tabla completa de empalamiento", () => {
   assert.equal(effects.length, 44);

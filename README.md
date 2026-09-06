@@ -70,7 +70,9 @@ El sistema incluye actualmente:
   combatientes, acción interactiva Cambiar Alcance y vista global desde el
   Combat Tracker; el DJ puede crear, corregir o eliminar relaciones y elegir
   entre las armas cuerpo a cuerpo empuñadas por cada participante; la vista
-  incluye una referencia desplegable de categorías y efectos del alcance;
+  incluye una referencia desplegable de categorías y efectos del alcance.
+  Los efectos Abrir Distancia, Cerrar Distancia y Retirada están completos:
+  actualizan las relaciones tácticas correspondientes, sin mover tokens;
 - Bloqueo Pasivo declarado durante la preparación del asalto, con selección de
   localizaciones conectadas por la anatomía, estado declarado o pasado visible
   por combatiente, opción de agacharse tras el escudo y cancelación al atacar o
@@ -147,7 +149,9 @@ El sistema incluye actualmente:
   Las enfrentadas de Músculo penalizan al participante con menor Modificador
   de Daño un grado por cada grado de diferencia, también al liberar armas.
   «Alzarse» elimina automáticamente Derribado del defensor antes del
-  daño, conservando los demás estados. «Cegar oponente» se resuelve antes del daño, permite
+  daño, conservando los demás estados. «Tumbar Oponente» está completo: resuelve
+  la resistencia de Aguante y aplica Incapacitado si falla; la recuperación
+  queda fuera del alcance del efecto. «Cegar oponente» se resuelve antes del daño, permite
   resistir con Evadir o con un estilo que use un escudo equipado, admite repetir
   la resistencia con Suerte y aplica automáticamente Cegado durante 1d3 turnos
   si no se resiste. «Desarmar oponente» enfrenta el Estilo de Combate con la
@@ -159,6 +163,14 @@ El sistema incluye actualmente:
   aparece primero en las acciones de combate cuando existe una inmovilización:
   cuesta 1 PA en el turno propio y ambos participantes eligen Músculo o Pelea
   para la enfrentada. Destrabarse del captor también libera las armas.
+  «Superar Armadura» está completo: un uso permite elegir entre armadura
+  natural y equipada cuando se superponen; dos usos ignoran ambas. Si solo
+  protege un tipo en la localización, un uso lo ignora automáticamente. La
+  tarjeta identifica los tipos ignorados y conserva intactas las armaduras.
+  «Marcar Enemigo» está terminado como efecto narrativo y se resuelve sin
+  modificar documentos ni pedir pruebas adicionales. «Muerte Silenciosa» está
+  completo: solo se ofrece si el Estilo de Combate usado en el ataque tiene el
+  rasgo Asesinato (`asesinato`), además de cumplir Sorpresa y arma pequeña.
   «Ardid» permite preparar en secreto un efecto ofensivo
   concreto contra el rival del intercambio: si este lo selecciona más adelante,
   su efecto se sustituye antes de resolverlo y el defensor elige un efecto
@@ -182,7 +194,9 @@ El sistema incluye actualmente:
   reducción oficial del rango d20; «Elegir Localización» siempre realiza el
   1d3. La tirada y un posible fallo quedan visibles en la tarjeta. Las pruebas
   causadas por efectos o heridas muestran motivo, habilidad elegida,
-  d100, objetivo, ataque enfrentado, resultado y consecuencia; una ayuda
+  d100, objetivo, ataque enfrentado, resultado y consecuencia. Las resistencias
+  independientes del daño conservan sus datos al recalcularlo, cambiar la
+  localización o repetirlo con Suerte; una ayuda
   contextual mantiene fuera de la tarjeta la explicación extensa. El DJ puede
   cancelar el intercambio hasta aplicar daño o un estado: se restituyen los PA
   de ataque y defensa, no avanza el tracker y la tarjeta deja constancia de que
@@ -220,6 +234,8 @@ El sistema incluye actualmente:
 - macro de DJ para aplicar `Desangrándose`; el estado permanece hasta retirarlo
   y reduce automáticamente un nivel de Fatiga al preparar cada asalto, también
   cuando procede del efecto de combate Desangrar o del selector de estados.
+  Desangrar está completo: su tratamiento y la reapertura por esfuerzos quedan
+  fuera de la automatización prevista.
   El chat identifica al afectado y la pérdida; varias fuentes activas no la multiplican;
 - macro de DJ para aplicar `Agonizando` con contador libre, Ritmo de curación ×2
   o ×60; el contador baja al inicio de cada asalto, nunca puede ampliarse y al
@@ -364,3 +380,13 @@ En resumen, tras superar pruebas y validación se incrementan conjuntamente
 La etiqueta activa `.github/workflows/release.yml`, que vuelve a ejecutar las
 pruebas, reconstruye los compendios, valida la etiqueta, crea
 `mythras-foundry.zip` y publica la release con el ZIP y `system.json`.
+
+Arrebatar Arma está automatizado para intercambios desarmados: enfrenta el Estilo
+de Combate del rival con la tirada original, sin ajustes por Tamaño, y transfiere
+el arma equipada al vencedor. Fracasa si la FUE del rival es igual o superior al
+doble de la del personaje que intenta arrebatarla.
+
+Derribar Oponente permite resistir desde la tarjeta de ataque con Músculo, Evadir
+o Acrobacias. El selector «¿Bípedo?» comienza en Sí; No añade Atletismo y reduce
+un grado la dificultad de cualquiera de esas habilidades. Si pierde la
+resistencia, el oponente recibe Derribado.

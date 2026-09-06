@@ -1,3 +1,10 @@
+import { hasTrait } from "./traits.js";
+
+export function combatStyleAllowsSilentDeath(actor, styleId) {
+  const style = actor?.items?.get?.(styleId);
+  return style?.type === "combatStyle" && hasTrait(style, "asesinato");
+}
+
 const normalize = (value) => String(value ?? "").normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
@@ -17,6 +24,8 @@ export const COMBAT_EFFECT_ROLL_RESTRICTIONS = Object.freeze([
 ]);
 
 export const COMBAT_EFFECT_RULES = Object.freeze({
+  "arrebatar-arma": { ruleKey: "guided", stage: "beforeDamage", target: "opponent" },
+  "derribar-oponente": { ruleKey: "guided", stage: "beforeDamage", target: "opponent" },
   agarrar: { ruleKey: "guided", stage: "beforeDamage", target: "opponent" },
   "abrir-distancia": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   alzarse: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
@@ -75,7 +84,7 @@ export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
 ]);
 
 const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
-  "agarrar",
+  "agarrar", "arrebatar-arma", "derribar-oponente", "marcar-enemigo",
   "abrir-distancia", "alzarse", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
   "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente"
@@ -198,7 +207,8 @@ export function combatEffectEligible(effect, context = {}) {
       ? context.parryWeaponDurable : context.attackerWeaponDurable;
     if (!target) return false;
   }
-  if (effect.key === "muerte-silenciosa" && !context.surpriseAttack) return false;
+  if (effect.key === "muerte-silenciosa"
+    && (!context.surpriseAttack || !context.silentDeathAllowed)) return false;
   if (effect.key === "ardid" && !context.activeCombat) return false;
   if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
     combatWeaponType(context))) {

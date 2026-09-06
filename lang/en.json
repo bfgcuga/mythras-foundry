@@ -1,4 +1,13 @@
 {
+  "MYTHRASF.Combat.BypassArmor.Title": "Bypass Armour",
+  "MYTHRASF.Combat.BypassArmor.Type": "Ignored armour",
+  "MYTHRASF.Combat.BypassArmor.worn": "Worn armour",
+  "MYTHRASF.Combat.BypassArmor.natural": "Natural armour",
+
+  "MYTHRASF.Combat.Trip.Biped": "Biped?",
+  "MYTHRASF.Combat.Trip.Help": "Choosing No adds Athletics and makes every resistance skill one difficulty grade easier.",
+  "MYTHRASF.Combat.EffectConsequence.prone": "The opponent falls prone",
+
   "MYTHRASF.Status.WeaponPinned": "Weapon pinned",
   "MYTHRASF.Status.Description.weaponPinned": "A specific weapon or shield remains equipped but cannot attack or parry. Win an opposed Brawn or Unarmed roll for 1 AP on your turn, or disengage from its holder, to free it. The condition identifies the weapon and holder.",
   "MYTHRASF.Action.releaseWeapon": "Free weapon",
@@ -1513,6 +1522,7 @@
   "MYTHRASF.Combat.EffectConsequence.resisted": "No effect: resistance succeeded",
   "MYTHRASF.Combat.EffectConsequence.blinded": "Blinded for {turns} turns",
   "MYTHRASF.Combat.EffectConsequence.suppressed": "Suppressed for {turns} turns",
+  "MYTHRASF.Combat.EffectConsequence.takeWeaponTooStrong": "The opponent is too strong; their weapon cannot be taken",
   "MYTHRASF.Combat.EffectConsequence.disarmTooStrong": "The opponent cannot be disarmed: they are too strong",
   "MYTHRASF.Combat.EffectConsequence.disarmResisted": "The weapon is not wrested away",
   "MYTHRASF.Combat.EffectConsequence.disarmChoice": "The {weapon} has been wrested away; choose whether to take it or throw it {distance} m",

@@ -132,6 +132,8 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     return { slot: index, side, waived: false, ...effect,
       stage: canonicalCombatEffectStage(effect.stage),
       parameters: { grabConfirmed: selection.parameters?.grabConfirmed === true,
+        armorType: ["natural", "worn"].includes(selection.parameters?.armorType)
+          ? selection.parameters.armorType : "",
         locationId: String(selection.parameters?.locationId ?? ""),
         effectKey: String(selection.parameters?.effectKey ?? ""),
         note: String(selection.parameters?.note ?? "") },

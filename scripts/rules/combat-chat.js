@@ -8,7 +8,7 @@ import { findHitLocation, hitLocationDisplayName, woundLocationKind } from "./hi
 import { totalArmorPoints } from "./armor.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
 import { classifyContestRoll } from "./contest-rolls.js";
-import { canonicalCombatEffectStage, combatEffectCheckPhase, combatEffectRule,
+import { canonicalCombatEffectStage, combatEffectCheckPhase, combatEffectRule, combatStyleAllowsSilentDeath,
   combatEffectSelectionHighlight, combatRuseTargetEffects, eligibleCombatEffects,
   eligibleCombatRuseReplacements, initialCombatEffectStatus,
   maximizeDamageFormulaDetails, mergeCombatEffectDocuments, opposedEffectWinner,
@@ -61,6 +61,8 @@ import { consumeSurpriseEffectBonus, consumeWeaponModeAmmunition, spendActorActi
   spendActorLuckPoint } from "./combat-resource-runtime.js";
 import { applyCombatWoundConsequences, heldCombatItemChoices
 } from "./combat-wound-runtime.js";
+import { chooseBypassArmor } from "./combat-bypass-armor.js";
+import { chooseTripResistance } from "./combat-trip.js";
 import { disarmResistanceTarget } from "./combat-disarm.js";
 import { weaponIsPinned, weaponPins } from "./weapon-pinning.js";
 
@@ -155,11 +157,14 @@ async function effectContext(combat, side = combat.effects?.pendingSide ?? comba
   const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
   return { winner: side, grabbed: isGrabbed(actor),
     activeCombat: Boolean(combat.turnEconomy),
+    silentDeathAllowed: side === "attacker"
+      && combatStyleAllowsSilentDeath(actor, combat.attacker.styleId),
     attackResult: combat.resolution?.attack?.result,
     defenseResult: combat.resolution?.defense?.result,
     attackMode: combat.ranged ? "ranged" : "melee",
     weaponMode: combat.attacker.modeSnapshot,
-    unarmed: combat.attacker.modeSnapshot?.key === "unarmed",
+    unarmed: (side === "attacker" ? combat.attacker.modeSnapshot?.key
+      : combat.defender.defense?.modeKey) === "unarmed",
     surpriseAttack: Boolean(combat.surprise?.consumed), rangedBand: combat.ranged?.band,
     rangedTargetStationary: Boolean(combat.ranged?.targetStationary),
     rangedTargetUnaware: Boolean(combat.ranged?.targetUnaware),
@@ -503,6 +508,7 @@ function parryChoices(actor, combatData = null) {
     const difficulty = effectiveDifficulty(actor);
     if (skill && difficulty !== "impossible") choices.push({ value: `unarmed:${skill.id}`,
       abilityId: skill.id, abilityName: skill.name, styleName: skill.name, modeName: skill.name,
+      modeKey: "unarmed",
       weaponName: skill.name, weaponId: "", weaponDurable: false, weaponSize: "P",
       difficulty, baseTarget: Number(skill.system.total ?? 0),
       target: difficultyTarget(skill.system.total, difficulty) });
@@ -746,6 +752,11 @@ async function chooseCombatEffects(message, combat) {
         note: selected.note },
       status: initialCombatEffectStatus(effect) };
   });
+  if (selections.some((effect) => effect.ruleKey === "bypassArmor")) {
+    const target = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
+    if (!await chooseBypassArmor(target, selections, { Dialog: foundry.applications.api.DialogV2,
+      localize, escape })) return;
+  }
   const request = { action: "combatEffects", messageId: message.id, revision: combat.revision,
     userId: game.user.id, side, selections };
   if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
@@ -1168,10 +1179,13 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
     const shieldStyles = check.allowsShieldStyle ? shieldResistanceChoices(defender) : [];
     const choices = [...new Map([...skills, ...shieldStyles].filter((choice) => choice.ability)
       .map((choice) => [choice.ability.id, choice])).values()];
-    if (!choices.length) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
-    let selected = choices[0];
+    const trip = check.effectKey === "derribar-oponente";
+    if (!trip && !choices.length) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
+    let selected = trip ? await chooseTripResistance(defender, effectiveDifficulty(defender), {
+      Dialog: foundry.applications.api.DialogV2, localize, escape }) : choices[0];
+    if (!selected) return;
     const weaponChoices = check.combatStyle ? (check.weaponChoices ?? []) : [];
-    if (choices.length > 1 || weaponChoices.length > 1) {
+    if (!trip && (choices.length > 1 || weaponChoices.length > 1)) {
       const selection = await foundry.applications.api.DialogV2.wait({
         window: { title: localize("MYTHRASF.Combat.CheckChooseAbility") },
         content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(localize(
@@ -1195,13 +1209,14 @@ async function requestCombatCheck(message, combat, checkId, manual = false) {
     const selectedWeaponId = check.selectedWeaponId ?? weaponChoices[0]?.id ?? "";
     const selectedWeapon = selectedWeaponId ? defender.items.get(selectedWeaponId) : null;
     const targetWeaponMode = selectedWeapon ? findWeaponMode(selectedWeapon) : null;
-    const adjusted = check.combatStyle ? disarmResistanceTarget(selected.target,
+    const adjusted = trip ? selected : check.combatStyle && check.effectKey !== "arrebatar-arma" ? disarmResistanceTarget(selected.target,
       check.sourceWeaponSize, targetWeaponMode?.size) : null;
     const target = adjusted?.target ?? selected.target;
     await recordAbilityFumble(skill, classifyContestRoll(roll.total, target));
     resolution = { manual: false, abilityId: skill.id, abilityName: skill.name,
       target, baseTarget: adjusted?.baseTarget ?? selected.target,
       difficulty: adjusted?.difficulty ?? "standard", difficultySteps: adjusted?.steps ?? 0,
+      ...(trip ? { biped: selected.biped } : {}),
       weaponId: selectedWeaponId, weaponName: selectedWeapon?.name ?? "",
       weaponSize: targetWeaponMode?.size ?? "", rawRoll: roll.total, serializedRoll: roll.toJSON(),
       result: classifyContestRoll(roll.total, target) };

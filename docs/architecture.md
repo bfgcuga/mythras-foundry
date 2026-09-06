@@ -297,6 +297,10 @@ Bloqueo Pasivo por asalto, coberturas y la colección versionada `ruses`. Cada
 Ardid identifica propietario, rival, efecto vigilado, intercambio de origen,
 estado y revisión. Las versiones anteriores se normalizan con la colección
 vacía; al terminar el combate se elimina junto con el resto del estado táctico.
+Abrir Distancia, Cerrar Distancia y Retirada están completamente implementados.
+Los dos primeros ajustan la relación de alcance y Retirada destraba al personaje
+del rival correspondiente. Su alcance funcional es relacional: no requieren
+mover tokens ni añadir comprobaciones de geometría del lienzo.
 El alcance es relacional (`longer`, `shorter` o
 `neutral`) y no se deriva de las coordenadas del lienzo. Cambiar Alcance se
 coordina mediante mensajes revisables y comparte coordinador y permisos con los
@@ -635,6 +639,12 @@ Modificador de Daño. Si existe una mano libre, una consecuencia persistente de
 la tarjeta permite transferir el Item o arrojarlo; el coordinador vuelve a
 validar documentos, permisos y capacidad de manos antes de la transferencia.
 
+«Arrebatar Arma» reutiliza las pruebas enfrentadas y Suerte de Desarmar, sin
+ajuste por Tamaño. La resistencia usa Estilo de Combate contra la tirada original
+del lado desarmado. FUE rival ≥ 2 × FUE propia cancela el efecto automáticamente.
+Al perder el rival, el coordinador copia el Item equipado al vencedor y elimina
+el original; si falla la eliminación, revierte la copia.
+
 «Inmovilizar arma» guarda una condición `weaponPinned` por arma en los
 ActiveEffects del portador: `timedCondition.weaponId` identifica el Item y
 `sourceActorUuid`/`sourceTokenUuid` identifican al captor. No cambia `equipped`
@@ -725,12 +735,44 @@ sitúan modificaciones dentro del cálculo; `afterDamage` agrupa consecuencias
 que necesitan conocer penetración o herida, y `woundChecks` queda reservado a
 las comprobaciones anatómicas. El valor histórico `afterEffect` se normaliza a
 `afterDamage`; los efectos nuevos sin una fase válida usan `beforeDamage`.
+Las pruebas de efectos independientes del daño se conservan completas al
+preparar o recalcular la propuesta, cambiar la localización o repetir el daño
+con Suerte: estado, resultado, historial de Suerte, opciones y consecuencia.
+`independentCombatEffectChecks` identifica estas pruebas por su selección
+vigente y por no requerir herida, sin una lista paralela de nombres de efectos.
+Las pruebas de heridas y de efectos condicionados al daño sí se recalculan
+cuando cambia la tirada o la localización.
 La tarjeta conserva visibles los resultados previos y nunca bloquea el daño por
 un efecto sin automatizar: esos efectos quedan cerrados como `notAutomated` sin
 pedir notas ni confirmaciones. Las pruebas automatizadas pueden resolverse en su
 fase sin ocultar «Tirar daño». Así, «Cegar oponente» se presenta antes del daño,
 mientras Aturdir, Desangrar y
-Tumbar solo aparecen después de aplicarlo si su condición se activó. Empalar
+Tumbar solo aparecen después de aplicarlo si su condición se activó.
+«Superar Armadura» está completo. `combat-bypass-armor.js` calcula los PA
+efectivos separando protección natural y equipada; esta última conserva el
+máximo de las prendas que cubren la localización. Con un uso, si el rival tiene
+ambos tipos superpuestos, la selección pide cuál ignorar y el coordinador guarda
+`parameters.armorType` (`natural` o `worn`). Dos usos ignoran ambos tipos.
+Si la localización impactada solo tiene uno, se ignora ese tipo automáticamente.
+La propuesta conserva la protección total como instantánea para detectar cambios,
+aplica solo los PA no ignorados e identifica `ignoredArmorTypes` en la tarjeta.
+La elección persiste al recalcular el daño o repetirlo con Suerte; no se modifican
+los PA de los documentos de armadura ni la protección natural de la localización.
+«Marcar Enemigo» está terminado como efecto exclusivamente narrativo: su
+selección se resuelve sin cambios documentales, estados ni pruebas adicionales.
+«Muerte Silenciosa» está completo. Su elegibilidad consulta el rasgo canónico
+`asesinato` (Asesinato) del Estilo de Combate identificado por `attacker.styleId`,
+mediante `hasTrait`; el nombre del estilo y los rasgos de otros estilos no
+habilitan el efecto. Esta condición se exige tanto al listar opciones como al
+validar la selección en el coordinador, junto con Sorpresa y arma pequeña.
+«Desangrar» está completamente implementado con la resistencia de Aguante,
+el estado de desangramiento y la pérdida de Fatiga por asalto. El tratamiento
+y la reapertura por esfuerzos no se van a automatizar y no son trabajo pendiente
+de este efecto.
+«Tumbar Oponente» está completamente implementado con la resistencia de Aguante
+y la aplicación de Incapacitado. La duración manual es intencionada: el efecto
+no debe gestionar la recuperación ni necesita automatizarla para estar completo.
+Empalar
 participa en `damageRoll`, aplica su doble tirada automáticamente y no crea una
 confirmación narrativa posterior.
 Como ayuda temporal de desarrollo, cada selección muestra en morado
@@ -863,3 +905,12 @@ ajuste compartido de porcentajes superiores a 100. Las enfrentadas generales
 y la liberación comparten el ayudante. Pelea no recibe esta penalización. En
 enfrentadas con varios rivales se usa el modificador más alto del bando rival;
 las pruebas contra dificultad y las diferenciales conservan sus reglas.
+
+«Derribar Oponente» crea una prueba enfrentada antes del daño contra la tirada
+original del lado que eligió el efecto. `combat-trip.js` prepara habilidades y
+objetivos y ofrece el selector explícito de bípedo, sin inferir anatomía. La opción «No»
+añade Atletismo a Músculo, Evadir y Acrobacias y mejora un grado la dificultad
+efectiva de todas ellas, después de las condiciones del Actor. La elección,
+dificultad y objetivo se conservan en la resolución y en sus repeticiones de
+Suerte. El fallo aplica el estado canónico `prone` de duración manual; no usa
+la incapacitación de «Tumbar oponente».

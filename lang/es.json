@@ -1,4 +1,13 @@
 {
+  "MYTHRASF.Combat.BypassArmor.Title": "Superar Armadura",
+  "MYTHRASF.Combat.BypassArmor.Type": "Armadura ignorada",
+  "MYTHRASF.Combat.BypassArmor.worn": "Armadura equipada",
+  "MYTHRASF.Combat.BypassArmor.natural": "Armadura natural",
+
+  "MYTHRASF.Combat.Trip.Biped": "¿Bípedo?",
+  "MYTHRASF.Combat.Trip.Help": "Si eliges No, se añade Atletismo y todas las habilidades de resistencia tienen un grado menos de dificultad.",
+  "MYTHRASF.Combat.EffectConsequence.prone": "El oponente cae derribado",
+
   "MYTHRASF.Status.WeaponPinned": "Arma inmovilizada",
   "MYTHRASF.Status.Description.weaponPinned": "Un arma o escudo concreto permanece equipado pero no puede atacar ni parar. Se libera ganando una enfrentada de Músculo o Pelea por 1 PA en su turno, o al destrabarse de quien lo sujeta. La condición identifica el arma y a su captor.",
   "MYTHRASF.Action.releaseWeapon": "Liberar arma",
@@ -1513,6 +1522,7 @@
   "MYTHRASF.Combat.EffectConsequence.resisted": "Sin efecto: resistencia superada",
   "MYTHRASF.Combat.EffectConsequence.blinded": "Cegado durante {turns} turnos",
   "MYTHRASF.Combat.EffectConsequence.suppressed": "Suprimido durante {turns} turnos",
+  "MYTHRASF.Combat.EffectConsequence.takeWeaponTooStrong": "El rival es demasiado fuerte, no es posible arrebatarle el arma",
   "MYTHRASF.Combat.EffectConsequence.disarmTooStrong": "No se consigue desarmar al oponente: es demasiado fuerte",
   "MYTHRASF.Combat.EffectConsequence.disarmResisted": "No se consigue arrebatar el arma",
   "MYTHRASF.Combat.EffectConsequence.disarmChoice": "El arma {weapon} ha sido arrebatada; debe decidirse si se toma o vuela {distance} m",

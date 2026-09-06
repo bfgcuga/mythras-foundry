@@ -1,8 +1,9 @@
 import { findHitLocation, hitLocationDisplayName, permanentWoundHitCheck, permanentWoundState, woundLevel,
   woundLocationKind } from "./hit-locations.js";
-import { damageLocationChoices, majorWoundLuckAdjustment,
+import { damageLocationChoices, independentCombatEffectChecks, majorWoundLuckAdjustment,
   prepareDamageChecks } from "./combat-damage.js";
 import { parryReduction, resolveDamage } from "./combat.js";
+import { bypassArmorProtection } from "./combat-bypass-armor.js";
 import { totalArmorPoints } from "./armor.js";
 import { combatWeaponDamagePlan, selectedEffectCount } from "./combat-effects.js";
 import { applyLongRangeDamage } from "./ranged-combat.js";
@@ -70,7 +71,7 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   }
   if (request.locationId !== combat.damage.locationId) {
     delete combat.damage.woundLuck;
-    combat.effects.checks = [];
+    combat.effects.checks = independentCombatEffectChecks(combat);
     for (const effect of combat.effects.selections ?? []) {
       if (effect.requiresWound) effect.status = "conditional";
     }
@@ -165,7 +166,10 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
     combat.damage.passiveBlock = { weaponId: passive.weaponId, weaponName: passive.weaponName,
       weaponSize: passive.weaponSize, locationId: location.id };
   } else delete combat.damage.passiveBlock;
-  const effectiveArmor = selectedEffectCount(combat.effects?.selections ?? [], "bypassArmor") ? 0 : armor;
+  const protection = weaponTarget ? null : bypassArmorProtection(location,
+    defender.items.filter((item) => item.type === "armor"), combat.effects?.selections ?? []);
+  const effectiveArmor = protection?.effective ?? armor;
+  combat.damage.ignoredArmorTypes = protection?.ignored ?? [];
   const rangeAdjustedDamage = weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
     ? Number(combat.damage.rawRoll) : applyLongRangeDamage(combat.damage.rawRoll, combat.ranged?.band);
   const cover = !weaponTarget && defense?.type === "cover" && tracker ? coverFor(tracker,
@@ -312,7 +316,7 @@ export async function applyCombatDamageLuck(message, request, { clone, flagScope
     resultExpression: request.resultExpression, rollExpression: request.rollExpression,
     serializedRoll: request.serializedRoll });
   delete combat.damage.woundLuck;
-  combat.effects.checks = [];
+  combat.effects.checks = independentCombatEffectChecks(combat);
   for (const effect of combat.effects.selections ?? []) {
     if (effect.requiresWound) effect.status = "conditional";
   }

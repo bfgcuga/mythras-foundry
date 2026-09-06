@@ -35,3 +35,7 @@ export function disarmWeaponChoices(actor, preferredId = "") {
   return choices.sort((left, right) => left.id === preferredId ? -1
     : right.id === preferredId ? 1 : left.name.localeCompare(right.name));
 }
+
+export function takeWeaponStrengthAllowed(attacker, victim) {
+  return Number(victim?.system?.strength ?? 0) < Number(attacker?.system?.strength ?? 0) * 2;
+}

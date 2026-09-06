@@ -154,3 +154,15 @@ test("las resistencias automáticas condicionadas esperan su fase", async () => 
   assert.equal(state.effects.checks[0].status, "resolved");
   assert.equal(conditions[0].condition.statusId, "incapacitated");
 });
+
+
+test("Marcar Enemigo se resuelve como narración sin pruebas ni cambios en documentos", async () => {
+  const effect = { key: "marcar-enemigo", side: "attacker", slot: 0,
+    ...combatEffectRule({ key: "marcar-enemigo" }) };
+  assert.equal(initialCombatEffectStatus(effect), "active");
+  const state = combat([effect]);
+  await applyImmediateCombatEffects(state, { uuid: "message" }, { resolveActor: assert.fail });
+  assert.equal(effect.status, "resolved");
+  assert.deepEqual(state.effects.checks, []);
+  assert.equal(state.consequencesApplied, undefined);
+});

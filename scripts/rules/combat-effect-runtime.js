@@ -4,7 +4,7 @@ import { setRelationPosition } from "./engagement-runtime.js";
 import { applyTimedCondition, timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { damageModifierFormula } from "./combat.js";
-import { disarmHasFreeHand, disarmStrengthAllowed, disarmWeaponChoices
+import { disarmHasFreeHand, disarmStrengthAllowed, disarmWeaponChoices, takeWeaponStrengthAllowed
 } from "./combat-disarm.js";
 import { findWeaponMode } from "./weapon-modes.js";
 import { pinnableWeapons, clearWeaponPinsBetween } from "./weapon-pinning.js";
@@ -44,6 +44,10 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
   combat.messageUuid = message.uuid;
   const selections = combat.effects.selections.filter((effect) => !effect.waived);
   for (const effect of selections) {
+    if (effect.key === "marcar-enemigo") {
+      effect.status = "resolved";
+      continue;
+    }
     if (["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect.key)) {
       const entry = combatSideEntry(combat, effect.side);
       const actor = await dependencies.resolveActor?.(entry.tokenUuid, entry.actorUuid);
@@ -124,30 +128,33 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
     offBalance.forEach((effect) => { effect.status = "resolved"; });
   }
   for (const effect of selections.filter((entry) => ["cegar-oponente",
-    "disparo-de-supresion", "desarmar-oponente"].includes(entry.key))) {
+    "disparo-de-supresion", "desarmar-oponente", "arrebatar-arma", "derribar-oponente"].includes(entry.key))) {
+    const taking = effect.key === "arrebatar-arma";
+    const weaponEffect = taking || effect.key === "desarmar-oponente";
     const sourceEntry = combatSideEntry(combat, effect.side);
     const targetEntry = combatSideEntry(combat, combatEffectAffectedSide(effect));
-    const sourceActor = effect.key === "desarmar-oponente"
+    const sourceActor = weaponEffect
       ? await dependencies.resolveActor?.(sourceEntry.tokenUuid, sourceEntry.actorUuid) : null;
-    const targetActor = effect.key === "desarmar-oponente"
+    const targetActor = weaponEffect
       ? await dependencies.resolveActor?.(targetEntry.tokenUuid, targetEntry.actorUuid) : null;
     const preferredWeaponId = effect.side === "attacker"
       ? combat.defender.defense?.weaponId : combat.attacker.weaponId;
-    const weaponChoices = effect.key === "desarmar-oponente"
+    const weaponChoices = weaponEffect
       ? disarmWeaponChoices(targetActor, preferredWeaponId) : [];
-    const tooStrong = effect.key === "desarmar-oponente"
-      && !disarmStrengthAllowed(sourceActor, targetActor);
+    const tooStrong = weaponEffect
+      && !(taking ? takeWeaponStrengthAllowed : disarmStrengthAllowed)(sourceActor, targetActor);
     combat.effects.checks.push({ id: `effect-${effect.side}-${effect.slot}`,
       source: "effect", order: combat.effects.checks.length, effectKey: effect.key,
       effectSide: effect.side, effectSlot: effect.slot,
       actorSide: combatEffectAffectedSide(effect),
-      abilitySlugs: effect.key === "cegar-oponente" ? ["evadir"] : ["voluntad"],
-      combatStyle: effect.key === "desarmar-oponente", weaponChoices,
+      abilitySlugs: effect.key === "derribar-oponente" ? ["musculo", "evadir", "acrobacias"]
+        : effect.key === "cegar-oponente" ? ["evadir"] : ["voluntad"],
+      combatStyle: weaponEffect, weaponChoices,
       sourceWeaponSize: sourceEntry.weaponSize ?? sourceEntry.defense?.weaponSize ?? "",
       allowsShieldStyle: effect.key === "cegar-oponente",
       opposedSide: effect.side, label: effect.name, status: "pending",
       automaticFailure: Boolean(effect.automaticSuccess), automaticResistance: tooStrong,
-      unavailable: effect.key === "desarmar-oponente" && !weaponChoices.length });
+      unavailable: weaponEffect && !weaponChoices.length });
     effect.status = "pending";
   }
   await applyAutomaticCombatEffectChecks(combat, dependencies);
@@ -185,11 +192,19 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
   effect.resolution = { checkId: check.id, resisted, resolvedAt: Date.now() };
   effect.status = "resolved";
   if (resisted) {
-    check.consequence = { key: effect.key === "desarmar-oponente"
+    check.consequence = { key: effect.key === "arrebatar-arma"
+      ? check.automaticResistance ? "takeWeaponTooStrong" : "disarmResisted"
+      : effect.key === "desarmar-oponente"
       ? check.resolution?.automaticResistance ? "disarmTooStrong" : "disarmResisted"
       : "resisted" };
     effect.resolution.consequence = check.consequence;
     return;
+  }
+  if (effect.key === "derribar-oponente") {
+    await addManagedCombatStatus(combat, effect, { key: "prone", statusId: "prone",
+      unit: "manual", phase: "manual" }, dependencies);
+    check.consequence = { key: "prone" };
+    effect.resolution.consequence = check.consequence;
   }
   if (effect.key === "cegar-oponente") {
     const duration = await dependencies.evaluateRoll("1d3", { manual });
@@ -212,6 +227,30 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
     } else await addManagedCombatStatus(combat, effect, { key: "suppressed",
       statusId: "suppressed", turns: 1 }, dependencies);
     check.consequence = { key: "suppressed", turns: 1 };
+    effect.resolution.consequence = check.consequence;
+  }
+  if (effect.key === "arrebatar-arma") {
+    const sourceEntry = combatSideEntry(combat, effect.side);
+    const sourceActor = await dependencies.resolveActor?.(sourceEntry.tokenUuid, sourceEntry.actorUuid);
+    const weapon = actor.items.get(check.resolution?.weaponId ?? check.weaponChoices?.[0]?.id);
+    if (!sourceActor || !weapon || !disarmWeaponChoices(actor).some((item) => item.id === weapon.id)) {
+      check.consequence = { key: "disarmResisted" };
+    } else if (!takeWeaponStrengthAllowed(sourceActor, actor)) {
+      check.consequence = { key: "takeWeaponTooStrong" };
+    } else {
+      const data = weapon.toObject();
+      delete data._id;
+      data.system = { ...data.system, equipped: true };
+      const created = await sourceActor.createEmbeddedDocuments("Item", [data]);
+      try {
+        await actor.deleteEmbeddedDocuments("Item", [weapon.id]);
+      } catch (error) {
+        await sourceActor.deleteEmbeddedDocuments("Item", created.map((item) => item.id));
+        throw error;
+      }
+      combat.consequencesApplied = true;
+      check.consequence = { key: "disarmTaken", weaponName: weapon.name, status: "resolved" };
+    }
     effect.resolution.consequence = check.consequence;
   }
   if (effect.key === "desarmar-oponente") {
