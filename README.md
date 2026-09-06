@@ -341,7 +341,9 @@ o el cálculo a partir de INT y DES.
 Los próximos pasos ordenados se mantienen en
 [`docs/roadmap.md`](docs/roadmap.md). El trabajo confirmado todavía sin
 prioridad y las decisiones abiertas se mantienen en
-[`docs/pending.md`](docs/pending.md).
+[`docs/pending.md`](docs/pending.md). Los límites estructurales cuya mejora debe
+preservar los contratos actuales se recogen en
+[`docs/refactoring.md`](docs/refactoring.md).
 
 ## Compendios
 

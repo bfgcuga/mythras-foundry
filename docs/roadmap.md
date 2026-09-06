@@ -43,7 +43,8 @@ los límites relevantes con pruebas.
 Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
 renderizado y el transporte antes de ampliar significativamente los peligros.
 Conservar las transiciones y validaciones actuales mediante pruebas durante la
-extracción.
+extracción. Las fronteras y restricciones del refactor están detalladas en
+[`refactoring.md`](refactoring.md).
 
 ## 5. Integrar las acciones diferenciales pendientes
 

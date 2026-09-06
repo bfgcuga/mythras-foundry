@@ -2,6 +2,8 @@
 
 Este documento resume la estructura estable del repositorio y las fuentes de
 verdad que deben consultarse antes de cambiar modelos, reglas o compendios.
+Los límites estructurales candidatos a extracción, sin alterar esta arquitectura
+vigente, se mantienen en [`refactoring.md`](refactoring.md).
 
 ## Capas
 

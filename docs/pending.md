@@ -102,8 +102,11 @@ motivaciones, familia, relaciones, secretos y notas. Queda por decidir:
 
 ## Deuda técnica no priorizada
 
-- Extraer el asistente de creación de trasfondo de `character-sheet.js` para
-  separar preparación, sincronización de Items y materialización.
+- Aplicar los candidatos sin prioridad descritos en
+  [`refactoring.md`](refactoring.md): extraer el asistente de creación de
+  trasfondo, aligerar la fachada de combate y el registro principal de hooks,
+  modularizar con cautela la hoja de estilos y sustituir pruebas acopladas a la
+  implementación por contratos observables.
 - Evaluar una infraestructura común para transacciones interactivas a partir de
   los patrones ya separados en combate; no abstraer sin consumidores adicionales
   estables en combate, concursos, alcance y consecuencias de asalto.
