@@ -13,7 +13,8 @@ export function weaponHasDurability(weapon) {
 }
 
 export function weaponCanEquip(weapon) {
-  return Boolean(weapon) && weaponDurabilityState(weapon) !== "broken";
+  const system = weapon?.system ?? weapon ?? {};
+  return Boolean(weapon) && !system.inoperable && weaponDurabilityState(system) !== "broken";
 }
 
 export function weaponDamageResult({ currentHitPoints = 0, armorPoints = 0, damage = 0 } = {}) {

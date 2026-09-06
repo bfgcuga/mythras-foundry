@@ -1,6 +1,7 @@
 export const COMBAT_ACTION_SCHEMA_VERSION = 1;
 
 export const COMBAT_ACTIONS = Object.freeze({
+  recoverImpaledWeapon: { type: "proactive", cost: 1, requiresCombat: true },
   releaseGrab: { type: "proactive", cost: 1, requiresCombat: true },
   releaseWeapon: { type: "proactive", cost: 1, requiresCombat: true },
   releaseEntangle: { type: "proactive", cost: 1, requiresCombat: true },
@@ -59,7 +60,8 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
   canTakeProactiveTurn = true, canAttack = true, engaged = false, prone = false,
   hasRangedWeapon = false, hasPreparedWeapon = false, hasRestraint = false,
   hasDelay = false, canCharge = false, hasPinnedWeapon = false, grabbed = false,
-  entangled = false, holdsEntanglement = false, rooted = false } = {}) {
+  entangled = false, holdsEntanglement = false, rooted = false,
+  hasReachableImpaledWeapon = false } = {}) {
   const available = {};
   for (const [key, definition] of Object.entries(COMBAT_ACTIONS)) {
     let allowed = definition.type !== "proactive" || (inCombat && isActive
@@ -74,6 +76,7 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     if (key === "releaseWeapon") allowed &&= hasPinnedWeapon;
     if (key === "releaseEntangle") allowed &&= entangled;
     if (key === "entangleTrip") allowed &&= holdsEntanglement;
+    if (key === "recoverImpaledWeapon") allowed &&= hasReachableImpaledWeapon;
     if (key === "move") allowed &&= !engaged && !rooted;
     if (key === "stand") allowed &&= prone;
     if (key === "charge") allowed &&= canCharge && hasPreparedWeapon;

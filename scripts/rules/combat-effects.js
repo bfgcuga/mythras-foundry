@@ -88,8 +88,18 @@ const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
   "abrir-distancia", "alzarse", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
   "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente",
-  "enredar", "liberarse"
+  "enredar", "forzar-fallo", "forzar-rendicion", "hender-armadura", "inutilizar-arma", "liberarse",
+  "potenciar-penetracion", "sortear-cobertura", "escoger-objetivo", "herida-accidental"
 ]));
+
+const RESISTED_COMBAT_EFFECTS = Object.freeze(new Set([
+  "arrebatar-arma", "cegar-oponente", "derribar-oponente", "desarmar-oponente",
+  "disparo-de-supresion", "forzar-rendicion"
+]));
+
+export function combatEffectRequiresResistance(effect) {
+  return Boolean(effect?.endurance || RESISTED_COMBAT_EFFECTS.has(effect?.key));
+}
 
 export function combatEffectIsAutomated(effect) {
   return effect?.ruleKey !== "guided" || AUTOMATED_GUIDED_EFFECTS.has(effect?.key);
@@ -212,6 +222,7 @@ export function combatEffectEligible(effect, context = {}) {
   if (effect.key === "muerte-silenciosa"
     && (!context.surpriseAttack || !context.silentDeathAllowed)) return false;
   if (effect.key === "ardid" && !context.activeCombat) return false;
+  if (effect.key === "disparo-de-supresion" && !context.targetUsesRangedWeapon) return false;
   if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
     combatWeaponType(context))) {
     if (context.completeCover) return false;
@@ -260,11 +271,18 @@ export function validateEffectSelections({ slots = 0, selections = [], effects =
   }
   const chosen = selections.filter((entry) => !entry?.waived)
     .map((entry) => catalog.get(entry.key)).filter(Boolean);
+  if (chosen.some((effect) => effect.key === "forzar-fallo")
+    && chosen.filter(combatEffectRequiresResistance).length !== 1) {
+    return { valid: false, reason: "forceFailure" };
+  }
   if (!combatEffectSelectionsCompatible(chosen)) return { valid: false, reason: "compatibility" };
   return { valid: true, reason: null };
 }
 
 export function combatEffectSelectionsCompatible(effects = []) {
+  if (effects.some((effect) => effect.key === "forzar-rendicion")
+    && effects.some((effect) => ["potenciar-penetracion", "sortear-cobertura"]
+      .includes(effect.key))) return false;
   if (!effects.some((effect) => effect.key === "danar-arma")) return true;
   return !effects.some((effect) => effect.key !== "danar-arma"
     && effect.damageTarget === "opponent");

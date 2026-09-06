@@ -5,6 +5,7 @@ import { inventoryLocation, inventoryRows, inventorySections } from "../rules/in
 import { isNaturalWeaponMode } from "../rules/passive-block.js";
 import { weaponModes } from "../rules/weapon-modes.js";
 import { weaponDurabilityState } from "../rules/weapon-durability.js";
+import { armorDurabilityState, armorMaximumPoints } from "../rules/armor-durability.js";
 import { hasBrokenHitLocationReference } from "../rules/hit-locations.js";
 
 export function isNaturalWeapon(weapon) {
@@ -32,9 +33,14 @@ export function prepareInventoryView(items = []) {
       ? game.i18n.localize("MYTHRASF.Item.Carried")
       : inventoryLocation(row.item, inventoryItems),
     groupLabel: game.i18n.localize(`MYTHRASF.Inventory.Category.${row.groupKey}`),
-    durabilityState: row.isWeapon ? weaponDurabilityState(row.item) : "",
-    broken: row.isWeapon && weaponDurabilityState(row.item) === "broken",
+    durabilityState: row.isWeapon ? weaponDurabilityState(row.item)
+      : row.isArmor ? armorDurabilityState(row.item) : "",
+    armorDisplay: row.isArmor
+      ? `${Number(row.item.system.armorPoints ?? 0)} / ${armorMaximumPoints(row.item)}` : "",
+    broken: row.isWeapon ? weaponDurabilityState(row.item) === "broken"
+      : row.isArmor && armorDurabilityState(row.item) === "broken",
     damaged: row.isWeapon && weaponDurabilityState(row.item) === "damaged",
+    inoperable: row.isWeapon && Boolean(row.item.system.inoperable),
     categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
       : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
         : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`)
@@ -64,6 +70,8 @@ export class InventorySheetController {
       button.addEventListener("click", (event) => this.toggleContainer(event)));
     this.element.querySelectorAll("[data-action='sell-item']").forEach((button) =>
       button.addEventListener("click", (event) => this.sellItem(event)));
+    this.element.querySelectorAll("[data-action='repair-inoperable-weapon']").forEach((button) =>
+      button.addEventListener("click", (event) => this.repairInoperableWeapon(event)));
     this.element.querySelectorAll("[data-property-funds]").forEach((field) =>
       field.addEventListener("change", (event) => this.updatePropertyFunds(event)));
     this.element.querySelectorAll("[data-action='buy-item']").forEach((button) =>
@@ -74,6 +82,15 @@ export class InventorySheetController {
     this.element.querySelectorAll("[data-action='transfer-money']").forEach((button) =>
       button.addEventListener("click", (event) => this.transferMoney(event)));
     this.activateDragAndDrop();
+  }
+
+  async repairInoperableWeapon(event) {
+    event.preventDefault();
+    if (!this.editable) return;
+    const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
+    if (item?.type === "weapon" && item.system.inoperable) {
+      await item.update({ "system.inoperable": false });
+    }
   }
 
   async toggleContainer(event) {

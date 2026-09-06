@@ -1,7 +1,8 @@
 import { combatAttackHits, resolveCombatExchange } from "./combat.js";
 import { canonicalCombatEffectStage, combatEffectSlotsBySide,
   combatEffectSelectionsCompatible, combatRuseTargetEffects, initialCombatEffectStatus,
-  validateEffectSelections, combatWeaponDamagePlan } from "./combat-effects.js";
+  validateEffectSelections, combatWeaponDamagePlan,
+  combatEffectRequiresResistance } from "./combat-effects.js";
 import { effectiveActionPointMaximum } from "./action-points.js";
 import { validateCombatResponse } from "./combat-exchange-state.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
@@ -26,6 +27,33 @@ export async function applyAccidentalTargetTransition(message, current, { token,
   combat.attackClassification = resolveCombatExchange({ attack: { target: combat.attacker.target,
     rawRoll: combat.attacker.rawRoll }, defense: { type: "none" } }).attack;
   combat.status = "awaitingAccidentalDefense";
+  combat.revision += 1;
+  await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+  return true;
+}
+
+export async function applyChosenTargetTransition(message, current, { token, entry = null,
+  userId, user, owner, clone, actorIdentity, tokenIdentity, tokenName, locationSnapshot, render,
+  flagScope = "mythras-foundry" } = {}) {
+  const actor = token?.actor;
+  if (!actor || current.chosenTarget?.status !== "awaitingTarget"
+    || !owner || !user || (!user.isGM && !owner.testUserPermission(user, "OWNER"))
+    || current.chosenTarget.originalDefender?.actorUuid === actor.uuid) return false;
+  const combat = clone(current);
+  combat.chosenTarget = { ...combat.chosenTarget, status: "selected",
+    target: { tokenUuid: tokenIdentity(token), actorUuid: actor.uuid,
+      actorName: tokenName(token), selectedBy: userId, selectedAt: Date.now() } };
+  combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenName(token),
+    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: actor.system.size,
+    targetType: "actor", targetWeaponId: "", locations: actor.items
+      .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
+  if (combat.turnEconomy && entry) combat.turnEconomy.defenderCombatantId = entry.id;
+  combat.effects = { selections: [], checks: [], confirmed: true };
+  combat.resolution = { attack: { ...combat.resolution.attack, result: "success",
+    automaticSuccess: true }, defense: { type: "none", result: "failure",
+    automaticFailure: true, rawRoll: null, target: null }, advantage: 0, effects: 0, winner: null };
+  combat.status = "resolved";
+  combat.damage = { status: "ready" };
   combat.revision += 1;
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
   return true;
@@ -95,7 +123,10 @@ export async function applyCombatDefenseTransition(message, request, { clone, fl
 
 export async function applyCombatEffectsTransition(message, request, { clone, flagScope,
   resolveActor, userById, catalogDocuments, effectView, effectContext, warn, localize,
-  applyImmediateEffects, immediateDependencies, triggerRuses, render, advance } = {}) {
+  applyImmediateEffects, immediateDependencies, triggerRuses, render, advance,
+  actorIdentity, locationSnapshot,
+  surrenderAuthorizedBy = "", penetrationAuthorizedBy = "", coverAuthorizedBy = "",
+  chosenTargetAuthorizedBy = "" } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || combat.status !== "awaitingEffects"
     || Number(request.revision) !== Number(combat.revision)) return false;
@@ -115,6 +146,18 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     && (!combat.turnEconomy || !ruseTargets.has(selection.parameters?.effectKey)));
   const invalidGrab = request.selections.some((selection) => !selection.waived
     && selection.key === "agarrar" && selection.parameters?.grabConfirmed !== true);
+  const requestsSurrender = request.selections.some((selection) => !selection.waived
+    && selection.key === "forzar-rendicion");
+  const surrenderAuthorizer = surrenderAuthorizedBy ? userById(surrenderAuthorizedBy) : null;
+  const requestsPenetration = request.selections.some((selection) => !selection.waived
+    && selection.key === "potenciar-penetracion");
+  const penetrationAuthorizer = penetrationAuthorizedBy ? userById(penetrationAuthorizedBy) : null;
+  const requestsCoverBypass = request.selections.some((selection) => !selection.waived
+    && selection.key === "sortear-cobertura");
+  const coverAuthorizer = coverAuthorizedBy ? userById(coverAuthorizedBy) : null;
+  const requestsChosenTarget = request.selections.some((selection) => !selection.waived
+    && selection.key === "escoger-objetivo");
+  const chosenTargetAuthorizer = chosenTargetAuthorizedBy ? userById(chosenTargetAuthorizedBy) : null;
   const combinedEffects = [...(combat.effects.selections ?? []).filter((entry) => !entry.waived),
     ...request.selections.filter((entry) => !entry.waived)
       .map((entry) => catalogByKey.get(entry.key)).filter(Boolean)];
@@ -122,7 +165,11 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     (counts.get(effect.key) ?? 0) + 1), new Map());
   const invalidCombinedStack = combinedEffects.some((effect) => !effect.stackable
     && combinedCounts.get(effect.key) > 1);
-  if (!validation.valid || invalidRuse || invalidGrab || invalidCombinedStack
+  if (!validation.valid || invalidRuse || invalidGrab
+    || (requestsSurrender && !surrenderAuthorizer?.isGM)
+    || (requestsPenetration && !penetrationAuthorizer?.isGM)
+    || (requestsCoverBypass && !coverAuthorizer?.isGM)
+    || (requestsChosenTarget && !chosenTargetAuthorizer?.isGM) || invalidCombinedStack
     || !combatEffectSelectionsCompatible(combinedEffects)) {
     warn(localize("MYTHRASF.CombatEffect.Invalid")); return false;
   }
@@ -139,6 +186,15 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
         note: String(selection.parameters?.note ?? "") },
       status: initialCombatEffectStatus(effect) };
   });
+  const forceFailure = sideSelections.find((selection) => selection.key === "forzar-fallo");
+  if (forceFailure) {
+    const forced = sideSelections.find((selection) => selection !== forceFailure
+      && combatEffectRequiresResistance(selection));
+    forced.automaticSuccess = true;
+    forced.automaticSource = { type: "forceFailure", sourceSlot: forceFailure.slot };
+    forceFailure.status = "resolved";
+    forceFailure.resolution = { effectKey: forced.key, effectSlot: forced.slot };
+  }
   combat.effects.selections.push(...sideSelections);
   combat.effects.confirmations = { ...(combat.effects.confirmations ?? {}),
     [side]: { userId: user.id, confirmedAt: Date.now() } };
@@ -170,10 +226,55 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     combat.effects.confirmedBy = user.id;
     combat.effects.confirmedAt = Date.now();
     await applyImmediateEffects(combat, message, immediateDependencies());
+    const chosenTargetEffect = combat.effects.selections.find((effect) =>
+      !effect.waived && effect.key === "escoger-objetivo");
+    if (chosenTargetEffect) {
+      chosenTargetEffect.status = "resolved";
+      combat.chosenTarget = { status: "awaitingTarget", originalDefender: clone(combat.defender),
+        originalEffects: clone(combat.effects) };
+      combat.status = "resolved";
+      combat.damage = { status: "unavailable" };
+      combat.revision += 1;
+      await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+      return true;
+    }
+    const accidentalWoundEffect = combat.effects.selections.find((effect) =>
+      !effect.waived && effect.key === "herida-accidental");
+    if (accidentalWoundEffect) {
+      accidentalWoundEffect.status = "resolved";
+      const originalDefender = clone(combat.defender);
+      const originalEffects = clone(combat.effects);
+      const attacker = await resolveActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+      if (!attacker) return false;
+      combat.accidentalWound = { status: "active", originalDefender, originalEffects,
+        ignoresArmor: combat.attacker.modeSnapshot?.key === "unarmed"
+          || !combat.attacker.weaponId };
+      combat.defender = { actorUuid: attacker.uuid, actorId: actorIdentity(attacker),
+        actorName: combat.attacker.actorName, tokenUuid: combat.attacker.tokenUuid,
+        defense: null, luckHistory: [], size: attacker.system.size,
+        targetType: "actor", targetWeaponId: "", locations: attacker.items
+          .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
+      if (combat.turnEconomy) {
+        combat.turnEconomy.defenderCombatantId = combat.turnEconomy.combatantId;
+      }
+      combat.effects = { selections: [], checks: [], confirmed: true };
+      combat.resolution = { attack: { ...combat.resolution.attack, result: "success",
+        automaticSuccess: true }, defense: { type: "none", result: "failure",
+        automaticFailure: true, rawRoll: null, target: null }, advantage: 0,
+      effects: 0, winner: null };
+      combat.status = "resolved";
+      combat.damage = { status: "ready" };
+      combat.revision += 1;
+      await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+      return true;
+    }
     combat.status = "resolved";
     const attackHits = combatAttackHits(combat.resolution);
     const damagesWeapon = Boolean(combatWeaponDamagePlan(combat));
-    combat.damage = { status: attackHits || damagesWeapon ? "ready" : "unavailable" };
+    const surrenderReplacesDamage = combat.effects.selections.some((effect) => !effect.waived
+      && effect.key === "forzar-rendicion");
+    combat.damage = { status: !surrenderReplacesDamage && (attackHits || damagesWeapon)
+      ? "ready" : "unavailable" };
     if (!attackHits) combat.effects.selections.forEach((effect) => {
       if (effect.requiresWound) effect.status = "notActivated";
     });

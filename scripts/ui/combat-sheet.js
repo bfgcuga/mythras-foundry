@@ -36,13 +36,14 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
   const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
   const durability = npcWeaponDurability(weapon, hitLocations);
   const durabilityState = weaponDurabilityState(durability);
+  const inoperable = Boolean(weapon.system.inoperable);
   return {
     item: weapon, mode, displayName: weaponModeDisplayName(weapon, mode),
     pinned: weaponIsPinned(weapon, actor),
     handsRequired: weaponHandsRequired(weapon, mode),
-    prepared: Boolean(weaponCanEquip(durability) && weapon.system.equipped
+    prepared: Boolean(!inoperable && weaponCanEquip(durability) && weapon.system.equipped
       && weapon.system.activeModeKey === mode.key),
-    durabilityState, broken: durabilityState === "broken", damaged: durabilityState === "damaged",
+    durabilityState, inoperable, broken: durabilityState === "broken", damaged: durabilityState === "damaged",
     brokenLocationReference: hasBrokenHitLocationReference(weapon, hitLocations),
     styleOptions: [
       ...candidates.map((style) => ({ id: style.id, name: style.name,
@@ -64,7 +65,7 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
     hasTargetPenalty: effectiveTarget !== resolution.target,
     canAttack: canActorAttack(actor.statuses) && resolution.difficulty !== "impossible"
       && !weaponIsPinned(weapon, actor)
-      && weaponCanEquip(durability) && weapon.system.equipped
+      && !inoperable && weaponCanEquip(durability) && weapon.system.equipped
       && weapon.system.activeModeKey === mode.key
       && (Boolean(resolution.style) || resolution.usesBase),
     durabilityDisplay: `${durability.armorPoints} / ${durability.currentHitPoints}–${durability.maxHitPoints}`

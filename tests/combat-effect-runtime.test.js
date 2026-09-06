@@ -168,6 +168,58 @@ test("Marcar Enemigo se resuelve como narración sin pruebas ni cambios en docum
   assert.equal(state.consequencesApplied, undefined);
 });
 
+test("Inutilizar Arma marca el arma atacante sin alterar su durabilidad", async () => {
+  const updates = [];
+  const weapon = { id: "bow", name: "Arco", type: "weapon",
+    system: { currentHitPoints: 6, maxHitPoints: 6 },
+    async update(change) { updates.push(change); Object.assign(this.system,
+      { inoperable: change["system.inoperable"] }); } };
+  const items = new Map([[weapon.id, weapon]]);
+  const state = combat([{ key: "inutilizar-arma", side: "defender", slot: 0 }]);
+  state.attacker.weaponId = weapon.id;
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" }, {
+    resolveActor: async (token, uuid) => uuid === "Actor.attacker" ? { items } : null
+  });
+  assert.deepEqual(updates, [{ "system.inoperable": true }]);
+  assert.equal(weapon.system.currentHitPoints, 6);
+  assert.equal(state.effects.selections[0].status, "resolved");
+  assert.equal(state.effects.selections[0].resolution.weaponName, "Arco");
+});
+
+test("Forzar Rendición solicita Voluntad y expresa ambos resultados", async () => {
+  const effect = { key: "forzar-rendicion", name: "Forzar Rendición", side: "attacker", slot: 0 };
+  const state = combat([effect]);
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" }, dependencies());
+  const check = state.effects.checks[0];
+  assert.deepEqual(check.abilitySlugs, ["voluntad"]);
+  assert.equal(check.opposedSide, "attacker");
+  check.resolution = { winner: "left" };
+  await applyCombatEffectCheckConsequence(state, check, { uuid: "Actor.defender" }, dependencies());
+  assert.equal(check.consequence.key, "didNotSurrender");
+  check.resolution = { winner: "right" };
+  await applyCombatEffectCheckConsequence(state, check, { uuid: "Actor.defender" }, dependencies());
+  assert.equal(check.consequence.key, "surrendered");
+});
+
+test("Disparo de Supresión enfrenta Voluntad y aplica un único turno sin exigir daño", async () => {
+  const conditions = [];
+  const effect = { key: "disparo-de-supresion", name: "Disparo de Supresión",
+    side: "attacker", slot: 0 };
+  const state = combat([effect]);
+  state.damage.penetratingDamage = 0;
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" },
+    dependencies({ conditions }));
+  const check = state.effects.checks[0];
+  assert.deepEqual(check.abilitySlugs, ["voluntad"]);
+  assert.equal(check.opposedSide, "attacker");
+  check.resolution = { winner: "right" };
+  await applyCombatEffectCheckConsequence(state, check, { uuid: "Actor.defender" },
+    dependencies({ conditions }));
+  assert.equal(conditions[0].condition.key, "suppressed");
+  assert.equal(conditions[0].condition.duration.value, 1);
+  assert.equal(check.consequence.key, "suppressed");
+});
+
 test("Enredar aplica a la localización impactada y bloquea el objeto elegido en un brazo", async () => {
   const effects = [];
   const sword = { id: "sword", type: "weapon", system: { equipped: true, handsRequired: 1 } };
@@ -189,4 +241,40 @@ test("Enredar aplica a la localización impactada y bloquea el objeto elegido en
   assert.equal(data.weaponId, sword.id);
   assert.equal(data.locationId, arm.id);
   assert.equal(state.effects.selections[0].status, "resolved");
+});
+
+test("Empalar custodia el arma en la víctima solo cuando causa una herida", async () => {
+  const activeEffects = [];
+  const weapon = { id: "trident", name: "Tridente", type: "weapon", system: {
+    equipped: true, traitRefs: [{ key: "barbada" }], modes: [] },
+  toObject: () => ({ _id: "trident", name: "Tridente", type: "weapon",
+    system: { equipped: true, traitRefs: [{ key: "barbada" }] } }) };
+  const head = { id: "head", type: "hitLocation", system: {} };
+  const victimItems = new Map([[head.id, head]]);
+  const ownerItems = new Map([[weapon.id, weapon]]);
+  const victim = { uuid: "Actor.defender", name: "Víctima", system: { size: 12 },
+    items: victimItems, effects: activeEffects,
+    async createEmbeddedDocuments(type, sources) {
+      const created = sources.map((source, index) => ({ id: `impale-${index}`, ...source }));
+      activeEffects.push(...created); return created;
+    } };
+  const owner = { uuid: "Actor.attacker", name: "Atacante", items: ownerItems,
+    async deleteEmbeddedDocuments(type, ids) { ids.forEach((id) => ownerItems.delete(id)); } };
+  const effect = { key: "empalar", side: "attacker", slot: 0, status: "resolved" };
+  const state = combat([effect]);
+  state.attacker.weaponId = weapon.id;
+  state.attacker.weaponSize = "G";
+  state.attacker.modeSnapshot = { key: "thrust", damage: "1d8", impalingSize: "M" };
+  state.damage.resultingWound = "minor";
+  await applyPostDamageCombatEffects(state, { resolveActor: async (token, uuid) =>
+    uuid === victim.uuid ? victim : owner, localize: (key) => key, combatById: () => null });
+  assert.equal(ownerItems.has(weapon.id), false);
+  assert.equal(activeEffects.length, 1);
+  const data = activeEffects[0].flags["mythras-foundry"].timedCondition;
+  assert.equal(data.key, "impaled");
+  assert.equal(data.weaponName, "Tridente");
+  assert.equal(data.damageFormula, "1d8");
+  assert.equal(data.barbed, true);
+  assert.equal(data.difficultyKey, "formidable");
+  assert.equal(effect.status, "resolved");
 });

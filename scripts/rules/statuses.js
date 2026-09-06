@@ -22,8 +22,11 @@ export const BURNING_STATUS_ID = "burning";
 export const SUFFOCATING_STATUS_ID = "suffocating";
 export const DYING_STATUS_ID = "dying";
 export const ENTANGLED_STATUS_ID = "entangled";
+export const IMPALED_STATUS_ID = "impaled";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
+  { id: IMPALED_STATUS_ID, name: "MYTHRASF.Status.Impaled",
+    img: "icons/svg/blood.svg" },
   { id: ENTANGLED_STATUS_ID, name: "MYTHRASF.Status.Entangled",
     img: "icons/svg/net.svg" },
   { id: "grabbed", name: "MYTHRASF.Status.Grabbed", img: "icons/svg/net.svg",

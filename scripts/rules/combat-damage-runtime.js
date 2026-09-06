@@ -5,6 +5,8 @@ import { damageLocationChoices, independentCombatEffectChecks, majorWoundLuckAdj
 import { parryReduction, resolveDamage } from "./combat.js";
 import { bypassArmorProtection } from "./combat-bypass-armor.js";
 import { totalArmorPoints } from "./armor.js";
+import { armorDurabilityState, armorMaximumPoints, armorSunderLayer,
+  armorSunderResult } from "./armor-durability.js";
 import { combatWeaponDamagePlan, selectedEffectCount } from "./combat-effects.js";
 import { applyLongRangeDamage } from "./ranged-combat.js";
 import { clearEntanglementsFromWeapon } from "./entanglement.js";
@@ -16,7 +18,7 @@ export function combatDamageDocumentIsCurrent({ location, damage, armorPoints })
     && Number(armorPoints) === Number(damage.armorSnapshot);
 }
 
-export async function applyCombatDamageDocument({ location, damage, targetType = "actor",
+export async function applyCombatDamageDocument({ location, armorTarget = null, damage, targetType = "actor",
   manual = false, evaluateRoll, format }) {
   if (!location?.update || !damage || typeof evaluateRoll !== "function"
     || typeof format !== "function") throw new TypeError("invalid-combat-damage-runtime");
@@ -49,6 +51,16 @@ export async function applyCombatDamageDocument({ location, damage, targetType =
     serializedPermanentWoundRoll = permanentRoll.toJSON?.() ?? null;
   }
 
+  if (appliedDamage.sunderArmor && armorTarget) {
+    const armorUpdate = { "system.armorPoints": appliedDamage.sunderArmor.after };
+    if (!Number(armorTarget.system.maxArmorPoints ?? 0)) {
+      armorUpdate["system.maxArmorPoints"] = appliedDamage.sunderArmor.maximum;
+    }
+    if (appliedDamage.sunderArmor.kind === "worn"
+      && appliedDamage.sunderArmor.after <= 0) armorUpdate["system.equipped"] = false;
+    if (armorTarget.id === location.id) Object.assign(locationUpdate, armorUpdate);
+    else await armorTarget.update(armorUpdate);
+  }
   await location.update(locationUpdate);
   return { damage: appliedDamage, serializedPermanentWoundRoll };
 }
@@ -106,9 +118,11 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   combat.damage.status = "applying";
   combat.revision += 1;
   await message.update({ [`flags.${flagScope}.combat`]: combat });
+  const armorTarget = combat.damage.sunderArmor?.kind === "natural" ? location
+    : defender.items.get(combat.damage.sunderArmor?.itemId);
   let damageApplication;
   try {
-    damageApplication = await applyCombatDamageDocument({ location, damage: combat.damage,
+    damageApplication = await applyCombatDamageDocument({ location, armorTarget, damage: combat.damage,
       targetType, manual: request.manual, evaluateRoll, format });
   } catch (error) {
     combat.damage.status = "proposed";
@@ -136,8 +150,61 @@ export async function applyProposedCombatDamage(message, request, { clone, flagS
   await applyAutomaticEffectChecks?.(combat);
   combat.damage.appliedBy = user.id;
   combat.damage.appliedAt = Date.now();
+  const penetrationEffect = (combat.effects?.selections ?? []).find((effect) =>
+    !effect.waived && effect.key === "potenciar-penetracion");
+  if (penetrationEffect && combat.penetration?.status !== "secondary") {
+    if (targetType !== "weapon" && Number(combat.damage.penetratingDamage) > 0) {
+      penetrationEffect.status = "resolved";
+      combat.penetration = { status: "awaitingTarget",
+        primaryDefender: clone(combat.defender), primaryDamage: clone(combat.damage),
+        primaryEffects: clone(combat.effects) };
+      combat.revision += 1;
+      await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+      return true;
+    }
+    penetrationEffect.status = "notActivated";
+  }
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
   await advance(message, combat);
+  return true;
+}
+
+export async function applyPenetrationTargetTransition(message, request, { clone, flagScope,
+  resolveToken, resolveActor, userById, actorIdentity, tokenIdentity, tokenName, locationSnapshot, findLocation,
+  combatantFor, refreshProposal, render, appendRolls } = {}) {
+  const combat = clone(message.getFlag(flagScope, "combat"));
+  const token = await resolveToken(request.tokenUuid);
+  const actor = token?.actor;
+  const attacker = await resolveActor(combat?.attacker?.tokenUuid, combat?.attacker?.actorUuid);
+  const user = userById(request.userId);
+  if (!combat || combat.penetration?.status !== "awaitingTarget" || !actor
+    || !attacker || !user || (!user.isGM && !attacker.testUserPermission(user, "OWNER"))
+    || [combat.attacker.actorUuid, combat.penetration.primaryDefender?.actorUuid]
+      .includes(actor.uuid) || Number(request.revision) !== Number(combat.revision)) return false;
+  const locations = actor.items.filter((item) => item.type === "hitLocation");
+  const location = findLocation(locations, Number(request.locationRoll));
+  combat.penetration.status = "secondary";
+  combat.penetration.secondaryTarget = { actorUuid: actor.uuid, tokenUuid: tokenIdentity(token),
+    actorName: tokenName(token), selectedBy: request.userId, selectedAt: Date.now() };
+  combat.penetration.secondaryCombatantId = combatantFor?.(combat.turnEconomy?.combatId,
+    tokenIdentity(token), actor.uuid)?.id ?? "";
+  combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenName(token),
+    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: actor.system.size,
+    targetType: "actor", targetWeaponId: "", locations: locations.map(locationSnapshot) };
+  combat.effects = { selections: [], checks: [], confirmed: true };
+  const primary = combat.penetration.primaryDamage;
+  const attenuated = Math.ceil(Number(primary.afterRange ?? primary.rawRoll ?? 0) / 2);
+  combat.damage = { status: location ? "rolled" : "missedLocation", targetType: "actor",
+    rawRoll: attenuated, formula: `ceil((${primary.formula ?? primary.rawRoll}) / 2)`,
+    resultExpression: `${attenuated}`, rollExpression: `${attenuated}`,
+    weaponFormula: primary.weaponFormula, modifierFormula: primary.modifierFormula,
+    extraordinaryFormula: primary.extraordinaryFormula, locationRoll: Number(request.locationRoll),
+    serializedLocationRoll: request.serializedLocationRoll ?? null,
+    rolledLocationId: location?.id ?? "", locationId: location?.id ?? "" };
+  if (location) await refreshProposal(combat, location.id);
+  combat.revision += 1;
+  await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+  if (request.serializedLocationRoll) await appendRolls(message, [request.serializedLocationRoll]);
   return true;
 }
 
@@ -166,8 +233,11 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   if (improveParry) parry = { type: "full" };
   if (bypassParry) parry = { type: "none" };
   const tracker = combat.turnEconomy ? combatById(combat.turnEconomy.combatId) : null;
-  const passive = !weaponTarget && tracker ? passiveBlockFor(tracker,
-    combat.turnEconomy.defenderCombatantId, location.id) : null;
+  const targetCombatantId = combat.penetration?.status === "secondary"
+    ? combat.penetration.secondaryCombatantId : combat.turnEconomy?.defenderCombatantId;
+  const accidentalSelfHit = combat.accidentalWound?.status === "active";
+  const passive = !accidentalSelfHit && !weaponTarget && tracker ? passiveBlockFor(tracker,
+    targetCombatantId, location.id) : null;
   let passiveParry = { type: "none" };
   if (!bypassParry && parry.type !== "full" && Number(combat.damage.rawRoll) > 0 && passive) {
     passiveParry = parryReduction(combat.attacker.weaponSize, passive.weaponSize);
@@ -176,19 +246,47 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   } else delete combat.damage.passiveBlock;
   const protection = weaponTarget ? null : bypassArmorProtection(location,
     defender.items.filter((item) => item.type === "armor"), combat.effects?.selections ?? []);
-  const effectiveArmor = protection?.effective ?? armor;
-  combat.damage.ignoredArmorTypes = protection?.ignored ?? [];
-  const rangeAdjustedDamage = weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
+  const ignoresAllArmor = accidentalSelfHit && combat.accidentalWound.ignoresArmor;
+  const effectiveArmor = ignoresAllArmor ? 0 : protection?.effective ?? armor;
+  combat.damage.ignoredArmorTypes = ignoresAllArmor ? ["worn", "natural"]
+    : protection?.ignored ?? [];
+  const rangeAdjustedDamage = combat.penetration?.status === "secondary"
+    ? Number(combat.damage.rawRoll)
+    : weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
     ? Number(combat.damage.rawRoll) : applyLongRangeDamage(combat.damage.rawRoll, combat.ranged?.band);
-  const cover = !weaponTarget && defense?.type === "cover" && tracker ? coverFor(tracker,
-    combat.turnEconomy.defenderCombatantId, location.id) : null;
+  const bypassesCover = (combat.effects?.selections ?? []).some((effect) =>
+    !effect.waived && effect.key === "sortear-cobertura");
+  const cover = !accidentalSelfHit && !bypassesCover && !weaponTarget
+    && defense?.type === "cover" && tracker ? coverFor(tracker,
+    targetCombatantId, location.id) : null;
   const coverProtection = Math.max(0, Number(cover?.protection ?? 0));
   const calculation = resolveDamage({ rolledDamage: rangeAdjustedDamage,
-    containedBlow: weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
+    containedBlow: combat.penetration?.status === "secondary" ? false
+      : weaponTarget && combat.damage?.weaponTarget?.sourceSide === "defender"
       ? false : combat.declarations?.containedBlow,
     parry, passiveBlock: passiveParry,
     coverPoints: coverProtection,
     armorPoints: effectiveArmor, targetSize: defender.system.size });
+  const sundering = !weaponTarget && (combat.effects?.selections ?? []).some((effect) =>
+    !effect.waived && effect.key === "hender-armadura");
+  const sunderLayer = sundering ? armorSunderLayer(location,
+    defender.items.filter((item) => item.type === "armor")) : null;
+  if (sunderLayer) {
+    const sunder = armorSunderResult({ damage: calculation.afterCover,
+      protectionPoints: effectiveArmor, armorPoints: sunderLayer.item.system.armorPoints });
+    calculation.penetratingDamage = sunder.penetratingDamage;
+    calculation.sunderArmor = { kind: sunderLayer.kind, itemId: sunderLayer.item.id,
+      itemName: sunderLayer.kind === "natural" ? hitLocationDisplayName(location) : sunderLayer.item.name,
+      before: sunder.armorBefore, after: sunder.armorAfter,
+      maximum: armorMaximumPoints(sunderLayer.item), damage: sunder.armorDamage,
+      excess: sunder.excess, state: armorDurabilityState({ armorPoints: sunder.armorAfter,
+        maxArmorPoints: armorMaximumPoints(sunderLayer.item) }) };
+  } else if (sundering) {
+    calculation.penetratingDamage = calculation.afterCover;
+    calculation.sunderArmor = { kind: "none", itemId: "", itemName: "", before: 0,
+      after: 0, maximum: 0, damage: 0, excess: calculation.afterCover,
+      state: "intact" };
+  }
   calculation.activeParry = activeParry && !bypassParry;
   calculation.beforeRange = Number(combat.damage.rawRoll);
   calculation.afterRange = rangeAdjustedDamage;

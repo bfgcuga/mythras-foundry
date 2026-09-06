@@ -31,7 +31,9 @@ El sistema incluye actualmente:
 - Dañar Arma automatizado cuando existe una parada: el uso ofensivo daña el arma
   de parada y el defensivo usa el daño del arma de parada contra el arma atacante;
   la tarjeta aplica los PA y PG de la instancia concreta, y las armas rotas se
-  desequipan y quedan inutilizables hasta ser reparadas;
+  desequipan y quedan inutilizables hasta ser reparadas. En las hojas solo el
+  nombre del arma adopta el color de durabilidad; manos, porcentaje y tirada no
+  se presentan como penalizados;
 - atributos derivados, recursos, experiencia, fatiga, heridas por localización,
   carga e iniciativa modificada por armadura, con una pestaña en las hojas de
   personaje y PNJ que desglosa sus penalizaciones, estados y totales aplicados;
@@ -178,6 +180,52 @@ El sistema incluye actualmente:
   liberarse mediante una enfrentada de Músculo, mientras el captor puede intentar
   Derribar Oponente desde su turno posterior. Dañar o desarmar el arma de enredo
   y el efecto crítico «Liberarse» retiran las condiciones correspondientes.
+  «Forzar Rendición» pide autorización al DJ antes de confirmar la selección;
+  si se deniega, vuelve al selector. Si se autoriza, sustituye el daño por una
+  tirada de Voluntad enfrentada a la tirada original y muestra si el rival se
+  rinde o no se rinde.
+  «Hender Armadura» aplica el daño posterior a parada y bloqueos contra la
+  protección de la localización; el exceso reduce los PA de la capa equipada
+  más fuerte o, si no existe, de la protección natural, y solo el sobrante tras
+  destruirla alcanza los PG. Las protecciones dañadas muestran sus PA actuales
+  y máximos; las piezas destruidas se desequipan y no pueden volver a equiparse.
+  «Inutilizar Arma» marca el arma del atacante que obtuvo la pifia sin dañar sus
+  PG: no puede atacar ni parar, se distingue en Inventario y Combate y dispone
+  de una reparación gratuita en su fila de inventario.
+  «Tiro Apuntado» tira primero la localización y permite sustituirla antes de
+  tirar el daño. El diálogo ofrece toda la anatomía y recuerda elegir solo una
+  localización contigua; la proximidad no se interpreta ni valida automáticamente.
+  «Disparo de Supresión» está disponible si el tirador y su blanco utilizan armas
+  a distancia. Enfrenta la Voluntad del blanco a la tirada original aunque no
+  haya daño; si falla, queda Suprimido y no puede realizar ataques a distancia
+  durante su siguiente turno, sin perder sus demás acciones.
+  «Forzar Fallo» solo puede acompañar a un único efecto que requiera resistencia
+  cuando el rival ha obtenido una pifia. Ese efecto aplica directamente el fallo
+  de la resistencia, sin tirar dados ni ofrecer repetición mediante Suerte.
+  «Potenciar Penetración» requiere autorización previa del DJ. El daño se resuelve
+  primero contra el blanco original y solo continúa si lo penetra; entonces el
+  atacante elige otro blanco visible, se tira su localización y se aplica la mitad
+  del daño que conservaba el proyectil, sin trasladar los Efectos de Combate.
+  «Sortear Cobertura» también requiere autorización previa del DJ y, una vez
+  aceptado, elimina la reducción de cobertura del cálculo de daño sin ignorar la
+  armadura ni las demás protecciones aplicables.
+  «Escoger Objetivo» aparece para el defensor cuando el atacante obtiene una
+  pifia y requiere autorización previa del DJ. Tras aceptarlo, el defensor elige
+  libremente otra víctima visible: el sistema no valida alcance, adyacencia ni
+  línea de tiro. El ataque impacta automáticamente al nuevo blanco, que recibe
+  el daño normal pero ningún Efecto de Combate.
+  «Herida Accidental» redirige automáticamente el ataque contra el propio
+  atacante y obtiene una localización al azar al tirar el daño. Usa la fórmula
+  del arma atacante; si el ataque era desarmado, ignora tanto la armadura
+  equipada como la protección natural.
+  «Empalar» conserva la elección del mejor de dos daños y, cuando atraviesa la
+  protección y causa una herida, traslada el arma completa desde el atacante a
+  un estado «Empalado» de la víctima. La penalización se calcula por el TAM de
+  ambos y solo se aplica la más grave. Cualquier personaje trabado con la víctima
+  dispone, al principio de sus acciones, de «Recuperar arma empalada»: enfrenta
+  Músculo si la víctima se resiste, devuelve el arma al inventario del vencedor
+  y causa en la misma localización la mitad del daño del arma —o el daño completo
+  si es Barbada—, sin Modificador de Daño ni reducción por armadura.
   «Ardid» permite preparar en secreto un efecto ofensivo
   concreto contra el rival del intercambio: si este lo selecciona más adelante,
   su efecto se sustituye antes de resolverlo y el defensor elige un efecto

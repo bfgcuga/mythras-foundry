@@ -9,6 +9,7 @@ test("la durabilidad deriva estados sin persistirlos", () => {
   assert.equal(weaponDurabilityState({ currentHitPoints: 0, maxHitPoints: 8 }), "broken");
   assert.equal(weaponDurabilityState({ currentHitPoints: 0, maxHitPoints: 0 }), "indestructible");
   assert.equal(weaponCanEquip({ currentHitPoints: 3, maxHitPoints: 8 }), true);
+  assert.equal(weaponCanEquip({ currentHitPoints: 8, maxHitPoints: 8, inoperable: true }), false);
   assert.equal(weaponCanEquip({ currentHitPoints: 0, maxHitPoints: 8 }), false);
   assert.equal(weaponCanEquip(null), false);
   assert.equal(weaponHasDurability({ maxHitPoints: 0 }), false);

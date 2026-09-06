@@ -2785,15 +2785,33 @@
 .mythras-foundry .equipment-state-toggle:not(.equipped):hover { color: rgb(61 57 51 / 48%); }
 .mythras-foundry .equipment-state-toggle.equipped { color: var(--mythras-accent); background: transparent !important; opacity: 1; }
 .mythras-foundry .equipment-state-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
-.mythras-foundry .weapon-durability-damaged,
 .mythras-foundry .weapon-durability-damaged .item-name,
-.mythras-foundry .weapon-durability-damaged button { color: #9f1d20; }
-.mythras-foundry .weapon-durability-broken,
+.mythras-foundry .weapon-durability-damaged [data-action="edit-item"] { color: #9f1d20; }
 .mythras-foundry .weapon-durability-broken .item-name,
-.mythras-foundry .weapon-durability-broken button,
+.mythras-foundry .weapon-durability-broken [data-action="edit-item"],
+.mythras-foundry .armor-durability-broken .item-name,
+.mythras-foundry .armor-durability-broken [data-action="edit-item"],
 .mythras-chat-card .weapon-durability-broken { color: #b65312; }
+.mythras-foundry .armor-durability-damaged .item-name,
+.mythras-foundry .armor-durability-damaged [data-action="edit-item"],
+.mythras-foundry .natural-armor-cell.armor-durability-damaged,
+.mythras-chat-card .armor-durability-damaged { color: #9f1d20; }
+.mythras-foundry .natural-armor-cell.armor-durability-broken,
+.mythras-chat-card .armor-durability-broken { color: #b65312; }
 .mythras-chat-card .weapon-durability-damaged { color: #9f1d20; }
 .mythras-chat-card .weapon-durability-unharmed { color: var(--mythras-ink); }
+.mythras-foundry .weapon-inoperable .item-name,
+.mythras-foundry .weapon-inoperable [data-action="edit-item"] {
+  color: #7a3f87;
+  text-decoration: line-through;
+}
+.mythras-foundry [data-item-id]:has(> [data-action="repair-inoperable-weapon"]) {
+  position: relative;
+}
+.mythras-foundry [data-action="repair-inoperable-weapon"] {
+  position: absolute;
+  right: 2rem;
+}
 .mythras-foundry .equipment-state-toggle:disabled { cursor: not-allowed; opacity: 0.75; }
 .mythras-foundry .armor-toggle { font-size: 1rem; }
 

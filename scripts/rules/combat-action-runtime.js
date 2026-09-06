@@ -14,6 +14,9 @@ import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
 import { advanceActorTurnConditions } from "./timed-condition-runtime.js";
 import { weaponCanEquip } from "./weapon-durability.js";
+import { impalementsReachableBy, extractionDamage } from "./impalement.js";
+import { applyStrengthContestPenalties } from "./strength-contests.js";
+import { difficultyTarget } from "./combat.js";
 import { COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
   chargeEligibility, chargeModifiers, movementDeclaration,
   normalizeCombatActionState, combatActionPresentation } from "./combat-actions.js";
@@ -79,6 +82,7 @@ export function actionPresentation(actor) {
     rooted: actorIsRooted(actor),
     hasPinnedWeapon: weaponPins(actor).length > 0,
     hasDelay: state.delays[combatant?.id]?.status === "reserved",
+    hasReachableImpaledWeapon: impalementsReachableBy(combat, actor).length > 0,
     canCharge: chargeEligibility(state.movements[combatant?.id], combat?.round).eligible });
 }
 
@@ -88,6 +92,7 @@ export function decorateCombatActionButtons(actor, root) {
     const key = button.dataset.combatActionKey;
     const state = presentation[key] ?? { available: false, cost: 1, reason: "unavailable" };
     button.hidden = (key === "releaseWeapon" && !weaponPins(actor).length)
+      || (key === "recoverImpaledWeapon" && !presentation.recoverImpaledWeapon?.available)
       || (key === "releaseGrab" && !isGrabbed(actor))
       || (key === "releaseEntangle" && !activeEntanglements(actor).length)
       || (key === "entangleTrip" && !presentation.entangleTrip?.available);
@@ -106,6 +111,109 @@ async function spend(actor, cost = 1) {
   const current = currentActionPoints(actor);
   if (current < cost) return false;
   await actor.update({ "system.resources.actionPoints.value": current - cost });
+  return true;
+}
+
+async function requestRecoverImpaledWeapon(actor) {
+  const context = activeContext(actor);
+  if (!context || currentActionPoints(actor) < 1) return;
+  const choices = impalementsReachableBy(context.combat, actor);
+  if (!choices.length) return;
+  const chosen = choices.length === 1 ? choices[0]
+    : await foundry.applications.api.DialogV2.wait({
+      window: { title: localize("MYTHRASF.Action.recoverImpaledWeapon") },
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize(
+        "MYTHRASF.Impale.Weapon"))}</span><select name="choice">${choices.map((entry, index) =>
+        `<option value="${index}">${escape(entry.data.weaponName)} — ${escape(entry.victimName)}</option>`)
+      .join("")}</select></label></div>`,
+      buttons: [{ action: "confirm", label: localize("MYTHRASF.Confirm"), default: true,
+        callback: (event, button) => choices[Number(button.form.elements.choice.value)] },
+      { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false });
+  if (!chosen) return;
+  const resisted = await foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.Impale.ResistanceTitle") },
+    content: `<p>${escape(game.i18n.format("MYTHRASF.Impale.ResistancePrompt", {
+      victim: chosen.victimName }))}</p>` });
+  const ownSkill = actor.items.find((item) => item.type === "skill" && item.system.slug === "musculo");
+  const rivalSkill = chosen.victim.items.find((item) => item.type === "skill"
+    && item.system.slug === "musculo");
+  if (!ownSkill || (resisted && !rivalSkill)) return;
+  const ownRoll = await evaluateSystemRoll("1d100");
+  const rivalRoll = resisted ? await evaluateSystemRoll("1d100") : null;
+  const request = { action: "combatImpaleRecovery", combatId: context.combat.id,
+    combatantId: context.combatant.id, victimCombatantId: chosen.victimCombatantId,
+    effectId: chosen.effect.id, resisted, ownRoll: ownRoll.total,
+    rivalRoll: rivalRoll?.total ?? null, serializedOwnRoll: ownRoll.toJSON(),
+    serializedRivalRoll: rivalRoll?.toJSON?.() ?? null, userId: game.user.id };
+  if (game.mythrasFoundry?.combat?.isCoordinator?.()) {
+    await applyImpaledWeaponRecoveryRequest(request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+export async function applyImpaledWeaponRecoveryRequest(request) {
+  const combat = game.combats.get(request.combatId);
+  const combatant = combat?.combatants.get(request.combatantId);
+  const actor = combatant?.actor; const user = game.users.get(request.userId);
+  const rollsValid = Number.isInteger(Number(request.ownRoll)) && Number(request.ownRoll) >= 1
+    && Number(request.ownRoll) <= 100 && (!request.resisted
+      || (Number.isInteger(Number(request.rivalRoll)) && Number(request.rivalRoll) >= 1
+        && Number(request.rivalRoll) <= 100));
+  if (!combat?.started || combat.combatant?.id !== combatant?.id || !actor || !user || !rollsValid
+    || (!user.isGM && !actor.testUserPermission(user, "OWNER"))
+    || currentActionPoints(actor) < 1) return false;
+  const chosen = impalementsReachableBy(combat, actor).find((entry) =>
+    entry.victimCombatantId === request.victimCombatantId && entry.effect.id === request.effectId);
+  if (!chosen) return false;
+  const ownSkill = actor.items.find((item) => item.type === "skill" && item.system.slug === "musculo");
+  const rivalSkill = chosen.victim.items.find((item) => item.type === "skill"
+    && item.system.slug === "musculo");
+  if (!ownSkill || (request.resisted && !rivalSkill)) return false;
+  const participant = (id, subject, skill) => {
+    const difficulty = resolveActorConditions(subject, { baseDifficulty: "standard",
+      physical: true }).difficulty;
+    return { id, abilitySlug: "musculo", difficulty, baseTarget: Number(skill.system.total ?? 0),
+      target: difficultyTarget(skill.system.total, difficulty),
+      damageModifier: subject.system.attributes?.damageModifier };
+  };
+  const participants = applyStrengthContestPenalties([participant("recoverer", actor, ownSkill),
+    ...(request.resisted ? [participant("victim", chosen.victim, rivalSkill)] : [])]);
+  const own = participants[0]; const rival = participants[1];
+  const ownResult = { result: classifyContestRoll(request.ownRoll, own.target),
+    rawRoll: Number(request.ownRoll) };
+  const rivalResult = rival ? { result: classifyContestRoll(request.rivalRoll, rival.target),
+    rawRoll: Number(request.rivalRoll) } : null;
+  const recovered = rivalResult ? opposedEffectWinner(ownResult, rivalResult) === "left"
+    : ["success", "critical"].includes(ownResult.result);
+  if (!await spend(actor, 1)) return false;
+  let dealt = 0; let damageRoll = null;
+  if (recovered) {
+    const weaponData = foundry.utils.deepClone(chosen.data.weaponData);
+    weaponData.system = { ...weaponData.system, equipped: false };
+    const created = await actor.createEmbeddedDocuments("Item", [weaponData]);
+    try {
+      await chosen.victim.deleteEmbeddedDocuments("ActiveEffect", [chosen.effect.id]);
+    } catch (error) {
+      await actor.deleteEmbeddedDocuments("Item", created.map((item) => item.id));
+      throw error;
+    }
+    damageRoll = await evaluateSystemRoll(chosen.data.damageFormula || "0");
+    dealt = extractionDamage(damageRoll.total, chosen.data.barbed);
+    const location = chosen.victim.items.get(chosen.data.locationId);
+    if (location) await location.update({ "system.currentHitPoints":
+      Number(location.system.currentHitPoints ?? 0) - dealt });
+  }
+  const rolls = [Roll.fromData(request.serializedOwnRoll),
+    ...(request.serializedRivalRoll ? [Roll.fromData(request.serializedRivalRoll)] : []),
+    ...(damageRoll ? [damageRoll] : [])];
+  await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), rolls,
+    content: `<section class="mythras-chat-card"><h3 class="mythras-chat-title">${escape(localize(
+      "MYTHRASF.Action.recoverImpaledWeapon"))}</h3><div class="mythras-chat-row"><span>${escape(
+      ownSkill.name)} (${own.target}%)</span><strong class="mythras-chat-roll-value">${request.ownRoll}</strong></div>${rivalResult
+      ? `<div class="mythras-chat-row"><span>${escape(rivalSkill.name)} (${rival.target}%)</span><strong class="mythras-chat-roll-value">${request.rivalRoll}</strong></div>` : ""}<div class="mythras-chat-total"><span>${escape(localize(
+      "MYTHRASF.Pin.Outcome"))}</span><strong>${escape(localize(recovered
+        ? "MYTHRASF.Impale.Recovered" : "MYTHRASF.Impale.Stuck"))}</strong></div>${recovered
+      ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Damage"))}</span><strong>${dealt}</strong></div>` : ""}</section>` });
+  await combat.nextTurn();
   return true;
 }
 
@@ -283,6 +391,7 @@ export async function requestCombatAction(actor, key) {
   }
   let parameters = {};
   if (key === "releaseGrab") return requestGrabRelease(actor);
+  if (key === "recoverImpaledWeapon") return requestRecoverImpaledWeapon(actor);
   if (key === "releaseWeapon") return requestWeaponRelease(actor);
   if (key === "releaseEntangle") return requestEntangleRelease(actor);
   if (key === "entangleTrip") return requestEntangleTrip(actor);
@@ -370,6 +479,10 @@ export function activateCombatActionCard(message, html) {
 
 export function registerCombatActionSocket() {
   game.socket.on(SOCKET, async (request) => {
+    if (request?.action === "combatImpaleRecovery"
+      && game.mythrasFoundry?.combat?.isCoordinator?.()) {
+      await applyImpaledWeaponRecoveryRequest(request);
+    }
     if (request?.action === "combatAction" && game.mythrasFoundry?.combat?.isCoordinator?.()) {
       await applyCardRequest(request);
     }

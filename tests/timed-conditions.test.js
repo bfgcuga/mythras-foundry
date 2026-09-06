@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { advanceActorTurnDuration, advanceRoundDuration, expiresAtRoundEnd, fatigueLossForResult,
   timedConditionSource, worsenFatigueLevel } from "../scripts/rules/timed-conditions.js";
+import { timedAttackRestriction } from "../scripts/rules/timed-condition-runtime.js";
 
 test("las duraciones configurables por asaltos se reducen hasta expirar", () => {
   const condition = timedConditionSource({ key: "prone", combat: { uuid: "Combat.a" },
@@ -38,6 +39,16 @@ test("varios turnos solo descuentan uno por final de turno propio", () => {
   const result = advanceActorTurnDuration(condition);
   assert.equal(result.action, "update");
   assert.equal(result.condition.remaining, 2);
+});
+
+test("la supresión bloquea cualquier ataque a distancia y permite otras acciones", () => {
+  const condition = timedConditionSource({ key: "suppressed",
+    source: { actorUuid: "Actor.shooter" }, duration: { unit: "actorTurn", value: 1 } });
+  const actor = { effects: [{ flags: { "mythras-foundry": { timedCondition: condition } } }] };
+  assert.equal(timedAttackRestriction(actor,
+    { weaponType: "ranged", targetActorUuid: "Actor.other" }), "suppressed");
+  assert.equal(timedAttackRestriction(actor, { weaponType: "siege" }), "suppressed");
+  assert.equal(timedAttackRestriction(actor, { weaponType: "melee" }), null);
 });
 
 test("las duraciones de asalto solo vencen en su combate", () => {

@@ -6,6 +6,7 @@ import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
   INCAPACITATED_STATUS_ID } from "./incapacitated.js";
 import { activeStatusRules } from "./statuses.js";
 import { actorHasVitalEntanglement, actorIsRooted } from "./entanglement.js";
+import { impalementConditionDescriptors } from "./impalement.js";
 
 const actorItems = (actor) => Array.from(actor?.items ?? []);
 
@@ -37,6 +38,7 @@ export function resolveActorConditions(actor, { baseAttributes = actor?.system?.
   const state = actorConditionState(actor, { fatigueKey,
     ...(loadState ? { loadState } : {}) });
   const descriptors = [...conditionDescriptors(state)];
+  descriptors.push(...impalementConditionDescriptors(actor));
   if (actorHasVitalEntanglement(actor)) descriptors.push({ id: "entangled:vital",
     source: "status", sourceKey: "entangled", name: "MYTHRASF.Status.Entangled",
     scope: "difficulty", target: "general", operation: "increase", value: 1,

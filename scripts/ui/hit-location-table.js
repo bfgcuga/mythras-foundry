@@ -2,6 +2,7 @@ import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combatantForActor, tacticalState } from "../rules/engagement-runtime.js";
 import { isLocationCrippled, isLocationDisabled,
   hitLocationDisplayName, locationWoundState } from "../rules/hit-locations.js";
+import { armorDurabilityState, armorMaximumPoints } from "../rules/armor-durability.js";
 
 export function prepareHitLocationTable({ actor, armor = [], combat = null,
   armorPointLabel = "PA" } = {}) {
@@ -13,11 +14,13 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
   const blockedIds = new Set(block?.status === "active"
     && Number(block.round) === Number(combat?.round) ? block.locationIds : []);
   return {
-    hasNaturalArmor: locations.some((item) => Number(item.system.armorPoints ?? 0) > 0),
+    hasNaturalArmor: locations.some((item) => armorMaximumPoints(item) > 0),
     rows: locations.map((item) => ({
       item,
       displayName: hitLocationDisplayName(item),
       naturalArmor: Number(item.system.armorPoints ?? 0),
+      naturalArmorMaximum: armorMaximumPoints(item),
+      naturalArmorState: armorDurabilityState(item),
       wornArmor: wornArmorPoints(item, equippedArmor),
       totalArmor: totalArmorPoints(item, equippedArmor),
       armorOptions: armor.filter((piece) =>

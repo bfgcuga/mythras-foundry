@@ -65,6 +65,8 @@ import {
 } from "../rules/combat.js";
 import { assessWeaponEquip, weaponHandsRequired } from "../rules/equipment.js";
 import { weaponCanEquip } from "../rules/weapon-durability.js";
+import { armorCanEquip, armorDurabilityState, armorMaximumPoints
+} from "../rules/armor-durability.js";
 import { inventoryCarried } from "../rules/inventory.js";
 import { encumbranceState, itemEncumbrance,
   skillUsesStrengthOrDexterity, totalCarriedEncumbrance } from "../rules/encumbrance.js";
@@ -545,7 +547,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     if (!item.system.equipped && !weaponCanEquip(item)) {
-      ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.BrokenCannotEquip"));
+      ui.notifications.warn(game.i18n.localize(item.system.inoperable
+        ? "MYTHRASF.Weapon.InoperableCannotUse" : "MYTHRASF.Weapon.BrokenCannotEquip"));
       return;
     }
     const modeKey = event.currentTarget.closest("[data-mode-key]")?.dataset.modeKey
@@ -568,6 +571,10 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #canEquipArmor(item) {
+    if (!armorCanEquip(item)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.BrokenCannotEquip"));
+      return false;
+    }
     if (!armorFitsWearer(item, this.actor)) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Armor.SizeMismatch"));
       return false;
@@ -605,8 +612,11 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #prepareArmor(item, hitLocations) {
     const locations = armorCoverageLocations(item, hitLocations);
     const totals = armorPhysicalTotals(item, hitLocations);
+    const durabilityState = armorDurabilityState(item);
     return {
       item,
+      durabilityState, broken: durabilityState === "broken",
+      armorDisplay: `${Number(item.system.armorPoints ?? 0)} / ${armorMaximumPoints(item)}`,
       coverageLabel: locations.map((location) => hitLocationDisplayName(location)).join(", ")
         || game.i18n.localize("MYTHRASF.Armor.Unassigned"),
       profileLabel: item.system.profileName || item.name,

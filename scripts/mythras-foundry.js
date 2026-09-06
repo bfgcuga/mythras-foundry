@@ -25,6 +25,7 @@ import { registerUiHooks } from "./system/ui-hooks.js";
 import { clearAim } from "./rules/ranged-actions.js";
 import { resolveActorConditions } from "./rules/actor-conditions.js";
 import { weaponCanEquip } from "./rules/weapon-durability.js";
+import { armorCanEquip } from "./rules/armor-durability.js";
 import { synchronizeFatigueDeath } from "./rules/death.js";
 import { initializeCreatedActor, isPrimaryActiveGM,
   runWorldMigrations } from "./migrations/index.js";
@@ -45,6 +46,17 @@ Hooks.on("createActiveEffect", (effect, options, userId) => {
 });
 
 Hooks.on("preUpdateItem", (item, changed) => {
+  if (item.type === "armor") {
+    const armorPoints = foundry.utils.hasProperty(changed, "system.armorPoints")
+      ? foundry.utils.getProperty(changed, "system.armorPoints") : item.system.armorPoints;
+    const maxArmorPoints = foundry.utils.hasProperty(changed, "system.maxArmorPoints")
+      ? foundry.utils.getProperty(changed, "system.maxArmorPoints") : item.system.maxArmorPoints;
+    if (!armorCanEquip({ armorPoints, maxArmorPoints })) {
+      foundry.utils.setProperty(changed, "system.armorPoints", 0);
+      foundry.utils.setProperty(changed, "system.equipped", false);
+    }
+    return;
+  }
   if (item.type === "weapon") {
     const currentHitPoints = foundry.utils.hasProperty(changed, "system.currentHitPoints")
       ? foundry.utils.getProperty(changed, "system.currentHitPoints")

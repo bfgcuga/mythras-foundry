@@ -6,6 +6,11 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Combate y automatización
 
+- Diseñar acciones para reparar armas y armaduras dañadas o destruidas. Queda
+  por decidir si viven en la hoja del Item o en Inventario y cómo se calcula y
+  cobra su coste económico antes de restaurar sus PG o PA. No incluye la marca
+  «Inutilizada», cuya reparación gratuita ya se resuelve desde Inventario.
+
 - Diseñar y revisar una matriz general de compatibilidad entre efectos de
   combate. «Dañar Arma» ya distingue los efectos ligados al daño corporal o a
   las defensas del golpe de las consecuencias independientes, pero el mismo

@@ -60,11 +60,16 @@ test("la localización aparece inmediatamente después de su tirada", () => {
     /damage\.locationRoll != null[\s\S]*?\$\{locationRow\}\$\{permanentWoundHitRow\}/);
 });
 
-test("Elegir localización presenta las instantáneas con el nombre localizado", () => {
+test("Tiro Apuntado ofrece todas las localizaciones con la advertencia anatómica", () => {
   const source = fs.readFileSync(new URL("../scripts/rules/combat-chat.js", import.meta.url),
     "utf8");
   assert.match(source,
-    /adjacent\.map\(\(entry\) =>[\s\S]*?hitLocationDisplayName\(entry\)/);
+    /AimedShot\.AdjacentNote[\s\S]*?locations\.map\(\(entry\) =>[\s\S]*?hitLocationDisplayName\(entry\)/);
+  assert.doesNotMatch(source, /const adjacent = locations\.filter/);
+  const damageRequest = source.slice(source.indexOf("async function requestCombatDamage"),
+    source.indexOf("async function applyCombatDamage"));
+  assert.ok(damageRequest.indexOf('evaluateSystemRoll("1d20"')
+    < damageRequest.indexOf("evaluateSystemRoll(formula"));
 });
 
 test("cancelar el selector de parada no produce una defensa parcial", () => {

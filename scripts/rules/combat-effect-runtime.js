@@ -11,6 +11,8 @@ import { pinnableWeapons, clearWeaponPinsBetween } from "./weapon-pinning.js";
 import { clearEntanglements, clearEntanglementsFromWeapon,
   entanglementKind } from "./entanglement.js";
 import { weaponHandsRequired } from "./equipment.js";
+import { impalementPenalty } from "./impalement.js";
+import { hasTrait } from "./traits.js";
 
 export function combatSideEntry(combat, side) {
   return side === "attacker" ? combat.attacker : combat.defender;
@@ -47,9 +49,24 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
   combat.messageUuid = message.uuid;
   const selections = combat.effects.selections.filter((effect) => !effect.waived);
   for (const effect of selections) {
+    if (effect.key === "forzar-fallo") {
+      effect.status = "resolved";
+      continue;
+    }
     if (effect.key === "marcar-enemigo") {
       effect.status = "resolved";
       continue;
+    }
+    if (effect.key === "inutilizar-arma") {
+      const actor = await dependencies.resolveActor?.(combat.attacker.tokenUuid,
+        combat.attacker.actorUuid);
+      const weapon = actor?.items?.get?.(combat.attacker.weaponId);
+      if (weapon?.type === "weapon") {
+        await weapon.update({ "system.inoperable": true });
+        combat.consequencesApplied = true;
+        effect.resolution = { weaponId: weapon.id, weaponName: weapon.name };
+        effect.status = "resolved";
+      } else effect.status = "notActivated";
     }
     if (["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect.key)) {
       const entry = combatSideEntry(combat, effect.side);
@@ -146,7 +163,8 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
     offBalance.forEach((effect) => { effect.status = "resolved"; });
   }
   for (const effect of selections.filter((entry) => ["cegar-oponente",
-    "disparo-de-supresion", "desarmar-oponente", "arrebatar-arma", "derribar-oponente"].includes(entry.key))) {
+    "disparo-de-supresion", "desarmar-oponente", "arrebatar-arma", "derribar-oponente",
+    "forzar-rendicion"].includes(entry.key))) {
     const taking = effect.key === "arrebatar-arma";
     const weaponEffect = taking || effect.key === "desarmar-oponente";
     const sourceEntry = combatSideEntry(combat, effect.side);
@@ -181,30 +199,83 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
 export async function applyPostDamageCombatEffects(combat, dependencies = {}) {
   const effect = (combat.effects?.selections ?? []).find((entry) =>
     !entry.waived && entry.key === "enredar" && entry.status !== "resolved");
-  if (!effect || combat.damage?.targetType === "weapon") return false;
-  const targetEntry = combatSideEntry(combat, combatEffectAffectedSide(effect));
-  const sourceEntry = combatSideEntry(combat, effect.side);
-  const actor = await dependencies.resolveActor?.(targetEntry.tokenUuid, targetEntry.actorUuid);
-  const location = actor?.items?.get?.(combat.damage?.locationId);
-  if (!actor || !location) { effect.status = "notActivated"; return false; }
-  const kind = entanglementKind(location);
-  const held = Array.from(actor.items ?? []).filter((item) =>
-    ["weapon", "equipment"].includes(item.type) && item.system?.equipped);
-  const forced = kind === "arm" && held.find((item) => weaponHandsRequired(item) >= 2);
-  const weaponId = kind === "arm" ? forced?.id
-    ?? await dependencies.chooseEntangledItem?.(actor, location, held) ?? "" : "";
-  await addManagedCombatStatus(combat, effect, { key: "entangled", statusId: "entangled",
-    unit: "manual", phase: "manual", locationId: location.id,
-    metadata: { kind, weaponId,
-      sourceWeaponId: sourceEntry.weaponId ?? sourceEntry.defense?.weaponId ?? "",
-      sourceRoll: Number(effect.side === "attacker" ? combat.resolution?.attack?.rawRoll
-        : combat.resolution?.defense?.rawRoll),
-      sourceTarget: Number(effect.side === "attacker" ? combat.resolution?.attack?.target
-        : combat.resolution?.defense?.target),
-      sourceResult: effect.side === "attacker" ? combat.resolution?.attack?.result
-        : combat.resolution?.defense?.result } }, dependencies);
-  effect.status = "resolved";
-  effect.resolution = { locationId: location.id, kind, weaponId };
+  let applied = false;
+  if (effect && combat.damage?.targetType !== "weapon") {
+    const targetEntry = combatSideEntry(combat, combatEffectAffectedSide(effect));
+    const sourceEntry = combatSideEntry(combat, effect.side);
+    const actor = await dependencies.resolveActor?.(targetEntry.tokenUuid, targetEntry.actorUuid);
+    const location = actor?.items?.get?.(combat.damage?.locationId);
+    if (!actor || !location) effect.status = "notActivated";
+    else {
+      const kind = entanglementKind(location);
+      const held = Array.from(actor.items ?? []).filter((item) =>
+        ["weapon", "equipment"].includes(item.type) && item.system?.equipped);
+      const forced = kind === "arm" && held.find((item) => weaponHandsRequired(item) >= 2);
+      const weaponId = kind === "arm" ? forced?.id
+        ?? await dependencies.chooseEntangledItem?.(actor, location, held) ?? "" : "";
+      await addManagedCombatStatus(combat, effect, { key: "entangled", statusId: "entangled",
+        unit: "manual", phase: "manual", locationId: location.id,
+        metadata: { kind, weaponId,
+          sourceWeaponId: sourceEntry.weaponId ?? sourceEntry.defense?.weaponId ?? "",
+          sourceRoll: Number(effect.side === "attacker" ? combat.resolution?.attack?.rawRoll
+            : combat.resolution?.defense?.rawRoll),
+          sourceTarget: Number(effect.side === "attacker" ? combat.resolution?.attack?.target
+            : combat.resolution?.defense?.target),
+          sourceResult: effect.side === "attacker" ? combat.resolution?.attack?.result
+            : combat.resolution?.defense?.result } }, dependencies);
+      effect.status = "resolved";
+      effect.resolution = { locationId: location.id, kind, weaponId };
+      applied = true;
+    }
+  }
+  const impale = (combat.effects?.selections ?? []).find((entry) =>
+    !entry.waived && entry.key === "empalar" && entry.status !== "notActivated"
+    && !entry.resolution?.weaponName);
+  if (!impale || combat.damage?.targetType === "weapon") return applied;
+  if (Number(combat.damage?.penetratingDamage ?? 0) <= 0
+    || combat.damage?.resultingWound === "healthy") {
+    impale.status = "notActivated";
+    return applied;
+  }
+  const targetEntry = combatSideEntry(combat, combatEffectAffectedSide(impale));
+  const sourceEntry = combatSideEntry(combat, impale.side);
+  const victim = await dependencies.resolveActor?.(targetEntry.tokenUuid, targetEntry.actorUuid);
+  const owner = await dependencies.resolveActor?.(sourceEntry.tokenUuid, sourceEntry.actorUuid);
+  const weapon = owner?.items?.get?.(sourceEntry.weaponId ?? sourceEntry.defense?.weaponId);
+  const location = victim?.items?.get?.(combat.damage.locationId);
+  if (!victim || !owner || !weapon || !location) {
+    impale.status = "notActivated";
+    return applied;
+  }
+  const weaponData = weapon.toObject();
+  delete weaponData._id;
+  weaponData.system = { ...weaponData.system, equipped: false };
+  const modeKey = sourceEntry.modeSnapshot?.key ?? sourceEntry.defense?.modeKey ?? "";
+  const impalingSize = sourceEntry.modeSnapshot?.impalingSize
+    ?? sourceEntry.defense?.impalingSize ?? sourceEntry.weaponSize;
+  const penalty = impalementPenalty(victim.system.size, impalingSize);
+  const created = await applyTimedCondition(victim, { key: "impaled", statusId: "impaled",
+    name: dependencies.localize?.("MYTHRASF.Status.Impaled") ?? "Impaled",
+    img: "icons/svg/blood.svg", source: { actorUuid: owner.uuid,
+      tokenUuid: sourceEntry.tokenUuid, name: owner.name },
+    combat: combat.turnEconomy ? dependencies.combatById?.(combat.turnEconomy.combatId) : null,
+    duration: { unit: "manual", phase: "manual" }, locationId: location.id,
+    metadata: { weaponData, weaponName: weapon.name, weaponId: weapon.id, modeKey,
+      damageFormula: sourceEntry.modeSnapshot?.damage ?? sourceEntry.defense?.damage ?? "0",
+      impalingSize, barbed: hasTrait(weapon, "barbada", { modeKey }),
+      difficultyKey: penalty.key, difficultySteps: penalty.difficultySteps,
+      incapacitated: penalty.incapacitated } });
+  try {
+    await owner.deleteEmbeddedDocuments("Item", [weapon.id]);
+  } catch (error) {
+    const ids = Array.from(created ?? []).map((entry) => entry.id);
+    if (ids.length) await victim.deleteEmbeddedDocuments("ActiveEffect", ids);
+    throw error;
+  }
+  combat.consequencesApplied = true;
+  impale.status = "resolved";
+  impale.resolution = { locationId: location.id, weaponName: weapon.name,
+    impalingSize, penalty: penalty.key };
   return true;
 }
 
@@ -244,9 +315,14 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
       ? check.automaticResistance ? "takeWeaponTooStrong" : "disarmResisted"
       : effect.key === "desarmar-oponente"
       ? check.resolution?.automaticResistance ? "disarmTooStrong" : "disarmResisted"
+      : effect.key === "forzar-rendicion" ? "didNotSurrender"
       : "resisted" };
     effect.resolution.consequence = check.consequence;
     return;
+  }
+  if (effect.key === "forzar-rendicion") {
+    check.consequence = { key: "surrendered" };
+    effect.resolution.consequence = check.consequence;
   }
   if (effect.key === "derribar-oponente") {
     await addManagedCombatStatus(combat, effect, { key: "prone", statusId: "prone",
@@ -262,17 +338,11 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
     effect.resolution.consequence = check.consequence;
   }
   if (effect.key === "disparo-de-supresion") {
-    const sourceActorUuid = combatSideEntry(combat, effect.side).actorUuid;
     const existing = (dependencies.activeEffects ?? timedEffects)(actor).find((candidate) => {
       const condition = candidate.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-      return condition?.key === "suppressed" && condition.sourceActorUuid === sourceActorUuid;
+      return condition?.key === "suppressed";
     });
-    if (existing) {
-      const condition = existing.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-      await existing.update({ [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]: {
-        ...condition, original: Number(condition.original ?? 1) + 1,
-        remaining: Number(condition.remaining ?? 1) + 1 } });
-    } else await addManagedCombatStatus(combat, effect, { key: "suppressed",
+    if (!existing) await addManagedCombatStatus(combat, effect, { key: "suppressed",
       statusId: "suppressed", turns: 1 }, dependencies);
     check.consequence = { key: "suppressed", turns: 1 };
     effect.resolution.consequence = check.consequence;

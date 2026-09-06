@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { applyCombatDamageDocument, applyProposedCombatDamage, applyRolledCombatDamage,
-  combatDamageDocumentIsCurrent, refreshCombatDamageProposal
+  applyPenetrationTargetTransition, combatDamageDocumentIsCurrent, refreshCombatDamageProposal
 } from "../scripts/rules/combat-damage-runtime.js";
 
 function location(overrides = {}) {
@@ -27,6 +27,19 @@ test("el daño ordinario actualiza únicamente los PG de la localización", asyn
     evaluateRoll: async () => assert.fail("no debe tirar"), format: () => "" });
   assert.deepEqual(target.updates, [{ "system.currentHitPoints": 1 }]);
   assert.deepEqual(result.damage, damage);
+});
+
+test("Hender actualiza la armadura, conserva su máximo y desequipa la destruida", async () => {
+  const target = location();
+  const armor = { id: "plate", system: { armorPoints: 5, maxArmorPoints: 0, equipped: true },
+    updates: [], async update(change) { this.updates.push(change); } };
+  const damage = { afterHitPoints: 2, resultingWound: "minor", sunderArmor: {
+    kind: "worn", before: 5, after: 0, maximum: 5 } };
+  await applyCombatDamageDocument({ location: target, armorTarget: armor, damage,
+    evaluateRoll: async () => assert.fail("no debe tirar"), format: () => "" });
+  assert.deepEqual(armor.updates, [{ "system.armorPoints": 0,
+    "system.maxArmorPoints": 5, "system.equipped": false }]);
+  assert.deepEqual(target.updates, [{ "system.currentHitPoints": 2 }]);
 });
 
 test("una herida crítica consolida la lesión permanente en la misma escritura", async () => {
@@ -95,6 +108,55 @@ test("la transición de daño marca applying y applied alrededor de la escritura
   assert.deepEqual(fixture.target.updates, [{ "system.currentHitPoints": 1 }]);
   assert.equal(fixture.calls.wound, 1);
   assert.equal(fixture.calls.advance, 1);
+});
+
+test("Potenciar Penetración espera al segundo blanco solo si atraviesa al primero", async () => {
+  const fixture = proposedDamageFixture();
+  fixture.combat.attacker = { actorUuid: "Actor.attacker", tokenUuid: "Token.attacker" };
+  fixture.combat.effects.selections = [{ key: "potenciar-penetracion", status: "active" }];
+  Object.assign(fixture.combat.damage, { rawRoll: 10, afterRange: 8, penetratingDamage: 3,
+    formula: "1d10" });
+  await applyProposedCombatDamage(fixture.message,
+    { revision: 1, userId: "gm", locationId: "arm" }, fixture.dependencies);
+  const saved = fixture.updates.at(-1)["flags.mythras-foundry.combat"];
+  assert.equal(saved.penetration.status, "awaitingTarget");
+  assert.equal(saved.penetration.primaryDamage.penetratingDamage, 3);
+  assert.equal(saved.effects.selections[0].status, "resolved");
+  assert.equal(fixture.calls.advance, 0);
+});
+
+test("el segundo blanco recibe la mitad y no hereda efectos de combate", async () => {
+  const hit = location({ currentHitPoints: 6, maxHitPoints: 6 });
+  const items = [hit]; items.get = (id) => items.find((item) => item.id === id);
+  const actor = { uuid: "Actor.second", id: "second", system: { size: 12 }, items };
+  const attacker = { testUserPermission: () => true };
+  let state = { revision: 3, attacker: { actorUuid: "Actor.attacker",
+    tokenUuid: "Token.attacker" }, defender: {}, turnEconomy: { combatId: "combat" },
+  penetration: { status: "awaitingTarget", primaryDefender: { actorUuid: "Actor.first",
+    actorName: "Primero" }, primaryDamage: { rawRoll: 10, afterRange: 7, formula: "1d10" },
+    primaryEffects: { selections: [{ key: "potenciar-penetracion" }] } },
+  effects: { selections: [{ key: "potenciar-penetracion" }], checks: [] }, damage: {} };
+  const message = { getFlag: () => state, async update(change) {
+    state = change["flags.scope.combat"] ?? state;
+  } };
+  const appended = [];
+  const result = await applyPenetrationTargetTransition(message, { revision: 3, userId: "player",
+    tokenUuid: "Token.second", locationRoll: 5, serializedLocationRoll: { formula: "1d20" } }, {
+    clone: structuredClone, flagScope: "scope", resolveToken: async () => ({ actor,
+      uuid: "Token.second", name: "Segundo" }), resolveActor: async () => attacker,
+    userById: () => ({ id: "player", isGM: false }), actorIdentity: (entry) => entry.id,
+    tokenIdentity: (token) => token.uuid, tokenName: (token) => token.name,
+    locationSnapshot: (entry) => ({ id: entry.id, name: entry.name }),
+    findLocation: () => hit, combatantFor: () => ({ id: "second-combatant" }),
+    refreshProposal: async (combat) => { combat.damage.status = "proposed"; },
+    render: () => "rendered", appendRolls: async (entry, rolls) => appended.push(...rolls)
+  });
+  assert.equal(result, true);
+  assert.equal(state.damage.rawRoll, 4);
+  assert.equal(state.damage.status, "proposed");
+  assert.deepEqual(state.effects.selections, []);
+  assert.equal(state.penetration.secondaryCombatantId, "second-combatant");
+  assert.equal(appended.length, 1);
 });
 
 test("una instantánea documental distinta deja la propuesta obsoleta", async () => {
@@ -217,6 +279,83 @@ test("una parada completa no aplica ni marca el bloqueo pasivo", async () => {
   await refreshCombatDamageProposal(combat, null, dependencies);
   assert.equal(combat.damage.afterParry, 0);
   assert.equal(combat.damage.passiveBlock, undefined);
+});
+
+test("Sortear Cobertura elimina únicamente su protección del cálculo", async () => {
+  const target = location({ currentHitPoints: 12, maxHitPoints: 12, armorPoints: 2 });
+  target.type = "hitLocation";
+  const items = [target]; items.get = (id) => items.find((item) => item.id === id);
+  const combat = { attacker: { weaponSize: "large" }, defender: { targetType: "actor",
+    defense: { type: "cover" } }, resolution: { defense: { result: "success" } },
+  declarations: {}, effects: { selections: [{ key: "sortear-cobertura" }], checks: [] },
+  turnEconomy: { combatId: "combat", defenderCombatantId: "defender" },
+  damage: { rawRoll: 10, locationId: "arm" } };
+  await refreshCombatDamageProposal(combat, null, {
+    resolveActor: async () => ({ items, system: { size: 10 } }), combatById: () => ({}),
+    passiveBlockFor: () => null,
+    coverFor: () => ({ source: "Muro", protection: 6 }) });
+  assert.equal(combat.damage.cover, null);
+  assert.equal(combat.damage.armorPoints, 2);
+  assert.equal(combat.damage.penetratingDamage, 8);
+});
+
+test("Herida Accidental desarmada ignora armadura, cobertura y bloqueo pasivo", async () => {
+  const target = location({ currentHitPoints: 12, maxHitPoints: 12, armorPoints: 3 });
+  target.type = "hitLocation";
+  const plate = { id: "plate", type: "armor", system: { equipped: true,
+    armorPoints: 5, coveredLocationIds: ["arm"] } };
+  const items = [target, plate]; items.get = (id) => items.find((item) => item.id === id);
+  const combat = { accidentalWound: { status: "active", ignoresArmor: true },
+    attacker: { weaponSize: "small" }, defender: { targetType: "actor",
+      defense: { type: "cover" } }, resolution: { defense: { result: "success" } },
+    declarations: {}, effects: { selections: [], checks: [] },
+    turnEconomy: { combatId: "combat", defenderCombatantId: "attacker" },
+    damage: { rawRoll: 9, locationId: "arm" } };
+  await refreshCombatDamageProposal(combat, null, {
+    resolveActor: async () => ({ items, system: { size: 10 } }), combatById: () => ({}),
+    passiveBlockFor: () => ({ weaponId: "shield", weaponSize: "large" }),
+    coverFor: () => ({ source: "Muro", protection: 20 }) });
+  assert.equal(combat.damage.armorPoints, 0);
+  assert.deepEqual(combat.damage.ignoredArmorTypes, ["worn", "natural"]);
+  assert.equal(combat.damage.cover, null);
+  assert.equal(combat.damage.passiveBlock, undefined);
+  assert.equal(combat.damage.penetratingDamage, 9);
+});
+
+test("Herida Accidental con arma conserva la protección de la localización", async () => {
+  const target = location({ currentHitPoints: 12, maxHitPoints: 12, armorPoints: 3 });
+  target.type = "hitLocation";
+  const items = [target]; items.get = (id) => items.find((item) => item.id === id);
+  const combat = { accidentalWound: { status: "active", ignoresArmor: false },
+    attacker: { weaponSize: "medium" }, defender: { targetType: "actor", defense: null },
+    resolution: { defense: { result: "failure" } }, declarations: {},
+    effects: { selections: [], checks: [] }, damage: { rawRoll: 9, locationId: "arm" } };
+  await refreshCombatDamageProposal(combat, null, {
+    resolveActor: async () => ({ items, system: { size: 10 } }), combatById: () => null,
+    passiveBlockFor: () => null, coverFor: () => null });
+  assert.equal(combat.damage.armorPoints, 3);
+  assert.equal(combat.damage.penetratingDamage, 6);
+});
+
+test("Hender Armadura prepara el daño a la capa y solo traspasa el sobrante final", async () => {
+  const target = location({ currentHitPoints: 12, maxHitPoints: 12, armorPoints: 1 });
+  target.type = "hitLocation";
+  const plate = { id: "plate", name: "Coraza", type: "armor", system: {
+    equipped: true, armorPoints: 5, maxArmorPoints: 5, coveredLocationIds: ["arm"] } };
+  const items = [target, plate];
+  items.get = (id) => items.find((item) => item.id === id);
+  const combat = { attacker: { weaponSize: "large" }, defender: { targetType: "actor",
+    defense: { type: "none" } }, resolution: { defense: { result: "failure" } },
+  declarations: {}, effects: { selections: [{ key: "hender-armadura" }], checks: [] },
+  damage: { rawRoll: 14, locationId: "arm" } };
+  await refreshCombatDamageProposal(combat, null, {
+    resolveActor: async () => ({ items, system: { size: 10 } }), combatById: () => null,
+    passiveBlockFor: () => null, coverFor: () => null });
+  assert.deepEqual(combat.damage.sunderArmor, { kind: "worn", itemId: "plate",
+    itemName: "Coraza", before: 5, after: 0, maximum: 5, damage: 5, excess: 8,
+    state: "broken" });
+  assert.equal(combat.damage.penetratingDamage, 3);
+  assert.equal(combat.damage.afterHitPoints, 9);
 });
 
 test("la propuesta contra un arma usa su instancia, PA y limita sus PG a cero", async () => {

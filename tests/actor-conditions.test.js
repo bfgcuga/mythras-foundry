@@ -47,3 +47,13 @@ test("el estado Incapacitado heredado conserva el suelo aunque aún no tenga ban
   assert.equal(actorConditionState(actor).manuallyIncapacitated, true);
   assert.equal(resolveActorConditions(actor, { baseAttributes }).condition.key, "incapacitated");
 });
+
+test("la peor arma empalada aumenta una sola vez la dificultad general", () => {
+  const actor = actorFixture();
+  actor.system.fatigueLevel = "fresh"; actor.statuses = new Set(["impaled"]); actor.items = [];
+  actor.effects = [{ flags: { "mythras-foundry": { timedCondition: {
+    key: "impaled", difficultySteps: 1 } } } },
+  { flags: { "mythras-foundry": { timedCondition: {
+    key: "impaled", difficultySteps: 3 } } } }];
+  assert.equal(resolveActorConditions(actor).difficulty, "herculean");
+});

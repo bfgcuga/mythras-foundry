@@ -621,6 +621,9 @@ antes de actualizarlo. Los estados `intact`, `damaged` y `broken` se derivan en
 `scripts/rules/weapon-durability.js`; no se persisten. Una rotura limita los PG
 a cero y desequipa el Item, mientras una reparación por encima de cero vuelve a
 permitir equiparlo.
+En las hojas, la durabilidad colorea únicamente el nombre del arma; la mano de
+equipación, el porcentaje y el botón de tirada conservan su semántica visual
+propia y no aparentan penalizaciones inexistentes.
 
 La compatibilidad de «Dañar Arma» no depende de que el otro efecto tenga como
 objetivo al oponente, sino de que participe en el conducto de daño corporal o
@@ -712,6 +715,52 @@ omiten su resistencia. Los efectos cuya consecuencia aún es guiada conservan
 la marca automática visible y su cierre manual actual. La cancelación y el
 cierre forzado reconocen `awaitingRuse` para que ningún intercambio quede
 bloqueado.
+«Forzar Fallo» reutiliza este mismo contrato. La validación exige que la selección
+contenga exactamente otro efecto reconocido por `combatEffectRequiresResistance`;
+al persistirla, ese compañero recibe `automaticSuccess` y un `automaticSource`
+de tipo `forceFailure`. La prueba queda resuelta internamente como fallo automático
+sin evaluar dados ni habilitar Suerte, y «Forzar Fallo» no genera una prueba propia.
+«Potenciar Penetración» exige una autorización del DJ validada por el coordinador,
+con el mismo patrón remoto que Forzar Rendición. Tras aplicar el primer daño,
+`applyProposedCombatDamage` solo abre `penetration.awaitingTarget` si hubo daño
+penetrante. La tarjeta conserva la instantánea del primer blanco y permite al
+propietario del atacante escoger otro token visible. La transición tira una nueva
+localización, toma la mitad redondeada hacia arriba del daño ya ajustado por alcance
+y prepara una segunda propuesta contra la armadura y PG del nuevo blanco. Las
+selecciones y pruebas del primer impacto se conservan solo para visualización y
+no participan en el segundo cálculo.
+«Sortear Cobertura» usa la misma autorización coordinada y se identifica mediante
+la selección canónica, no por el texto del efecto. `refreshCombatDamageProposal`
+omite tanto la protección como el desglose de cobertura cuando está presente,
+pero conserva alcance, parada, bloqueo pasivo y armadura. Si se combina con
+«Potenciar Penetración», el DJ confirma ambos permisos antes de persistir la
+selección; el segundo impacto no hereda ninguno de los dos efectos.
+«Escoger Objetivo» comparte el protocolo de autorización del DJ, pero conserva
+como propietario de la decisión al defensor original. Tras la autorización,
+`chosenTarget.awaitingTarget` bloquea el daño hasta que ese propietario o el DJ
+elija cualquier otro token visible; la interfaz y la transición omiten a propósito
+validaciones de alcance, adyacencia, línea de tiro y participación en combate.
+`applyChosenTargetTransition` sustituye la instantánea del defensor, convierte la
+tirada atacante en impacto automático, elimina las selecciones y pruebas para que
+la nueva víctima no reciba Efectos de Combate y vuelve a habilitar el daño normal.
+«Herida Accidental» realiza la misma sustitución sin intervención adicional: el
+Actor atacante pasa a ocupar la instantánea del defensor y su combatiente se usa
+como destino de cualquier estado táctico. La resolución conserva la fórmula de
+daño del ataque, descarta efectos y defensas y deja que el flujo ordinario tire
+una localización aleatoria. `accidentalWound.ignoresArmor` identifica el ataque
+desarmado; al preparar la propuesta anula protección natural y equipada, además
+de impedir que cobertura o bloqueo pasivo reduzcan este daño autoinfligido.
+La fase posterior al daño de «Empalar» exige daño penetrante y una herida. El
+módulo `impalement.js` traduce TAM de criatura y tamaño de empalamiento a la
+tabla oficial. El ActiveEffect canónico `impaled` guarda el Item serializado,
+modo, fórmula, localización, propietario y rasgo Barbada; solo después de crear
+esa custodia se elimina el arma de su Actor, con reversión si falla la operación.
+`actor-conditions.js` reduce todos los empalamientos activos a la peor penalización,
+sin sumarlas. La acción `recoverImpaledWeapon` aparece únicamente en turno propio
+para combatientes trabados con una víctima empalada, consume 1 PA y aplica el
+ajuste compartido de competiciones de fuerza a Músculo. Al vencer restaura el
+Item desequipado, elimina el efecto y aplica daño directo a la localización sin
+armadura ni Modificador de Daño; Barbada decide entre daño completo y mitad.
 Mientras la prueba de Aguante de una Herida Crítica siga pendiente, el
 propietario de la víctima o el DJ puede gastar uno de sus puntos de Suerte para
 reducirla a Herida Grave. La propuesta eleva los PG de la localización a
@@ -781,6 +830,37 @@ previa de todas las tiradas. La víctima puede iniciar una enfrentada de Múscul
 por 1 PA y el captor obtiene en su siguiente turno la acción destacada para usar
 la tirada original en un intento de Derribar Oponente. Dañar o desarmar el arma
 fuente elimina su traba; «Liberarse» elimina Enredar, Agarrar e Inmovilizar Arma.
+«Forzar Rendición» usa una autorización remota previa: el cliente solicitante
+envía la selección al DJ coordinador, que es quien muestra la confirmación y
+aplica la transición con su identidad; una denegación devuelve el control al
+selector sin mutar el intercambio. La transición rechaza selecciones sin esa
+autorización, marca el daño como no disponible y crea una prueba de Voluntad
+enfrentada a la tirada original cuyo resultado queda como consecuencia narrativa.
+«Hender Armadura» comparte el conducto ordinario de daño, pero
+`armor-durability.js` resuelve por separado la capa afectada y sus umbrales. La
+protección total absorbe primero el daño posterior a parada, bloqueo y cobertura;
+el exceso reduce los PA de la pieza equipada más fuerte o de la protección
+natural, y únicamente lo que resta después llega a los PG. `maxArmorPoints`
+conserva el valor original en armaduras y localizaciones con compatibilidad para
+documentos antiguos. A cero PA, una pieza se desequipa y `armorCanEquip` impide
+equiparla; la tarjeta persiste el desglose completo y las hojas derivan los
+estados visuales sin guardar una etiqueta redundante.
+«Inutilizar Arma» persiste `system.inoperable` en el arma atacante. Es una marca
+operativa independiente de los PG: `weaponCanEquip` la excluye de todos los
+selectores compartidos de ataque y parada, pero no la clasifica como destruida.
+Inventario y Combate derivan su presentación de esa marca; la acción de reparar
+en Inventario solo la restablece a `false`, sin coste ni cambios de durabilidad.
+«Tiro Apuntado» resuelve el d20 de localización antes de evaluar el daño y abre
+una elección explícita con todas las localizaciones del defensor. Conserva por
+separado `rolledLocationId` y la localización finalmente elegida. La interfaz
+explica la restricción de contigüidad, pero deliberadamente no mantiene un grafo
+anatómico ni filtra opciones según el orden de la tabla.
+«Disparo de Supresión» se filtra en `combatEffectEligible` mediante el modo a
+distancia del ataque y la presencia de un arma a distancia equipada en el blanco.
+Su prueba independiente de Voluntad conserva la tirada de ataque como oposición
+aunque el daño sea cero. Al fallar crea durante un turno propio la condición
+canónica `suppressed`; `timedAttackRestriction` rechaza cualquier modo `ranged` o
+`siege`, sin restringir ataques cuerpo a cuerpo ni el resto de acciones.
 Empalar
 participa en `damageRoll`, aplica su doble tirada automáticamente y no crea una
 confirmación narrativa posterior.

@@ -20,6 +20,11 @@ test("los paneles de Combate conservan el orden operativo en el DOM",t=>{
   const panels=[".combat-action-panel",".combat-paper-locations",".combat-paper-melee-weapons",".combat-paper-ranged-weapons",".combat-paper-styles"].map(selector=>{const el=doc.querySelector(selector);assert.ok(el,selector);return el;});
   for(let i=1;i<panels.length;i++)assert.ok(panels[i-1].compareDocumentPosition(panels[i])&4);
 });
+test("Recuperar arma empalada es la primera acción de combate",t=>{
+  const doc=rendered(t,"templates/actor/parts/combat-tab.hbs",{});
+  const actions=doc.querySelectorAll(".combat-tactical-actions [data-combat-action-key]");
+  assert.equal(actions[0]?.dataset.combatActionKey,"recoverImpaledWeapon");
+});
 test("los campos libres de características conservan valor y mínimo",t=>{
   const doc=rendered(t,"templates/actor/parts/characteristics.hbs",{isFreeAllocation:true,characteristicRows:[{key:"strength",label:"FUE",value:12,minimum:3}]});
   const field=doc.querySelector("input[name='system.strength']");assert.equal(field.value,"12");assert.equal(field.min,"3");assert.ok(field.classList.contains("sheet-field-editable"));

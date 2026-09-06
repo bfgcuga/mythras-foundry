@@ -101,6 +101,9 @@ async function materializeItem(item, evaluateFormula, failures) {
     await applyFormula({ formula: system.armorPointsFormula,
       label: `${item.name}.armorPoints`, min: 0, integer: true, evaluateFormula, failures,
       apply: (value) => { system.armorPoints = value; } });
+    if (["hitLocation", "armor"].includes(item.type)) {
+      system.maxArmorPoints = Number(system.armorPoints ?? 0);
+    }
   }
 }
 

@@ -100,3 +100,36 @@ test("cabecera y filas de pasiones comparten distribución y tamaño de tabla",(
     assert.notEqual(header.gridTemplateColumns,'');assert.equal(header.gridTemplateColumns,row.gridTemplateColumns);assert.match(header.fontSize,/mythras-font-size-table/);
   }finally{sample.window.close();}
 });
+
+test("la durabilidad colorea el nombre del arma pero no sus controles ni datos",()=>{
+  for(const state of ["damaged","broken"]){
+    const sample=dom(`<div class="mythras-foundry"><div class="weapon-durability-${state}"><button data-action="edit-item">Espada</button><button class="equipment-state-toggle equipped">Mano</button><strong>65%</strong><button data-action="roll-weapon-attack">Dado</button></div></div>`,css);
+    try{
+      const [name,hand,percentage,die]=[...sample.window.document.querySelectorAll("button,strong")]
+        .map(node=>sample.window.getComputedStyle(node).color);
+      assert.equal(name,state==="damaged"?"rgb(159, 29, 32)":"rgb(182, 83, 18)");
+      for(const color of [hand,percentage,die])assert.notEqual(color,name);
+    }finally{sample.window.close();}
+  }
+});
+
+test("la durabilidad identifica piezas y protección natural sin teñir la equipación",()=>{
+  const sample=dom(`<div class="mythras-foundry"><div class="armor-durability-damaged"><button class="item-name" data-action="edit-item">Coraza</button><button class="equipment-state-toggle equipped">Vestir</button></div><span class="natural-armor-cell armor-durability-broken">0 / 4</span></div>`,css);
+  try{
+    const [name,equip,natural]=[...sample.window.document.querySelectorAll("button,span")]
+      .map(node=>sample.window.getComputedStyle(node).color);
+    assert.equal(name,"rgb(159, 29, 32)");
+    assert.notEqual(equip,name);
+    assert.equal(natural,"rgb(182, 83, 18)");
+  }finally{sample.window.close();}
+});
+
+test("un arma inutilizada se distingue y su reparación queda integrada en la fila",()=>{
+  const sample=dom(`<div class="mythras-foundry"><div data-item-id="bow" class="weapon-inoperable"><button class="item-name" data-action="edit-item">Arco</button><button data-action="repair-inoperable-weapon">Reparar</button></div></div>`,css);
+  try{
+    const name=sample.window.getComputedStyle(sample.window.document.querySelector(".item-name"));
+    const repair=sample.window.getComputedStyle(sample.window.document.querySelector("[data-action='repair-inoperable-weapon']"));
+    assert.equal(name.color,"rgb(122, 63, 135)");
+    assert.equal(repair.position,"absolute");
+  }finally{sample.window.close();}
+});

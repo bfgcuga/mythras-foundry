@@ -115,11 +115,12 @@ export async function revealSurprisedTurn(actor) {
   if (updates.length) await actor.updateEmbeddedDocuments("ActiveEffect", updates);
 }
 
-export function timedAttackRestriction(actor, { weaponType, targetActorUuid } = {}) {
+export function timedAttackRestriction(actor, { weaponType } = {}) {
   for (const effect of timedEffects(actor)) {
     const condition = flag(effect);
-    if (condition.key === "suppressed" && ["ranged", "siege"].includes(weaponType)
-      && condition.sourceActorUuid === targetActorUuid) return "suppressed";
+    if (condition.key === "suppressed" && ["ranged", "siege"].includes(weaponType)) {
+      return "suppressed";
+    }
   }
   return null;
 }

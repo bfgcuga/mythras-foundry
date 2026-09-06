@@ -227,6 +227,7 @@ export function humanHitLocationData(actorSystem) {
         maxHitPoints: maximum,
         currentHitPoints: maximum,
         armorPoints: 0,
+        maxArmorPoints: 0,
         armorEncumbranceMultiplier: location.armorEncumbranceMultiplier,
         armorCostPercentage: location.armorCostPercentage,
         armorFactorsVersion: 2,

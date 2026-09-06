@@ -48,7 +48,7 @@ function location(buildKey, name, rangeStart, rangeEnd, armorPoints, maxHitPoint
       ? buildKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()) : "",
     rangeStart, rangeEnd, category, hpClass, autoCalculate: false,
     maxHitPoints, maxHitPointsFormula: "", currentHitPoints: maxHitPoints,
-    armorPoints, armorPointsFormula: "", armorEncumbranceMultiplier: 1,
+    armorPoints, maxArmorPoints: armorPoints, armorPointsFormula: "", armorEncumbranceMultiplier: 1,
     armorCostPercentage: 10, armorFactorsVersion: 2, disabled: false, description: ""
   }, flags: sourceFlags };
 }

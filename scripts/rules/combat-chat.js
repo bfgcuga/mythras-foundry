@@ -46,7 +46,8 @@ import { exchangeTerminal, preferredCombatCoordinator, validateCombatResponse
 import { registerCombatSocketRuntime } from "./combat-chat-runtime.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
 import { applyCombatDamageLuck, applyMajorWoundLuck, applyProposedCombatDamage,
-  applyRolledCombatDamage, refreshCombatDamageProposal } from "./combat-damage-runtime.js";
+  applyPenetrationTargetTransition, applyRolledCombatDamage,
+  refreshCombatDamageProposal } from "./combat-damage-runtime.js";
 import { addManagedCombatStatus, applyAutomaticCombatEffectChecks, applyCombatEffectCheckConsequence,
   applyImmediateCombatEffects, applyPostDamageCombatEffects,
   combatSideEntry } from "./combat-effect-runtime.js";
@@ -55,7 +56,7 @@ import { advanceCombatExchange, applyCombatExchangeCancellation, applyDroppedCom
   resolveCombatExchangePending
 } from "./combat-exchange-runtime.js";
 import { applyAccidentalTargetTransition, applyCombatDefenseTransition, applyCombatEffectsTransition,
-  applyCombatLuckTransition, applyCombatRuseReplacementTransition
+  applyChosenTargetTransition, applyCombatLuckTransition, applyCombatRuseReplacementTransition
 } from "./combat-response-runtime.js";
 import { applyCombatCheckTransition } from "./combat-check-runtime.js";
 import { consumeSurpriseEffectBonus, consumeWeaponModeAmmunition, spendActorActionPoint,
@@ -73,6 +74,168 @@ export { preferredCombatCoordinator, validateCombatResponse } from "./combat-exc
 
 const FLAG_SCOPE = "mythras-foundry";
 const SOCKET = "system.mythras-foundry";
+const pendingSurrenderAuthorizations = new Map();
+const pendingPenetrationAuthorizations = new Map();
+const pendingCoverAuthorizations = new Map();
+const pendingChosenTargetAuthorizations = new Map();
+
+function surrenderAuthorizationId(messageId) {
+  return `${messageId}-${game.user.id}-${foundry.utils.randomID()}`;
+}
+
+async function confirmSurrenderAuthorization(combat) {
+  const sourceSide = combat.effects?.pendingSide ?? combat.effects?.winner;
+  const source = combatSideEntry(combat, sourceSide)?.actorName ?? "—";
+  const targetSide = sourceSide === "attacker"
+    ? "defender" : "attacker";
+  const target = combatSideEntry(combat, targetSide)?.actorName ?? "—";
+  return foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.CombatEffect.Surrender.AuthorizationTitle") },
+    content: `<p>${escape(game.i18n.format(
+      "MYTHRASF.CombatEffect.Surrender.AuthorizationPrompt", { source, target }))}</p>`
+  });
+}
+
+async function authorizeCombatSurrender(message, request) {
+  if (!game.user.isGM || request.targetGmId !== game.user.id) return;
+  const combat = message?.getFlag(FLAG_SCOPE, "combat");
+  const approved = Boolean(combat && await confirmSurrenderAuthorization(combat));
+  const applied = approved && await applyCombatEffects(message, request.effectsRequest, game.user.id);
+  game.socket.emit(SOCKET, { action: "combatSurrenderAuthorizationResult",
+    authorizationId: request.authorizationId, targetUserId: request.userId,
+    approved: Boolean(applied) });
+}
+
+function receiveSurrenderAuthorization(request) {
+  if (request.targetUserId !== game.user.id) return;
+  const pending = pendingSurrenderAuthorizations.get(request.authorizationId);
+  if (!pending) return;
+  pendingSurrenderAuthorizations.delete(request.authorizationId);
+  pending(Boolean(request.approved));
+}
+
+function requestSurrenderAuthorization(message, request, gmId) {
+  const authorizationId = surrenderAuthorizationId(message.id);
+  return new Promise((resolve) => {
+    pendingSurrenderAuthorizations.set(authorizationId, resolve);
+    game.socket.emit(SOCKET, { action: "combatSurrenderAuthorization", messageId: message.id,
+      authorizationId, userId: game.user.id, targetGmId: gmId, effectsRequest: request });
+  });
+}
+
+async function confirmPenetrationAuthorization(combat) {
+  return foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.CombatEffect.Penetration.AuthorizationTitle") },
+    content: `<p>${escape(game.i18n.format(
+      "MYTHRASF.CombatEffect.Penetration.AuthorizationPrompt", {
+        source: combat.attacker.actorName, target: combat.defender.actorName }))}</p>`
+  });
+}
+
+async function authorizeCombatPenetration(message, request) {
+  if (!game.user.isGM || request.targetGmId !== game.user.id) return;
+  const combat = message?.getFlag(FLAG_SCOPE, "combat");
+  const needsCover = request.effectsRequest?.selections?.some((effect) =>
+    !effect.waived && effect.key === "sortear-cobertura");
+  const approved = Boolean(combat && await confirmPenetrationAuthorization(combat)
+    && (!needsCover || await confirmCoverAuthorization(combat)));
+  const applied = approved && await applyCombatEffects(message, request.effectsRequest,
+    "", game.user.id, needsCover ? game.user.id : "");
+  game.socket.emit(SOCKET, { action: "combatPenetrationAuthorizationResult",
+    authorizationId: request.authorizationId, targetUserId: request.userId,
+    approved: Boolean(applied) });
+}
+
+function receivePenetrationAuthorization(request) {
+  if (request.targetUserId !== game.user.id) return;
+  const pending = pendingPenetrationAuthorizations.get(request.authorizationId);
+  if (!pending) return;
+  pendingPenetrationAuthorizations.delete(request.authorizationId);
+  pending(Boolean(request.approved));
+}
+
+function requestPenetrationAuthorization(message, request, gmId) {
+  const authorizationId = surrenderAuthorizationId(message.id);
+  return new Promise((resolve) => {
+    pendingPenetrationAuthorizations.set(authorizationId, resolve);
+    game.socket.emit(SOCKET, { action: "combatPenetrationAuthorization", messageId: message.id,
+      authorizationId, userId: game.user.id, targetGmId: gmId, effectsRequest: request });
+  });
+}
+
+async function confirmCoverAuthorization(combat) {
+  return foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.CombatEffect.BypassCover.AuthorizationTitle") },
+    content: `<p>${escape(game.i18n.format(
+      "MYTHRASF.CombatEffect.BypassCover.AuthorizationPrompt", {
+        source: combat.attacker.actorName, target: combat.defender.actorName }))}</p>`
+  });
+}
+
+async function authorizeCombatCover(message, request) {
+  if (!game.user.isGM || request.targetGmId !== game.user.id) return;
+  const combat = message?.getFlag(FLAG_SCOPE, "combat");
+  const approved = Boolean(combat && await confirmCoverAuthorization(combat));
+  const applied = approved && await applyCombatEffects(message, request.effectsRequest,
+    "", "", game.user.id);
+  game.socket.emit(SOCKET, { action: "combatCoverAuthorizationResult",
+    authorizationId: request.authorizationId, targetUserId: request.userId,
+    approved: Boolean(applied) });
+}
+
+function receiveCoverAuthorization(request) {
+  if (request.targetUserId !== game.user.id) return;
+  const pending = pendingCoverAuthorizations.get(request.authorizationId);
+  if (!pending) return;
+  pendingCoverAuthorizations.delete(request.authorizationId);
+  pending(Boolean(request.approved));
+}
+
+function requestCoverAuthorization(message, request, gmId) {
+  const authorizationId = surrenderAuthorizationId(message.id);
+  return new Promise((resolve) => {
+    pendingCoverAuthorizations.set(authorizationId, resolve);
+    game.socket.emit(SOCKET, { action: "combatCoverAuthorization", messageId: message.id,
+      authorizationId, userId: game.user.id, targetGmId: gmId, effectsRequest: request });
+  });
+}
+
+async function confirmChosenTargetAuthorization(combat) {
+  return foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.CombatEffect.ChosenTarget.AuthorizationTitle") },
+    content: `<p>${escape(game.i18n.format(
+      "MYTHRASF.CombatEffect.ChosenTarget.AuthorizationPrompt", {
+        source: combat.defender.actorName, attacker: combat.attacker.actorName }))}</p>`
+  });
+}
+
+async function authorizeCombatChosenTarget(message, request) {
+  if (!game.user.isGM || request.targetGmId !== game.user.id) return;
+  const combat = message?.getFlag(FLAG_SCOPE, "combat");
+  const approved = Boolean(combat && await confirmChosenTargetAuthorization(combat));
+  const applied = approved && await applyCombatEffects(message, request.effectsRequest,
+    "", "", "", game.user.id);
+  game.socket.emit(SOCKET, { action: "combatChosenTargetAuthorizationResult",
+    authorizationId: request.authorizationId, targetUserId: request.userId,
+    approved: Boolean(applied) });
+}
+
+function receiveChosenTargetAuthorization(request) {
+  if (request.targetUserId !== game.user.id) return;
+  const pending = pendingChosenTargetAuthorizations.get(request.authorizationId);
+  if (!pending) return;
+  pendingChosenTargetAuthorizations.delete(request.authorizationId);
+  pending(Boolean(request.approved));
+}
+
+function requestChosenTargetAuthorization(message, request, gmId) {
+  const authorizationId = surrenderAuthorizationId(message.id);
+  return new Promise((resolve) => {
+    pendingChosenTargetAuthorizations.set(authorizationId, resolve);
+    game.socket.emit(SOCKET, { action: "combatChosenTargetAuthorization", messageId: message.id,
+      authorizationId, userId: game.user.id, targetGmId: gmId, effectsRequest: request });
+  });
+}
 const SCHEMA_VERSION = 9;
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const localize = (key) => game.i18n.localize(key);
@@ -171,10 +334,17 @@ const effectView = (item) => {
 async function effectContext(combat, side = combat.effects?.pendingSide ?? combat.resolution?.winner) {
   const entry = side === "attacker" ? combat.attacker : combat.defender;
   const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
+  const targetEntry = side === "attacker" ? combat.defender : combat.attacker;
+  const targetActor = await combatActor(targetEntry?.tokenUuid, targetEntry?.actorUuid);
+  const targetUsesRangedWeapon = Array.from(targetActor?.items ?? []).some((item) => {
+    if (item.type !== "weapon" || !item.system?.equipped) return false;
+    const mode = findWeaponMode(item, item.system.activeModeKey);
+    return ["ranged", "siege"].includes(mode?.weaponType);
+  });
   return { winner: side, grabbed: isGrabbed(actor),
     hasRestraint: isGrabbed(actor) || weaponPins(actor).length > 0
       || activeEntanglements(actor).length > 0,
-    activeCombat: Boolean(combat.turnEconomy),
+    activeCombat: Boolean(combat.turnEconomy), targetUsesRangedWeapon,
     silentDeathAllowed: side === "attacker"
       && combatStyleAllowsSilentDeath(actor, combat.attacker.styleId),
     attackResult: combat.resolution?.attack?.result,
@@ -263,7 +433,8 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   manual = false }) {
   if (weaponIsPinned(weapon, actor)) return ui.notifications.warn(localize("MYTHRASF.Pin.Blocked"));
   if (!weaponCanEquip(weapon)) return ui.notifications.warn(
-    localize("MYTHRASF.Weapon.BrokenCannotEquip"));
+    localize(weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
+      : "MYTHRASF.Weapon.BrokenCannotEquip"));
   if (pendingAttackActors.has(actor.uuid)) return null;
   pendingAttackActors.add(actor.uuid);
   try {
@@ -777,12 +948,72 @@ async function chooseCombatEffects(message, combat) {
   }
   const request = { action: "combatEffects", messageId: message.id, revision: combat.revision,
     userId: game.user.id, side, selections };
+  if (selections.some((effect) => effect.key === "forzar-rendicion")) {
+    const gmId = preferredCombatCoordinator(game.users, combat.authorUserId);
+    const gm = game.users.get(gmId);
+    if (!gm?.isGM) {
+      ui.notifications.warn(localize("MYTHRASF.CombatEffect.Surrender.GMRequired"));
+      return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    }
+    const approved = game.user.isGM
+      ? await confirmSurrenderAuthorization(combat)
+        && await applyCombatEffects(message, request, game.user.id)
+      : await requestSurrenderAuthorization(message, request, gmId);
+    if (!approved) return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    return;
+  }
+  if (selections.some((effect) => effect.key === "potenciar-penetracion")) {
+    const gmId = preferredCombatCoordinator(game.users, combat.authorUserId);
+    const gm = game.users.get(gmId);
+    if (!gm?.isGM) {
+      ui.notifications.warn(localize("MYTHRASF.CombatEffect.Penetration.GMRequired"));
+      return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    }
+    const needsCover = selections.some((effect) => effect.key === "sortear-cobertura");
+    const approved = game.user.isGM
+      ? await confirmPenetrationAuthorization(combat)
+        && (!needsCover || await confirmCoverAuthorization(combat))
+        && await applyCombatEffects(message, request, "", game.user.id,
+          needsCover ? game.user.id : "")
+      : await requestPenetrationAuthorization(message, request, gmId);
+    if (!approved) return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    return;
+  }
+  if (selections.some((effect) => effect.key === "sortear-cobertura")) {
+    const gmId = preferredCombatCoordinator(game.users, combat.authorUserId);
+    const gm = game.users.get(gmId);
+    if (!gm?.isGM) {
+      ui.notifications.warn(localize("MYTHRASF.CombatEffect.BypassCover.GMRequired"));
+      return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    }
+    const approved = game.user.isGM
+      ? await confirmCoverAuthorization(combat)
+        && await applyCombatEffects(message, request, "", "", game.user.id)
+      : await requestCoverAuthorization(message, request, gmId);
+    if (!approved) return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    return;
+  }
+  if (selections.some((effect) => effect.key === "escoger-objetivo")) {
+    const gmId = preferredCombatCoordinator(game.users, combat.authorUserId);
+    const gm = game.users.get(gmId);
+    if (!gm?.isGM) {
+      ui.notifications.warn(localize("MYTHRASF.CombatEffect.ChosenTarget.GMRequired"));
+      return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    }
+    const approved = game.user.isGM
+      ? await confirmChosenTargetAuthorization(combat)
+        && await applyCombatEffects(message, request, "", "", "", game.user.id)
+      : await requestChosenTargetAuthorization(message, request, gmId);
+    if (!approved) return chooseCombatEffects(message, message.getFlag(FLAG_SCOPE, "combat"));
+    return;
+  }
   if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
     await applyCombatEffects(message, request);
   } else game.socket.emit(SOCKET, request);
 }
 
-async function applyCombatEffects(message, request) {
+async function applyCombatEffects(message, request, surrenderAuthorizedBy = "",
+  penetrationAuthorizedBy = "", coverAuthorizedBy = "", chosenTargetAuthorizedBy = "") {
   return applyCombatEffectsTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     catalogDocuments: combatEffectDocuments, effectView, effectContext,
@@ -792,7 +1023,10 @@ async function applyCombatEffects(message, request) {
         ownerCombatantId: combat.turnEconomy.defenderCombatantId,
         rivalCombatantId: combat.turnEconomy.combatantId, selections }),
     applyImmediateEffects: applyImmediateCombatEffects,
-    immediateDependencies: combatEffectRuntimeDependencies, render: renderCombatExchange,
+    immediateDependencies: combatEffectRuntimeDependencies, surrenderAuthorizedBy,
+    penetrationAuthorizedBy, coverAuthorizedBy, chosenTargetAuthorizedBy,
+    actorIdentity, locationSnapshot,
+    render: renderCombatExchange,
     advance: advanceCombatTurnForExchange });
 }
 
@@ -1025,7 +1259,8 @@ async function requestCombatDamage(message, combat, manual = false) {
   const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
   if (!weapon || !mode) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
   if (!weaponCanEquip(weapon)) return ui.notifications.warn(
-    localize("MYTHRASF.Weapon.BrokenCannotEquip"));
+    localize(weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
+      : "MYTHRASF.Weapon.BrokenCannotEquip"));
   const modifier = damageModifierFormula(actor.system.attributes?.damageModifier, mode.damageModifierMode) || "0";
   const extraordinary = weaponPlan?.sourceSide === "defender"
     ? "0" : combat.declarations?.extraordinaryDamage || "0";
@@ -1035,22 +1270,6 @@ async function requestCombatDamage(message, combat, manual = false) {
       || mode.damage || "0", maximizeCount);
   const weaponDamage = maximizedDamage.formula;
   const formula = `max(0, (${weaponDamage}) + (${modifier}) + (${extraordinary}))`;
-  let roll;
-  try { roll = await evaluateSystemRoll(formula, { manual }); }
-  catch { return ui.notifications.warn(localize("MYTHRASF.Combat.InvalidDamageFormula")); }
-  let alternateRoll = null;
-  if (selectedEffectCount(combat.effects?.selections ?? [], "impale")) {
-    alternateRoll = await evaluateSystemRoll(formula, { manual });
-    const choice = await foundry.applications.api.DialogV2.wait({
-      window: { title: localize("MYTHRASF.CombatEffect.ImpaleChoice") },
-      content: `<div class="mythras-foundry mythras-dialog"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.FirstRoll"))}</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.SecondRoll"))}</span><strong class="mythras-chat-roll-value">${alternateRoll.total}</strong></div></div>`,
-      buttons: [{ action: "first", label: `${localize("MYTHRASF.CombatEffect.FirstRoll")}: ${roll.total}` },
-        { action: "second", label: `${localize("MYTHRASF.CombatEffect.SecondRoll")}: ${alternateRoll.total}` }],
-      rejectClose: false
-    });
-    if (!choice) return;
-    if (choice === "second") [roll, alternateRoll] = [alternateRoll, roll];
-  }
   const targetsWeapon = Boolean(weaponPlan) || combat.defender.targetType === "weapon";
   let chosenLocation = weaponPlan?.targetWeaponId
     ?? (combat.defender.targetType === "weapon" ? combat.defender.targetWeaponId
@@ -1072,16 +1291,30 @@ async function requestCombatDamage(message, combat, manual = false) {
     if (!rolledLocationId) {
       chosenLocation = "";
     } else {
-    const index = locations.findIndex((entry) => entry.id === rolledLocationId);
-    const adjacent = locations.filter((entry, candidate) => Math.abs(candidate - index) <= 1);
     chosenLocation = await foundry.applications.api.DialogV2.wait({
       window: { title: localize("MYTHRASF.CombatEffect.ChooseLocation") },
-      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location">${adjacent.map((entry) => `<option value="${escape(entry.id)}" ${entry.id === rolledLocationId ? "selected" : ""}>${escape(hitLocationDisplayName(entry))}</option>`).join("")}</select></label></div>`,
+      content: `<div class="mythras-foundry mythras-dialog"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.AimedShot.RolledLocation"))}</span><strong>${escape(hitLocationDisplayName(rolledLocation))}</strong></div><p>${escape(localize("MYTHRASF.CombatEffect.AimedShot.AdjacentNote"))}</p><label><span>${escape(localize("MYTHRASF.Combat.HitLocation"))}</span><select name="location">${locations.map((entry) => `<option value="${escape(entry.id)}" ${entry.id === rolledLocationId ? "selected" : ""}>${escape(hitLocationDisplayName(entry))}</option>`).join("")}</select></label></div>`,
       buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.Confirm"),
         callback: (event, button) => button.form.elements.location.value }], rejectClose: false
     });
     if (!chosenLocation) return;
     }
+  }
+  let roll;
+  try { roll = await evaluateSystemRoll(formula, { manual }); }
+  catch { return ui.notifications.warn(localize("MYTHRASF.Combat.InvalidDamageFormula")); }
+  let alternateRoll = null;
+  if (selectedEffectCount(combat.effects?.selections ?? [], "impale")) {
+    alternateRoll = await evaluateSystemRoll(formula, { manual });
+    const choice = await foundry.applications.api.DialogV2.wait({
+      window: { title: localize("MYTHRASF.CombatEffect.ImpaleChoice") },
+      content: `<div class="mythras-foundry mythras-dialog"><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.FirstRoll"))}</span><strong class="mythras-chat-roll-value">${roll.total}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.CombatEffect.SecondRoll"))}</span><strong class="mythras-chat-roll-value">${alternateRoll.total}</strong></div></div>`,
+      buttons: [{ action: "first", label: `${localize("MYTHRASF.CombatEffect.FirstRoll")}: ${roll.total}` },
+        { action: "second", label: `${localize("MYTHRASF.CombatEffect.SecondRoll")}: ${alternateRoll.total}` }],
+      rejectClose: false
+    });
+    if (!choice) return;
+    if (choice === "second") [roll, alternateRoll] = [alternateRoll, roll];
   }
   const selectedLocation = (combat.defender.locations ?? []).find((entry) =>
     entry.id === chosenLocation) ?? (combat.defender.locations ?? []).find((entry) =>
@@ -1398,6 +1631,15 @@ export function activateCombatCard(message, html) {
     card.querySelectorAll("[data-combat-action='choose-ruse-replacement']").forEach((button) => {
       button.hidden = !game.user.isGM && !actor?.isOwner;
     }));
+  combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid).then((actor) =>
+    card.querySelectorAll("[data-combat-action='penetration-target']").forEach((button) => {
+      button.hidden = !game.user.isGM && !actor?.isOwner;
+    }));
+  combatActor(combat.chosenTarget?.originalDefender?.tokenUuid,
+    combat.chosenTarget?.originalDefender?.actorUuid).then((actor) =>
+    card.querySelectorAll("[data-combat-action='chosen-target']").forEach((button) => {
+      button.hidden = !game.user.isGM && !actor?.isOwner;
+    }));
   card.querySelectorAll("[data-combat-action='drop-held-item']").forEach(async (button) => {
     const consequence = combat.consequences?.[Number(button.dataset.consequenceIndex)];
     const entry = combatSideEntry(combat, consequence?.actorSide ?? "defender");
@@ -1419,6 +1661,8 @@ export function activateCombatCard(message, html) {
     const manual = event.shiftKey;
     if (["parry", "evade", "cover", "none"].includes(action)) return respondToAttack(message, combat, action, manual);
     if (action === "accidental-target") return chooseAccidentalTarget(message, combat);
+    if (action === "penetration-target") return choosePenetrationTarget(message, combat, manual);
+    if (action === "chosen-target") return chooseChosenTarget(message, combat);
     if (action === "cancel") return cancelCombat(message, combat);
     if (action === "close-exchange") return closeCombatExchange(message, combat);
     if (action === "resolve-consequence") return resolveCombatConsequence(message, combat,
@@ -1462,10 +1706,105 @@ export function registerCombatSocket() {
       combatDamageLuck: applyDamageLuck, combatApplyDamage: applyProposedDamage,
       combatCheck: applyCombatCheck, combatWoundLuck: applyWoundLuck,
       combatDropHeldItem: applyDropHeldItem,
+      combatSurrenderAuthorization: authorizeCombatSurrender,
+      combatPenetrationAuthorization: authorizeCombatPenetration,
+      combatPenetrationTarget: applyPenetrationTarget,
+      combatCoverAuthorization: authorizeCombatCover,
+      combatChosenTargetAuthorization: authorizeCombatChosenTarget,
+      combatChosenTarget: applyChosenTarget,
       combatDisarmChoice: (message, request) => applyDisarmChoice(message, request, {
         clone: foundry.utils.deepClone, flagScope: FLAG_SCOPE, resolveActor: combatActor,
         userById: (id) => game.users.get(id), render: renderCombatExchange,
         advance: advanceCombatTurnForExchange })
-    }
+    }, directHandlers: { combatSurrenderAuthorizationResult: receiveSurrenderAuthorization,
+      combatPenetrationAuthorizationResult: receivePenetrationAuthorization,
+      combatCoverAuthorizationResult: receiveCoverAuthorization,
+      combatChosenTargetAuthorizationResult: receiveChosenTargetAuthorization }
   });
+}
+
+async function chooseChosenTarget(message, combat) {
+  if (combat.chosenTarget?.status !== "awaitingTarget") return;
+  const owner = await combatActor(combat.chosenTarget.originalDefender?.tokenUuid,
+    combat.chosenTarget.originalDefender?.actorUuid);
+  if (!owner || (!game.user.isGM && !owner.isOwner)) return;
+  const candidates = visibleTargets(owner);
+  if (!candidates.length) return ui.notifications.warn(
+    localize("MYTHRASF.CombatEffect.ChosenTarget.NoTarget"));
+  const selected = await foundry.applications.api.DialogV2.wait({
+    window: { title: localize("MYTHRASF.CombatEffect.ChosenTarget.ChooseTarget") },
+    content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize(
+      "MYTHRASF.CombatEffect.ChosenTarget.Note"))}</p><label><span>${escape(localize(
+      "MYTHRASF.Combat.Defender"))}</span><select name="target">${candidates.map((token) =>
+        `<option value="${escape(tokenUuid(token))}">${escape(tokenDisplayName(token))}</option>`)
+      .join("")}</select></label></div>`,
+    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.Confirm"),
+      callback: (event, button) => button.form.elements.target.value },
+    { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false
+  });
+  if (!selected) return;
+  const request = { action: "combatChosenTarget", messageId: message.id,
+    revision: combat.revision, userId: game.user.id, tokenUuid: selected };
+  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
+    await applyChosenTarget(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+async function applyChosenTarget(message, request) {
+  const current = message?.getFlag(FLAG_SCOPE, "combat");
+  if (!current || Number(request.revision) !== Number(current.revision)) return false;
+  const token = await fromUuid(request.tokenUuid).catch(() => null);
+  const owner = await combatActor(current.chosenTarget?.originalDefender?.tokenUuid,
+    current.chosenTarget?.originalDefender?.actorUuid);
+  const entry = current.turnEconomy ? game.combats.get(current.turnEconomy.combatId)
+    ?.combatants.find((combatant) => combatant.token?.uuid === request.tokenUuid
+      || combatant.actor?.uuid === token?.actor?.uuid) : null;
+  return applyChosenTargetTransition(message, current, { token, entry,
+    userId: request.userId, user: game.users.get(request.userId), owner,
+    clone: foundry.utils.deepClone, actorIdentity, tokenIdentity: tokenUuid,
+    tokenName: tokenDisplayName, locationSnapshot, render: renderCombatExchange,
+    flagScope: FLAG_SCOPE });
+}
+
+async function choosePenetrationTarget(message, combat, manual = false) {
+  if (combat.penetration?.status !== "awaitingTarget") return;
+  const attacker = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
+  if (!attacker || (!game.user.isGM && !attacker.isOwner)) return;
+  const candidates = visibleTargets(attacker).filter((token) =>
+    ![combat.attacker.actorUuid, combat.penetration.primaryDefender?.actorUuid]
+      .includes(token.actor?.uuid));
+  if (!candidates.length) return ui.notifications.warn(
+    localize("MYTHRASF.CombatEffect.Penetration.NoTarget"));
+  const selected = await foundry.applications.api.DialogV2.wait({
+    window: { title: localize("MYTHRASF.CombatEffect.Penetration.ChooseTarget") },
+    content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize(
+      "MYTHRASF.CombatEffect.Penetration.SecondaryNote"))}</p><label><span>${escape(localize(
+      "MYTHRASF.Combat.Defender"))}</span><select name="target">${candidates.map((token) =>
+        `<option value="${escape(tokenUuid(token))}">${escape(tokenDisplayName(token))}</option>`)
+      .join("")}</select></label></div>`,
+    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.Confirm"),
+      callback: (event, button) => button.form.elements.target.value },
+    { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false
+  });
+  if (!selected) return;
+  const locationRoll = await evaluateSystemRoll("1d20", { manual });
+  const request = { action: "combatPenetrationTarget", messageId: message.id,
+    revision: combat.revision, userId: game.user.id, tokenUuid: selected,
+    locationRoll: locationRoll.total, serializedLocationRoll: locationRoll.toJSON() };
+  if (preferredCombatCoordinator(game.users, combat.authorUserId) === game.user.id) {
+    await applyPenetrationTarget(message, request);
+  } else game.socket.emit(SOCKET, request);
+}
+
+async function applyPenetrationTarget(message, request) {
+  return applyPenetrationTargetTransition(message, request, { clone: foundry.utils.deepClone,
+    flagScope: FLAG_SCOPE, resolveToken: fromUuid, resolveActor: combatActor,
+    userById: (id) => game.users.get(id), actorIdentity, tokenIdentity: tokenUuid,
+    tokenName: tokenDisplayName, locationSnapshot,
+    findLocation: (locations, roll) => findHitLocation(locations, roll),
+    combatantFor: (combatId, targetTokenUuid, actorUuid) => game.combats.get(combatId)
+      ?.combatants.find((entry) => entry.token?.uuid === targetTokenUuid
+        || entry.actor?.uuid === actorUuid),
+    refreshProposal: refreshDamageProposal, render: renderCombatExchange,
+    appendRolls: appendSerializedRolls });
 }

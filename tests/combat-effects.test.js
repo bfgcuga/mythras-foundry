@@ -140,6 +140,15 @@ test("las restricciones a distancia respetan el modo usado en el ataque", () => 
   assert.equal(combatEffectEligible(rangedEffect, { ...context, attackMode: "ranged" }), true);
 });
 
+test("Disparo de Supresión exige que el blanco use un arma a distancia", () => {
+  const suppression = effects.find((effect) => effect.key === "disparo-de-supresion");
+  const context = { winner: "attacker", attackResult: "success", defenseResult: "failure",
+    attackMode: "ranged", weaponMode: { weaponType: "ranged" } };
+  assert.equal(combatEffectEligible(suppression, context), false);
+  assert.equal(combatEffectEligible(suppression,
+    { ...context, targetUsesRangedWeapon: true }), true);
+});
+
 test("Elegir Localización respeta alcance corto, situación y cobertura completa", () => {
   const choose = effects.find((effect) => effect.key === "elegir-localizacion");
   const context = { winner: "attacker", attackResult: "success", defenseResult: "failure",
@@ -166,6 +175,20 @@ test("la selección admite renuncias y solo duplica efectos apilables", () => {
   assert.equal(validateEffectSelections({ slots: 2, selections: [
     { key: choose.key }, { waived: true }
   ], effects, context }).valid, true);
+});
+
+test("Forzar Fallo exige exactamente un efecto compañero con resistencia", () => {
+  const context = { winner: "attacker", attackResult: "success", defenseResult: "fumble",
+    weaponMode: { weaponType: "melee", size: "M", effects: "" } };
+  const force = effects.find((effect) => effect.key === "forzar-fallo");
+  const trip = effects.find((effect) => effect.key === "derribar-oponente");
+  const mark = effects.find((effect) => effect.key === "marcar-enemigo");
+  assert.equal(validateEffectSelections({ slots: 1, selections: [{ key: force.key }],
+    effects, context }).reason, "forceFailure");
+  assert.equal(validateEffectSelections({ slots: 2, selections: [{ key: force.key },
+    { key: mark.key }], effects, context }).reason, "forceFailure");
+  assert.equal(validateEffectSelections({ slots: 2, selections: [{ key: force.key },
+    { key: trip.key }], effects, context }).valid, true);
 });
 
 test("Dañar arma solo es elegible con una parada y un objetivo material", () => {

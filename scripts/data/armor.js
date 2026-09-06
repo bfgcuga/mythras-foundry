@@ -108,6 +108,7 @@ function armorPiece(profile, referenceLocation) {
       designedSize: 0,
       designedBuild: "",
       armorPoints: profile.armorPoints,
+      maxArmorPoints: profile.armorPoints,
       armorPointsFormula: "",
       baseEncumbrance: profile.encumbrance / ARMOR_MATERIAL_MODIFIERS[profile.material],
       baseValue: profile.value,

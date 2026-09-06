@@ -13,6 +13,13 @@ test("las acciones proactivas solo aparecen en el turno propio con PA", () => {
   assert.equal(availableCombatActions({ inCombat: true, isActive: false, actionPoints: 3 }).move, false);
 });
 
+test("recuperar un arma empalada exige turno, PA y una víctima trabada", () => {
+  assert.equal(availableCombatActions({ inCombat: true, isActive: true, actionPoints: 1,
+    hasReachableImpaledWeapon: true }).recoverImpaledWeapon, true);
+  assert.equal(availableCombatActions({ inCombat: true, isActive: true, actionPoints: 1,
+    hasReachableImpaledWeapon: false }).recoverImpaledWeapon, false);
+});
+
 test("traba, postura y fuentes restringen únicamente sus acciones", () => {
   const relations = { one: { status: "engaged", sides: { a: {}, b: {} } } };
   assert.equal(isEngaged(relations, "a"), true);
