@@ -350,7 +350,32 @@ export function renderCombatExchange(combat) {
     ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.BeforeDamageResolution"))}</legend>${beforeDamageChecks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : "";
   const afterDamageChecksHtml = `${afterDamageChecks.length ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.EffectResolution"))}</legend>${afterDamageChecks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : ""}${woundChecks.length ? `<fieldset class="combat-checks-panel"><legend>${escape(localize("MYTHRASF.Combat.WoundResolution"))}</legend>${woundChecks.map((check) => combatCheckHtml(check, combat)).join("")}</fieldset>` : ""}`;
   const consequencesHtml = (combat.consequences ?? []).length ? `<fieldset><legend>${escape(localize("MYTHRASF.Combat.Consequences"))}</legend>${combat.consequences.map(combatConsequenceHtml).join("")}</fieldset>` : "";
-  const tracker = combat.turnEconomy ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Tracker.Position"))}</span><strong>${escape(game.i18n.format("MYTHRASF.Tracker.RoundCycle", { round: combat.turnEconomy.round, cycle: combat.turnEconomy.cycle }))}</strong></div>` : "";
+  const bash = (combat.effects?.selections ?? []).find((effect) => effect.key === "golpetazo");
+  const bashResolution = bash?.resolution;
+  const bashHtml = bashResolution ? `<fieldset><legend>${escape(localize(
+    "MYTHRASF.CombatEffect.Rule.bash"))}</legend><div class="mythras-chat-row"><span>${escape(localize(
+    "MYTHRASF.CombatEffect.Bash.Distance"))}</span><strong>${Number(bashResolution.distance)} m</strong></div>${
+    !bashResolution.allowed ? `<p class="combat-card-warning">${escape(localize(
+      "MYTHRASF.CombatEffect.Bash.TargetTooLarge"))}</p>` : bashResolution.obstacle
+      ? bashResolution.check?.unavailable ? `<p class="combat-card-warning">${escape(localize(
+        "MYTHRASF.CombatEffect.Bash.SkillMissing"))}</p>` : bashResolution.check?.cancelled
+        ? `<p>${escape(localize("MYTHRASF.CombatEffect.Bash.CheckCancelled"))}</p>`
+        : `<div class="mythras-chat-row"><span>${escape(bashResolution.check?.abilityName)} (1d100 / ${Number(
+          bashResolution.check?.target ?? 0)}%)</span>${rollOutcome(bashResolution.check?.rawRoll,
+          bashResolution.check?.result)}</div><div class="mythras-chat-total mythras-chat-result--${
+          bashResolution.check?.success ? "success" : "failure"}"><span>${escape(localize(
+          "MYTHRASF.Combat.CheckOutcomeLabel"))}</span><strong>${escape(localize(
+          bashResolution.check?.success ? "MYTHRASF.CombatEffect.Bash.KeepsFooting"
+            : "MYTHRASF.CombatEffect.Bash.Falls"))}</strong></div>`
+      : `<div class="mythras-chat-row"><span>${escape(localize(
+        "MYTHRASF.CombatEffect.Bash.Obstacle"))}</span><strong>${escape(localize("MYTHRASF.No"))}</strong></div>`}</fieldset>` : "";
+  const retainedTurnEffect = { rafaga: "Flurry", "redoblar-ataque": "DoubleAttack" }[
+    combat.turnEconomy?.retainTurnReason];
+  const retainedTurn = retainedTurnEffect
+    ? `<div class="mythras-chat-total mythras-chat-result--success"><span>${escape(localize(
+      `MYTHRASF.CombatEffect.${retainedTurnEffect}.Tracker`))}</span><strong>${escape(localize(
+      `MYTHRASF.CombatEffect.${retainedTurnEffect}.RetainedTurn`))}</strong></div>` : "";
+  const tracker = combat.turnEconomy ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Tracker.Position"))}</span><strong>${escape(game.i18n.format("MYTHRASF.Tracker.RoundCycle", { round: combat.turnEconomy.round, cycle: combat.turnEconomy.cycle }))}</strong></div>${retainedTurn}` : "";
   const close = combat.turnEconomy && !combat.turnEconomy.turnAdvanced
     ? `<button type="button" data-combat-action="close-exchange" data-gm-only title="${escape(localize("MYTHRASF.Tracker.CloseExchange"))}">${escape(localize("MYTHRASF.Tracker.CloseExchange"))}</button>` : "";
   const rangedHtml = combat.ranged ? `<fieldset><legend>${escape(localize("MYTHRASF.Ranged.Attack"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Distance"))}</span><strong>${combat.ranged.distance} m</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.BandLabel"))}</span><strong>${escape(localize(`MYTHRASF.Ranged.Band.${combat.ranged.band}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Difficulty"))}</span><strong>${escape(localize(`MYTHRASF.Difficulty.${combat.ranged.difficulty}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Power"))}</span><strong>${escape(combat.ranged.power)} → ${escape(combat.ranged.effectivePower)}</strong></div>${combat.ranged.ammunition?.tracking ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Ammunition"))}</span><strong>${combat.ranged.ammunition.loaded}/${combat.ranged.ammunition.reserve}</strong></div>` : ""}${combat.ranged.accidentalEligible ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Ranged.AccidentalPending"))}</p>` : ""}</fieldset>` : "";
@@ -388,7 +413,7 @@ export function renderCombatExchange(combat) {
       combat.attacker.actorName ?? "—")}</strong></div><p>${escape(localize(combat.accidentalWound.ignoresArmor
         ? "MYTHRASF.CombatEffect.AccidentalWound.UnarmedNote"
         : "MYTHRASF.CombatEffect.AccidentalWound.Note"))}</p></fieldset>` : "";
-  damageHtml = `${accidentalWound}${chosenTarget}${penetration}${damageHtml}${penetrationTarget}`;
+  damageHtml = `${accidentalWound}${chosenTarget}${penetration}${damageHtml}${bashHtml}${penetrationTarget}`;
   const cancelled = combat.status === "cancelled"
     ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Combat.CancelledNotice"))}</p>` : "";
   const cancel = combatCanBeCancelled(combat)

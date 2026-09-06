@@ -1575,11 +1575,51 @@ async function applyProposedDamage(message, request) {
     evaluateRoll: evaluateAnimatedRoll, format: game.i18n.format.bind(game.i18n),
     applyWoundConsequences,
     applyPostDamageEffects: (combat) => applyPostDamageCombatEffects(combat,
-      combatEffectRuntimeDependencies()),
+      { ...combatEffectRuntimeDependencies(), resolveBashObstacle: (actor, result) =>
+        resolveBashObstacle(actor, result, message) }),
     applyAutomaticEffectChecks: (combat) => applyAutomaticCombatEffectChecks(
       combat, combatEffectRuntimeDependencies()),
     combatById: (id) => game.combats.get(id), consumePassiveBlock,
     advance: advanceCombatTurnForExchange });
+}
+
+async function resolveBashObstacle(actor, { distance }, message) {
+  const obstacle = await foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.CombatEffect.Bash.ObstacleTitle") },
+    content: `<div class="mythras-foundry mythras-dialog"><p>${escape(game.i18n.format(
+      "MYTHRASF.CombatEffect.Bash.ObstaclePrompt", { actor: actorDisplayName(actor), distance }))}</p></div>`,
+    yes: { label: localize("MYTHRASF.Yes") }, no: { label: localize("MYTHRASF.No") }
+  });
+  if (!obstacle) return { obstacle: false };
+  const choices = actor.items.filter((item) => item.type === "skill"
+    && ["atletismo", "acrobacias"].includes(item.system.slug));
+  if (!choices.length) {
+    ui.notifications.warn(localize("MYTHRASF.CombatEffect.Bash.SkillMissing"));
+    return { obstacle: true, check: { unavailable: true } };
+  }
+  const abilityId = choices.length === 1 ? choices[0].id
+    : await foundry.applications.api.DialogV2.wait({
+      window: { title: localize("MYTHRASF.CombatEffect.Bash.ChooseSkill") },
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize(
+        "MYTHRASF.Combat.CheckAbility"))}</span><select name="ability">${choices.map((skill) =>
+          `<option value="${escape(skill.id)}">${escape(skill.name)}</option>`).join("")}</select></label></div>`,
+      buttons: [{ action: "roll", label: localize("MYTHRASF.Roll"), icon: "fas fa-dice-d20",
+        default: true, callback: (event, button) => button.form.elements.ability.value },
+      { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times",
+        callback: () => null }], rejectClose: false
+    });
+  if (!abilityId) return { obstacle: true, check: { cancelled: true } };
+  const skill = actor.items.get(abilityId);
+  const baseTarget = Number(skill.system.total ?? 0);
+  const target = difficultyTarget(baseTarget, "hard");
+  const roll = await evaluateAnimatedRoll("1d100");
+  const result = classifyContestRoll(roll.total, target);
+  await recordAbilityFumble(skill, result);
+  const serializedRoll = roll.toJSON?.() ?? null;
+  if (serializedRoll) await message.update({ rolls: appendSerializedRolls(message, serializedRoll) });
+  return { obstacle: true, check: { abilityId, abilityName: skill.name, baseTarget, target,
+    difficulty: "hard", rawRoll: roll.total, result,
+    success: ["success", "critical"].includes(result), serializedRoll } };
 }
 
 function heldItemChoices(actor) {

@@ -13,6 +13,7 @@ import { clearEntanglements, clearEntanglementsFromWeapon,
 import { weaponHandsRequired } from "./equipment.js";
 import { impalementPenalty } from "./impalement.js";
 import { hasTrait } from "./traits.js";
+import { bashKnockback } from "./combat-bash.js";
 
 export function combatSideEntry(combat, side) {
   return side === "attacker" ? combat.attacker : combat.defender;
@@ -55,6 +56,17 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
     }
     if (effect.key === "marcar-enemigo") {
       effect.status = "resolved";
+      continue;
+    }
+    if (["rafaga", "redoblar-ataque"].includes(effect.key)) {
+      if (!combat.turnEconomy) effect.status = "notActivated";
+      else {
+        combat.turnEconomy.retainTurn = true;
+        combat.turnEconomy.retainTurnReason = effect.key;
+        combat.consequencesApplied = true;
+        effect.status = "resolved";
+        effect.resolution = { combatantId: combat.turnEconomy.combatantId };
+      }
       continue;
     }
     if (effect.key === "inutilizar-arma") {
@@ -225,6 +237,30 @@ export async function applyPostDamageCombatEffects(combat, dependencies = {}) {
             : combat.resolution?.defense?.result } }, dependencies);
       effect.status = "resolved";
       effect.resolution = { locationId: location.id, kind, weaponId };
+      applied = true;
+    }
+  }
+  const bash = (combat.effects?.selections ?? []).find((entry) =>
+    !entry.waived && entry.key === "golpetazo" && entry.status !== "resolved"
+    && entry.status !== "notActivated");
+  if (bash && combat.damage?.targetType !== "weapon") {
+    const sourceEntry = combatSideEntry(combat, bash.side);
+    const targetEntry = combatSideEntry(combat, combatEffectAffectedSide(bash));
+    const victim = await dependencies.resolveActor?.(targetEntry.tokenUuid, targetEntry.actorUuid);
+    const result = bashKnockback({ damage: combat.damage?.beforeRange ?? combat.damage?.rawRoll,
+      weaponType: sourceEntry.modeSnapshot?.weaponType
+        ?? sourceEntry.defense?.weaponType ?? "",
+      attackerSize: sourceEntry.size, targetSize: targetEntry.size });
+    if (!victim || !result.allowed) {
+      bash.status = "notActivated";
+      bash.resolution = { ...result, reason: victim ? "targetTooLarge" : "targetMissing" };
+    } else {
+      const obstacle = result.distance > 0
+        ? await dependencies.resolveBashObstacle?.(victim, result) ?? { obstacle: false }
+        : { obstacle: false };
+      bash.status = "resolved";
+      bash.resolution = { ...result, ...obstacle };
+      combat.consequencesApplied = true;
       applied = true;
     }
   }

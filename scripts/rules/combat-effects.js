@@ -37,6 +37,8 @@ export const COMBAT_EFFECT_RULES = Object.freeze({
   "mantenerse-firme": { ruleKey: "guided", stage: "afterPenetration", target: "self",
     damageTarget: "opponent" },
   "recarga-rapida": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  rafaga: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
+  "redoblar-ataque": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   retirada: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   "elegir-localizacion": { ruleKey: "chooseLocation", stage: "beforeLocation",
     damageTarget: "opponent" },
@@ -89,7 +91,8 @@ const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
   "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente",
   "enredar", "forzar-fallo", "forzar-rendicion", "hender-armadura", "inutilizar-arma", "liberarse",
-  "potenciar-penetracion", "sortear-cobertura", "escoger-objetivo", "herida-accidental"
+  "potenciar-penetracion", "sortear-cobertura", "escoger-objetivo", "herida-accidental", "rafaga",
+  "redoblar-ataque"
 ]));
 
 const RESISTED_COMBAT_EFFECTS = Object.freeze(new Set([
@@ -222,6 +225,7 @@ export function combatEffectEligible(effect, context = {}) {
   if (effect.key === "muerte-silenciosa"
     && (!context.surpriseAttack || !context.silentDeathAllowed)) return false;
   if (effect.key === "ardid" && !context.activeCombat) return false;
+  if (["rafaga", "redoblar-ataque"].includes(effect.key) && !context.activeCombat) return false;
   if (effect.key === "disparo-de-supresion" && !context.targetUsesRangedWeapon) return false;
   if (effect.key === "elegir-localizacion" && ["ranged", "siege"].includes(
     combatWeaponType(context))) {

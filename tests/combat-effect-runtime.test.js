@@ -168,6 +168,26 @@ test("Marcar Enemigo se resuelve como narración sin pruebas ni cambios en docum
   assert.equal(state.consequencesApplied, undefined);
 });
 
+test("Ráfaga conserva el turno del atacante en el tracker", async () => {
+  const effect = { key: "rafaga", side: "attacker", slot: 0 };
+  const state = combat([effect]);
+  await applyImmediateCombatEffects(state, { uuid: "message" }, {});
+  assert.equal(effect.status, "resolved");
+  assert.equal(state.turnEconomy.retainTurn, true);
+  assert.equal(state.turnEconomy.retainTurnReason, "rafaga");
+  assert.equal(state.consequencesApplied, true);
+});
+
+test("Redoblar Ataque conserva el turno mediante la misma economía", async () => {
+  const effect = { key: "redoblar-ataque", side: "attacker", slot: 0 };
+  const state = combat([effect]);
+  await applyImmediateCombatEffects(state, { uuid: "message" }, {});
+  assert.equal(effect.status, "resolved");
+  assert.equal(state.turnEconomy.retainTurn, true);
+  assert.equal(state.turnEconomy.retainTurnReason, "redoblar-ataque");
+  assert.equal(effect.resolution.combatantId, state.turnEconomy.combatantId);
+});
+
 test("Inutilizar Arma marca el arma atacante sin alterar su durabilidad", async () => {
   const updates = [];
   const weapon = { id: "bow", name: "Arco", type: "weapon",
@@ -241,6 +261,41 @@ test("Enredar aplica a la localización impactada y bloquea el objeto elegido en
   assert.equal(data.weaponId, sword.id);
   assert.equal(data.locationId, arm.id);
   assert.equal(state.effects.selections[0].status, "resolved");
+});
+
+test("Golpetazo registra distancia y resuelve el obstáculo después del daño", async () => {
+  const effect = { key: "golpetazo", side: "attacker", slot: 0, status: "active" };
+  const state = combat([effect]);
+  state.attacker.size = 12;
+  state.attacker.modeSnapshot = { weaponType: "shield" };
+  state.defender.size = 18;
+  state.damage = { targetType: "actor", rawRoll: 9, beforeRange: 10 };
+  let received;
+  await applyPostDamageCombatEffects(state, {
+    resolveActor: async () => ({ uuid: "Actor.defender" }),
+    resolveBashObstacle: async (actor, result) => {
+      received = { actor, result };
+      return { obstacle: true, check: { success: false, result: "failure" } };
+    }
+  });
+  assert.equal(received.result.distance, 5);
+  assert.equal(effect.status, "resolved");
+  assert.equal(effect.resolution.obstacle, true);
+  assert.equal(effect.resolution.check.success, false);
+});
+
+test("Golpetazo no consulta obstáculos cuando el blanco supera el límite de TAM", async () => {
+  const effect = { key: "golpetazo", side: "attacker", slot: 0, status: "active" };
+  const state = combat([effect]);
+  state.attacker.size = 10;
+  state.defender.size = 21;
+  state.damage = { targetType: "actor", rawRoll: 30 };
+  await applyPostDamageCombatEffects(state, {
+    resolveActor: async () => ({ uuid: "Actor.defender" }),
+    resolveBashObstacle: async () => assert.fail("no debe preguntar")
+  });
+  assert.equal(effect.status, "notActivated");
+  assert.equal(effect.resolution.reason, "targetTooLarge");
 });
 
 test("Empalar custodia el arma en la víctima solo cuando causa una herida", async () => {

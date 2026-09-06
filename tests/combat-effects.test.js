@@ -140,6 +140,28 @@ test("las restricciones a distancia respetan el modo usado en el ataque", () => 
   assert.equal(combatEffectEligible(rangedEffect, { ...context, attackMode: "ranged" }), true);
 });
 
+test("Ráfaga solo se ofrece desarmado durante un combate activo", () => {
+  const flurry = effects.find((effect) => effect.key === "rafaga");
+  assert.equal(combatEffectIsAutomated(flurry), true);
+  assert.equal(combatEffectEligible(flurry, { winner: "attacker", activeCombat: false,
+    unarmed: true, attackMode: "melee" }), false);
+  assert.equal(combatEffectEligible(flurry, { winner: "attacker", activeCombat: true,
+    unarmed: false, attackMode: "melee" }), false);
+  assert.equal(combatEffectEligible(flurry, { winner: "attacker", activeCombat: true,
+    unarmed: true, attackMode: "melee" }), true);
+});
+
+test("Redoblar Ataque solo se ofrece con arma Pequeña durante un combate activo", () => {
+  const doubleAttack = effects.find((effect) => effect.key === "redoblar-ataque");
+  assert.equal(combatEffectIsAutomated(doubleAttack), true);
+  assert.equal(combatEffectEligible(doubleAttack, { winner: "attacker", activeCombat: false,
+    weaponMode: { weaponType: "melee", size: "P" } }), false);
+  assert.equal(combatEffectEligible(doubleAttack, { winner: "attacker", activeCombat: true,
+    weaponMode: { weaponType: "melee", size: "M" } }), false);
+  assert.equal(combatEffectEligible(doubleAttack, { winner: "attacker", activeCombat: true,
+    weaponMode: { weaponType: "melee", size: "P" } }), true);
+});
+
 test("Disparo de Supresión exige que el blanco use un arma a distancia", () => {
   const suppression = effects.find((effect) => effect.key === "disparo-de-supresion");
   const context = { winner: "attacker", attackResult: "success", defenseResult: "failure",

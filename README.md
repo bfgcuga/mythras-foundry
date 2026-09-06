@@ -226,6 +226,17 @@ El sistema incluye actualmente:
   Músculo si la víctima se resiste, devuelve el arma al inventario del vencedor
   y causa en la misma localización la mitad del daño del arma —o el daño completo
   si es Barbada—, sin Modificador de Daño ni reducción por armadura.
+  «Golpetazo» usa el daño bruto generado antes de parada, cobertura y armadura:
+  los escudos empujan un metro por cada dos puntos y las armas contundentes uno
+  por cada tres. Solo afecta a blancos de hasta el doble del TAM del atacante y
+  muestra la distancia sin mover tokens. Si se confirma una colisión con un
+  obstáculo, el blanco elige Atletismo o Acrobacias y realiza una tirada Difícil;
+  la tarjeta indica si conserva el equilibrio o tropieza y cae.
+  «Ráfaga» solo se ofrece a ataques desarmados dentro de un combate. Al usarla,
+  el intercambio se cierra sin avanzar el tracker, por lo que el atacante conserva
+  el turno y puede atacar de nuevo; ese ataque adicional gasta normalmente 1 PA.
+  «Redoblar Ataque» reutiliza esa misma continuación inmediata para ataques con
+  armas de Tamaño Pequeño: conserva el turno y el segundo ataque cuesta 1 PA.
   «Ardid» permite preparar en secreto un efecto ofensivo
   concreto contra el rival del intercambio: si este lo selecciona más adelante,
   su efecto se sustituye antes de resolverlo y el defensor elige un efecto

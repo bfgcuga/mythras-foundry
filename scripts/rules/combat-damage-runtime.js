@@ -297,9 +297,7 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
     ? weaponDamageResult({ currentHitPoints: before, armorPoints: effectiveArmor,
       damage: rangeAdjustedDamage }).afterHitPoints
     : before - calculation.penetratingDamage;
-  if (!selectedEffectCount(combat.effects?.selections ?? [], "bash")) {
-    calculation.push = { triggered: false, excess: 0, distance: 0 };
-  }
+  calculation.push = { triggered: false, excess: 0, distance: 0 };
   let resulting = combat.damage?.targetType === "weapon"
     ? (after <= 0 ? "broken" : after < before ? "damaged" : "unharmed")
     : weaponTarget ? "healthy"

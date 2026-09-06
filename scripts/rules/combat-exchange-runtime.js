@@ -15,7 +15,7 @@ export async function advanceCombatExchange(message, combat, { force = false, co
   combat.turnEconomy.advancedAt = Date.now();
   combat.revision += 1;
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
-  await tracker.nextTurn();
+  if (!combat.turnEconomy.retainTurn) await tracker.nextTurn();
   return true;
 }
 

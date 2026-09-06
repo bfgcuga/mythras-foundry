@@ -442,6 +442,13 @@ tracker solo avanza cuando la tarjeta queda confirmada. Mientras no se haya
 aplicado daño, un estado o un cambio táctico al blanco, la transacción puede
 cancelarse: `scripts/rules/combat-cancellation.js` decide esa frontera,
 `combat-chat.js` restituye los PA gastados y el turno permanece en su posición.
+«Ráfaga» y «Redoblar Ataque» usan esta misma frontera transaccional: su resolución
+inmediata marca `turnEconomy.retainTurn`, identifica el motivo en
+`retainTurnReason` y hace irreversible el intercambio. Al cerrarlo,
+`advanceCombatExchange` sella la tarjeta y su revisión, pero omite `nextTurn`;
+el combatiente activo puede iniciar otro ataque, que consume su propio PA por
+el flujo ordinario. La elegibilidad exige combate activo y, respectivamente,
+un ataque desarmado o un arma de Tamaño Pequeño.
 
 `MythrasCombat` extiende el documento nativo de Foundry. `Combat.round`
 representa el asalto y `flags.mythras-foundry.turnEconomy.cycle` los recorridos
@@ -761,6 +768,13 @@ para combatientes trabados con una víctima empalada, consume 1 PA y aplica el
 ajuste compartido de competiciones de fuerza a Músculo. Al vencer restaura el
 Item desequipado, elimina el efecto y aplica daño directo a la localización sin
 armadura ni Modificador de Daño; Barbada decide entre daño completo y mitad.
+`combat-bash.js` mantiene puro el cálculo de «Golpetazo»: valida que el TAM del
+blanco no supere el doble del atacante y divide el daño previo a cualquier
+mitigación entre dos para escudos o entre tres para armas contundentes, siempre
+redondeando hacia abajo. La fase posterior al daño guarda esa distancia sin
+mover tokens. Su dependencia de interfaz pregunta por la colisión y, si existe,
+permite elegir Atletismo o Acrobacias, aplica dificultad Difícil y serializa el
+resultado en la resolución del efecto para que la tarjeta lo conserve.
 Mientras la prueba de Aguante de una Herida Crítica siga pendiente, el
 propietario de la víctima o el DJ puede gastar uno de sus puntos de Suerte para
 reducirla a Herida Grave. La propuesta eleva los PG de la localización a
