@@ -1,3 +1,4 @@
+import { isGrabbed } from "./grappling.js";
 import { combatAttackHits, damageModifierFormula, difficultyTarget,
   resolveCombatExchange, resolveWeaponStyle } from "./combat.js";
 import { findWeaponMode, weaponModeDisplayName, weaponModes, weaponModeView } from "./weapon-modes.js";
@@ -149,8 +150,10 @@ const effectView = (item) => {
   };
 };
 
-function effectContext(combat, side = combat.effects?.pendingSide ?? combat.resolution?.winner) {
-  return { winner: side,
+async function effectContext(combat, side = combat.effects?.pendingSide ?? combat.resolution?.winner) {
+  const entry = side === "attacker" ? combat.attacker : combat.defender;
+  const actor = await combatActor(entry?.tokenUuid, entry?.actorUuid);
+  return { winner: side, grabbed: isGrabbed(actor),
     activeCombat: Boolean(combat.turnEconomy),
     attackResult: combat.resolution?.attack?.result,
     defenseResult: combat.resolution?.defense?.result,
@@ -653,7 +656,7 @@ async function chooseCombatEffects(message, combat) {
   const actor = await combatActor(winnerEntry?.tokenUuid, winnerEntry?.actorUuid);
   if (!actor || (!game.user.isGM && !actor.isOwner) || combat.status !== "awaitingEffects") return;
   const catalog = (await combatEffectDocuments()).map(effectView);
-  const eligible = eligibleCombatEffects(catalog, effectContext(combat, side));
+  const eligible = eligibleCombatEffects(catalog, await effectContext(combat, side));
   const ruseTargetOptions = combatRuseTargetEffects(catalog).map((effect) =>
     `<option value="${escape(effect.key)}">${escape(effect.name)}</option>`).join("");
   const options = [`<option value="__waive__">${escape(localize("MYTHRASF.CombatEffect.Waive"))}</option>`,
@@ -731,11 +734,15 @@ async function chooseCombatEffects(message, combat) {
     rejectClose: false
   });
   if (!result) return;
+  if (result.some((entry) => entry.key === "agarrar") && !await foundry.applications.api.DialogV2.confirm({
+    window: { title: localize("MYTHRASF.Status.Grabbed") },
+    content: `<p>${escape(localize("MYTHRASF.Grab.Confirm"))}</p>`
+  })) return;
   const selections = result.map((selected, index) => {
     if (selected.key === "__waive__") return { slot: index, waived: true };
     const effect = eligible.find((entry) => entry.key === selected.key);
     return { slot: index, waived: false, ...effect,
-      parameters: { locationId: selected.locationId, effectKey: selected.effectKey,
+      parameters: { grabConfirmed: selected.key === "agarrar", locationId: selected.locationId, effectKey: selected.effectKey,
         note: selected.note },
       status: initialCombatEffectStatus(effect) };
   });
@@ -764,7 +771,7 @@ async function chooseCombatRuseReplacement(message, combat) {
   const actor = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
   if (!actor || (!game.user.isGM && !actor.isOwner) || combat.status !== "awaitingRuse") return;
   const catalog = (await combatEffectDocuments()).map(effectView);
-  const eligible = eligibleCombatRuseReplacements(catalog, effectContext(combat, "defender"));
+  const eligible = eligibleCombatRuseReplacements(catalog, await effectContext(combat, "defender"));
   const options = eligible.map((effect) =>
     `<option value="${escape(effect.key)}">${escape(effect.name)}</option>`).join("");
   const locationOptions = (combat.defender.locations ?? []).map((location) =>

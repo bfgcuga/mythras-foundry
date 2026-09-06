@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { combatEffectRule, initialCombatEffectStatus } from "../scripts/rules/combat-effects.js";
 import { addManagedCombatStatus, applyCombatEffectCheckConsequence,
   applyAutomaticCombatEffectChecks, applyImmediateCombatEffects, combatEffectAffectedSide
 } from "../scripts/rules/combat-effect-runtime.js";
@@ -11,6 +12,36 @@ function combat(selections = []) {
   turnEconomy: { combatId: "combat", combatantId: "a", defenderCombatantId: "d" },
   effects: { selections, checks: [] }, damage: { locationId: "head", penetratingDamage: 3 } };
 }
+
+test("Alzarse elimina Derribado del defensor, conserva otros estados y se resuelve antes del daño", async () => {
+  const effect = { key: "alzarse", side: "defender", slot: 0,
+    ...combatEffectRule({ key: "alzarse" }) };
+  assert.equal(initialCombatEffectStatus(effect), "active");
+  assert.equal(effect.stage, "beforeDamage");
+  const state = combat([effect]);
+  const actor = { effects: [
+    { id: "prone-one", statuses: new Set(["prone"]) },
+    { id: "prone-two", statuses: new Set(["prone"]) },
+    { id: "blinded", statuses: new Set(["blinded"]) }
+  ], async deleteEmbeddedDocuments(type, ids) {
+    assert.equal(type, "ActiveEffect");
+    this.effects = this.effects.filter((entry) => !ids.includes(entry.id));
+  } };
+  const deps = { resolveActor: async (tokenUuid, actorUuid) => {
+    assert.equal(tokenUuid, "Token.defender");
+    assert.equal(actorUuid, "Actor.defender");
+    return actor;
+  } };
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" }, deps);
+  assert.deepEqual(actor.effects.map((entry) => entry.id), ["blinded"]);
+  assert.equal(effect.status, "resolved");
+  assert.equal(state.consequencesApplied, true);
+  assert.deepEqual(state.effects.checks, []);
+  delete state.consequencesApplied;
+  await applyImmediateCombatEffects(state, { uuid: "ChatMessage.message" }, deps);
+  assert.equal(state.consequencesApplied, undefined);
+  assert.equal(effect.status, "resolved");
+});
 
 function dependencies({ conditions = [], positions = [] } = {}) {
   const actors = { "Actor.attacker": { uuid: "Actor.attacker" },

@@ -1,6 +1,7 @@
+import { isGrabbed } from "./grappling.js";
 import { currentActionPoints } from "./action-points.js";
 import { weaponPins, weaponIsPinned } from "./weapon-pinning.js";
-import { requestWeaponRelease } from "./weapon-pin-runtime.js";
+import { requestGrabRelease, requestWeaponRelease } from "./weapon-pin-runtime.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
@@ -61,6 +62,7 @@ export function actionPresentation(actor) {
     prone: actor?.statuses?.has?.("prone"), hasRangedWeapon: modes.some((mode) =>
       ["ranged", "siege"].includes(mode.weaponType)), hasPreparedWeapon: modes.length > 0,
     hasRestraint: restraintEffects(actor).length > 0,
+    grabbed: isGrabbed(actor),
     hasPinnedWeapon: weaponPins(actor).length > 0,
     hasDelay: state.delays[combatant?.id]?.status === "reserved",
     canCharge: chargeEligibility(state.movements[combatant?.id], combat?.round).eligible });
@@ -71,7 +73,8 @@ export function decorateCombatActionButtons(actor, root) {
   root?.querySelectorAll?.("[data-combat-action-key]").forEach((button) => {
     const key = button.dataset.combatActionKey;
     const state = presentation[key] ?? { available: false, cost: 1, reason: "unavailable" };
-    button.hidden = key === "releaseWeapon" && !weaponPins(actor).length;
+    button.hidden = (key === "releaseWeapon" && !weaponPins(actor).length)
+      || (key === "releaseGrab" && !isGrabbed(actor));
     button.disabled = !state.available;
     button.setAttribute("aria-disabled", String(!state.available));
     const reason = state.reason ? localize(`MYTHRASF.Action.Unavailable.${state.reason}`) : "";
@@ -224,6 +227,7 @@ export async function requestCombatAction(actor, key) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.turn"));
   }
   let parameters = {};
+  if (key === "releaseGrab") return requestGrabRelease(actor);
   if (key === "releaseWeapon") return requestWeaponRelease(actor);
   if (key === "move") { parameters = await chooseMovement(context); if (!parameters) return; }
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }

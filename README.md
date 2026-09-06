@@ -140,7 +140,14 @@ El sistema incluye actualmente:
   modificadores compatibles y avanza por fases sin detener el daño por efectos
   no automatizados: integra en el daño los cambios de parada, localización,
   tirada y armadura, y presenta después las consecuencias condicionadas y las
-  heridas. «Cegar oponente» se resuelve antes del daño, permite
+  heridas. «Agarrar» confirma alcance de Pelea y miembro libre, aplica Agarrado
+  con su captor y bloquea cambiar distancia y Retirada. «Liberarse del agarre»
+  aparece primero en las acciones: cuesta 1 PA en el turno propio y enfrenta
+  Músculo o Pelea de ambos participantes; ganar elimina solo la presa elegida.
+  Las enfrentadas de Músculo penalizan al participante con menor Modificador
+  de Daño un grado por cada grado de diferencia, también al liberar armas.
+  «Alzarse» elimina automáticamente Derribado del defensor antes del
+  daño, conservando los demás estados. «Cegar oponente» se resuelve antes del daño, permite
   resistir con Evadir o con un estilo que use un escudo equipado, admite repetir
   la resistencia con Suerte y aplica automáticamente Cegado durante 1d3 turnos
   si no se resiste. «Desarmar oponente» enfrenta el Estilo de Combate con la
@@ -211,7 +218,9 @@ El sistema incluye actualmente:
   varias localizaciones elegidas o a una aleatoria; aplica directamente a PG,
   ignora armadura y ejecuta las consecuencias compartidas de heridas;
 - macro de DJ para aplicar `Desangrándose`; el estado permanece hasta retirarlo
-  y reduce automáticamente un nivel de Fatiga al preparar cada asalto;
+  y reduce automáticamente un nivel de Fatiga al preparar cada asalto, también
+  cuando procede del efecto de combate Desangrar o del selector de estados.
+  El chat identifica al afectado y la pérdida; varias fuentes activas no la multiplican;
 - macro de DJ para aplicar `Agonizando` con contador libre, Ritmo de curación ×2
   o ×60; el contador baja al inicio de cada asalto, nunca puede ampliarse y al
   llegar a cero aplica el estado nativo Muerto/Derrotado de Foundry;

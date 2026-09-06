@@ -194,7 +194,12 @@ Sangrando y Ahogándose crean una cola de Aguante antes del primer turno del
 asalto. Esas tiradas resuelven su objetivo efectivo en el momento de lanzar los
 dados mediante `resolveSkillRollConditions`, por lo que incorporan la Fatiga,
 heridas y estados vigentes. Desangrándose crea una única entrada automática por Actor y pierde un
-nivel de Fatiga, sin tirada, durante esa misma preparación. Su efecto manual
+nivel de Fatiga, sin tirada, durante esa misma preparación. Se reconoce tanto
+el estado nativo sin flags como la condición gestionada de Desangrar; se omiten
+efectos desactivados o suprimidos y varias fuentes se agrupan en una entrada
+estable por combatiente. La pérdida usa el Actor actual del combatiente y la
+cola conserva su resolución para no repetirla al preparar de nuevo el mismo
+asalto. El mensaje identifica al Actor y el nivel perdido. Su efecto manual
 permanece hasta retirarlo y fuera de combate no avanza. Sorprendido bloquea la
 defensa hasta su iniciativa, las acciones ofensivas durante el asalto y aporta
 un hueco ofensivo al primer ataque exitoso.
@@ -834,3 +839,27 @@ la presencia de compendios y la URL versionada de descarga.
 dependencias, prueba, reconstruye compendios, valida la coincidencia entre
 etiqueta y manifiesto, empaqueta los archivos de ejecución y crea la release.
 El procedimiento manual y su orden obligatorio se mantienen en `AGENTS.md`.
+
+## Agarres y competiciones de fuerza
+
+`grappling.js` identifica las presas activas vinculadas al captor. Agarrar requiere
+confirmar alcance de Pelea y miembro libre; no modela miembros anatómicos. El
+estado canónico `grabbed` se aplica antes del daño y conserva Actor y token de
+origen. El selector de estados también permite elegir un captor. La víctima no
+puede usar Cambiar Distancia ni Abrir Distancia, Cerrar Distancia o Retirada;
+la elegibilidad y la ejecución verifican el estado vigente. La edición táctica
+del DJ permanece disponible como operación administrativa.
+
+`weapon-pin-runtime.js` comparte la transacción de liberación para armas y
+agarres mediante `kind`: valida propietario, turno, PA y fuente activa, cobra
+1 PA una sola vez y retira únicamente la fuente elegida si vence la víctima.
+Empates y fallos conservan la presa. El botón de agarre precede al de arma y
+reutiliza su estilo de atención.
+
+`strength-contests.js` compara grados de los modificadores de daño preparados,
+incluidos valores negativos. Solo penaliza a quien usa Músculo y tiene un
+modificador inferior: acumula la diferencia sobre su dificultad antes del
+ajuste compartido de porcentajes superiores a 100. Las enfrentadas generales
+y la liberación comparten el ayudante. Pelea no recibe esta penalización. En
+enfrentadas con varios rivales se usa el modificador más alto del bando rival;
+las pruebas contra dificultad y las diferenciales conservan sus reglas.

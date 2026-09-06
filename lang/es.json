@@ -1890,5 +1890,13 @@
   "MYTHRASF.ManualRoll.Formula": "Fórmula: {formula}",
   "MYTHRASF.ManualRoll.DieLabel": "Dado {die} (d{faces})",
   "MYTHRASF.ManualRoll.Accept": "Aceptar",
-  "MYTHRASF.ManualRoll.Invalid": "Introduce un número entero válido para cada dado."
+  "MYTHRASF.ManualRoll.Invalid": "Introduce un número entero válido para cada dado.",
+  "MYTHRASF.Status.Grabbed": "Agarrado",
+  "MYTHRASF.Status.Description.grabbed": "Sujeto por un captor: no puede cambiar distancia ni destrabarse. En su turno puede gastar 1 PA para enfrentarse con Músculo o Pelea al captor y liberarse si gana.",
+  "MYTHRASF.Grab.Release": "Liberarse del agarre",
+  "MYTHRASF.Grab.Confirm": "Confirma que el rival está a alcance de Pelea y dispones de una mano u otro miembro libre capaz de sujetarlo.",
+  "MYTHRASF.Grab.Blocked": "Debes liberarte del agarre antes de cambiar distancia o destrabarte.",
+  "MYTHRASF.Grab.Freed": "Agarre liberado",
+  "MYTHRASF.Grab.Held": "El captor mantiene el agarre",
+  "MYTHRASF.Contest.StrengthPenalty": "Competición de fuerza: +{steps} grados de dificultad"
 }

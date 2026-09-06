@@ -17,6 +17,7 @@ export const COMBAT_EFFECT_ROLL_RESTRICTIONS = Object.freeze([
 ]);
 
 export const COMBAT_EFFECT_RULES = Object.freeze({
+  agarrar: { ruleKey: "guided", stage: "beforeDamage", target: "opponent" },
   "abrir-distancia": { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   alzarse: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
   ardid: { ruleKey: "guided", stage: "beforeDamage", target: "self" },
@@ -74,7 +75,8 @@ export const COMBAT_EFFECT_RULE_KEYS = Object.freeze([
 ]);
 
 const AUTOMATED_GUIDED_EFFECTS = Object.freeze(new Set([
-  "abrir-distancia", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
+  "agarrar",
+  "abrir-distancia", "alzarse", "aprovechar-la-ventaja", "ardid", "aturdir-localizacion", "cegar-oponente",
   "cerrar-distancia", "desangrar", "desequilibrar-oponente", "disparo-de-supresion",
   "inmovilizar-arma", "desarmar-oponente", "muerte-silenciosa", "retirada", "tumbar-oponente"
 ]));
@@ -186,6 +188,7 @@ function matchesRollRestriction(restriction, context) {
 }
 
 export function combatEffectEligible(effect, context = {}) {
+  if (context.grabbed && ["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect?.key)) return false;
   if (!effect || !["attacker", "defender"].includes(context.winner)) return false;
   if (context.winner === "attacker" && !effect.offensive) return false;
   if (context.winner === "defender" && !effect.defensive) return false;

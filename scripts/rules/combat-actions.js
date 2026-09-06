@@ -1,6 +1,7 @@
 export const COMBAT_ACTION_SCHEMA_VERSION = 1;
 
 export const COMBAT_ACTIONS = Object.freeze({
+  releaseGrab: { type: "proactive", cost: 1, requiresCombat: true },
   releaseWeapon: { type: "proactive", cost: 1, requiresCombat: true },
   attack: { type: "proactive", cost: 1, observable: true },
   changeReach: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
@@ -55,7 +56,7 @@ export function delayIsValid(delay, { round, cycle, turnSerial = 0 } = {}) {
 export function availableCombatActions({ inCombat = false, isActive = false, actionPoints = 0,
   canTakeProactiveTurn = true, canAttack = true, engaged = false, prone = false,
   hasRangedWeapon = false, hasPreparedWeapon = false, hasRestraint = false,
-  hasDelay = false, canCharge = false, hasPinnedWeapon = false } = {}) {
+  hasDelay = false, canCharge = false, hasPinnedWeapon = false, grabbed = false } = {}) {
   const available = {};
   for (const [key, definition] of Object.entries(COMBAT_ACTIONS)) {
     let allowed = definition.type !== "proactive" || (inCombat && isActive
@@ -65,6 +66,8 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     if (["aim", "reload"].includes(key)) allowed &&= hasRangedWeapon;
     if (["brace", "readyWeapon", "passiveBlock"].includes(key)) allowed &&= hasPreparedWeapon;
     if (key === "struggle") allowed &&= hasRestraint;
+    if (key === "releaseGrab") allowed &&= grabbed;
+    if (key === "changeReach") allowed &&= !grabbed;
     if (key === "releaseWeapon") allowed &&= hasPinnedWeapon;
     if (key === "move") allowed &&= !engaged;
     if (key === "stand") allowed &&= prone;

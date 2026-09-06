@@ -35,9 +35,9 @@ test("todos los efectos oficiales tienen una fase canónica de resolución", () 
   assert.equal(combatEffectIsAutomated({ key: "desarmar-oponente", ruleKey: "guided" }), true);
   assert.equal(initialCombatEffectStatus({ key: "desarmar-oponente", ruleKey: "guided" }),
     "active");
-  assert.equal(combatEffectIsAutomated({ key: "agarrar", ruleKey: "guided" }), false);
+  assert.equal(combatEffectIsAutomated({ key: "agarrar", ruleKey: "guided" }), true);
   assert.equal(initialCombatEffectStatus({ key: "agarrar", ruleKey: "guided" }),
-    "notAutomated");
+    "active");
 });
 
 test("Sorpresa puede conceder efectos ofensivos aunque gane la defensa", () => {

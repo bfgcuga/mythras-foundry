@@ -3,7 +3,6 @@ import { appendSerializedRolls, evaluateAnimatedRoll } from "./dice-animation.js
 import { recordAbilityFumble } from "./skills.js";
 import { fatigueLossForResult, worsenFatigueLevel, TIMED_CONDITION_FLAG,
   TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
-import { timedEffects } from "./timed-condition-runtime.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { isNaturalWeaponMode, passiveBlockCapacity, validatePassiveBlock } from "./passive-block.js";
 import { getSystemSetting, SETTING_KEYS } from "../settings.js";
@@ -66,11 +65,15 @@ export function periodicConditionEntries(combat) {
   const entries = [];
   for (const combatant of uniqueActorEntries(combat?.combatants)) {
     const actor = combatant.actor; if (!actor) continue;
-    for (const effect of timedEffects(actor)) {
-      const condition = effect.getFlag(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG);
-      if (condition.key === "exsanguinating") entries.push({ id: `${combatant.id}:${effect.id}`,
+    const exsanguinating = Array.from(actor.effects ?? []).find((effect) =>
+      !effect.disabled && !effect.isSuppressed && (effect.statuses?.has?.("exsanguinating")
+        || effect.getFlag?.(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG)?.key === "exsanguinating"));
+    if (exsanguinating) {
+      const effect = exsanguinating;
+      entries.push({ id: `${combatant.id}:exsanguinating`,
         combatantId: combatant.id, actorUuid: actor.uuid, effectId: effect.id,
-        key: condition.key, automatic: true, status: "pending" });
+        actorName: actorDisplayName(actor),
+        key: "exsanguinating", automatic: true, status: "pending" });
     }
     for (const key of ["bleeding", "drowning"]) {
       if (actor.statuses?.has(key)) entries.push({ id: `${combatant.id}:${key}`,
@@ -244,7 +247,8 @@ export async function prepareRoundConsequences(combat) {
     });
   for (const entry of queue.filter((candidate) => candidate.automatic
     && candidate.status === "pending")) {
-    const actor = await fromUuid(entry.actorUuid);
+    const actor = Array.from(combat.combatants ?? []).find((combatant) =>
+      combatant.id === entry.combatantId)?.actor ?? await fromUuid(entry.actorUuid);
     entry.resolution = actor ? await applyFatigueLoss(actor, 1) : { missing: true };
     entry.status = actor ? "resolved" : "pending";
   }
@@ -279,7 +283,7 @@ export function renderRoundConsequences(state) {
       : entry.key === "bleeding" ? "Bleeding" : entry.key === "passiveBlock"
         ? "PassiveBlock" : entry.key === "suffocating" ? "Suffocating"
           : entry.key === "combatFatigue" ? "CombatFatigue"
-            : entry.key === "dying" ? "Dying" : "Drowning"}`))}${["suffocating", "combatFatigue", "dying"].includes(entry.key) ? ` — ${escape(entry.actorName)}` : ""}</span><strong>${escape(
+            : entry.key === "dying" ? "Dying" : "Drowning"}`))}${["exsanguinating", "suffocating", "combatFatigue", "dying"].includes(entry.key) ? ` — ${escape(entry.actorName)}` : ""}</span><strong>${escape(
     game.i18n.localize(`MYTHRASF.RoundConsequence.${entry.status}`))}</strong>${entry.status === "pending"
       ? entry.key === "passiveBlock"
         ? `<button type="button" data-round-action="block" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Declare"))}</button><button type="button" data-round-action="waive" data-entry-id="${escape(entry.id)}">${escape(game.i18n.localize("MYTHRASF.PassiveBlock.Waive"))}</button>`

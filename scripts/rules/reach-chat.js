@@ -1,3 +1,4 @@
+import { isGrabbed } from "./grappling.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { opposedEffectWinner } from "./combat-effects.js";
@@ -42,6 +43,7 @@ function render(state) {
 }
 
 export async function requestReachChange(actor, { manual = false } = {}) {
+  if (isGrabbed(actor)) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Grab.Blocked"));
   if (!detailedReachEnabled()) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Reach.Disabled"));
   if (pendingActors.has(actor.uuid)) return;
@@ -62,7 +64,7 @@ export async function requestReachChange(actor, { manual = false } = {}) {
     buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.Reach.Change"),
       callback: (event, button) => ({ targetId: button.form.elements.target.value,
         intent: button.form.elements.intent.value, weapon: button.form.elements.weapon.value }) }], rejectClose: false });
-  if (!result || !await spend(actor)) return;
+  if (!result || isGrabbed(actor) || !await spend(actor)) return;
   const target = combat.combatants.get(result.targetId); const [weaponId, modeKey] = result.weapon.split(":");
   const weapon = actor.items.get(weaponId); const mode = findWeaponMode(weapon, modeKey);
   const relation = await ensureEngagement(combat, actor, target.actor, weapon, mode);
@@ -119,6 +121,7 @@ async function apply(message, request) {
   const user = game.users.get(request.userId);
   if (!state || state.status !== "awaitingResponse" || state.revision !== request.revision || !user
     || (!user.isGM && !target?.actor?.testUserPermission(user, "OWNER"))) return;
+  if (isGrabbed(combat.combatants.get(state.actorCombatantId)?.actor)) return;
   const response = request.response; let succeeds = response.type === "none"; let winner = null;
   if (response.type !== "none" && !await spend(target.actor)) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Tracker.Rejected.actionPoints"));

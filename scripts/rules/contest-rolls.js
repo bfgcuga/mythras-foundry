@@ -1,3 +1,4 @@
+import { applyStrengthContestPenalties } from "./strength-contests.js";
 export const CONTEST_TYPES = Object.freeze({
   simple: "simple", opposed: "opposed", differential: "differential",
   team: "team", inverseTeam: "inverseTeam", elimination: "elimination"
@@ -70,7 +71,10 @@ export function selectTeamRepresentative(participants, { inverse = false, design
 }
 
 export function resolveContest({ type, participants = [], initiatorId, designatedId = null } = {}) {
-  const adjusted = applySharedOver100Penalty(participants);
+  const adjusted = applySharedOver100Penalty(type === CONTEST_TYPES.opposed
+    ? applyStrengthContestPenalties(participants, (id) => id === initiatorId
+      ? participants.filter((entry) => entry.id !== id).map((entry) => entry.id) : [initiatorId])
+    : participants);
   const entries = adjusted.participants;
   if (type === CONTEST_TYPES.opposed || type === CONTEST_TYPES.differential) {
     const protagonist = entries.find((entry) => entry.id === initiatorId);
@@ -101,7 +105,11 @@ export function resolveContest({ type, participants = [], initiatorId, designate
 }
 
 export function resolveConfiguredContest({ resolutionMode = "difficulty", sides = {}, participants = [] } = {}) {
-  const adjusted = applySharedOver100Penalty(participants);
+  const adjusted = applySharedOver100Penalty(resolutionMode === "opposed"
+    ? applyStrengthContestPenalties(participants, (id) =>
+      (sides.initiator?.participantIds ?? []).includes(id)
+        ? sides.opponent?.participantIds ?? [] : sides.initiator?.participantIds ?? [])
+    : participants);
   const byId = new Map(adjusted.participants.map((entry) => [entry.id, entry]));
   const initiator = resolveContestSide(sides.initiator, byId);
   const opponent = resolutionMode === "difficulty" ? null : resolveContestSide(sides.opponent, byId);

@@ -108,11 +108,13 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
   const catalog = (await catalogDocuments()).map(effectView);
   const slots = combat.effects.sideSlots?.[side] ?? combat.effects.slots;
   const validation = validateEffectSelections({ slots, selections: request.selections,
-    effects: catalog, context: effectContext(combat, side) });
+    effects: catalog, context: await effectContext(combat, side) });
   const catalogByKey = new Map(catalog.map((effect) => [effect.key, effect]));
   const ruseTargets = new Set(combatRuseTargetEffects(catalog).map((effect) => effect.key));
   const invalidRuse = request.selections.some((selection) => selection.key === "ardid"
     && (!combat.turnEconomy || !ruseTargets.has(selection.parameters?.effectKey)));
+  const invalidGrab = request.selections.some((selection) => !selection.waived
+    && selection.key === "agarrar" && selection.parameters?.grabConfirmed !== true);
   const combinedEffects = [...(combat.effects.selections ?? []).filter((entry) => !entry.waived),
     ...request.selections.filter((entry) => !entry.waived)
       .map((entry) => catalogByKey.get(entry.key)).filter(Boolean)];
@@ -120,7 +122,7 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     (counts.get(effect.key) ?? 0) + 1), new Map());
   const invalidCombinedStack = combinedEffects.some((effect) => !effect.stackable
     && combinedCounts.get(effect.key) > 1);
-  if (!validation.valid || invalidRuse || invalidCombinedStack
+  if (!validation.valid || invalidRuse || invalidGrab || invalidCombinedStack
     || !combatEffectSelectionsCompatible(combinedEffects)) {
     warn(localize("MYTHRASF.CombatEffect.Invalid")); return false;
   }
@@ -129,7 +131,8 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
     const effect = catalogByKey.get(selection.key);
     return { slot: index, side, waived: false, ...effect,
       stage: canonicalCombatEffectStage(effect.stage),
-      parameters: { locationId: String(selection.parameters?.locationId ?? ""),
+      parameters: { grabConfirmed: selection.parameters?.grabConfirmed === true,
+        locationId: String(selection.parameters?.locationId ?? ""),
         effectKey: String(selection.parameters?.effectKey ?? ""),
         note: String(selection.parameters?.note ?? "") },
       status: initialCombatEffectStatus(effect) };
@@ -191,7 +194,7 @@ export async function applyCombatRuseReplacementTransition(message, request, { c
   const user = userById(request.userId);
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return false;
   const catalog = (await catalogDocuments()).map(effectView);
-  const eligible = replacementEffects(catalog, effectContext(combat, "defender"));
+  const eligible = replacementEffects(catalog, await effectContext(combat, "defender"));
   const eligibleByKey = new Map(eligible.map((effect) => [effect.key, effect]));
   const chosen = request.selections.map((selection) => eligibleByKey.get(selection.key));
   const combined = [...combat.effects.selections.filter((entry) => !entry.waived),

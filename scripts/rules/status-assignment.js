@@ -58,6 +58,10 @@ async function applySimpleStatus(actor, status, { duration, locationId = "" } = 
 }
 
 async function applyConfiguredStatus(status, actor, token) {
+  if (status.assignment === "grab") {
+    const { openWeaponPinAssignment } = await import("./weapon-pin-runtime.js");
+    return openWeaponPinAssignment(actor, "grab");
+  }
   if (status.assignment === "weaponPin") {
     const { openWeaponPinAssignment } = await import("./weapon-pin-runtime.js");
     return openWeaponPinAssignment(actor);

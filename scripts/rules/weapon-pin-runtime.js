@@ -1,3 +1,5 @@
+import { activeGrabs, grabData } from "./grappling.js";
+import { strengthContestAdjustment } from "./strength-contests.js";
 import { PIN_SCOPE, pinnableWeapons, releaseWeaponSkills, resolveWeaponRelease, weaponPinData, weaponPins
 } from "./weapon-pinning.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
@@ -13,6 +15,9 @@ import { actorDisplayName } from "./document-names.js";
 const localize = (key) => game.i18n.localize(`MYTHRASF.Pin.${key}`);
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const queues = new Map();
+const restraints = (actor, kind) => kind === "grab" ? activeGrabs(actor) : weaponPins(actor);
+const choiceName = (kind) => localize(kind === "grab" ? "Holder" : "ChooseWeapon");
+const releaseName = (kind) => kind === "grab" ? game.i18n.localize("MYTHRASF.Grab.Release") : localize("Release");
 const coordinator = () => game.users.filter((user) => user.active && user.isGM)
   .sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
 const entryFor = (combat, side) => side === "attacker" ? combat?.attacker : combat?.defender;
@@ -44,20 +49,25 @@ export async function applyWeaponPin(actor, weaponId, source, messageUuid) {
   return true;
 }
 
-export async function openWeaponPinAssignment(actor) {
+export async function openWeaponPinAssignment(actor, kind = "weapon") {
   if (!game.user.isGM) return;
   const weapons = pinnableWeapons(actor);
   const candidates = [...new Map([
     ...Array.from(globalThis.canvas?.tokens?.placeables ?? []).map((token) => token.actor),
     ...Array.from(game.actors ?? [])].filter((entry) => entry && entry.uuid !== actor.uuid
       && ["character", "npc"].includes(entry.type)).map((entry) => [entry.uuid, entry])).values()];
-  if (!weapons.length || !candidates.length) return ui.notifications.warn(localize("NoWeapon"));
-  const choice = await foundry.applications.api.DialogV2.wait({ window: { title: localize("Title") },
-    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(localize("Title"))}</legend><label>${escape(localize("ChooseWeapon"))}<select name="weapon">${weapons.map((weapon) => `<option value="${escape(weapon.id)}">${escape(weapon.name)}</option>`).join("")}</select></label><label>${escape(localize("Holder"))}<select name="holder">${candidates.map((entry) => `<option value="${escape(entry.uuid)}">${escape(actorDisplayName(entry))}</option>`).join("")}</select></label></fieldset></div>`,
-    buttons: [{ action: "apply", label: localize("Title"), callback: (event, button) => ({
+  if ((kind !== "grab" && !weapons.length) || !candidates.length) return ui.notifications.warn(localize("NoWeapon"));
+  const title = kind === "grab" ? game.i18n.localize("MYTHRASF.Status.Grabbed") : localize("Title");
+  const choice = await foundry.applications.api.DialogV2.wait({ window: { title },
+    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(title)}</legend><label ${kind === "grab" ? "hidden" : ""}>${escape(localize("ChooseWeapon"))}<select name="weapon">${weapons.map((weapon) => `<option value="${escape(weapon.id)}">${escape(weapon.name)}</option>`).join("")}</select></label><label>${escape(localize("Holder"))}<select name="holder">${candidates.map((entry) => `<option value="${escape(entry.uuid)}">${escape(actorDisplayName(entry))}</option>`).join("")}</select></label></fieldset></div>`,
+    buttons: [{ action: "apply", label: title, callback: (event, button) => ({
       weaponId: button.form.elements.weapon.value, holderUuid: button.form.elements.holder.value }) },
       { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), callback: () => null }], rejectClose: false });
   const holder = candidates.find((entry) => entry.uuid === choice?.holderUuid);
+  if (holder && kind === "grab") return applyTimedCondition(actor, { key: "grabbed", statusId: "grabbed",
+    name: game.i18n.localize("MYTHRASF.Status.Grabbed"), img: "icons/svg/net.svg",
+    source: { actorUuid: holder.uuid, tokenUuid: holder.token?.uuid ?? "", name: actorDisplayName(holder) },
+    duration: { unit: "manual", phase: "manual" } });
   if (holder) return applyWeaponPin(actor, choice.weaponId, { actorUuid: holder.uuid,
     actorName: actorDisplayName(holder), tokenUuid: holder.token?.uuid ?? "" }, "");
 }
@@ -66,24 +76,26 @@ function renderRelease(state) {
   const rows = ["victim", "holder"].map((side) => {
     const entry = state[side]; const roll = entry.roll;
     return `<fieldset><legend>${escape(entry.name)}</legend>${roll
-      ? `<div class="mythras-chat-row"><span>${escape(roll.abilityName)} (1d100 / ${roll.target}%)</span><strong class="mythras-chat-result--${roll.result}"><span class="mythras-chat-roll-value">${roll.rawRoll}</span> ${escape(game.i18n.localize(`MYTHRASF.RollResult.${roll.result}`))}</strong></div>`
+      ? `<div class="mythras-chat-row"><span>${escape(roll.abilityName)}${roll.strengthSteps ? ` — ${escape(game.i18n.format("MYTHRASF.Contest.StrengthPenalty", { steps: roll.strengthSteps }))}` : ""} (1d100 / ${roll.target}%)</span><strong class="mythras-chat-result--${roll.result}"><span class="mythras-chat-roll-value">${roll.rawRoll}</span> ${escape(game.i18n.localize(`MYTHRASF.RollResult.${roll.result}`))}</strong></div>`
       : `<button type="button" data-pin-action="roll" data-pin-side="${side}" title="${escape(localize("ChooseSkill"))}">${escape(localize("ChooseSkill"))}</button>`}</fieldset>`;
   }).join("");
-  return `<section class="mythras-chat-card" data-pin-release><div class="mythras-chat-title">${escape(localize("Release"))} — ${escape(state.weaponName)}</div><div class="mythras-chat-row"><span>${escape(localize("Cost"))}</span><strong>1</strong></div>${rows}${state.status === "resolved"
-    ? `<div class="mythras-chat-total mythras-chat-result--${state.freed ? "success" : "failure"}"><span>${escape(localize("Outcome"))}</span><strong>${escape(localize(state.freed ? "Freed" : "Held"))}</strong></div>` : ""}</section>`;
+  return `<section class="mythras-chat-card" data-pin-release><div class="mythras-chat-title">${escape(releaseName(state.kind))} — ${escape(state.weaponName)}</div><div class="mythras-chat-row"><span>${escape(localize("Cost"))}</span><strong>1</strong></div>${rows}${state.status === "resolved"
+    ? `<div class="mythras-chat-total mythras-chat-result--${state.freed ? "success" : "failure"}"><span>${escape(localize("Outcome"))}</span><strong>${escape(state.kind === "grab" ? game.i18n.localize(`MYTHRASF.Grab.${state.freed ? "Freed" : "Held"}`) : localize(state.freed ? "Freed" : "Held"))}</strong></div>` : ""}</section>`;
 }
 
-export async function requestWeaponRelease(actor) {
+export const requestGrabRelease = (actor) => requestWeaponRelease(actor, "grab");
+
+export async function requestWeaponRelease(actor, kind = "weapon") {
   if (!actor?.isOwner && !game.user.isGM) return;
-  const pins = weaponPins(actor);
+  const pins = restraints(actor, kind);
   if (!pins.length) return;
   const selected = await foundry.applications.api.DialogV2.wait({
-    window: { title: localize("Release") },
-    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(localize("ChooseWeapon"))}</legend><select name="pin" aria-label="${escape(localize("ChooseWeapon"))}">${pins.map((effect) => `<option value="${escape(effect.id)}">${escape(actor.items.get(weaponPinData(effect).weaponId)?.name)}</option>`).join("")}</select></fieldset></div>`,
-    buttons: [{ action: "start", label: localize("Release"), callback: (event, button) => button.form.elements.pin.value },
+    window: { title: releaseName(kind) },
+    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(choiceName(kind))}</legend><select name="pin" aria-label="${escape(choiceName(kind))}">${pins.map((effect) => `<option value="${escape(effect.id)}">${escape(kind === "grab" ? grabData(effect).sourceName : actor.items.get(weaponPinData(effect).weaponId)?.name)}</option>`).join("")}</select></fieldset></div>`,
+    buttons: [{ action: "start", label: releaseName(kind), callback: (event, button) => button.form.elements.pin.value },
       { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), callback: () => null }], rejectClose: false });
   if (!selected) return;
-  await submit({ operation: "start", actorUuid: actor.uuid, effectId: selected,
+  await submit({ operation: "start", kind, actorUuid: actor.uuid, effectId: selected,
     combatId: (game.combat ?? game.combats?.active)?.id });
 }
 
@@ -100,7 +112,8 @@ async function startRelease(request, user) {
   const active = combat?.combatant;
   if (!actor || !combat?.started || active?.actor?.uuid !== actor.uuid
     || (!user.isGM && !actor.testUserPermission(user, "OWNER")) || currentActionPoints(actor) < 1) return;
-  const effect = weaponPins(actor).find((entry) => entry.id === request.effectId);
+  const kind = request.kind === "grab" ? "grab" : "weapon";
+  const effect = restraints(actor, kind).find((entry) => entry.id === request.effectId);
   if (!effect) return;
   if (!resolveActorConditions(actor, { baseAttributes: actor.system.baseAttributes
     ?? actor.system.attributes ?? {} }).capabilities.canTakeProactiveTurn) return;
@@ -111,10 +124,10 @@ async function startRelease(request, user) {
   }
   if (game.messages.some((message) => { const state = message.getFlag(PIN_SCOPE, "weaponRelease");
     return state?.status === "pending" && state.victim.actorUuid === actor.uuid
-      && weaponPins(actor).some((pin) => pin.id === state.effectId);
+      && restraints(actor, state.kind).some((pin) => pin.id === state.effectId);
   })) return;
-  const state = { revision: 0, status: "pending", effectId: effect.id,
-    weaponName: actor.items.get(data.weaponId).name, combatId: combat.id,
+  const state = { revision: 0, status: "pending", kind, effectId: effect.id,
+    weaponName: kind === "grab" ? actorDisplayName(holder) : actor.items.get(data.weaponId).name, combatId: combat.id,
     combatantId: active.id, round: combat.round, turn: combat.turn,
     victim: { actorUuid: actor.uuid, tokenUuid: actor.token?.uuid ?? "", name: actorDisplayName(actor) },
     holder: { actorUuid: holder.uuid, tokenUuid: data.sourceTokenUuid, name: actorDisplayName(holder) } };
@@ -154,21 +167,29 @@ export async function applyWeaponPinRequest(request) {
     || request.operation !== "roll" || !["victim", "holder"].includes(request.side)) return;
   const entry = state[request.side]; const actor = await resolveActor(entry);
   if (!actor || entry.roll || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return;
+  const victimNow = await resolveActor(state.victim);
+  if (!restraints(victimNow, state.kind).some((effect) => effect.id === state.effectId)) return;
   const skill = releaseWeaponSkills(actor).find((item) => item.id === request.skillId);
   if (!skill) return;
   const roll = await evaluateSystemRoll("1d100");
   const conditions = resolveActorConditions(actor, { baseAttributes: actor.system.baseAttributes
     ?? actor.system.attributes ?? {}, physical: true, loadState: actorLoadState(actor) });
-  const target = difficultyTarget(skill.system.total, conditions.difficulty);
+  const other = await resolveActor(state[request.side === "victim" ? "holder" : "victim"]);
+  const strength = strengthContestAdjustment({ abilitySlug: skill.system.slug,
+    damageModifier: actor.system.attributes?.damageModifier, baseTarget: skill.system.total,
+    difficulty: conditions.difficulty, target: difficultyTarget(skill.system.total, conditions.difficulty) },
+  [{ damageModifier: other?.system.attributes?.damageModifier }]);
+  const target = strength.target;
   const result = classifyContestRoll(roll.total, target);
   await recordAbilityFumble(skill, result);
-  entry.roll = { rawRoll: roll.total, target, result, abilityName: skill.name };
+  entry.roll = { rawRoll: roll.total, target, result, abilityName: skill.name,
+    strengthSteps: strength.steps, strengthDifficulty: strength.difficulty };
   if (state.victim.roll && state.holder.roll) {
     const outcome = resolveWeaponRelease(state.victim.roll, state.holder.roll);
     state.freed = outcome.freed;
     state.victim.roll = outcome.victim; state.holder.roll = outcome.holder;
     const victim = await resolveActor(state.victim);
-    if (state.freed && weaponPins(victim).some((effect) => effect.id === state.effectId)) {
+    if (state.freed && restraints(victim, state.kind).some((effect) => effect.id === state.effectId)) {
       await victim.deleteEmbeddedDocuments("ActiveEffect", [state.effectId]);
     }
     state.status = "resolved";

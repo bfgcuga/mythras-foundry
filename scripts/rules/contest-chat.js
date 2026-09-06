@@ -43,8 +43,8 @@ function contestActor(participant) {
 }
 
 function effectiveParticipantResult(contest, participant, rawRoll = participant?.rawRoll) {
-  const penalty = Math.max(0, ...contest.participants.map((entry) => Number(entry.target) || 0)) - 100;
-  const target = Math.max(0, Number(participant?.target ?? 0) - Math.max(0, penalty));
+  const resolution = contest.schemaVersion >= 2 ? resolveConfiguredContest(contest) : resolveContest(contest);
+  const target = resolution.participants.find((entry) => entry.id === participant?.id)?.target ?? 0;
   return rawRoll == null ? null : classifyContestRoll(rawRoll, target);
 }
 
@@ -54,6 +54,9 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     id: participantId(item.actor.id), actorId: actorIdentity(item.actor), actorUuid: item.actor.uuid,
     actorName: item.actor.type === "character" ? actorDisplayName(item.actor)
       : tokenDisplayName(item.actor.token) || actorDisplayName(item.actor),
+    abilitySlug: item.system.slug, damageModifier: item.actor.system.attributes?.damageModifier,
+    baseTarget: configured.targets.adjustedTarget ?? item.system.total,
+    difficulty: configured.targets.difficulty ?? configured.difficulty,
     abilityId: item.id, abilityName: item.name, target: configured.targets.target,
     rawRoll: initiatorRoll?.total ?? null, pending: !initiatorRoll,
     serializedRoll: initiatorRoll?.toJSON?.() ?? null,
@@ -70,6 +73,10 @@ export async function createContestMessage(item, configured, initiatorRoll = nul
     id: participantId(entry.actorId), ...entry,
     rawRoll: null, pending: true, config: { difficulty: entry.difficulty }
   }))];
+  for (const entry of participants) {
+    const actor = contestActor(entry);
+    entry.damageModifier ??= actor?.system.attributes?.damageModifier;
+  }
   const buildSide = (name) => {
     const source = setup.sides[name];
     const members = participants.filter((entry) => entry.id === initiator.id
@@ -150,7 +157,7 @@ export function renderContestCard(contest) {
     const attempts = `${oldAttempts}<div class="contest-roll-attempt contest-roll-attempt--current"><strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}</div>`;
     const html = `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
       <span class="contest-participant-identity"><strong>${escape(participantDisplayName(participant))}${representative}</strong><small>${escape(ability)}</small>${luckNotes}</span>
-      <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}</span><span class="contest-roll-attempts">${attempts}</span></span>
+      <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}${final.strengthSteps ? `<small class="skill-roll-modifier-effect--penalty">${escape(game.i18n.format("MYTHRASF.Contest.StrengthPenalty", { steps: final.strengthSteps }))}</small>` : ""}</span><span class="contest-roll-attempts">${attempts}</span></span>
       <span class="contest-participant-actions">${button}${luck}</span>
     </div>`;
     return [participant.id, html];
@@ -293,7 +300,9 @@ async function applyContestResponseUnlocked(message, request) {
   const targets = resolveSkillRollTargets({ baseTarget: ability.system.total, difficulty: request.config.difficulty,
     limited: Boolean(limited), limitedTarget: limited?.system.total,
     reinforced: Boolean(reinforced), reinforcedTarget: reinforced?.system.total });
-  Object.assign(participant, { abilityId: ability.id, abilityName: ability.name, target: targets.target,
+  Object.assign(participant, { abilitySlug: ability.system.slug,
+    damageModifier: actor.system.attributes?.damageModifier,
+    baseTarget: targets.adjustedTarget, difficulty: targets.difficulty, abilityId: ability.id, abilityName: ability.name, target: targets.target,
     rawRoll: Number(request.rawRoll), serializedRoll: request.serializedRoll, pending: false, config: request.config });
   const sideName = contestSideForParticipant(contest, participant.id);
   const side = contest.sides?.[sideName];

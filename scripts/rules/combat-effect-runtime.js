@@ -1,4 +1,5 @@
 import { engagementId } from "./engagements.js";
+import { isGrabbed } from "./grappling.js";
 import { setRelationPosition } from "./engagement-runtime.js";
 import { applyTimedCondition, timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
@@ -43,6 +44,30 @@ export async function applyImmediateCombatEffects(combat, message, dependencies 
   combat.messageUuid = message.uuid;
   const selections = combat.effects.selections.filter((effect) => !effect.waived);
   for (const effect of selections) {
+    if (["abrir-distancia", "cerrar-distancia", "retirada"].includes(effect.key)) {
+      const entry = combatSideEntry(combat, effect.side);
+      const actor = await dependencies.resolveActor?.(entry.tokenUuid, entry.actorUuid);
+      if (isGrabbed(actor)) { effect.status = "notActivated"; continue; }
+    }
+    if (effect.key === "agarrar") {
+      if (!effect.parameters?.grabConfirmed) { effect.status = "notActivated"; continue; }
+      const applied = await addManagedCombatStatus(combat, effect, {
+        key: "grabbed", statusId: "grabbed", unit: "manual", phase: "manual"
+      }, dependencies);
+      if (applied) effect.status = "resolved";
+    }
+    if (effect.key === "alzarse") {
+      const entry = combatSideEntry(combat, effect.side);
+      const actor = await dependencies.resolveActor?.(entry.tokenUuid, entry.actorUuid);
+      if (!actor) continue;
+      const prone = Array.from(actor.effects ?? []).filter((condition) =>
+        condition.statuses?.has?.("prone"));
+      if (prone.length) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", prone.map((condition) => condition.id));
+        combat.consequencesApplied = true;
+      }
+      effect.status = "resolved";
+    }
     if (effect.key === "inmovilizar-arma") {
       const target = combatSideEntry(combat, combatEffectAffectedSide(effect));
       const actor = await dependencies.resolveActor?.(target.tokenUuid, target.actorUuid);
@@ -207,7 +232,8 @@ export async function applyCombatEffectCheckConsequence(combat, check, actor,
     if (canTake) (combat.consequences ??= []).push(check.consequence);
   }
   if (effect.key === "desangrar") await addManagedCombatStatus(combat, effect,
-    { key: "exsanguinating", statusId: "exsanguinating", unit: "manual" }, dependencies);
+    { key: "exsanguinating", statusId: "exsanguinating", unit: "manual",
+      phase: "startRound" }, dependencies);
   if (effect.key === "tumbar-oponente") await addManagedCombatStatus(combat, effect,
     { key: "incapacitated", statusId: "incapacitated", unit: "manual" }, dependencies);
   if (effect.key === "aturdir-localizacion") {

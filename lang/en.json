@@ -1890,5 +1890,13 @@
   "MYTHRASF.ManualRoll.Formula": "Formula: {formula}",
   "MYTHRASF.ManualRoll.DieLabel": "Die {die} (d{faces})",
   "MYTHRASF.ManualRoll.Accept": "Accept",
-  "MYTHRASF.ManualRoll.Invalid": "Enter a valid whole number for every die."
+  "MYTHRASF.ManualRoll.Invalid": "Enter a valid whole number for every die.",
+  "MYTHRASF.Status.Grabbed": "Grabbed",
+  "MYTHRASF.Status.Description.grabbed": "Held by a captor: cannot change reach or disengage. On their turn, spend 1 AP to oppose the captor with Brawn or Unarmed and escape by winning.",
+  "MYTHRASF.Grab.Release": "Escape grab",
+  "MYTHRASF.Grab.Confirm": "Confirm that the opponent is within Unarmed reach and you have a free hand or other limb capable of holding them.",
+  "MYTHRASF.Grab.Blocked": "Escape the grab before changing reach or disengaging.",
+  "MYTHRASF.Grab.Freed": "Grab escaped",
+  "MYTHRASF.Grab.Held": "The captor maintains the grab",
+  "MYTHRASF.Contest.StrengthPenalty": "Contest of strength: +{steps} difficulty grades"
 }

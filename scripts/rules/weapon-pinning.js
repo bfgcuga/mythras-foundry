@@ -1,3 +1,4 @@
+import { applyStrengthContestPenalties } from "./strength-contests.js";
 import { weaponHandsRequired } from "./equipment.js";
 import { applySharedOver100Penalty, compareOpposed } from "./contest-rolls.js";
 
@@ -24,8 +25,8 @@ export function releaseWeaponSkills(actor) {
     && ["musculo", "pelea"].includes(item.system.slug)) ?? [];
 }
 export function resolveWeaponRelease(victim, holder) {
-  const adjusted = applySharedOver100Penalty([{ ...victim, id: "victim" },
-    { ...holder, id: "holder" }]);
+  const adjusted = applySharedOver100Penalty(applyStrengthContestPenalties([{ ...victim, id: "victim" },
+    { ...holder, id: "holder" }]));
   return { victim: adjusted.participants[0], holder: adjusted.participants[1],
     freed: compareOpposed(...adjusted.participants).winnerId === "victim" };
 }
