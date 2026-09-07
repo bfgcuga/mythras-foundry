@@ -347,13 +347,15 @@ preservar los contratos actuales se recogen en
 
 ## Compendios
 
-El manifiesto declara trece compendios generados a partir de fuentes canónicas:
+El manifiesto declara quince compendios generados a partir de fuentes canónicas:
 
 - habilidades, culturas y profesiones;
 - armas, equipo y piezas de armadura;
 - rasgos, efectos de combate, estilos de combate y criaturas;
 - macros, tablas de clase social, acontecimientos de trasfondo y tablas de
-  familia y conexiones.
+  familia y conexiones;
+- un diario «Referencia de Mythras», cuya portada admite nuevas categorías y
+  cuyo índice de efectos de combate enlaza una página descriptiva por efecto.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
 determinista antes de validar o empaquetar una versión.

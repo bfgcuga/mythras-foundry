@@ -3147,6 +3147,44 @@
 .combat-effect-table th,
 .combat-effect-table td { border: 1px solid var(--mythras-border); padding: 0.35rem; color: var(--mythras-ink); background: transparent; white-space: normal; overflow-wrap: anywhere; }
 .combat-effect-table-note { font-size: var(--mythras-font-size-auxiliary); }
+
+.journal-entry-content .mythras-reference,
+.journal-entry-page .mythras-reference {
+  color: var(--mythras-ink);
+}
+.mythras-reference-table-wrapper { overflow-x: auto; }
+.mythras-reference-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--mythras-font-size-table);
+}
+.mythras-reference-table th,
+.mythras-reference-table td {
+  padding: 0.35rem;
+  border: 1px solid var(--mythras-border);
+  background: transparent;
+  color: var(--mythras-ink);
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mythras-reference-table th:first-child { text-align: left; }
+.mythras-reference-table tbody tr:nth-child(even) {
+  background: rgb(61 57 51 / 6%);
+}
+.mythras-reference-properties {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.mythras-reference-properties > div {
+  padding: 0.4rem;
+  border: 1px solid var(--mythras-border);
+}
+.mythras-reference-properties dt { font-weight: 700; }
+.mythras-reference-properties dd { margin: 0.2rem 0 0; }
+.mythras-reference-back,
+.mythras-reference-note { font-size: var(--mythras-font-size-auxiliary); }
 .mythras-foundry .combat-effect-item-sheet { min-width: 660px; }
 .mythras-foundry .combat-effect-sheet-description,
 .mythras-foundry .combat-effect-sheet-summary { grid-column: 1 / -1; }

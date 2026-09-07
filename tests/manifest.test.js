@@ -34,7 +34,8 @@ const EXPECTED_PACKS = Object.freeze({
     label: "Acontecimientos de trasfondo",
     path: "packs/background-event-tables",
     type: "RollTable"
-  }
+  },
+  reference: { label: "Referencia de Mythras", path: "packs/reference", type: "JournalEntry" }
 });
 
 test("los compendios muestran únicamente el nombre de su contenido", () => {

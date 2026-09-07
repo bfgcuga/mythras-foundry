@@ -21,6 +21,7 @@ import { COMBAT_STYLE_SOURCES } from "../data/combat-styles.js";
 import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
   combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
+import { referenceJournalSources } from "../data/reference-journals.js";
 import { deterministicPackId } from "./pack-ids.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
@@ -247,6 +248,57 @@ async function buildRollTablePack(name, sources, idNamespace) {
   console.log(`Compendio ${name} generado con ${sources.length} tablas.`);
 }
 
+async function buildJournalPack(name, sources, idNamespace) {
+  const sourceDirectory = resolve(projectRoot, `.build/packs-src/${name}`);
+  const outputDirectory = resolve(projectRoot, `packs/${name}`);
+  await rm(sourceDirectory, { recursive: true, force: true });
+  await rm(outputDirectory, { recursive: true, force: true });
+  await mkdir(sourceDirectory, { recursive: true });
+
+  for (const [index, source] of sources.entries()) {
+    const journalId = deterministicPackId(`${idNamespace}.${source.buildKey}`);
+    const pageIds = new Map(source.pages.map((page) => [
+      page.buildKey, deterministicPackId(`${idNamespace}.${source.buildKey}.page.${page.buildKey}`)
+    ]));
+    const pageUuid = (pageKey) => `Compendium.mythras-foundry.${name}.JournalEntry.${journalId}`
+      + `.JournalEntryPage.${pageIds.get(pageKey)}`;
+    const pages = source.pages.map((page, pageIndex) => {
+      const pageId = pageIds.get(page.buildKey);
+      return {
+        _key: `!journal.pages!${journalId}.${pageId}`,
+        _id: pageId,
+        name: page.name,
+        type: "text",
+        title: { show: true, level: pageIndex ? 2 : 1 },
+        image: {},
+        text: { format: 1, content: page.content({ pageUuid }), markdown: "" },
+        video: { controls: true, volume: 0.5 },
+        src: null,
+        system: {},
+        sort: pageIndex * 1000,
+        ownership: { default: -1 },
+        flags: { "mythras-foundry": { referencePage: page.buildKey } }
+      };
+    });
+    const document = {
+      _key: `!journal!${journalId}`,
+      _id: journalId,
+      name: source.name,
+      img: source.img,
+      pages,
+      folder: null,
+      sort: index * 1000,
+      ownership: { default: 0 },
+      flags: { "mythras-foundry": { referenceJournal: source.buildKey } }
+    };
+    await writeFile(resolve(sourceDirectory, `${source.buildKey}_${journalId}.json`),
+      `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  }
+
+  await compilePack(sourceDirectory, outputDirectory, { log: true });
+  console.log(`Compendio ${name} generado con ${sources.length} diarios.`);
+}
+
 const packBuilders = new Map([
   ["skills", () => buildPack("skills", ALL_SKILL_SOURCES, "skill")],
   ["cultures", () => buildPack("cultures", CULTURE_SOURCES, "culture")],
@@ -264,7 +316,9 @@ const packBuilders = new Map([
   ["family-tables", () => buildRollTablePack("family-tables",
     FAMILY_TABLE_SOURCES, "family-table")],
   ["background-event-tables", () => buildRollTablePack("background-event-tables",
-    BACKGROUND_EVENT_TABLE_SOURCES, "background-event-table")]
+    BACKGROUND_EVENT_TABLE_SOURCES, "background-event-table")],
+  ["reference", () => buildJournalPack("reference",
+    referenceJournalSources(COMBAT_EFFECT_SOURCES), "reference")]
 ]);
 
 const requestedPacks = process.argv.slice(2);

@@ -961,9 +961,15 @@ en `scripts/data/`. El creador homebrew permite seleccionar uno existente o
 crearlo, lo registra como fuente del catálogo y genera un documento inicial
 válido mediante `scripts/rules/homebrew-items.js`.
 
-Los doce compendios declarados en `system.json` deben mantenerse sincronizados
+Los quince compendios declarados en `system.json` deben mantenerse sincronizados
 con las llamadas de construcción de `build-packs.mjs`. Cualquier cambio en sus
 fuentes requiere ejecutar `npm run build:packs` antes de `npm run check`.
+
+El compendio `reference` contiene un único `JournalEntry` multipágina. Su portada
+es el índice extensible de categorías; la tabla de efectos de combate y cada una
+de sus páginas descriptivas se derivan del mismo catálogo canónico que construye
+`combat-effects`. Los diarios y sus páginas usan identificadores deterministas,
+por lo que los enlaces UUID internos permanecen estables entre reconstrucciones.
 
 ## Validación y publicación
 
