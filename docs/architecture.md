@@ -976,6 +976,13 @@ campos operativos de `ALL_SKILL_SOURCES`, añade las tablas específicas de
 Primeros Auxilios e Idioma y alimenta tanto `skills` como `reference`. El Journal
 genera un índice alfabético completo y otro separado en habilidades básicas,
 profesionales y mágicas. Las copias ya embebidas en Actores no se sobrescriben.
+Los rasgos se derivan directamente de `TRAIT_SOURCES` y se organizan en tres
+índices según `traitType`: armas, estilos de combate y criaturas. Todas las
+páginas de índice del Journal enlazan de vuelta a su portada principal.
+La página de armas genera cinco tablas estáticas desde `WEAPON_SOURCES`. El botón
+de referencia completa abre `WeaponReference`, que vuelve a leer el compendio
+oficial y los packs mundiales configurados en `catalogSources`; las armas se
+clasifican por cada modo y conservan UUID y procedencia, sin modificar el Journal.
 
 ## Validación y publicación
 

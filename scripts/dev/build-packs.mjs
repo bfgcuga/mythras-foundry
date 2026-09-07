@@ -34,6 +34,9 @@ const skillsDocument = JSON.parse(await readFile(
   resolve(projectRoot, "data/mythras_habilidades.json"), "utf8"
 ));
 const FULL_SKILL_SOURCES = fullSkillSources(ALL_SKILL_SOURCES, skillsDocument);
+const REFERENCE_WEAPON_SOURCES = WEAPON_SOURCES.map((source) => ({ ...source,
+  uuid: `Compendium.mythras-foundry.weapons.Item.${deterministicPackId(`weapon.${source.buildKey}`)}`
+}));
 const COMBAT_EFFECT_SOURCES = combatEffectsDocument.efectos_combate.map((entry) => {
   const buildKey = combatEffectSlug(entry.nombre);
   const rule = combatEffectRule({ key: buildKey });
@@ -323,7 +326,8 @@ const packBuilders = new Map([
   ["background-event-tables", () => buildRollTablePack("background-event-tables",
     BACKGROUND_EVENT_TABLE_SOURCES, "background-event-table")],
   ["reference", () => buildJournalPack("reference",
-    referenceJournalSources(COMBAT_EFFECT_SOURCES, FULL_SKILL_SOURCES), "reference")]
+    referenceJournalSources(COMBAT_EFFECT_SOURCES, FULL_SKILL_SOURCES, TRAIT_SOURCES,
+      REFERENCE_WEAPON_SOURCES), "reference")]
 ]);
 
 const requestedPacks = process.argv.slice(2);

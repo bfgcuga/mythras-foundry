@@ -3185,6 +3185,15 @@
 .mythras-reference-properties dd { margin: 0.2rem 0 0; }
 .mythras-reference-back,
 .mythras-reference-note { font-size: var(--mythras-font-size-auxiliary); }
+.mythras-reference-open-weapons {
+  width: auto;
+  margin: 0 0 0.6rem;
+  border: 1px solid var(--mythras-border);
+  background: transparent;
+  color: var(--mythras-ink);
+}
+.weapon-reference-content { min-width: 62rem; }
+.weapon-reference-content .mythras-reference-table { margin-bottom: 1rem; }
 .mythras-foundry .combat-effect-item-sheet { min-width: 660px; }
 .mythras-foundry .combat-effect-sheet-description,
 .mythras-foundry .combat-effect-sheet-summary { grid-column: 1 / -1; }

@@ -29,10 +29,11 @@ test("el diario de referencia enlaza el índice, la tabla y todas las descripcio
   const index = journal.pages.find((page) => page.buildKey === "index").content(context);
   const summary = journal.pages.find((page) => page.buildKey === "combat-effects").content(context);
 
-  assert.equal(journal.pages.length, combatEffects.length + 4);
+  assert.equal(journal.pages.length, combatEffects.length + 8);
   assert.match(index, /data-uuid="UUID\.combat-effects"/);
   assert.match(summary, /<table class="mythras-reference-table">/);
   assert.match(summary, /<th scope="col">Efecto de combate<\/th>/);
+  assert.match(summary, /data-uuid="UUID\.index"/);
   for (const effect of combatEffects) {
     assert.match(summary, new RegExp(`data-uuid="UUID\\.combat-effect-${effect.buildKey}"`));
     const detail = journal.pages.find(
@@ -68,9 +69,36 @@ test("el diario ofrece los dos índices de habilidades y páginas por categoría
   assert.match(alphabetical, /UUID\.skill-aguante/);
   assert.match(categorized, /<h2>Básicas<\/h2>/);
   assert.match(categorized, /<h2>Mágicas<\/h2>/);
+  assert.match(alphabetical, /UUID\.index/);
+  assert.match(categorized, /UUID\.index/);
   assert.match(detail, /CON ×2/);
   assert.match(detail, /UUID\.skills-alphabetical/);
   assert.match(detail, /UUID\.skills-by-category/);
+});
+
+test("los rasgos se separan en tres índices con retorno a la portada", () => {
+  const traits = [
+    { buildKey: "bloqueo-pasivo", name: "Bloqueo Pasivo", system: {
+      traitType: "weapon", source: "Mythras", description: "Protege localizaciones." } },
+    { buildKey: "asesinato", name: "Asesinato", system: {
+      traitType: "combatStyle", source: "Mythras", description: "Ataque sigiloso." } },
+    { buildKey: "acuatico", name: "Acuático", system: {
+      traitType: "creature", source: "Mythras", description: "Respira agua." } }
+  ];
+  const [journal] = referenceJournalSources([], [], traits);
+  const context = { pageUuid: (key) => `UUID.${key}` };
+  for (const [indexKey, traitKey] of [
+    ["weapon-traits", "bloqueo-pasivo"],
+    ["combat-style-traits", "asesinato"],
+    ["creature-traits", "acuatico"]
+  ]) {
+    const index = journal.pages.find((page) => page.buildKey === indexKey).content(context);
+    const detail = journal.pages.find((page) => page.buildKey === `trait-${traitKey}`).content(context);
+    assert.match(index, new RegExp(`UUID\\.trait-${traitKey}`));
+    assert.match(index, /UUID\.index/);
+    assert.match(detail, new RegExp(`UUID\\.${indexKey}`));
+    assert.match(detail, /UUID\.index/);
+  }
 });
 
 test("el diario traduce restricciones y escapa el contenido variable", () => {

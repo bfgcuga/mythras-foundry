@@ -13,6 +13,7 @@ import { PartyManager } from "../apps/party-manager.js";
 import { CatalogSourceManager } from "../apps/catalog-source-manager.js";
 import { HomebrewItemCreator, createHomebrewApi } from "../apps/homebrew-item-creator.js";
 import { createCatalogApi } from "../apps/item-catalog.js";
+import { createWeaponReferenceApi } from "../apps/weapon-reference.js";
 import { createPartyApi } from "../api/party-api.js";
 import { registerSystemSettings, getSystemSetting, SETTING_KEYS } from "../settings.js";
 import { INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
@@ -101,6 +102,7 @@ export function registerSystemInitialization() {
     });
     game.mythrasFoundry = {
       ...(game.mythrasFoundry ?? {}), shop: createCatalogApi(), homebrew: createHomebrewApi(),
+      weaponReference: createWeaponReferenceApi(),
       dice: createDiceApi(),
       party: createPartyApi({
         getConfig: () => getSystemSetting(SETTING_KEYS.parties), getActors: () => game.actors,

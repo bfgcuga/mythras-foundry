@@ -42,6 +42,9 @@ function activateApplicationUi(element) {
   if (element) {
     activateSkillRollDialog(element);
     activateContestResponseDialog(element);
+    for (const button of element.querySelectorAll(".mythras-reference-open-weapons")) {
+      button.addEventListener("click", () => game.mythrasFoundry?.weaponReference?.open?.());
+    }
   }
   activateDelayedTooltips(element);
   activateActionPointSettingVisibility(element);

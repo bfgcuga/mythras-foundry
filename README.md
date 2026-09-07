@@ -356,7 +356,11 @@ El manifiesto declara quince compendios generados a partir de fuentes canónicas
   familia y conexiones;
 - un diario «Referencia de Mythras», cuya portada admite nuevas categorías y
   cuyos índices enlazan las descripciones completas de efectos de combate y
-  habilidades. Las habilidades ofrecen un índice alfabético y otro por categorías.
+  habilidades. Las habilidades ofrecen un índice alfabético y otro por categorías;
+  los rasgos se separan en índices de armas, estilos de combate y criaturas.
+  La referencia de armas ofrece tablas de una mano, dos manos, escudos, distancia
+  y asedio, además de una vista dinámica que incorpora los compendios personales
+  seleccionados en el gestor de fuentes.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
 determinista antes de validar o empaquetar una versión.

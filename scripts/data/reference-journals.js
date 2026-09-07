@@ -1,3 +1,5 @@
+import { weaponReferenceHtml } from "../rules/weapon-reference.js";
+
 const WEAPON_RESTRICTION_LABELS = Object.freeze({
   "": "—",
   unarmed: "Pelea",
@@ -36,6 +38,11 @@ function contentLink(uuid, label) {
     + `<i class="fas fa-file-lines" aria-hidden="true"></i>${escapeHtml(label)}</a>`;
 }
 
+function mainIndexLink(pageUuid) {
+  return `<p class="mythras-reference-back">${contentLink(pageUuid("index"),
+    "Volver al índice principal")}</p>`;
+}
+
 function yesNo(value) {
   return value ? '<span aria-label="Sí">X</span>' : "";
 }
@@ -54,6 +61,7 @@ function effectSummaryTable(effects, pageUuid) {
     <td>${yesNo(effect.system.stackable)}</td>
   </tr>`).join("");
   return `<article class="mythras-reference">
+    ${mainIndexLink(pageUuid)}
     <p>Selecciona el nombre de un efecto para consultar su descripción completa.</p>
     <div class="mythras-reference-table-wrapper">
       <table class="mythras-reference-table">
@@ -154,10 +162,44 @@ function skillPage(skill, pageUuid) {
   </article>`;
 }
 
-export function referenceJournalSources(combatEffects, skillSources = []) {
+const TRAIT_TYPE_LABELS = Object.freeze({
+  weapon: "Rasgos de armas",
+  combatStyle: "Rasgos de estilos de combate",
+  creature: "Rasgos de criaturas"
+});
+
+const TRAIT_INDEX_KEYS = Object.freeze({
+  weapon: "weapon-traits",
+  combatStyle: "combat-style-traits",
+  creature: "creature-traits"
+});
+
+function traitLinks(traits, pageUuid) {
+  return `<ul>${traits.map((trait) =>
+    `<li>${contentLink(pageUuid(`trait-${trait.buildKey}`), trait.name)}</li>`).join("")}</ul>`;
+}
+
+function traitPage(trait, pageUuid) {
+  const indexKey = TRAIT_INDEX_KEYS[trait.system.traitType];
+  return `<article class="mythras-reference mythras-reference-detail">
+    <p class="mythras-reference-back">${contentLink(pageUuid(indexKey),
+    `Volver a ${TRAIT_TYPE_LABELS[trait.system.traitType].toLowerCase()}`)} · ${contentLink(
+    pageUuid("index"), "Índice principal")}</p>
+    <dl class="mythras-reference-properties">
+      <div><dt>Tipo</dt><dd>${TRAIT_TYPE_LABELS[trait.system.traitType]}</dd></div>
+      <div><dt>Fuente</dt><dd>${escapeHtml(trait.system.source)}</dd></div>
+    </dl>
+    <h2>Descripción</h2>
+    <p>${escapeHtml(trait.system.description)}</p>
+  </article>`;
+}
+
+export function referenceJournalSources(combatEffects, skillSources = [], traitSources = [],
+  weaponSources = []) {
   const effects = [...combatEffects].sort((left, right) =>
     left.name.localeCompare(right.name, "es"));
   const skills = [...skillSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
+  const traits = [...traitSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
   const categoryOrder = ["Básicas", "Profesionales", "Mágicas"];
   return [{
     buildKey: "mythras-reference",
@@ -173,6 +215,10 @@ export function referenceJournalSources(combatEffects, skillSources = []) {
             <li>${contentLink(pageUuid("combat-effects"), "Efectos de combate")}</li>
             <li>${contentLink(pageUuid("skills-alphabetical"), "Habilidades: índice alfabético")}</li>
             <li>${contentLink(pageUuid("skills-by-category"), "Habilidades por categorías")}</li>
+            <li>${contentLink(pageUuid("weapon-traits"), "Rasgos de armas")}</li>
+            <li>${contentLink(pageUuid("combat-style-traits"), "Rasgos de estilos de combate")}</li>
+            <li>${contentLink(pageUuid("creature-traits"), "Rasgos de criaturas")}</li>
+            <li>${contentLink(pageUuid("weapons"), "Armas")}</li>
           </ul></nav>
         </article>`
       },
@@ -190,6 +236,7 @@ export function referenceJournalSources(combatEffects, skillSources = []) {
         buildKey: "skills-alphabetical",
         name: "Habilidades: índice alfabético",
         content: ({ pageUuid }) => `<article class="mythras-reference">
+          ${mainIndexLink(pageUuid)}
           <p>Índice completo de habilidades básicas, profesionales y mágicas.</p>
           ${skillLinks(skills, pageUuid)}
         </article>`
@@ -198,6 +245,7 @@ export function referenceJournalSources(combatEffects, skillSources = []) {
         buildKey: "skills-by-category",
         name: "Habilidades por categorías",
         content: ({ pageUuid }) => `<article class="mythras-reference">
+          ${mainIndexLink(pageUuid)}
           ${categoryOrder.map((category) => `<h2>${category}</h2>${skillLinks(
     skills.filter((skill) => skillCategory(skill) === category), pageUuid)}`).join("")}
         </article>`
@@ -206,7 +254,28 @@ export function referenceJournalSources(combatEffects, skillSources = []) {
         buildKey: `skill-${skill.system.slug}`,
         name: skill.name,
         content: ({ pageUuid }) => skillPage(skill, pageUuid)
-      }))
+      })),
+      ...Object.entries(TRAIT_INDEX_KEYS).map(([traitType, buildKey]) => ({
+        buildKey,
+        name: TRAIT_TYPE_LABELS[traitType],
+        content: ({ pageUuid }) => `<article class="mythras-reference">
+          ${mainIndexLink(pageUuid)}
+          <p>Selecciona un rasgo para consultar su descripción completa.</p>
+          ${traitLinks(traits.filter((trait) => trait.system.traitType === traitType), pageUuid)}
+        </article>`
+      })),
+      ...traits.map((trait) => ({
+        buildKey: `trait-${trait.buildKey}`,
+        name: trait.name,
+        content: ({ pageUuid }) => traitPage(trait, pageUuid)
+      })),
+      {
+        buildKey: "weapons",
+        name: "Armas",
+        content: ({ pageUuid }) => `<div class="mythras-reference">${mainIndexLink(pageUuid)}</div>${
+          weaponReferenceHtml(weaponSources)}
+        `
+      }
     ]
   }];
 }
