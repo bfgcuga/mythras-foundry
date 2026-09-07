@@ -970,6 +970,12 @@ es el índice extensible de categorías; la tabla de efectos de combate y cada u
 de sus páginas descriptivas se derivan del mismo catálogo canónico que construye
 `combat-effects`. Los diarios y sus páginas usan identificadores deterministas,
 por lo que los enlaces UUID internos permanecen estables entre reconstrucciones.
+Las descripciones reglamentarias empaquetadas de habilidades proceden de
+`data/mythras_habilidades.json`; `fullSkillSources` las combina con los slugs y
+campos operativos de `ALL_SKILL_SOURCES`, añade las tablas específicas de
+Primeros Auxilios e Idioma y alimenta tanto `skills` como `reference`. El Journal
+genera un índice alfabético completo y otro separado en habilidades básicas,
+profesionales y mágicas. Las copias ya embebidas en Actores no se sobrescriben.
 
 ## Validación y publicación
 

@@ -355,7 +355,8 @@ El manifiesto declara quince compendios generados a partir de fuentes canónicas
 - macros, tablas de clase social, acontecimientos de trasfondo y tablas de
   familia y conexiones;
 - un diario «Referencia de Mythras», cuya portada admite nuevas categorías y
-  cuyo índice de efectos de combate enlaza una página descriptiva por efecto.
+  cuyos índices enlazan las descripciones completas de efectos de combate y
+  habilidades. Las habilidades ofrecen un índice alfabético y otro por categorías.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
 determinista antes de validar o empaquetar una versión.

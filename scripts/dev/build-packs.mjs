@@ -22,6 +22,7 @@ import { COMBAT_EFFECT_ROLL_RESTRICTIONS, COMBAT_EFFECT_WEAPON_RESTRICTIONS,
   combatEffectRule, combatEffectSlug } from "../rules/combat-effects.js";
 import { MYTHRAS_REVISED_SOURCE } from "../data/sources.js";
 import { referenceJournalSources } from "../data/reference-journals.js";
+import { fullSkillSources } from "../data/skill-reference.js";
 import { deterministicPackId } from "./pack-ids.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
@@ -29,6 +30,10 @@ const projectRoot = resolve(import.meta.dirname, "../..");
 const combatEffectsDocument = JSON.parse(await readFile(
   resolve(projectRoot, "data/mythras_efectos_combate.json"), "utf8"
 ));
+const skillsDocument = JSON.parse(await readFile(
+  resolve(projectRoot, "data/mythras_habilidades.json"), "utf8"
+));
+const FULL_SKILL_SOURCES = fullSkillSources(ALL_SKILL_SOURCES, skillsDocument);
 const COMBAT_EFFECT_SOURCES = combatEffectsDocument.efectos_combate.map((entry) => {
   const buildKey = combatEffectSlug(entry.nombre);
   const rule = combatEffectRule({ key: buildKey });
@@ -300,7 +305,7 @@ async function buildJournalPack(name, sources, idNamespace) {
 }
 
 const packBuilders = new Map([
-  ["skills", () => buildPack("skills", ALL_SKILL_SOURCES, "skill")],
+  ["skills", () => buildPack("skills", FULL_SKILL_SOURCES, "skill")],
   ["cultures", () => buildPack("cultures", CULTURE_SOURCES, "culture")],
   ["professions", () => buildPack("professions", PROFESSION_SOURCES, "profession")],
   ["weapons", () => buildPack("weapons", WEAPON_SOURCES, "weapon")],
@@ -318,7 +323,7 @@ const packBuilders = new Map([
   ["background-event-tables", () => buildRollTablePack("background-event-tables",
     BACKGROUND_EVENT_TABLE_SOURCES, "background-event-table")],
   ["reference", () => buildJournalPack("reference",
-    referenceJournalSources(COMBAT_EFFECT_SOURCES), "reference")]
+    referenceJournalSources(COMBAT_EFFECT_SOURCES, FULL_SKILL_SOURCES), "reference")]
 ]);
 
 const requestedPacks = process.argv.slice(2);

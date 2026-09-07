@@ -375,4 +375,10 @@
 
   {{#unless isWeapon}}{{#unless isCombatStyle}}{{#unless isArmor}}{{#unless isTrait}}{{#unless isCombatEffect}}<label>{{localize "MYTHRASF.Item.Description"}}</label>
   <textarea name="system.description">{{item.system.description}}</textarea>{{/unless}}{{/unless}}{{/unless}}{{/unless}}{{/unless}}
+  {{#if isSkill}}{{#each item.system.referenceTables as |table|}}
+    <fieldset class="skill-reference-table-panel"><legend>{{table.name}}</legend>
+      <table class="combat-effect-table"><thead><tr>{{#each table.columns as |column|}}<th scope="col">{{column}}</th>{{/each}}</tr></thead>
+      <tbody>{{#each table.rows as |row|}}<tr>{{#each row as |cell|}}{{#if @first}}<th scope="row">{{cell}}</th>{{else}}<td>{{cell}}</td>{{/if}}{{/each}}</tr>{{/each}}</tbody></table>
+    </fieldset>
+  {{/each}}{{/if}}
 </div>

@@ -29,7 +29,7 @@ test("el diario de referencia enlaza el índice, la tabla y todas las descripcio
   const index = journal.pages.find((page) => page.buildKey === "index").content(context);
   const summary = journal.pages.find((page) => page.buildKey === "combat-effects").content(context);
 
-  assert.equal(journal.pages.length, combatEffects.length + 2);
+  assert.equal(journal.pages.length, combatEffects.length + 4);
   assert.match(index, /data-uuid="UUID\.combat-effects"/);
   assert.match(summary, /<table class="mythras-reference-table">/);
   assert.match(summary, /<th scope="col">Efecto de combate<\/th>/);
@@ -41,6 +41,36 @@ test("el diario de referencia enlaza el índice, la tabla y todas las descripcio
     assert.match(detail, /data-uuid="UUID\.combat-effects"/);
     assert.ok(detail.includes(effect.system.description.replaceAll("&", "&amp;")));
   }
+});
+
+test("el diario ofrece los dos índices de habilidades y páginas por categoría", () => {
+  const skills = [{
+    name: "Aguante",
+    system: { slug: "aguante", category: "basic", group: "resistance",
+      characteristic1: "constitution", characteristic2: "constitution",
+      source: "Mythras", description: "Descripción completa.", referenceTables: [] }
+  }, {
+    name: "Atadura",
+    system: { slug: "atadura", category: "professional", group: "magic",
+      characteristic1: "power", characteristic2: "charisma",
+      source: "Mythras", description: "Magia.", referenceTables: [] }
+  }];
+  const [journal] = referenceJournalSources([], skills);
+  const context = { pageUuid: (key) => `UUID.${key}` };
+  const alphabetical = journal.pages.find(
+    (page) => page.buildKey === "skills-alphabetical"
+  ).content(context);
+  const categorized = journal.pages.find(
+    (page) => page.buildKey === "skills-by-category"
+  ).content(context);
+  const detail = journal.pages.find((page) => page.buildKey === "skill-aguante").content(context);
+
+  assert.match(alphabetical, /UUID\.skill-aguante/);
+  assert.match(categorized, /<h2>Básicas<\/h2>/);
+  assert.match(categorized, /<h2>Mágicas<\/h2>/);
+  assert.match(detail, /CON ×2/);
+  assert.match(detail, /UUID\.skills-alphabetical/);
+  assert.match(detail, /UUID\.skills-by-category/);
 });
 
 test("el diario traduce restricciones y escapa el contenido variable", () => {

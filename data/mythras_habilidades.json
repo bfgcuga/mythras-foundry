@@ -1,0 +1,491 @@
+{
+  "fuente": "habilidades.pdf",
+  "habilidades": [
+    {
+      "nombre": "Aguante",
+      "categoria": "Básica",
+      "valor_inicial": "CON x2",
+      "descripcion": "El Aguante es la capacidad del personaje para resistir el dolor, la fatiga y el esfuerzo físico. Mide la habilidad del cuerpo para hacer frente a condiciones potencialmente dañinas o debilitantes y es un indicador general de resistencia, vigor y metabolismo. El Aguante, como su contrapartida Voluntad, se usa de distintas formas, pero de manera específica se emplea para resistir los posibles efectos de las heridas, incluyendo las enfermedades y los venenos dañinos. En la mayoría de los casos el Aguante se usa en tiradas enfrentadas, pero existen algunas circunstancias en las que se usa como una tirada de Habilidad simple. Un éxito Crítico en Aguante normalmente indica que el personaje ha logrado vencer el peor asalto posible contra su cuerpo. En el caso de heridas a menudo será capaz de actuar cuando de forma habitual hubiera quedado incapacitado. Una tirada fallida de Aguante hace que el personaje sucumba a cualquier tensión o herida a la que se vea sometido. Una Pifia significa que el personaje se ha visto abrumado por las circunstancias y se queda incapacitado. En caso de enfermedad o veneno, automáticamente falla cualquier tirada de resistencia posterior."
+    },
+    {
+      "nombre": "Atletismo",
+      "categoria": "Básica",
+      "valor_inicial": "FUE+DES",
+      "descripcion": "El Atletismo cubre una variedad de actividades físicas que incluyen escalar, saltar, lanzar y correr. Si un aventurero lleva puesta una armadura, las distancias que puede trepar, correr o saltar se ven afectadas por la Penalización por Armadura (ver pág. 70 para más detalles). Una mayor habilidad de Atletismo permite al personaje correr a mayor velocidad durante distancias largas y cortas. • Por cada 25% completo que un personaje tenga en Atletismo puede añadir un metro adicional a su Movimiento básico al Esprintar, o medio metro al Correr durante largas distancias. En ciertas situaciones en las que el espacio pueda estar limitado, como al Cargar a una melé, el personaje puede decidir no aplicar esta bonificación y quedarse con su Movimiento básico según raza o especie. Con un éxito Crítico el personaje añade un metro adicional a su Tasa de Movimiento. Un fallo hace que el corredor gane un Nivel de Fatiga. Una Pifia indica que el personaje ha sufrido un tirón muscular o se ha desgarrado un ligamento y debe dejar de correr. Tiene que hacer inmediatamente una tirada de Aguante. Si la tirada de Aguante es un éxito, sufre 1 punto de daño en una pierna. Si la tirada de Aguante falla, en vez de eso sufre 1d4 puntos de daño. El Atletismo también se puede usar para lanzar a más distancia objetos grandes y poco equilibrados, o arrojar objetos pequeños con precisión. Lanzar está limitado a deportes o armas arrojadizas improvisadas, cualquier cosa desde pequeñas piedras y taburetes de bar. Las armas que se lanzan con una técnica específica para asegurar que impacte con la punta o el filo por delante (en lugar de simplemente lograr distancia), como las jabalinas, hachas o cuchillos, usan su propio Estilo de Combate. • Un objeto arrojado tiene un alcance máximo de un metro por cada punto en que la FUE del personaje supere el TAM del objeto. Una tirada exitosa de Atletismo permite al personaje saltar hasta el doble de su propia altura horizontalmente o hasta la mitad de su altura verticalmente (si puede coger una carrerilla de al menos cinco metros). Si se salta desde una posición estática, estas distancias se reducen a la mitad. Cualquier salto que supere la mitad de la distancia máxima del personaje hace que este caiga al suelo al aterrizar. • Si lleva armadura, resta la mitad de la Penalización por Armadura a la distancia de salto en metros hasta un mínimo de un paso normal. • Por cada 20% completo que el personaje tenga en Atletismo, puede añadir un metro adicional a un salto horizontal, o 20 cm. a uno vertical, si tiene espacio para coger carrerilla. Con un éxito Crítico el personaje añade un metro adicional a su distancia total y permanece en pie al aterrizar. Una Pifia indica que el personaje ha aterrizado torpemente. Debe hacer inmediatamente una tirada de Aguante. Si la tirada de Aguante es un éxito, sufre 1 punto de daño en una pierna. Si la tirada de Aguante falla, en vez de eso sufre 1d4 puntos de daño. Con la superficie correcta (asideros y soportes para manos y pies), el equipo adecuado (escalas, cuerdas, pitones) y tiempo suficiente, los personajes pueden escalar cualquier superficie sin necesidad de una tirada. En circunstancias normales, sigue estas indicaciones: • Trepar una superficie rugosa o irregular (árboles con ramas, andamios, pilas de escombros, etc.): se resta la mitad de la Penalización por Armadura (redondeando hacia arriba) al Movimiento básico del personaje. Si el resultado es cero o menos, está demasiado lastrado por la armadura para trepar. • Trepar una superficie escarpada (tejados inclinados, colinas abruptas, etc.): la Penalización por Armadura se resta directamente al Movimiento básico. Si el resultado es cero o menos, está demasiado lastrado por la armadura para trepar. • Escalar una superficie vertical (muros, paredes de acantilado, etc.): se resta el doble de la Penalización por Armadura al Movimiento básico. Como en las situaciones anteriores, si el resultado es cero o menos, el personaje no puede escalar. • Las tiradas se deben realizar en caso de una superficie traicionera (como acantilados escarpados o superficies húmedas) y si un personaje se distrae o le atacan durante su ascenso o descenso. Un éxito Crítico permite al escalador trepar por la superficie extremadamente rápido o evitar cualquier peligro oculto que el intento entrañe. Un fallo simplemente indica que se interrumpe la escalada. Una Pifia al Trepar resulta en una caída. Además el personaje no puede intentar una tirada de Acrobacias (si tiene esa Habilidad) para reducir el daño por la caída."
+    },
+    {
+      "nombre": "Bailar",
+      "categoria": "Básica",
+      "valor_inicial": "DES+CAR",
+      "descripcion": "Prácticamente todas las culturas utilizan el baile de un modo u otro, ya sea como diversión o como parte de rituales importantes. La Habilidad de Bailar mide la capacidad del personaje de moverse con ritmo y precisión (dentro de lo razonable) cuando se le pide hacerlo. Un éxito Crítico resulta en un baile expresivo, fluido y quizá capaz de impactar profundamente a quienes lo presencian. El baile es tan persuasivo como cualquier tirada de Influencia, y se puede usar como tal en cualquier situación que dependa de la comunicación y la credibilidad personal. Alternativamente, toda tirada de Influencia subsiguiente recibe una bonificación igual al valor de Crítico de la Habilidad de Bailar. Por descontado, una tirada Crítica de Bailar puede perfectamente resultar en un aplauso tumultuoso, y muestras de aprecio y admiración. Una tirada fallida de Bailar indica una actuación deslustrada. Una Pifia en Bailar es torpe tanto para el danzante como para sus espectadores. El bailarín trastabilla o se tropieza. Se pierde la pasión, la ejecución es pobre y el baile no logra transmitir lo que pretendía. Cualquier Habilidad que dependa de la comunicación y la credibilidad personal sufre una penalización a discreción del Director de Juego."
+    },
+    {
+      "nombre": "Cantar",
+      "categoria": "Básica",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "Entonar una melodía se rige por la Habilidad de Cantar, desde cánticos monótonos hasta complejas arias. El canto es parte inherente de la mayoría de culturas, fuente importante de entretenimiento y quizá usado en rituales. Las canciones importantes se pueden usar para cortejar, inspirar a los soldados antes de la batalla o simplemente relatar un hecho histórico. La Habilidad refleja la capacidad del usuario para mantener el ritmo, afinar y recordar las letras correctamente. Un éxito Crítico en Cantar puede tener varios posibles efectos. Si se está cantando para ganar dinero, aumenta en un 50% la cantidad obtenida por el entusiasmo del público ante la actuación. Si se usa para impresionar a alguien, una tirada subsiguiente de Influencia o una Habilidad similar puede reducir su dificultad en un Grado. Una tirada de Cantar fallida implica una actuación floja. Si se Pifia, la canción ha estado desafinada, fuera de tono y es mal recibida. Reduce a la mitad las ganancias y cualquier intento posterior de influenciar o engañar aumenta su dificultad en un Grado."
+    },
+    {
+      "nombre": "Conducir",
+      "categoria": "Básica",
+      "valor_inicial": "DES+POD",
+      "descripcion": "Conducir cubre el manejo de vehículos de tiro o sobre ruedas, ya estén impulsados por una o más bestias de carga o por medios más esotéricos: carromatos, carruajes, cuadrigas o trineos. Se necesitan tiradas de Conducir cuando un personaje quiere hacer algo fuera de lo normal con un vehículo: recorrer terreno traicionero, saltar sobre obstáculos, etc. También hay que hacer una tirada cuando los animales que tiran del vehículo conducido son distintos a los que el conductor está acostumbrado (caballos en vez de bueyes, por ejemplo) o si hay más o menos animales tirando del vehículo (un carromato tirado por cuatro caballos cuando el personaje está habituado a un equipo de dos caballos). En los casos en los que los animales o bien su número sean radicalmente distintos (una cuadriga remolcada por tigres, por ejemplo), la tirada debería aumentar de dificultad. Cuando dos o más vehículos compiten entre sí, quizá para adelantarse o empujar al otro fuera de la carretera, los conductores deben determinar el resultado mediante una tirada enfrentada de Conducir. Un éxito Crítico de Conducir o bien aumenta la Tasa de Movimiento del vehículo en una décima parte o permite al conductor realizar alguna hazaña de conducción habilidosa o extravagante. Una tirada fallida de Conducir reduce el Movimiento del vehículo a la mitad. Una Pifia en Conducir indica o bien que el vehículo se ha averiado de alguna manera (se desprende una rueda o se rompen las riendas, por ejemplo), o si el vehículo está realizando una maniobra peligrosa o a alta velocidad, se desestabiliza y vuelca. Un vehículo volcado exige a todos sus ocupantes una tirada exitosa de Acrobacias o Evadir para saltar a tiempo, o sufrir la cantidad de daño por caída correspondiente a su velocidad (ver pág. 72)."
+    },
+    {
+      "nombre": "Conocimiento Local",
+      "categoria": "Básica",
+      "valor_inicial": "INT x2",
+      "descripcion": "El Conocimiento Local mide la comprensión que tiene el personaje de la flora y fauna, el terreno y el clima de la zona en la que ha pasado la mayor parte de su vida, normalmente como parte de su comunidad. El personaje conoce las plantas, árboles y animales más frecuentes, así como sus propiedades y comportamiento; dónde encontrar refugio;el clima más probable en cada estación y los peligros regionales más habituales. En lugares cercanos pero desconocidos, la dificultad del Conocimiento Local debería aumentar en uno o más Grados. Un éxito Crítico garantiza que el personaje encuentra lo que está buscando en abundancia o sabe con exactitud qué es algo. Las tiradas subsiguientes relacionadas con el sujeto de la tirada de Conocimiento Local (Supervivencia, por ejemplo, o Rastrear) reducen su dificultad en un Grado. Un fallo implica que no se han hallado pruebas suficientes para predecir o identificar sin ambigüedad, o que no se encuentra lo que se estaba buscando. Una Pifia significa que la información buscada no solo es imposible de obtener sino que se entiende de manera absolutamente errónea. Las tiradas subsiguientes que dependan de este uso de Conocimiento Local aumentan su dificultad en un Grado."
+    },
+    {
+      "nombre": "Costumbres",
+      "categoria": "Básica",
+      "valor_inicial": "INT x2",
+      "descripcion": "Costumbres representa el conocimiento que tiene el personaje de su propia comunidad; sus códigos sociales, ritos, ceremonias, tabúes y demás. La Habilidad se utiliza cuando es esencial interpretar o realizar cualquier costumbre socialmente importante o comportarse de una manera concreta. Un éxito Crítico en Costumbres indica que el personaje ha actuado de manera ejemplar o ha percibido un matiz social muy sutil que le será de utilidad de forma inmediata o más adelante. Una tirada fallida de Costumbres provoca una réplica irónica o una irritación menor. Una Pifia indica que el personaje no ha respetado en absoluto las costumbres de la comunidad, y quizá incluso haya provocado ofensas (intencionadamente o no). Las ramificaciones de una Pifia dependerán sobre todo de la naturaleza de la cultura o comunidad y pueden tener, por tanto, consecuencias muy diferentes, desde una dura reprimenda hasta el ostracismo, el exilio o incluso un castigo violento."
+    },
+    {
+      "nombre": "Engañar",
+      "categoria": "Básica",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Engañar cubre todos los casos en los que el personaje intenta enmascarar la verdad y plantear un engaño de algún tipo: mentir descaradamente, confundir a un guardia o incluso ir de farol (o hacer trampas) durante un juego de cartas. Esta Habilidad también cubre los momentos en que es necesario ocultar los verdaderos sentimientos o intenciones (fingir placer cuando uno se siente amargamente decepcionado, o intentar parecer hospitalario y cordial cuando la verdad es todo lo contrario). Engañar es la contrapartida de Perspicacia y se puede usar para enfrentarse a las tiradas de Perspicacia cuando los demás intentan averiguar la verdad o tus intenciones. Con un éxito Crítico el personaje ha introducido el engaño tan convincentemente que aquellos que lo han sufrido no cuestionarán la verdad en el futuro, a no ser que ocurra algo que exponga la verdad. Una tirada fallida de Engañar indica que al personaje le ha faltado convicción o credibilidad, lo que da pie a más indagaciones. Una Pifia en Engañar representa un embuste miserablemente fallido, tan transparente que los demás pueden tenerlo difícil para creer de nuevo al personaje en el futuro."
+    },
+    {
+      "nombre": "Evadir",
+      "categoria": "Básica",
+      "valor_inicial": "DES x2",
+      "descripcion": "Evadir se usa para escapar de un peligro inminente y percibido, y también para esquivar armas a distancia (saltando a cubierto, por ejemplo), evitar trampas, cambiar la distancia del enfrentamiento en combate y en general para quitarse de en medio ante un riesgo físico potencial. Además se puede usar como tirada de resistencia contra ciertos tipos de magia. Normalmente Evadir se enfrentará a otra tirada, pero también puede ser una tirada de Habilidad independiente. Intentar negar el daño al saltar de un vehículo en colisión, como se menciona en la Habilidad de Conducir, es un ejemplo de tirada simple de Evadir. Las circunstancias más típicas para una tirada enfrentada son las siguientes: Enfrentada a la puntuación del lanzador de conjuros en la Habilidad mágica relevante. Evadir se enfrenta al Estilo de Combate del atacante. Evadir se enfrenta a la Potencia de la trampa o bien al valor de la Habilidad que usó su constructor original en el momento de montarla o prepararla. Enfrentada a la Habilidad de Evadir del atacante. Como la Habilidad de Aguante, Evadir se utiliza generalmente en tiradas enfrentadas. Cuando se emplea en una tirada simple, un éxito Crítico de Evadir asegura que el personaje evasor mantiene la compostura o conserva algún tipo de ventaja, como evitar todo el daño o librarse por completo de peligros posteriores. Una tirada fallida normalmente indica que el personaje sufre cualquier infortunio que estuviera intentando evitar. Si la tirada de Evadir es una Pifia, el personaje se ha expuesto por completo al riesgo, por ejemplo sufriendo el máximo daño de una trampa o acabando derribado y vulnerable ante peligros posteriores. Los efectos de los Críticos y Pifias durante el combate son un caso especial (ver las reglas de Esquivar en el capítulo de Combate, página 108)."
+    },
+    {
+      "nombre": "Influencia",
+      "categoria": "Básica",
+      "valor_inicial": "CAR x2",
+      "descripcion": "Esta es la medida de la capacidad del personaje para convencer a los demás. Se utiliza en una amplia variedad de contextos, desde hacer cambiar de opinión a alguien hasta sobornar a un guardia o funcionario. Las tiradas de Influencia se enfrentan habitualmente a la Percepción, Voluntad u otra Habilidad de Influencia, de acuerdo con las circunstancias, y se modifican según lo mucho que el personaje esté intentando influir en un comportamiento. Intentar persuadir a un amigo íntimo de que te preste su caballo puede ser relativamente fácil. Lograr que un burócrata habitualmente incorruptible acepte un soborno es más difícil. Un éxito Crítico indica que el personaje ha sido increíblemente persuasivo, tanto que no solo tiene éxito en lo que estaba intentando conseguir sino que su siguiente tirada de Influencia con la misma persona, sea cuando sea, tendrá su dificultad reducida en un Grado, por encima de lo que las circunstancias dictarían normalmente (una tirada Normal se convierte en Fácil, por ejemplo, o una Difícil se convierte en Normal). Un fallo simplemente significa que la persuasión ha sido rechazada, sin problemas adicionales. Con una Pifia no solo falla la Influencia, también insulta u ofende a la persona a influenciar. La reacción concreta depende del individuo y la situación. También significa que los posteriores intentos de Influencia contra este individuo aumentan su dificultad en un Grado."
+    },
+    {
+      "nombre": "Lengua Materna",
+      "categoria": "Básica",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Lengua Materna es la capacidad de hablar el propio idioma, aquel que se aprende al crecer en la cultura nativa. Mide la articulación, la elocuencia y la profundidad de vocabulario de quien habla. A diferencia de otras Habilidades, no se realizan tiradas directas de Lengua Materna. En cambio, se la considera una representación estática de la fluidez general, que limita el nivel de la interacción verbal. Esto se describe con más detalle bajo la Habilidad Idiomas en la página 47, pero los personajes noveles normalmente empiezan a jugar teniendo plena fluidez en su lengua natal. Esta Habilidad se puede usar de dos maneras. En primer lugar, puede ayudar a comprender los dialectos de pueblos vecinos que comparten una misma base u origen lingüístico. En tales casos la dificultad se considera un Grado más alta, afectando a la fluidez del personaje. En segundo lugar, se puede usar como un límite a las Habilidades verbales que requieran un buen dominio del lenguaje. Ver Límites a las Habilidades (pág. 51)."
+    },
+    {
+      "nombre": "Manejo de Botes",
+      "categoria": "Básica",
+      "valor_inicial": "FUE+CON",
+      "descripcion": "La Habilidad de Manejo de Botes cubre el pilotaje de pequeñas embarcaciones en ríos, lagos y aguas costeras. Los vehículos apropiados generalmente son botes, canoas o balsas que recorren distancias cortas y que no están preparadas para los rigores del mar abierto. La mayoría son propulsados con remos, zaguales, pértigas o velas simples; incluso pueden remolcarse por animales. Los barcos con tripulaciones grandes o diseñados para los viajes marítimos largos entran dentro de la Habilidad Profesional de Navegación. Esta Habilidad mide la competencia del personaje a la hora de propulsar el bote en la dirección correcta y de hacer frente a las condiciones adversas. Sin distracciones y en condiciones óptimas, no es necesaria la tirada de Manejo de Botes, aunque a los personajes menos hábiles les puede llevar más tiempo llegar a su destino mientras se encargan de gobernarlo. Un éxito Crítico en Manejo de Botes aumenta la Tasa de Movimiento del bajel en una décima parte. Una tirada fallida implica que la Tasa de Movimiento del bote se reduce a la mitad o bien que no ha logrado alcanzar el destino deseado; por ejemplo, navegar hasta una roca aislada situada sobre una cascada. Una Pifia indica que se ha perdido un remo, que el bote está haciendo aguas o algún otro problema grave. Si hay mal tiempo o las aguas están revueltas, una Pifia hace que el bote vuelque."
+    },
+    {
+      "nombre": "Montar",
+      "categoria": "Básica",
+      "valor_inicial": "DES+POD",
+      "descripcion": "Montar cubre la habilidad de controlar y permanecer a lomos de aquellas criaturas entrenadas para usarse como monturas. La Habilidad se puede aplicar a una amplia diversidad de bestias, desde mulas a elefantes; incluso a criaturas voladoras o nadadoras como las águilas gigantes o los delfines. Montar una especie desconocida siempre aumenta la dificultad en un Grado; mientras que montar una especie en un medio distinto (un jinete montando a lomos de un dragón volador, por ejemplo) es dos Grados más difícil. Las criaturas salvajes y sin domesticar no se pueden montar de manera productiva hasta que no se las doma y entrena como bestias de monta. Un Crítico en Montar permite al jinete realizar una hazaña de monta extravagante (como un salto o giro en el aire) o aumentar temporalmente la Tasa de Movimiento de la montura en una décima parte. Un fallo hace que la montura gane un Nivel de Fatiga. Una Pifia significa que ha ocurrido un accidente; o bien del jinete (que podría caerse) o bien de la montura, que sufre algún tipo de lesión, como una cojera o la rotura de una pata."
+    },
+    {
+      "nombre": "Músculo",
+      "categoria": "Básica",
+      "valor_inicial": "FUE+TAM",
+      "descripcion": "Músculo es la aplicación eficiente de la técnica al usar la pura fuerza física. La Habilidad cubre el levantamiento de pesos, romper objetos y las competiciones de fuerza. Las tiradas de Músculo también se pueden usar como tiradas enfrentadas para liberarse de la presa de otro, echar un pulso o en juegos de tirar de la cuerda. Tales eventos se resuelven con una tirada enfrentada simple. Sin embargo, llegados a cierto punto, la técnica no puede superar una fuerza o tamaño superior. En un duelo así, si el Modificador de Daño de un personaje es menor que el de sus oponentes, su tirada de Músculo sufre una penalización. Una diferencia de un Grado eleva la dificultad a Difícil, mientras que dos Grados la aumentan a Formidable, y así. Obviamente, si el personaje es más fuerte la penalización la sufre su oponente. Un personaje puede levantar del suelo y transportar tantos puntos de TAM como FUE tenga, o arrastrar el doble de esa cantidad, sin necesidad de una tirada de Músculo. Como equivalente de masa, 1 punto de TAM es igual a 5 kilogramos, aproximadamente. Por cada 10% completo que posea en esta Habilidad, el personaje puede añadir un punto extra de TAM (o 5 Kg) a su total. Para un TAM o masa superior a este límite, el personaje debe pasar una tirada de Músculo. El peso máximo que un personaje puede levantar brevemente es igual al doble de su FUE más cualquier bonificación obtenida por esta Habilidad. Fallar la tirada de Músculo puede resultar en una lesión. El personaje debe superar una tirada de Aguante o sufrir 1d3 puntos de daño en una Localización aleatoria por debajo de la cabeza. Pifiar la tirada de Músculo resulta en una lesión automáticamente. Un personaje puede usar su Músculo para romper objetos con sus manos desnudas, como al embestir con el hombro contra una puerta de madera. Toma la capacidad máxima de levantamiento del personaje en TAM y aplica ese valor a la Tabla de Modificador de Daño de la página 9 para determinar cuánto daño se puede causar con cada tirada de Músculo, teniendo en cuenta que las tiradas fallidas pueden resultar en una lesión."
+    },
+    {
+      "nombre": "Nadar",
+      "categoria": "Básica",
+      "valor_inicial": "FUE+CON",
+      "descripcion": "Sin entrenamiento, la Habilidad de Nadar permite solo patalear y mantener la cabeza fuera del agua durante un breve tiempo. Porcentajes más altos denotan la capacidad de moverse por aguas más profundas y rápidas, con menor riesgo de ahogarse. Los mares embravecidos, las corrientes fuertes, los rápidos y las contracorrientes aumentan la dificultad de la tirada sin importar cuál pueda ser la afinidad del personaje con el agua. En condiciones normales, la velocidad de nado máxima por Asalto de un personaje es igual a su Tasa de Movimiento básica, más un metro adicional por cada 20% completo que posea en Nadar. Un Crítico en Nadar permite al personaje añadir un metro adicional a su Tasa de Movimiento. Fallar una tirada de Nadar no tiene consecuencias inmediatas, salvo que el personaje obtiene un Nivel de Fatiga. Si se Pifia una tirada de Nadar, el movimiento controlado cesa mientras el nadador empieza a sufrir calambres o se ve abrumado por las condiciones turbulentas. Las futuras tiradas de Nadar aumentan su dificultad en un Grado. A partir de ese momento, lo único que el nadador puede hacer es intentar mantener la cabeza fuera del agua hasta que llegue ayuda o se quede exhausto, momento en el que probablemente empezará a ahogarse. Ver las reglas de Asfixia en la página 71."
+    },
+    {
+      "nombre": "Ocultar",
+      "categoria": "Básica",
+      "valor_inicial": "DES+POD",
+      "descripcion": "Ocultar es la contrapartida de Sigilo, es decir, la capacidad de esconder objetos grandes en lugar de al propio personaje. Por ejemplo, Ocultar se podría usar para esconder una cuadriga tras unas rocas, o barrer las rodadas dejadas por esta para que no se pueda rastrear su paso. Esta Habilidad es versátil en su aplicación, permitiendo desde esconder un pergamino en una biblioteca a disfrazar la presencia de una trampa o un pasadizo secreto. Un éxito Crítico indica que el objeto se esconde tan astutamente que la dificultad de las tiradas para encontrarlo aumenta en un Grado. Una tirada fallida de Ocultar significa que el objeto se encuentra automáticamente si se lo busca activamente. Una Pifia en Ocultar indica que el intento resulta espectacularmente contraproducente y el objeto cae, rueda o se desplaza de su escondrijo tan descaradamente (o se revela de alguna otra manera apropiada) que llama la atención de todos los presentes."
+    },
+    {
+      "nombre": "Pelea",
+      "categoria": "Básica",
+      "valor_inicial": "FUE+DES",
+      "descripcion": "Pelea es un Estilo de Combate universal y común en todos los personajes, que mide la capacidad de defenderse sin la ayuda de armas. La Habilidad de Pelea cubre las técnicas de forcejeo y lucha sin armas conocidas en esa cultura. Sin embargo, existen, por supuesto, estilos específicos que mejoran la capacidad de luchar sin armas y que ofrecen ventajas a aquellos que los aprenden como Estilos de Combate separados. Ya que la Pelea es un Estilo de Combate, sus efectos de Crítico y Pifia quedan cubiertos por las reglas de combate (ver pág. 88)."
+    },
+    {
+      "nombre": "Percepción",
+      "categoria": "Básica",
+      "valor_inicial": "INT+POD",
+      "descripcion": "La Percepción se usa tanto para la observación pasiva como para la detección consciente; ya sea en busca de algo concreto, echando un vistazo general a la zona o mediante el simple discernimiento del entorno. Algunas condiciones concretas (la oscuridad, por ejemplo) pueden afectar al Grado de Dificultad de la tirada, según los sentidos primarios que se estén utilizando. Los olores fuertes pueden hacer que una tirada de Percepción olfativa sea Fácil en lugar de Normal, mientras que intentar escuchar a hurtadillas una conversación en una taberna atestada y ruidosa haría que la tirada fuera Difícil. Un éxito Crítico de Percepción revela cosas que de otra manera no se habrían percibido, además de aquello por lo que se estaba usando la Habilidad. Un fallo indica que no se ha detectado nada en particular. Pifiar una tirada de Percepción hace que incluso lo más absolutamente obvio se pase por alto o malinterprete, aumentando potencialmente la dificultad de tiradas de Habilidad posteriores. Por ejemplo, una Pifia en Percepción al intentar detectar una trampa podría hacer que una posterior tirada de Evadir fuera Difícil o incluso Formidable en lugar de Normal."
+    },
+    {
+      "nombre": "Perspicacia",
+      "categoria": "Básica",
+      "valor_inicial": "INT+POD",
+      "descripcion": "La Perspicacia es la capacidad de leer o interpretar instintivamente el comportamiento verbal y no verbal de los demás (como el lenguaje corporal o la manera de hablar) para comprender sus intenciones y su estado de ánimo. La Perspicacia se puede usar para determinar si alguien está mintiendo (y se puede enfrentar a la Habilidad de Engañar de la otra persona), o para discernir cómo se siente alguien ante una situación concreta. La Perspicacia se puede aplicar a situaciones concretas de la misma manera que a las personas: ¿Es esa taberna un nido de problemas? ¿Podrían los bandidos planear una emboscada en las colinas cercanas? Con un éxito Crítico el personaje perspicaz obtiene una comprensión profunda de las intenciones, pensamientos y sentimientos de la otra persona. Las tiradas posteriores tanto de Engañar como de Influencia contra esa persona son un Grado más fáciles de lo que las circunstancias indicarían (Fácil en lugar de Normal; Normal en lugar de Difícil, etc.). Un fallo simplemente significa que el personaje no puede discernir nada concreto en ese momento. Con una Pifia, el personaje juzga de manera completamente equivocada las intenciones y acciones de la persona. El Director de Juego debería ofrecer en privado al personaje una serie de pistas deliberadamente engañosas sobre las motivaciones y acciones probables de la persona. También hacer que las tiradas subsiguientes de Engañar e Influencia aumenten su dificultad en un Grado."
+    },
+    {
+      "nombre": "Primeros Auxilios",
+      "categoria": "Básica",
+      "valor_inicial": "DES+INT",
+      "descripcion": "Los Primeros Auxilios miden la capacidad del personaje para tratar heridas menores y estabilizar las más graves. Se pueden aplicar una sola vez por cada herida concreta. Así, un personaje que ha recibido dos cortes en la pierna puede recibir tratamiento para cada herida por separado. Si está sufriendo de algún tipo de daño corporal que ha afectado a varias localizaciones simultáneamente, como el Aliento de Dragón, se permite un intento de Primeros Auxilios para cada localización individual. Un personaje puede auto-administrarse Primeros Auxilios, aunque dependiendo de las circunstancias (como la localización de la herida, su grado de severidad y demás), la tirada puede aumentar su Grado de Dificultad. Aplicar Primeros Auxilios lleva 1d3 minutos. Ninguna de las partes puede hacer nada más durante el tratamiento. Al tratar traumas con riesgo de muerte, el paciente queda temporalmente estabilizado hasta conocer el resultado de la aplicación. Una herida a la que se ha aplicado una forma anterior de Primeros Auxilios, exitosa o no, no puede beneficiarse de nuevo de ello hasta que no se cura del todo. Los Primeros Auxilios dependen de que el equipo apropiado (vendas, como mínimo) esté disponible al realizar el tratamiento. Este equipo se puede improvisar si es necesario (una capa desgarrada para hacer vendas o cabestrillos, por ejemplo). Un Crítico en Primeros Auxilios mejora el resultado del tratamiento. En una Herida Leve recupera 1d6 Puntos de Golpe, en una Herida Grave recupera 1d3 Puntos de Golpe, y en una Herida Crítica devuelve una funcionalidad parcial (si es posible) y permite que se cure de forma natural. Una Pifia en Primeros Auxilios hace más mal que bien: la localización herida sufre 1 punto adicional de daño, aumentando potencialmente la gravedad de la herida."
+    },
+    {
+      "nombre": "Sigilo",
+      "categoria": "Básica",
+      "valor_inicial": "DES+INT",
+      "descripcion": "Esconderse a simple vista o moverse haciendo el mínimo sonido posible son acciones que quedan cubiertas por la Habilidad de Sigilo. La cobertura y las condiciones, como la oscuridad o un fuerte ruido ambiental, mejoran el Grado de la Habilidad según las particularidades del entorno. Condiciones similarmente adversas, como la falta de cobertura o una noche tranquila, disminuirán el Grado de la Habilidad. Las circunstancias también pueden modificar la dificultad del intento. Por ejemplo, un guerrero que lleve armadura pesada podría esconderse fácilmente tras un muro siempre que se esté quieto o se mueva muy despacio, mientras que si se mueve rápidamente hará que su armadura tintinee. Un éxito Crítico hace que todo intento posterior de usar Habilidades para detectar al personaje, seguirle, observarle o similar aumenten su dificultad en un Grado. Un fallo indica que el personaje es abiertamente detectable, siempre que alguien se esté molestando en intentar localizarle. Con una Pifia el intento de Sigilo ha salido por la culata y atrae la atención hacia el personaje en lugar de ocultar su presencia, o provoca algún tipo de accidente o infortunio, como esconderse en el alféizar de una ventana y ser derribado cuando alguien abre el postigo para investigar ese extraño ruido."
+    },
+    {
+      "nombre": "Voluntad",
+      "categoria": "Básica",
+      "valor_inicial": "POD x2",
+      "descripcion": "La Voluntad mide la capacidad del personaje para concentrarse, canalizar su fuerza de voluntad en una dirección concreta o de endurecer su psique ante un posible shock mental. También es una medida de la determinación personal. La Habilidad se usa en toda clase de situaciones en las que es necesaria la fortaleza mental, y esto incluye resistir la magia. Aunque no es una medida de la cordura, se puede usar para soportar eventos traumáticos que conmocionarían a la mente más cuerda y estable. La Voluntad es la contrapartida mental del Aguante. De nuevo, como las Habilidades de Aguante y Evadir, la Voluntad se usa generalmente en tiradas enfrentadas. Cuando se usa en una tirada simple, un resultado Crítico de Voluntad indica que el personaje ha fortalecido su mente y espíritu hasta el punto de hacer fracasar todo intento posterior de influenciarle o debilitar su resolución. En caso de resistir la magia, un éxito Crítico significa que ningún hechizo posterior que afecte a la mente lanzado por ese oponente tendrá efecto alguno en el personaje durante el resto del encuentro. Los efectos de fallar una tirada de Voluntad dependen de la situación y las circunstancias; normalmente indica la capitulación temporal ante cualquier cosa que se le esté haciendo. Una Pifia en Voluntad deja al personaje completamente abrumado. Su voluntad está rota, y no tiene medios para resistir aquello que esté asaltándole mental o espiritualmente. En caso de resistir el shock o un conjuro, una Pifia en Voluntad significa que el efecto psicológico del conjuro se vuelve permanente hasta que se cure. Las Habilidades Profesionales varían entre personajes y representan formas más especializadas de entrenamiento y experiencia. Como su nombre indica, algunas Habilidades Profesionales se adquieren a través del trasfondo cultural y la profesión del personaje. Aunque varían entre personajes, funcionan de la misma manera que las Habilidades Básicas. Ciertas Habilidades mágicas también están clasificadas como Habilidades Profesionales: Invocación y Manipulación son las dos Habilidades asociadas con la Hechicería, por ejemplo. Estas solo se describen brevemente en este apartado. Para conocer más detalles, ver el capítulo relevante sobre la magia."
+    },
+    {
+      "nombre": "Acrobacias",
+      "categoria": "Profesional",
+      "valor_inicial": "FUE+DES",
+      "descripcion": "La Habilidad de Acrobacias cubre las acciones relacionadas con el equilibrio, la gimnasia, el malabarismo y las piruetas. La Habilidad se puede usar por sí misma para impresionar a un público, pero también ayuda a mitigar el daño de las caídas. Con una tirada exitosa, el personaje puede moverse a toda velocidad y con paso firme por una superficie estrecha o inestable. Al intentar mitigar el daño de una caída inesperada, una tirada exitosa de Acrobacias reduce la distancia como se explica en Caídas (ver pág. 72). El valor de Acrobacias puede sustituir al de Evadir si la situación lo permite. El beneficio que supone es que, si la tirada es exitosa, el personaje evita acabar derribado. Un éxito Crítico duplica la Tasa de Movimiento al hacer equilibrios o recorrer una superficie inestable. Fallar impide que se logre impresionar al público, o que haya que abortar prematuramente cualquier truco o pirueta que se estuviera intentando. Una Pifia al tirar Acrobacias significa que se ha perdido el equilibrio y la coordinación por completo, haciendo que el personaje se caiga de la superficie sobre la que estaba equilibrado, se le escapen los malabares de manera catastrófica o se dañe a sí mismo realizando una pirueta acrobática, sufriendo 1d4 puntos de daño en una localización al azar."
+    },
+    {
+      "nombre": "Actuar",
+      "categoria": "Profesional",
+      "valor_inicial": "CAR x2",
+      "descripcion": "Actuar gobierna el arte de saber interpretar y hacerse pasar por una persona completamente distinta, ya sea en un espectáculo teatral o en una situación social. El actor interpreta una personalidad y unas maneras distintas a las suyas de forma convincente. Unida a las Habilidades de Disfraz y Engañar, esta es una manera muy efectiva de convertirse por completo en otra persona. Las tiradas de Actuar son necesarias cuando es esencial interpretar de manera convincente: sobre el escenario, por ejemplo, o al intentar hacerse pasar por otra persona. Un éxito Crítico es absolutamente convincente. En un contexto interpretativo, garantiza la ovación del público o una muestra de aprecio similar. En un contexto social, el actor se convierte en el personaje que interpreta. También significa que cualquier tirada de Habilidad subsiguiente, como Engañar, Influencia o similar, reduce su dificultad en un Grado (Fácil en lugar de Normal, por ejemplo). Las tiradas fallidas resultan en una actuación mediocre y sin brillo. Una Pifia en Actuar significa que la actuación no ha convencido a nadie, y que de hecho es tan mala que ni los menos observadores se la creerán, o lo que quizá es peor, la recibirán con risas y abucheos."
+    },
+    {
+      "nombre": "Arte",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "Hay muchas formas de arte específicas, de la pintura a la poesía y de la literatura a la escultura. Un personaje elige una especialización en Arte al aprender esta Habilidad. Las formas de Arte subsiguientes se desarrollan por separado. Las tiradas se realizan siempre que un personaje deba impresionar o convencer a través de su medio artístico. Un éxito Crítico indica que el artista ha creado algo de calidad, elegancia o belleza asombrosas, que vale un 50% más del valor habitual de productos parecidos. Toda tirada de Habilidad subsiguiente hecha para influenciar a quien haya encargado la obra, o a aquellos que simplemente la están admirando, reduce temporalmente su dificultad en un Grado. Fallar la tirada conlleva la creación de algo insustancial, que ni impresiona a nadie ni se vende por más del coste de los materiales usados en su creación. Una Pifia en Arte ocasiona un desastre artístico. Los efectos de una situación tan terrible debe determinarlos el Director de Juego pero, como mínimo, representa una absoluta pérdida de tiempo, materiales y talento que puede repercutir en la reputación del artista si se muestra en público."
+    },
+    {
+      "nombre": "Artesanía",
+      "categoria": "Profesional",
+      "valor_inicial": "DES+INT",
+      "descripcion": "Cada Artesanía es una forma especializada y hay tantas artesanías como profesiones basadas en ellas. Como el Arte, la Artesanía se usa para crear el objeto deseado. El tiempo necesario depende por completo de la naturaleza del producto: tejer una alfombra lleva más tiempo que moldear una vasija, pero el tiempo no es necesariamente el factor más importante. Lo son la habilidad del artesano, la calidad de los recursos y la atención al detalle. Un éxito Crítico crea un objeto de calidad superior, en términos de durabilidad, utilidad o belleza. Una tirada fallida de Artesanía indica un producto de calidad inferior, en detrimento de la robustez, funcionalidad o valor estético del objeto. Con una Pifia se crea un objeto carente por completo de utilidad y valor. Alternativamente, se produce un accidente durante el proceso de creación que causa daños a la propiedad, a las existencias o al propio artesano; un horno de alfarero que se desmorona o un herrero que se golpea la mano con el martillo, por ejemplo."
+    },
+    {
+      "nombre": "Atadura",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "La Atadura es una Habilidad mágica usada por los animistas para ejercer su voluntad sobre los espíritus y criaturas del otro mundo. Se usa para atar espíritus a fetiches, y controlar sus acciones una vez atados. Además se puede usar para invocar y coaccionar a un espíritu conocido para que realice una acción a cambio de un servicio mutuamente aceptable, forjando un contrato entre ambos. Asimismo, esta Habilidad se usa al entablar un Combate Espiritual, y también mide la autoridad de un animista dentro de un culto espiritual. Para conocer más detalles ver la página 136 del capítulo de Animismo. La Atadura no está limitada a los animistas. Esta Habilidad la pueden aprender otros practicantes de la magia, y se usa en la atadura de entidades sobrenaturales como los elementales y los demonios."
+    },
+    {
+      "nombre": "Burocracia",
+      "categoria": "Profesional",
+      "valor_inicial": "INT x2",
+      "descripcion": "La comprensión de los procedimientos y registros administrativos y sus convenciones no pactadas queda cubierta por la Habilidad de Burocracia. Se usa para interactuar con funcionarios o encontrar la información civil deseada. Dependiendo de la sofisticación de su cultura, los burócratas no necesariamente tienen por qué saber leer y escribir. Sin embargo, su Habilidad de Burocracia no puede superar el valor de las Habilidades de Idioma o Leer/Escribir con las que trabaja. Siempre que hay que adentrarse en los recovecos de la administración o atravesar la cinta roja, es necesaria una tirada de Burocracia. Obtener un éxito Crítico en Burocracia ofrece una comprensión profunda de los procedimientos y formalidades de lo que esté intentando lograr el personaje, consiguiéndolo en la mitad del tiempo normal. También significa que cualquier tirada subsiguiente que dependa del resultado de Burocracia reduce su dificultad en un Grado (Influencia, por ejemplo, o Engañar). Un fallo lleva a toparse con un muro de piedra insalvable o a traspapelar los documentos relevantes, y la incapacidad del usuario para seguir los procedimientos habituales hace que las tiradas subsiguientes que sean relevantes para la situación aumenten su dificultad en un Grado. Si la tirada es una Pifia, el acceso queda prohibido o el personaje irrita a una personalidad clave, de tal manera que su petición o pregunta nunca recibirá respuesta."
+    },
+    {
+      "nombre": "Callejeo",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "Callejeo representa el conocimiento de lugares y contactos sociales dentro de un asentamiento. Cubre desde identificar barrios potencialmente peligrosos hasta encontrar servicios locales (ya sean legales o ilegales). El tiempo necesario para llevar a cabo una tarea de Callejeo depende de lo que se esté buscando. Encontrar una buena posada puede llevar menos tiempo que encontrar a un perista que compre objetos robados o un permiso de comercio falsificado. Un éxito Crítico en Callejeo localiza a la persona o lugar necesarios para obtener lo que se estuviera buscando sin necesidad de sobornos o pasos intermedios, lo que puede llevar a la obtención de un nuevo contacto. Un fallo simplemente implica perder el tiempo invertido en buscar. Una Pifia en Callejeo significa que no solo no se encuentra lo que se estaba buscando, sino que se atrae una atención indeseada y potencialmente peligrosa: desde matones locales o asaltantes, a la milicia local, dependiendo de las circunstancias."
+    },
+    {
+      "nombre": "Comerciar",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Comerciar se usa para tasar el valor de bienes y artículos y mercadear con ellos para obtener el mejor precio posible. También se usa para entender las complejidades de las transacciones mercantiles además de intentar procurar beneficios. Un uso adicional consiste en encontrar la mejor manera de colocar bienes ilícitos o robados, de nuevo en busca del mejor precio posible. Comerciar se usa obviamente al hacer negocios y se puede enfrentar a la Voluntad o a la Habilidad de Comerciar del oponente, reflejando los intentos de la otra parte de ajustar el trato a su favor. También se usa para juzgar el valor de mercado de los bienes y hacerse una idea del precio y de dónde se pueden vender más fácilmente. En las transacciones sin tiradas enfrentadas, un éxito Crítico permite al personaje hacerse con el producto o servicio a la mitad del precio habitual, o venderlo por el doble. Fallar la tirada indica que el producto o servicio se ha conseguido al doble de su precio, o vendido tan solo por la mitad de su valor. Una Pifia significa que el personaje ha insultado al comprador o vendedor hasta tal punto que la transacción se cancela. Alternativamente, puede indicar que ha sido timado y ha terminado pagando por algo inservible o que ha vendido sin querer algo de un valor potencialmente mayor por una fracción de su coste. Ver también la sección de Regateo, página 56."
+    },
+    {
+      "nombre": "Cortesía",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Esta Habilidad informa sobre cómo actuar de manera apropiada a la situación social o formal que se esté produciendo: maneras de dirigirse a otros, rituales y códigos de conducta, etc. Lo incluye todo, desde saber cuándo y ante quién hay que inclinarse a lo profunda que debe ser la reverencia; desde saber cuándo hay que usar un título concreto a saber en qué momentos es apropiado comportarse de manera más informal. Lograr un éxito Crítico en Cortesía hace que todas las tiradas subsiguientes relevantes para la situación reduzcan su dificultad en un Grado. Fallar indica que el usuario no ha impresionado a su compañía con su actitud y modales, haciendo que todas las tiradas subsiguientes aumenten su dificultad en un Grado. Una Pifia en Cortesía genera una profunda vergüenza y humillación y, en el peor de los casos, resulta en un grave insulto que, dependiendo de las circunstancias, puede tener consecuencias terribles. No es posible proseguir ningún tipo de interacción social tras una Pifia."
+    },
+    {
+      "nombre": "Cultura",
+      "categoria": "Profesional",
+      "valor_inicial": "INT x2",
+      "descripcion": "La Cultura es una forma más específica de la Habilidad Básica de Costumbres y se refiere a sociedades distintas a la propia. Cada Habilidad de Cultura se debe aplicar a una nación o sociedad concreta. Mecánicamente funciona de la misma manera que la Habilidad de Costumbres."
+    },
+    {
+      "nombre": "Curación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+POD",
+      "descripcion": "Curación es el conocimiento en profundidad de los procedimientos médicos, según las distintas prácticas culturales. En una cultura bárbara o primitiva, por ejemplo, la curación se basará en el conocimiento de hierbas y remedios naturales. En una cultura civilizada, las drogas y los tratamientos más avanzados serán más comunes. En todas las culturas, la curación incluye la capacidad de recolocar huesos, suturar heridas y demás. Obviamente, para usar Curación se necesitan los recursos apropiados, que la mayoría de curanderos tendrán a mano (agujas, tripa o hilo para suturas, hierbas para cataplasmas, etc.). Hay tres áreas principales de Curación: Una tirada exitosa de Curación recupera 1d3 Puntos de Golpe de una Localización que ha sufrido una Herida Grave. Un éxito Crítico aumenta esta tirada a 1d3+1. Con una Pifia, se sufre 1 Punto de Golpe de daño adicional. Si la Curación se aplica antes del Tiempo de Aparición, puede contrarrestar la enfermedad o el veneno, siempre que se supere su Potencia en una tirada enfrentada. Si se le aplica a un personaje que ya ha sucumbido a la enfermedad o toxina, una tirada exitosa de Curación permite a la víctima una nueva oportunidad de resistir, con un Grado de Dificultad más fácil. Un éxito Crítico lo hace dos Grados más fácil. Una Pifia, en cambio, hace que la tirada de resistencia sea un Grado más difícil. La cirugía es el único modo, salvo la curación mágica, de que un personaje se recupere de una Herida Crítica. Para tratar una Herida Crítica primero se necesita una tirada con éxito de Primeros Auxilios que la estabilice (ver Primeros Auxilios, pág. 43), de modo que después se pueda realizar una tirada de Curación que coloque un hueso roto, cosa la carne de un muñón o extirpe cuerpos extraños incrustados en el tejido, y así la localización pueda comenzar el camino hacia su recuperación. Siempre que la tirada de Curación sea un éxito, la localización dañada comenzará a curarse como si hubiera sufrido una Herida Grave (ver Curación de Heridas, pág. 74). Con un éxito Crítico la localización recupera 1 Punto de Golpe inmediatamente, mientras que una Pifia en Curación hará que el paciente tenga que tener éxito en una tirada de Aguante o morir en el proceso. La cirugía no puede volver a unir una extremidad seccionada."
+    },
+    {
+      "nombre": "Devoción",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "La Devoción es una Habilidad mágica que refleja la entrega de los sacerdotes y cargos similares al servicio de su deidad o panteón de dioses. No solo mide la profundidad de la devoción hacia una deidad, sino que también rige la Magnitud de cualquier milagro divino invocado por el teísta y la recuperación de tales bendiciones en un lugar sagrado apropiado. Además, esta Habilidad puede indicar el estatus de un teísta dentro de un culto religioso. Para conocer más detalles ver Uso del Teísmo (pág. 190). En algunas ambientaciones la Devoción no está limitada a los sacerdotes profesionales. Puede ser adoptada por aquellos que simplemente deseen mostrar respeto a los dioses incluso si no practican activamente el Teísmo o, de hecho, ¡aunque los dioses ni siquiera existan!"
+    },
+    {
+      "nombre": "Disfraz",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "El diseño de un disfraz convincente, usando materiales apropiados (trajes, cosméticos, pelucas o postizos), entra en el ámbito de la Habilidad de Disfraz. Crearlo requiere tiempo y atención al detalle, así como acceso a los materiales adecuados para hacerlo convincente. Si se carece de alguno de estos elementos, o de todos, la dificultad de la tirada de Disfraz aumenta en uno o más Grados. La Habilidad de Disfraz se puede potenciar mediante el uso de Actuar para mejorar el efecto general de un engaño (y viceversa al interpretar), de manera que ambas Habilidades son complementarias. Un Crítico en Disfraz tiene como resultado una mascarada completamente convincente y tan completa que incluso la propia madre del personaje o un enemigo de toda la vida podría no reconocerle. Fallar tiene como resultado un intento tan pobre que da a los observadores pasivos la oportunidad de ver a través del mismo. Una Pifia en Disfraz o bien produce un disfraz tan patético que es detectado instantáneamente, o bien uno que falla en un momento espectacularmente inoportuno. No hay actuación lo bastante brillante como para mantener la ilusión cuando una nariz falsa se cae o un traje mal entallado se rasga."
+    },
+    {
+      "nombre": "Enseñar",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Enseñar permite al usuario transmitir sus conocimientos y técnicas de una manera constructiva y fácil de entender. Sin esta Habilidad hasta los maestros más hábiles tendrán problemas al instruir a otros. Como ocurre con otras Habilidades, no se realizan tiradas directas de Enseñar, sino que actúa como un límite a lo que se puede enseñar realmente a los estudiantes másavanzados.Para más detalles, ver Entrenamiento(pág.82)."
+    },
+    {
+      "nombre": "Exhortación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Exhortación es la Habilidad mágica usada para invocar y encauzar el poder de los dioses. Incluye el conocimiento de la historia, los mitos, rituales, prácticas, plegarias y poderes del dios o panteón y es esencial para la Magia Teísta, al ser usada para manifestar milagros divinos. Para conocer más detalles ver las páginas 190-192 del capítulo de Teísmo."
+    },
+    {
+      "nombre": "Forzar Cerraduras",
+      "categoria": "Profesional",
+      "valor_inicial": "DES x2",
+      "descripcion": "Forzar Cerraduras es la Habilidad de abrir sistemas mecánicos de cierre sin la ayuda de una llave u otro artilugio diseñado específicamente para esa cerradura. Incluye las técnicas para abrir puertas y ventanas atrancadas o cerradas con pestillo sin causar daños. La dificultad de la cerradura depende de la Habilidad del cerrajero que la creó y se necesita una tirada enfrentada de Forzar Cerraduras contra la Habilidad de Mecanismos del creador. Cuando una cerradura no tiene ningún valor de Habilidad asignado, el Director de Juego puede ajustar el Grado de Dificultad de la tirada de Forzar Cerraduras según la complejidad de la cerradura. Un ladrón que intente forzar un cerrojo mecánico caro y expertamente diseñado de un tipo que nunca ha visto antes, por ejemplo, podría tener que hacer su tirada de Forzar Cerraduras con uno o dos Grados más de dificultad. Y algunas cerraduras (invisibles, candados y cerrojos empotrados) pueden ser imposibles de forzar. Con un éxito Crítico, el personaje no solo abre la cerradura en silencio y con eficiencia, sino que su siguiente intento de forzar el mismo tipo de cerradura reducirá su dificultad en un Grado durante un breve tiempo. Un fallo simplemente significa que no se ha podido forzar la cerradura. Con una Pifia la cerradura se atasca: las ganzúas se rompen dentro del mecanismo, o este queda dañado internamente. Sea por la causa que sea, la cerradura atascada acabará por llamar la atención."
+    },
+    {
+      "nombre": "Idioma",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "Esta Habilidad permite la comprensión y habla de un idioma que no sea el propio del personaje. De forma similar a la Lengua Materna (ver pág. 41), la Habilidad de Idioma no recibe tiradas directas, sino que se considera una representación básica de la fluidez general. El Director de Juego usa su valor para limitar el nivel de interacción verbal cuando los jugadores conversan con los distintos personajes del juego. Usa la Tabla de Fluidez lingüística como pauta. Cada Habilidad de Idioma es específica para un lenguaje nacional o regional concreto, que se debe escoger en el momento de aprenderla. Entender dialectos similares con una base u origen lingüístico en común puede facilitar la comprensión. Dependiendo de la divergencia, la dificultad de la tirada de Habilidad podría considerarse un Grado más alta, posiblemente reduciendo la fluidez del personaje. El Idioma también se usa como límite para las Habilidades verbales que requieran un buen dominio del lenguaje. Ver Límites a las Habilidades (pág. 51)."
+    },
+    {
+      "nombre": "Ingeniería",
+      "categoria": "Profesional",
+      "valor_inicial": "INT x2",
+      "descripcion": "El diseño y construcción de estructuras a gran escala, desde casas a puentes, de pórticos a máquinas de asedio, entra en el ámbito de la Habilidad de Ingeniería. Se necesitan tiradas cuando se planean proyectos a gran escala para asegurar una construcción correcta, pero también se hacen cuando un ingeniero quiere valorar la integridad de una estructura por la razón que sea (estado de mantenimiento o puntos débiles, por ejemplo). Un éxito Crítico pone en relieve cualquier defecto o problema grave y difícil de detectar que pudiera tener el objeto a estudiar. También reduce la dificultad de todas las tiradas posteriores que dependan de la estructura en un Grado. Alternativamente, puede permitir la construcción de una estructura más dura y resistente (sus Puntos de Golpe o Puntos de Armadura aumentan en una décima parte). Fallar una tirada de Ingeniería da como resultado una construcción de calidad inferior (sus Puntos de Golpe o Puntos de Armadura disminuyen en una décima parte) o en la imposibilidad de obtener información estructural alguna. Una Pifia introduce activamente un defecto en el proyecto o resulta en una valoración desastrosa de la condición del objeto, que proporciona información incorrecta y engañosa. Las tiradas subsiguientes que dependan del resultado de la tirada de Ingeniería aumentan su dificultad en un Grado."
+    },
+    {
+      "nombre": "Invocación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT x2",
+      "descripcion": "La Invocación es una Habilidad mágica esencial para la Hechicería. Es la capacidad del hechicero para lanzar con éxito los conjuros que ha aprendido de un grimorio o mentor concreto. Combina la comprensión de las fórmulas del hechizo con el estado mental adecuado, los gestos y ensalmos necesarios, etc. Aumentar la competencia en esta Habilidad también mejora la Intensidad final de los conjuros que se lanzan con ella. Cada Habilidad de Invocación debe estar vinculada a una fuente específica de conocimiento arcano, ya sea un libro de hechizos en particular, una escuela de brujería o incluso un patrón demoníaco. Para conocer más detalles, ver el capítulo de Hechicería (pág. 173)."
+    },
+    {
+      "nombre": "Juego",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+POD",
+      "descripcion": "La Habilidad de Juego mide la competencia del personaje en los juegos de azar, y especialmente cuando se apuesta dinero a un resultado. Se usa para valorar las probabilidades de éxito o fracaso o para ver si alguien está haciendo trampa. Esta Habilidad se puede usar de manera simple o enfrentada, dependiendo de la situación. Pasar la noche en una casa de apuestas anónima solo requiere una tirada simple, mientras que una partida de dados en la que hay mucho en juego y en la que participan personalidades destacadas puede exigir varias rondas de tiradas enfrentadas. Un éxito Crítico en Juego normalmente permite que el personaje gane directamente la partida o desplume a uno de los participantes. Un fallo simplemente indica que el personaje ha perdido la mano o la apuesta. Con una Pifia, el personaje ha interpretado mal las probabilidades o ha sufrido una trágica racha de mala suerte. Pierde todo lo apostado y queda expulsado del juego. Hacer trampas permite al personaje tirar dos veces y quedarse el mejor resultado. Sin embargo, cada vez que lo intente, el tramposo tendrá que hacer una tirada enfrentada de su Habilidad Juego de Manos contra la Percepción o el Juego de todos los demás jugadores. Si el tramposo no logra vencer a todos los observadores le habrán pillado, con los resultados pertinentes."
+    },
+    {
+      "nombre": "Juego de Manos",
+      "categoria": "Profesional",
+      "valor_inicial": "DES+CAR",
+      "descripcion": "Juego de Manos cubre los intentos de ocultar o escamotear pequeños objetos (prestidigitación e ilusionismo) e incluye los intentos de vaciar bolsillos, cortar bolsas o provocar distracciones visuales. Naturalmente, es una Habilidad esencial para un ladrón. Los personajes pueden intentar manipular cualquier objeto siempre que no sea más grande que su mano. Se puede intentar el Juego de Manos con seres vivos siempre que el usuario tenga algo o algún lugar donde esconderlos, por ejemplo un sombrero o una manga ancha, pero la tirada aumenta su dificultad en un Grado. Algunos objetos, debido a su tamaño y masa, no se pueden manipular con Juego de Manos y requieren la Habilidad de Ocultar en su lugar. Los observadores pueden enfrentar su Habilidad de Percepción contra el intento de hacer Juego de Manos para tratar de darse cuenta del engaño. Con un Crítico en Juego de Manos el personaje ha manipulado el objeto con tanto éxito que cualquier intento subsiguiente de localizarlo aumenta su dificultad en un Grado. Un fallo significa que el objeto no se ha escondido y lo detecta automáticamente cualquiera que haga un esfuerzo para localizarlo. Si se Pifia, el objeto no solo se queda sin esconder, sino que se cae o queda totalmente expuesto de alguna otra manera en el momento más inoportuno."
+    },
+    {
+      "nombre": "Leer/Escribir",
+      "categoria": "Profesional",
+      "valor_inicial": "INT x2",
+      "descripcion": "Hablar un lenguaje con fluidez no significa que uno sepa leerlo o escribirlo. Leer/Escribir es una Habilidad específica y las distintas sociedades presentan diferentes niveles y enfoques de la misma. En algunas, leer y escribir es algo reservado a la nobleza o a las clases burocráticas o religiosas. En otras es algo desconocido y prevalecen las tradiciones orales. Lógicamente, Leer/Escribir exige una especialización según el lenguaje al que va asociada, incluyendo la Lengua Materna. Antes de que uno pueda aprender a leer y escribir en un Idioma debe ser capaz de hablarlo. Leer/Escribir no puede superar el valor de la Habilidad del personaje en ese Idioma. Esta Habilidad funciona de manera parecida a la de Idiomas en términos de cuánto se puede comprender un documento. Saber leer y escribir no necesariamente está asociado a la alfabetización, ya que existen un número infinito de maneras de registrar la información. Algunas culturas pueden tallar símbolos en los árboles o en fragmentos de hueso, mientras que otras registran su historia en los complejos patrones de nudos de un tapiz. De la misma manera, tampoco todas las formas de lectura y escritura se basan en alfabetos fonéticos; los jeroglíficos e ideogramas son también métodos comunes."
+    },
+    {
+      "nombre": "Magia Común",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "La magia menor y más simple se puede usar mediante esta Habilidad. Esta representa el conocimiento del personaje sobre bendiciones, talismanes y trucos, y lo competente que es en su uso (ver más detalles en el capítulo de Magia Común en pág. 126)."
+    },
+    {
+      "nombre": "Manipulación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+POD",
+      "descripcion": "La Manipulación es la Habilidad mágica que actúa como contrapartida de la Invocación. El hechicero puede manipular o moldear los conjuros invocados con éxito para que se ajusten a ciertos requisitos específicos, extendiendo su alcance, añadiendo objetivos múltiples, aumentando su duración, etc. (para más detalles, ver Manipulación en el capítulo de Hechicería de las págs. 170-172)."
+    },
+    {
+      "nombre": "Mecanismos",
+      "categoria": "Profesional",
+      "valor_inicial": "DES+INT",
+      "descripcion": "Mecanismos representa el conocimiento y talento para montar y desmontar artilugios mecánicos, tales como trampas. Esta Habilidad por lo general implica la creación de delicados aparatos con pequeñas partes móviles, en contraposición a la Ingeniería, que se ocupa de las construcciones masivas. Es una disciplina distinta a Forzar Cerraduras y no se puede intercambiar con dicha Habilidad. El tiempo que lleva encargarse de un mecanismo depende por completo de su escala y complejidad. Reparar una carreta grande podría llevar media hora, mientras que construir una cerradura con una trampa de aguja venenosa podría llevar una semana entera. A la hora de decidir cuánto tiempo debería llevar un intento de usar la Habilidad de Mecanismos, el Director de Juego debe tener en cuenta su tamaño, complejidad, las herramientas necesarias y cualquier condición específica. Como regla general, las tiradas de Mecanismos llevan un mínimo de 1d3x10 minutos, pero esto es solo para los desafíos mecánicos más simples y directos. El marco temporal podría extenderse tranquilamente de minutos a meses. Con un éxito Crítico el personaje logra tener éxito en la mitad de tiempo y con resultados perfectos. Cualquier tirada futura que intente desactivar o sortear el mecanismo aumenta su dificultad en un Grado. Un fallo da como resultado un artilugio imprevisible y propenso a averiarse; los intentos de superarlo o desactivarlo reducen su dificultad en un Grado. Con una Pifia el mecanismo se rompe por completo y debe descartarse para poder empezar de nuevo desde cero."
+    },
+    {
+      "nombre": "Meditación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CON",
+      "descripcion": "La Meditación es la capacidad de alcanzar un estado de profunda relajación y concentración, vaciando la consciencia de toda distracción externa e interna. Siendo técnicamente una Habilidad mágica, es una parte fundamental del Misticismo, que permite controlar la profundidad del foco necesario para aumentar las Habilidades hasta niveles sobrehumanos. A medida que el personaje incrementa su competencia en Meditación, más potentes se vuelven las capacidades del místico. Al ser una Habilidad útil en sí misma, la Meditación no tiene por qué estar limitada solo a los místicos. Ya que ayuda a ignorar las distracciones y a relajar el cuerpo, permite al usuario conseguir descansar incluso en los lugares más incómodos. Una tirada exitosa permite al personaje recuperar Fatiga o Puntos de Golpe incluso en situaciones donde las reglas normalmente lo prohíben."
+    },
+    {
+      "nombre": "Misticismo",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CON",
+      "descripcion": "Esta es una Habilidad mágica esencial para los místicos. Mide la facilidad de realizar actos sobrehumanos canalizando los recursos interiores, y encauzando o suprimiendo ciertas pasiones o conceptos. A medida que la competencia en esta Habilidad aumenta, también lo hace la gradual aproximación del místico a la perfección en aquellas Habilidades que son el foco de su entrenamiento. Cada Habilidad de Misticismo debe estar vinculada a un fundamento concreto de conocimiento místico. Puede tratarse de una secta religiosa, un libro de enseñanzas esotéricas o quizá un ermitaño que habita la cima de una montaña. Esta Habilidad se describe en mayor profundidad en el capítulo de Misticismo (pág. 162)."
+    },
+    {
+      "nombre": "Música",
+      "categoria": "Profesional",
+      "valor_inicial": "DES+CAR",
+      "descripcion": "Música gobierna el manejo de instrumentos musicales, desde una simple flauta de juncos a un complejo instrumento de cuerda como el arpa. Cada iteración de esta Habilidad se aplica a un grupo de instrumentos similares. Un músico que sabe tocar una zampoña también sabe tocar una flauta, una siringa o una flauta travesera. No sabría, sin embargo, tocar un arpa o un laúd. Los principales grupos de instrumentos son los siguientes: • Cuerda frotada (chelo, viola, violín, etc.) • Cuerda pinzada (arpa, lira) • Cuerda pulsada (banjo, guitarra, laúd, etc.) • Percusión (tambor, tam-tam, etc.) • Teclados (clavicordio, órgano, piano, etc.) • Viento (flauta, flautín, trompeta, etc.) Un éxito Crítico indica que el músico ha creado música de una calidad, belleza o elegancia asombrosas. Cualquier tirada posterior, como Influencia, reduce su dificultad en un Grado. Fallar una tirada de Música resulta en una actuación mediocre y sin brillo. Una Pifia tiene como resultado un desastre musical. Quizá el instrumento se rompa o la pieza interpretada sea recibida como un burdo insulto. Los efectos de tan terrible situación debe determinarlos el Director de Juego pero, como mínimo, suponen un bochorno que puede repercutir en la reputación."
+    },
+    {
+      "nombre": "Navegación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CON",
+      "descripcion": "Esta Habilidad se usa de la misma manera que Manejo de Botes (ver pág. 41) pero se aplica a navíos acuáticos grandes impulsados a remo, vela u otros medios mecánicos. También cubre el mantenimiento y cuidado de un barco: valorar cuándo se necesitan reparaciones, dónde es seguro atracar, los peligros de un clima violento, etc."
+    },
+    {
+      "nombre": "Oratoria",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CAR",
+      "descripcion": "La Oratoria es el arte de hacer llegar un discurso a un gran número de gente con la intención de presentar o alterar un punto de vista. Es una Habilidad usada a menudo por los políticos para convencer de una línea de actuación, pero también la usan los comandantes para inspirar a las tropas e imponer disciplina en el campo de batalla. Siempre que sea necesario persuadir a las masas, se usa la Oratoria en lugar de la Influencia. Con un Crítico el personaje convence por completo al grupo de sus argumentos, ganándose incluso a sus detractores más apasionados. Las tiradas subsiguientes relacionadas con la Oratoria reducen su dificultad en un Grado. Una tirada fallida de Oratoria no va a ninguna parte; la gente permanece tan desapasionada u hostil como antes. Con una Pifia, el orador ha alienado a su público, quizá quedando como un tonto, y puede que hasta haya logrado convencerles de lo contrario de lo que estaba intentando afirmar. Las tiradas posteriores dependientes de la Oratoria aumentan su dificultad en un Grado."
+    },
+    {
+      "nombre": "Orientación",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+POD",
+      "descripcion": "Ya sea usando puntos de referencia prominentes, las estrellas o el sabor cambiante del agua de mar, la capacidad de trazar el rumbo con precisión durante un viaje forma parte de la Habilidad de Orientación. Cada Habilidad de Orientación cubre una región o entorno específico, como Mar Abierto o Bajo Tierra, por ejemplo. Las tiradas deberían hacerse durante viajes inusuales o al encontrarse en territorio completamente desconocido. Un éxito Crítico en Orientación permite al usuario localizar un atajo, como una corriente rápida o un paso oculto. Fallar la tirada resulta en demoras debidas a la incertidumbre o a perder el rumbo temporalmente. Una Pifia deja al usuario perdido sin remedio, incapaz incluso de volver sobre sus pasos."
+    },
+    {
+      "nombre": "Rastrear",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CON",
+      "descripcion": "La Habilidad de Rastrear se usa para seguir el rastro a cualquier tipo de presa. Para mantenerse en el rastro de la presa se usan las señales de su paso, tanto obvias como ambiguas, lo que incluye huellas, hojas pisadas, polen diseminado, rocas desplazadas y demás; pequeños pero reveladores indicios invisibles para el ojo no adiestrado. Las tiradas de Rastrear deben hacerse periódicamente, especialmente si las condiciones cambian abruptamente (un chaparrón, por ejemplo, borrará ciertas señales). La frecuencia de las tiradas depende de lo astuta que haya sido la presa. Se pueden usar tiradas de Ocultar para enfrentarse a una tirada de Rastrear. Con un éxito Crítico el rastreador se mantiene en el rastro de alguien o algo que no está intentando ocultar su paso, al margen de las condiciones, y no necesita hacer más tiradas de Rastrear para localizar a su presa. Fallar hace que el rastreador pierda el rastro, obligándole a volver sobre sus pasos para poder empezar a seguirlo de nuevo. Una Pifia en Rastrear hace que el rastro se pierda por completo, obligando al usuario a abandonar la persecución o la cacería. Además, el rastreador puede meterse alegremente en una trampa preparada por la víctima acechada."
+    },
+    {
+      "nombre": "Saber",
+      "categoria": "Profesional",
+      "valor_inicial": "INT x2",
+      "descripcion": "Un Saber engloba un cuerpo específico de conocimiento que se debe elegir al aprender la Habilidad por primera vez. Ejemplos típicos de Habilidades de Saber son: Astrología, Astronomía, Geografía, Historia, Monstruos, Mitología, Política, Estrategia y Tácticas. Tener Habilidad en un Saber significa que el personaje entiende sus fundamentos, cómo se puede aplicar a desafíos y problemas inmediatos, y cómo usar el Saber para recordar información útil. Un éxito Crítico otorga un alto grado de comprensión sobre aquello que se está estudiando. También significa que toda tirada de Habilidad posterior y relevante para ese Saber reduce su dificultad en un Grado. Por ejemplo, un oficial al mando que obtiene un éxito Crítico en una tirada de Saber (Política) sabe que la tropa que se aproxima no forma parte de una misión diplomática, sino que son mercenarios poco satisfechos con su situación. Si posteriormente intenta influenciar a los mercenarios para que cambien de bando, la dificultad se reducirá en un Grado. Fallar una tirada de Saber implica que no se ha obtenido ninguna información útil. Una Pifia indica un malentendido absoluto sobre el tema. Los hechos se entienden erróneamente y las tiradas subsiguientes relacionadas con la exactitud de la tirada de Saber aumentan su dificultad en un Grado."
+    },
+    {
+      "nombre": "Seducción",
+      "categoria": "Profesional",
+      "valor_inicial": "INT+CAR",
+      "descripcion": "La Seducción es la persuasión sexual o romántica de otra persona, una Habilidad muy distinta a la Influencia. Usa señales explícitas (verbales y no verbales) para propiciar una respuesta sexualmente positiva. También lleva una cantidad considerable de tiempo: una Seducción exitosa puede llevar horas, días o semanas, dependiendo de la moralidad del objetivo, que siempre tiene la oportunidad de resistir un intento de Seducción usando su Voluntad. Un éxito Crítico en Seducción arroja un resultado potente, fascinando a la víctima o haciendo que sucumba apasionadamente al amor (o la lujuria). Las tiradas posteriores que se aprovechen de esta relación reducen su dificultad en un Grado. Un fallo hace que el seductor sea rechazado hasta cierto punto. Una Pifia acaba causando daños emocionales o insultando a la víctima. Eso arruina por completo cualquier posibilidad posterior de seducción durante un tiempo; también hace que las tiradas subsiguientes aumenten su dificultad en un Grado. Un intento desastroso de Seducción puede tener consecuencias terriblemente graves."
+    },
+    {
+      "nombre": "Supervivencia",
+      "categoria": "Profesional",
+      "valor_inicial": "CON+POD",
+      "descripcion": "Esta Habilidad cubre la supervivencia en un entorno rural o salvaje en el que los beneficios de la civilización están ausentes: forrajear, encender fuego, encontrar refugio o un lugar seguro para dormir. Cuando se está equipado adecuadamente, las tiradas no suelen ser necesarias, ya que el personaje lleva encima una tienda de campaña, provisiones y demás. Solo cuando se está desprovisto de equipamiento ocuando lascondiciones ambientalesempeoran se vuelve indispensable usar esta Habilidad. Se suele realizar una tirada por cada día en tales condiciones. Un éxito Crítico indica que el personaje ha localizado una buena fuente de comida o refugio, y no necesita hacer más tiradas de Supervivencia durante un número de días igual al rango Crítico de su Habilidad (una décima parte). Un fallo hace que el personaje gane un Nivel de Fatiga automático que no desaparecerá hasta que las condiciones cambien o se supere la siguiente tirada de Supervivencia. Una Pifia termina en un accidente desastroso de algún tipo; encontrar a una criatura fiera, sufrir daños por exposición o ingerir comida venenosa, por ejemplo."
+    },
+    {
+      "nombre": "Trance",
+      "categoria": "Profesional",
+      "valor_inicial": "POD+CON",
+      "descripcion": "Trance es una Habilidad mágica empleada por los practicantes del Animismo para alcanzar el estado psicológico correcto para la percepción de, y la transición hacia, el Mundo Espiritual. Para más detalles sobre cómo funciona el Trance, ver capítulo de Animismo (pág. 135)."
+    }
+  ],
+  "tablas": [
+    {
+      "nombre": "Tabla de Grado de Dificultad",
+      "columnas": [
+        "Grado de Dificultad",
+        "Modificador a la Habilidad"
+      ],
+      "filas": [
+        [
+          "Automático",
+          "No hace falta tirar"
+        ],
+        [
+          "Muy Fácil",
+          "Duplica el valor de la Habilidad"
+        ],
+        [
+          "Fácil",
+          "Multiplica el valor de la Habilidad por 1.5"
+        ],
+        [
+          "Normal",
+          "Sin ajustes"
+        ],
+        [
+          "Difícil",
+          "Reduce la Habilidad en un tercio"
+        ],
+        [
+          "Formidable",
+          "Reduce la Habilidad a la mitad"
+        ],
+        [
+          "Hercúleo",
+          "Reduce la Habilidad a un décimo"
+        ],
+        [
+          "Imposible",
+          "No se puede realizar el intento"
+        ]
+      ]
+    },
+    {
+      "nombre": "Tabla de Grados de Dificultad Simplificados",
+      "columnas": [
+        "Grado de Dificultad",
+        "Modificador a la Habilidad"
+      ],
+      "filas": [
+        [
+          "Muy Fácil",
+          "+40%"
+        ],
+        [
+          "Fácil",
+          "+20%"
+        ],
+        [
+          "Normal",
+          "Sin ajustes"
+        ],
+        [
+          "Difícil",
+          "-20%"
+        ],
+        [
+          "Formidable",
+          "-40%"
+        ],
+        [
+          "Hercúleo",
+          "-80%"
+        ]
+      ]
+    },
+    {
+      "nombre": "Acciones de Primeros Auxilios",
+      "columnas": [
+        "Herida o Condición",
+        "Éxito en el tratamiento"
+      ],
+      "filas": [
+        [
+          "Asfixia",
+          "La víctima empieza a respirar de nuevo."
+        ],
+        [
+          "Desangramiento",
+          "La pérdida de sangre queda restañada."
+        ],
+        [
+          "Empalamiento",
+          "El objeto empalante es eliminado sin causar más daños a la víctima."
+        ],
+        [
+          "Inconsciencia",
+          "Siempre que la inconsciencia no sea el resultado de venenos o narcóticos, el personaje tratado recupera la consciencia."
+        ],
+        [
+          "Herida Leve",
+          "El tratamiento devuelve 1d3 Puntos de Golpe a la herida."
+        ],
+        [
+          "Herida Grave",
+          "El tratamiento devuelve una funcionalidad parcial a la localización."
+        ],
+        [
+          "Herida Crítica",
+          "Una tirada exitosa de Primeros Auxilios no recupera Puntos de Golpe ni devuelve la funcionalidad, pero estabiliza la zona e impide la muerte inmediata resultante del daño. Hacen falta cuidados más expertos para tratar las Heridas Críticas."
+        ]
+      ]
+    },
+    {
+      "nombre": "Fluidez lingüística",
+      "columnas": [
+        "% en Idioma",
+        "Fluidez en la conversación"
+      ],
+      "filas": [
+        [
+          "01-25%",
+          "Solo sabe unas cuantas palabras simples, no puede formular frases."
+        ],
+        [
+          "26-50%",
+          "Puede entender y comunicarse con frases simples y fragmentadas, como «¿Dónde templo?» o «¿Cuánto comida?»."
+        ],
+        [
+          "51-75%",
+          "Fluidez suficiente para una conversación general."
+        ],
+        [
+          "76% +",
+          "Capaz de expresarse con elocuencia."
+        ]
+      ]
+    }
+  ]
+}

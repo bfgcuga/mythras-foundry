@@ -131,6 +131,13 @@ export class SkillData extends foundry.abstract.TypeDataModel {
         initial: false
       }),
       description: descriptionField(),
+      referenceTables: new ArrayField(new SchemaField({
+        name: textField(),
+        columns: new ArrayField(textField(), { required: true, nullable: false, initial: [] }),
+        rows: new ArrayField(new ArrayField(textField(), {
+          required: true, nullable: false, initial: []
+        }), { required: true, nullable: false, initial: [] })
+      }), { required: true, nullable: false, initial: [] }),
       valueMode: new StringField({
         required: true,
         nullable: false,
