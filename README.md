@@ -360,7 +360,10 @@ El manifiesto declara quince compendios generados a partir de fuentes canónicas
   los rasgos se separan en índices de armas, estilos de combate y criaturas.
   La referencia de armas ofrece tablas de una mano, dos manos, escudos, distancia
   y asedio, además de una vista dinámica que incorpora los compendios personales
-  seleccionados en el gestor de fuentes.
+  seleccionados en el gestor de fuentes. Culturas, profesiones y estilos de combate
+  disponen de índices y fichas de reglas; los objetos generales se agrupan por
+  categoría en tablas navegables y permiten abrir el catálogo completo, incluidas
+  las fuentes personales configuradas.
 
 `packs/` contiene la salida LevelDB y no se versiona. Se reconstruye de forma
 determinista antes de validar o empaquetar una versión.

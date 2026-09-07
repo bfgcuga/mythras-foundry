@@ -3185,7 +3185,8 @@
 .mythras-reference-properties dd { margin: 0.2rem 0 0; }
 .mythras-reference-back,
 .mythras-reference-note { font-size: var(--mythras-font-size-auxiliary); }
-.mythras-reference-open-weapons {
+.mythras-reference-open-weapons,
+.mythras-reference-open-catalog {
   width: auto;
   margin: 0 0 0.6rem;
   border: 1px solid var(--mythras-border);

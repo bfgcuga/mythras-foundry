@@ -194,12 +194,106 @@ function traitPage(trait, pageUuid) {
   </article>`;
 }
 
+function referenceList(entries, prefix, pageUuid) {
+  return `<ul>${entries.map((entry) =>
+    `<li>${contentLink(pageUuid(`${prefix}-${entry.buildKey ?? entry.system.key}`), entry.name)}</li>`
+  ).join("")}</ul>`;
+}
+
+function backgroundRules(source) {
+  try { return JSON.parse(source.system.rules || "{}"); } catch { return {}; }
+}
+
+function namedSkills(values, skillNames) {
+  return (values ?? []).map((value) => skillNames.get(value) ?? String(value)
+    .replaceAll("-", " ").replace(/^./, (letter) => letter.toUpperCase())).join(", ") || "—";
+}
+
+function backgroundPage(source, kind, pageUuid, skillNames) {
+  const rules = backgroundRules(source);
+  const professional = (rules.professional ?? []).map((skill) => skill.label).join(", ") || "—";
+  const choices = (rules.choices ?? []).map((choice) => `${choice.label}: ${choice.options
+    .map((option) => option.label).join(" / ")}`).join("<br>") || "—";
+  return `<article class="mythras-reference mythras-reference-detail">
+    <p class="mythras-reference-back">${contentLink(pageUuid(`${kind}s`),
+    `Volver al índice de ${kind === "culture" ? "culturas" : "profesiones"}`)} · ${contentLink(
+    pageUuid("index"), "Índice principal")}</p>
+    <dl class="mythras-reference-properties">
+      <div><dt>Habilidades básicas</dt><dd>${escapeHtml(namedSkills(rules.basic, skillNames))}</dd></div>
+      <div><dt>Habilidades profesionales</dt><dd>${escapeHtml(professional)}</dd></div>
+      <div><dt>Elecciones</dt><dd>${choices}</dd></div>
+      <div><dt>Estilos de combate</dt><dd>${escapeHtml((rules.styles ?? []).join(", ") || "—")}</dd></div>
+      <div><dt>Fuente</dt><dd>${escapeHtml(source.system.source)}</dd></div>
+    </dl>
+    ${source.system.description ? `<h2>Descripción</h2><p>${escapeHtml(source.system.description)}</p>` : ""}
+  </article>`;
+}
+
+const EQUIPMENT_CATEGORY_LABELS = Object.freeze({ service: "Servicios y alojamiento", clothing: "Ropa",
+  food: "Comida y bebida", livestock: "Animales", general: "Equipo general", item: "Equipo general",
+  ammunition: "Munición", container: "Contenedores", vehicle: "Vehículos", property: "Propiedades" });
+const CURRENCY_LABELS = Object.freeze({ copper: "PC", silver: "PP", gold: "PO" });
+
+function equipmentIndex(equipment, pageUuid) {
+  const groups = new Map();
+  for (const entry of equipment) {
+    const category = entry.system.category ?? "general";
+    groups.set(category, [...(groups.get(category) ?? []), entry]);
+  }
+  return `<article class="mythras-reference">${mainIndexLink(pageUuid)}
+    <p><button type="button" class="mythras-reference-open-catalog"
+      title="Abrir catálogo completo" aria-label="Abrir catálogo completo"><i class="fas fa-store"
+      aria-hidden="true"></i> Abrir catálogo completo y fuentes personales</button></p>
+    ${[...groups].map(([category, entries]) => `<h2>${escapeHtml(
+    EQUIPMENT_CATEGORY_LABELS[category] ?? category)}</h2><div class="mythras-reference-table-wrapper">
+      <table class="mythras-reference-table"><thead><tr><th scope="col">Objeto</th>
+      <th scope="col">Peso</th><th scope="col">Coste</th><th scope="col">Época</th></tr></thead>
+      <tbody>${entries.map((entry) => `<tr><th scope="row">${contentLink(
+    pageUuid(`equipment-${entry.buildKey}`), entry.name)}</th><td>${escapeHtml(entry.system.weight)}</td>
+      <td>${escapeHtml(entry.system.value)} ${CURRENCY_LABELS[entry.system.currency] ?? ""}</td>
+      <td>${escapeHtml(entry.system.era || "—")}</td></tr>`).join("")}</tbody></table></div>`).join("")}
+  </article>`;
+}
+
+function equipmentPage(entry, pageUuid) {
+  return `<article class="mythras-reference mythras-reference-detail">
+    <p class="mythras-reference-back">${contentLink(pageUuid("equipment"),
+    "Volver al índice de objetos generales")} · ${contentLink(pageUuid("index"), "Índice principal")}</p>
+    <dl class="mythras-reference-properties">
+      <div><dt>Categoría</dt><dd>${escapeHtml(EQUIPMENT_CATEGORY_LABELS[entry.system.category]
+    ?? entry.system.category)}</dd></div><div><dt>Peso</dt><dd>${escapeHtml(entry.system.weight)}</dd></div>
+      <div><dt>Coste</dt><dd>${escapeHtml(entry.system.value)} ${CURRENCY_LABELS[entry.system.currency]
+    ?? ""}</dd></div><div><dt>Época</dt><dd>${escapeHtml(entry.system.era || "—")}</dd></div>
+      <div><dt>Fuente</dt><dd>${escapeHtml(entry.system.source)}</dd></div>
+    </dl>${entry.system.description ? `<h2>Descripción</h2><p>${escapeHtml(entry.system.description)}</p>` : ""}
+  </article>`;
+}
+
+function combatStylePage(style, pageUuid) {
+  return `<article class="mythras-reference mythras-reference-detail">
+    <p class="mythras-reference-back">${contentLink(pageUuid("combat-styles"),
+    "Volver al índice de estilos de combate")} · ${contentLink(pageUuid("index"), "Índice principal")}</p>
+    <dl class="mythras-reference-properties">
+      <div><dt>Armas</dt><dd>${escapeHtml(style.system.weaponProfiles.map((weapon) => weapon.name).join(", ") || "—")}</dd></div>
+      <div><dt>Rasgos</dt><dd>${escapeHtml(style.system.traitRefs.map((trait) => trait.name).join(", ") || "—")}</dd></div>
+      <div><dt>Valor inicial</dt><dd>FUE+DES</dd></div>
+      <div><dt>Fuente</dt><dd>${escapeHtml(style.system.source)}</dd></div>
+    </dl>${style.system.description ? `<h2>Descripción</h2><p>${escapeHtml(style.system.description)}</p>` : ""}
+  </article>`;
+}
+
 export function referenceJournalSources(combatEffects, skillSources = [], traitSources = [],
-  weaponSources = []) {
+  weaponSources = [], cultureSources = [], professionSources = [], equipmentSources = [],
+  combatStyleSources = []) {
   const effects = [...combatEffects].sort((left, right) =>
     left.name.localeCompare(right.name, "es"));
   const skills = [...skillSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
   const traits = [...traitSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
+  const cultures = [...cultureSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
+  const professions = [...professionSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
+  const equipment = [...equipmentSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
+  const combatStyles = [...combatStyleSources].sort((left, right) => left.name.localeCompare(right.name, "es"));
+  const skillNames = new Map(skills.map((skill) => [skill.system.slug, skill.name]));
   const categoryOrder = ["Básicas", "Profesionales", "Mágicas"];
   return [{
     buildKey: "mythras-reference",
@@ -219,6 +313,10 @@ export function referenceJournalSources(combatEffects, skillSources = [], traitS
             <li>${contentLink(pageUuid("combat-style-traits"), "Rasgos de estilos de combate")}</li>
             <li>${contentLink(pageUuid("creature-traits"), "Rasgos de criaturas")}</li>
             <li>${contentLink(pageUuid("weapons"), "Armas")}</li>
+            <li>${contentLink(pageUuid("cultures"), "Culturas")}</li>
+            <li>${contentLink(pageUuid("professions"), "Profesiones")}</li>
+            <li>${contentLink(pageUuid("equipment"), "Objetos generales")}</li>
+            <li>${contentLink(pageUuid("combat-styles"), "Estilos de combate")}</li>
           </ul></nav>
         </article>`
       },
@@ -275,7 +373,26 @@ export function referenceJournalSources(combatEffects, skillSources = [], traitS
         content: ({ pageUuid }) => `<div class="mythras-reference">${mainIndexLink(pageUuid)}</div>${
           weaponReferenceHtml(weaponSources)}
         `
-      }
+      },
+      ...[["cultures", "Culturas", cultures, "culture"],
+        ["professions", "Profesiones", professions, "profession"]].flatMap(
+        ([indexKey, title, entries, prefix]) => [{ buildKey: indexKey, name: title,
+          content: ({ pageUuid }) => `<article class="mythras-reference">${mainIndexLink(pageUuid)}
+            <p>Selecciona una entrada para consultar sus habilidades y reglas.</p>${referenceList(
+    entries, prefix, pageUuid)}</article>` }, ...entries.map((entry) => ({
+          buildKey: `${prefix}-${entry.system.key}`, name: entry.name,
+          content: ({ pageUuid }) => backgroundPage(entry, prefix, pageUuid, skillNames)
+        }))]),
+      { buildKey: "equipment", name: "Objetos generales",
+        content: ({ pageUuid }) => equipmentIndex(equipment, pageUuid) },
+      ...equipment.map((entry) => ({ buildKey: `equipment-${entry.buildKey}`, name: entry.name,
+        content: ({ pageUuid }) => equipmentPage(entry, pageUuid) })),
+      { buildKey: "combat-styles", name: "Estilos de combate",
+        content: ({ pageUuid }) => `<article class="mythras-reference">${mainIndexLink(pageUuid)}
+          <p>Selecciona un estilo para consultar las armas y rasgos que incluye.</p>${referenceList(
+    combatStyles, "combat-style", pageUuid)}</article>` },
+      ...combatStyles.map((style) => ({ buildKey: `combat-style-${style.buildKey}`, name: style.name,
+        content: ({ pageUuid }) => combatStylePage(style, pageUuid) }))
     ]
   }];
 }

@@ -45,6 +45,9 @@ function activateApplicationUi(element) {
     for (const button of element.querySelectorAll(".mythras-reference-open-weapons")) {
       button.addEventListener("click", () => game.mythrasFoundry?.weaponReference?.open?.());
     }
+    for (const button of element.querySelectorAll(".mythras-reference-open-catalog")) {
+      button.addEventListener("click", () => game.mythrasFoundry?.shop?.open?.());
+    }
   }
   activateDelayedTooltips(element);
   activateActionPointSettingVisibility(element);

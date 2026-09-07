@@ -327,7 +327,8 @@ const packBuilders = new Map([
     BACKGROUND_EVENT_TABLE_SOURCES, "background-event-table")],
   ["reference", () => buildJournalPack("reference",
     referenceJournalSources(COMBAT_EFFECT_SOURCES, FULL_SKILL_SOURCES, TRAIT_SOURCES,
-      REFERENCE_WEAPON_SOURCES), "reference")]
+      REFERENCE_WEAPON_SOURCES, CULTURE_SOURCES, PROFESSION_SOURCES, EQUIPMENT_SOURCES,
+      COMBAT_STYLE_SOURCES), "reference")]
 ]);
 
 const requestedPacks = process.argv.slice(2);

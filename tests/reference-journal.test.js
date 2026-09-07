@@ -29,7 +29,7 @@ test("el diario de referencia enlaza el índice, la tabla y todas las descripcio
   const index = journal.pages.find((page) => page.buildKey === "index").content(context);
   const summary = journal.pages.find((page) => page.buildKey === "combat-effects").content(context);
 
-  assert.equal(journal.pages.length, combatEffects.length + 8);
+  assert.equal(journal.pages.length, combatEffects.length + 12);
   assert.match(index, /data-uuid="UUID\.combat-effects"/);
   assert.match(summary, /<table class="mythras-reference-table">/);
   assert.match(summary, /<th scope="col">Efecto de combate<\/th>/);

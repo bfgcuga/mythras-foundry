@@ -983,6 +983,13 @@ La página de armas genera cinco tablas estáticas desde `WEAPON_SOURCES`. El bo
 de referencia completa abre `WeaponReference`, que vuelve a leer el compendio
 oficial y los packs mundiales configurados en `catalogSources`; las armas se
 clasifican por cada modo y conservan UUID y procedencia, sin modificar el Journal.
+`CULTURE_SOURCES`, `PROFESSION_SOURCES`, `EQUIPMENT_SOURCES` y
+`COMBAT_STYLE_SOURCES` alimentan también la referencia. Culturas y profesiones
+exponen las reglas estructuradas de generación; los estilos enumeran sus perfiles
+de arma y rasgos; el equipo se agrupa en tablas por categoría. El botón de su
+índice abre el catálogo existente, cuya lectura dinámica incorpora los packs
+personales de `catalogSources`, mientras las páginas oficiales siguen siendo
+deterministas y reproducibles durante la construcción.
 
 ## Validación y publicación
 
