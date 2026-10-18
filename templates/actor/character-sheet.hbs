@@ -1,3 +1,9 @@
+{{#if visibility.restricted}}
+<div class="character-sheet-content">
+{{> "systems/mythras-foundry/templates/actor/parts/character-observer-header.hbs"}}
+{{> "systems/mythras-foundry/templates/actor/parts/observer-body.hbs" characterView=true}}
+</div>
+{{else}}
 <div class="character-sheet-content">
   <header class="sheet-header">
     <div class="portrait-frame">
@@ -360,3 +366,5 @@
       </section>
     </main>
 </div>
+
+{{/if}}

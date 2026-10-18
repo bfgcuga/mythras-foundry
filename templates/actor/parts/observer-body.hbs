@@ -1,0 +1,12 @@
+<nav class="sheet-tabs" aria-label="{{localize "MYTHRASF.Navigation"}}">
+  {{#if visibility.combat}}<button type="button" data-tab="combat">{{localize "MYTHRASF.Tab.Combat"}}</button>{{/if}}
+  {{#if visibility.status}}<button type="button" data-tab="penalties">{{localize "MYTHRASF.Tab.Status"}}</button>{{/if}}
+  {{#if characterView}}<button type="button" data-tab="narrative">{{localize "MYTHRASF.Tab.Narrative"}}</button>{{/if}}
+  <button type="button" data-tab="gallery">{{localize "MYTHRASF.Tab.Gallery"}}</button>
+</nav>
+<main class="sheet-body observer-sheet-body">
+  {{#if visibility.combat}}<section class="tab-panel" data-tab-content="combat">{{> "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs" editable=false hitLocationTemplateMode=false canManageMorphology=false canDeleteHitLocations=false}}</section>{{/if}}
+  {{#if visibility.status}}<section class="tab-panel" data-tab-content="penalties">{{> "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs" editable=false}}</section>{{/if}}
+  {{#if characterView}}<section class="tab-panel" data-tab-content="narrative">{{> "systems/mythras-foundry/templates/actor/parts/narrative-tab.hbs"}}</section>{{/if}}
+  <section class="tab-panel" data-tab-content="gallery">{{> "systems/mythras-foundry/templates/actor/parts/gallery-tab.hbs" gallery=actor.system.gallery editable=false}}</section>
+</main>

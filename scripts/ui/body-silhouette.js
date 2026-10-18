@@ -50,7 +50,7 @@ function tooltip(actor, location, armors) {
     conditions.length ? conditions.join(", ") : ""].filter(Boolean).join(" · ");
 }
 
-export async function renderBodySilhouette(actor, root) {
+export async function renderBodySilhouette(actor, root, { interactive = true } = {}) {
   const container = root?.querySelector?.("[data-body-silhouette]");
   if (!container) return;
   try { container.innerHTML = await svgText(); }
@@ -68,8 +68,8 @@ export async function renderBodySilhouette(actor, root) {
     if (!region) continue;
     region.classList.remove("state-none", "state-light", "state-serious", "state-grave");
     const location = byRegion.get(id);
-    region.setAttribute("role", location ? "button" : "img");
-    region.setAttribute("tabindex", location ? "0" : "-1");
+    region.setAttribute("role", location && interactive ? "button" : "img");
+    region.setAttribute("tabindex", location && interactive ? "0" : "-1");
     if (!location) {
       region.classList.add("body-location--unbound");
       region.dataset.mythrasTooltip = game.i18n.localize("MYTHRASF.Silhouette.Unbound");
@@ -82,6 +82,7 @@ export async function renderBodySilhouette(actor, root) {
     const label = tooltip(actor, location, armors);
     region.setAttribute("aria-label", label);
     region.dataset.mythrasTooltip = label;
+    if (!interactive) continue;
     const open = (event) => {
       if (event.type === "keydown" && !["Enter", " "].includes(event.key)) return;
       event.preventDefault(); location.sheet.render({ force: true });

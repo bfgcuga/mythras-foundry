@@ -1,3 +1,5 @@
+import { canViewActor, canManageActor, actorVisibility, bindObserverSheet, visibleSheetTab } from "../ui/actor-visibility.js";
+import { GallerySheetController } from "../ui/gallery-sheet.js";
 import { removeManeuverProtection } from "../rules/maneuver-protection.js";
 import { CHARACTERISTIC_KEYS, calculateDerivedAttributes } from "../rules/derived-attributes.js";
 import {
@@ -143,6 +145,7 @@ const CORE_BASIC_SLUGS = BASIC_SKILL_SOURCES
 
 export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
+    viewPermission: 1,
     classes: ["mythras-foundry", "mythras-paper-sheet", "actor-sheet", "character-sheet"],
     tag: "form",
     window: {
@@ -166,7 +169,13 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   };
 
+  _canRender(options) {
+    if (!canViewActor(this.actor)) throw new Error(game.i18n.localize("MYTHRASF.Sheet.AccessDenied"));
+    return super._canRender?.(options);
+  }
+
   static async _onSubmitForm(event, form, formData) {
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     await updateActorFromSheet(this.actor, formData.object);
   }
 
@@ -283,7 +292,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     ));
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
-      editable: this.isEditable,
+      visibility: actorVisibility(this.actor),
+      editable: this.isEditable && canManageActor(this.actor),
       characteristicRows,
       editMode: Boolean(this._editMode),
       headerStatus: {
@@ -386,10 +396,16 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _onRender(context, options) {
     super._onRender(context, options);
+    new GallerySheetController(this).bind();
+    if (!canManageActor(this.actor)) {
+      bindObserverSheet(this);
+      renderBodySilhouette(this.actor, this.element, { interactive: false });
+      return;
+    }
     decorateCombatActionButtons(this.actor, this.element);
     renderBodySilhouette(this.actor, this.element);
 
-    if (!this.isEditable) {
+    if (!canManageActor(this.actor) || !this.isEditable) {
       this.element.querySelectorAll(
         "input[name], textarea[name], select[name], [data-skill-field], "
         + "[data-passion-field], [data-resource-action], [data-combat-style], "
@@ -406,9 +422,6 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ["[data-action='train-skill']", "click", () => this.#showTrainingPlaceholder()],
       ["[data-action='choose-portrait']", "click", () => this.#choosePortrait()],
       ["[data-action='view-portrait']", "click", () => this.#viewPortrait()],
-      ["[data-action='add-gallery-image']", "click", () => this.#addGalleryImage()],
-      ["[data-action='view-gallery-image']", "click", (event) => this.#viewGalleryImage(event)],
-      ["[data-action='remove-gallery-image']", "click", (event) => this.#removeGalleryImage(event)],
       ["[data-action='adjust-characteristic']", "click", (event) => this.#adjustCharacteristic(event)],
       ["[data-swap-characteristic]", "change", (event) => this.#swapCharacteristic(event)],
       ["[data-background-select]", "change", (event) => this.#selectBackground(event)],
@@ -495,6 +508,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #showTab(tab) {
+    tab = visibleSheetTab(this.element, tab);
+    this._activeTab = tab;
     this.element.querySelectorAll("[data-tab]").forEach((button) => {
       button.classList.toggle("active", button.dataset.tab === tab);
     });
@@ -529,7 +544,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleEquipped(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
     if (item.type === "weapon" && weaponIsPinned(item, this.actor)) {
@@ -591,7 +606,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateLocationArmor(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const locationId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     const armors = this.actor.items.filter((item) => item.type === "armor");
     const current = armors.find((item) => item.system.equipped
@@ -628,7 +643,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #applyMorphology() {
-    if (!this.isEditable || !this._editMode) return;
+    if (!canManageActor(this.actor) || !this.isEditable || !this._editMode) return;
     const morphologyKey = this.element.querySelector("select[name='system.morphologyKey']")?.value
       ?? this.actor.system.morphologyKey;
     if (!MORPHOLOGIES[morphologyKey]) return;
@@ -654,7 +669,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #prepareWeaponMode(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const weapon = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!weapon) return;
     const modeKey = event.currentTarget.value;
@@ -670,7 +685,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateFatigue(event) {
-    if (!this.isEditable || !event.currentTarget.checked) return;
+    if (!canManageActor(this.actor) || !this.isEditable || !event.currentTarget.checked) return;
     const levelKey = event.currentTarget.value;
     const baseAttributes = calculateDerivedAttributes(this.actor.system, getActionPointRules());
     const effectiveAttributes = applyFatigue(baseAttributes,
@@ -684,7 +699,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateLocationDisabled(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const location = this.actor.items.get(
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
@@ -692,7 +707,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateItemField(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const field = event.currentTarget;
     const item = this.actor.items.get(field.closest("[data-item-id]")?.dataset.itemId);
     if (!item) return;
@@ -702,7 +717,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #adjustLocationHitPoints(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const location = this.actor.items.get(
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
@@ -728,14 +743,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleManualIncapacitated(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     await this.actor.update({
       [`flags.${INCAPACITATED_FLAG_SCOPE}.${INCAPACITATED_MANUAL_FLAG}`]: event.currentTarget.checked
     });
   }
 
   async #toggleStatus(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     if (event.currentTarget.dataset.statusToggle === "maneuverProtected" && !event.currentTarget.checked) {
       return removeManeuverProtection(this.actor);
     }
@@ -831,7 +846,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #choosePortrait() {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const worldDirectory = `worlds/${game.world.id}`;
     const picker = new FilePicker({
       type: "image",
@@ -851,52 +866,8 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }).render(true);
   }
 
-  async #addGalleryImage() {
-    if (!this.isEditable) return;
-    const worldDirectory = `worlds/${game.world.id}`;
-    const picker = new FilePicker({
-      type: "image",
-      current: worldDirectory,
-      callback: async (src) => {
-        if (!src) return;
-        const filename = decodeURIComponent(src.split("/").pop() ?? "")
-          .replace(/\.[^.]+$/, "").replaceAll(/[-_]+/g, " ").trim();
-        const gallery = Array.from(this.actor.system.gallery ?? [], (image) => ({
-          src: image.src, title: image.title
-        }));
-        gallery.push({ src, title: filename || game.i18n.localize("MYTHRASF.Gallery.Image") });
-        await this.actor.update({ "system.gallery": gallery });
-      }
-    });
-    await picker.browse(worldDirectory);
-  }
-
-  #viewGalleryImage(event) {
-    const image = this.actor.system.gallery?.[Number(
-      event.currentTarget.closest("[data-gallery-index]")?.dataset.galleryIndex
-    )];
-    if (!image?.src) return;
-    new ImagePopout({
-      src: image.src,
-      uuid: this.actor.uuid,
-      window: { title: image.title || this.actor.name }
-    }).render(true);
-  }
-
-  async #removeGalleryImage(event) {
-    if (!this.isEditable) return;
-    const index = Number(event.currentTarget.closest("[data-gallery-index]")?.dataset.galleryIndex);
-    if (!Number.isInteger(index)) return;
-    const gallery = Array.from(this.actor.system.gallery ?? [], (image) => ({
-      src: image.src, title: image.title
-    }));
-    if (index < 0 || index >= gallery.length) return;
-    gallery.splice(index, 1);
-    await this.actor.update({ "system.gallery": gallery });
-  }
-
   async #confirmCharacteristics() {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const method = this.actor.system.generationMethod;
     if (!method) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Character.ChooseMethod"));
@@ -922,7 +893,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #selectGenerationMethod(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const method = event.currentTarget.dataset.generationMethod;
     const allocation = initialAllocationForGenerationMethod(
@@ -959,14 +930,14 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleEditMode() {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     this._editMode = !this._editMode;
     await this.render({ force: true });
   }
 
   async #adjustCharacteristic(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const key = event.currentTarget.dataset.characteristic;
     const delta = Number(event.currentTarget.dataset.delta);
@@ -985,7 +956,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #swapCharacteristic(event) {
-    if (!this.isEditable || this.actor.system.characteristicsGenerated) return;
+    if (!canManageActor(this.actor) || !this.isEditable || this.actor.system.characteristicsGenerated) return;
 
     const first = event.currentTarget.dataset.swapCharacteristic;
     const second = event.currentTarget.value;
@@ -1588,7 +1559,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #selectBackground(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const type = event.currentTarget.dataset.backgroundSelect;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (type === "culture") {
@@ -1626,7 +1597,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateBackgroundPassion(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const { index, backgroundPassionField: field } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const passion = draft.passions[Number(index)];
@@ -1638,7 +1609,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleBackgroundChoice(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const { phase, group, slug } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const background = phase === "culture"
@@ -1666,7 +1637,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleBackgroundProfessional(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const { phase, option } = event.currentTarget.dataset;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const target = phase === "culture"
@@ -1917,7 +1888,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #selectSocialClass(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     draft.socialClassKey = event.currentTarget.value;
     draft.socialClassRoll = 0;
@@ -1929,7 +1900,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #rollSocialClass(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     if (getSocialClassMethod() === SOCIAL_CLASS_METHODS.random) {
       await this.#assignRandomSocialClass(draft, event.shiftKey);
@@ -1940,7 +1911,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateBackgroundAge(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const field = event.currentTarget.dataset.backgroundAgeField;
     if (field === "category") {
@@ -1961,7 +1932,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #rollBackgroundAge(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const category = getAgeCategory(draft.ageCategory);
     if (!category) return;
@@ -2003,7 +1974,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #rollBackgroundFamily(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     event.currentTarget.disabled = true;
     const key = event.currentTarget.dataset.backgroundFamilyRoll;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
@@ -2211,7 +2182,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #confirmBackground() {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const draft = parseBackgroundDraft(this.actor.system.backgroundDraft);
     const culture = getCulture(draft.cultureKey);
     const profession = getProfession(draft.professionKey);
@@ -2416,7 +2387,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #createItem(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const type = event.currentTarget.dataset.type;
     if (type === "passion") {
@@ -2486,6 +2457,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #editItem(event) {
+    if (!canManageActor(this.actor)) return;
     event.preventDefault();
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     item?.sheet.render(true);
@@ -2499,7 +2471,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updatePropertyFunds(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const property = this.actor.items.get(event.currentTarget
       .closest("[data-inventory-destination]")?.dataset.inventoryDestination);
     if (property?.system.category !== "property") return;
@@ -2510,7 +2482,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #transferMoney(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const sourceId = event.currentTarget.dataset.walletId;
     const wallets = [{ id: "person", name: game.i18n.localize("MYTHRASF.Inventory.OnPerson") },
       ...this.actor.items.filter((item) => item.type === "equipment"
@@ -2587,7 +2559,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #sellItem(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item) return;
     const value = Math.max(0, Number(item.system.value ?? 0))
@@ -2666,7 +2638,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #deleteItem(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     if (itemId) {
@@ -2682,7 +2654,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #removePermanentWound(event) {
     event.preventDefault();
-    if (!this.isEditable || !game.user?.isGM) return;
+    if (!canManageActor(this.actor) || !this.isEditable || !game.user?.isGM) return;
     const location = this.actor.items.get(
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation" || !isLocationCrippled(location)) return;
@@ -2712,6 +2684,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #rollSkill(event) {
+    if (!canManageActor(this.actor)) return;
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
@@ -2725,7 +2698,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #improveSkill(event) {
     event.preventDefault();
-    if (!this.isEditable || this._experienceImprovementPending) return;
+    if (!canManageActor(this.actor) || !this.isEditable || this._experienceImprovementPending) return;
 
     const button = event.currentTarget;
     const itemId = button.closest("[data-item-id]")?.dataset.itemId;
@@ -2814,6 +2787,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #rollPassion(event) {
+    if (!canManageActor(this.actor)) return;
     event.preventDefault();
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     await this.actor.items.get(itemId)?.rollPassion({ manual: event.shiftKey });
@@ -2821,7 +2795,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #adjustPassion(event) {
     event.preventDefault();
-    if (!this.isEditable || !this._editMode) return;
+    if (!canManageActor(this.actor) || !this.isEditable || !this._editMode) return;
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     const item = this.actor.items.get(itemId);
     if (!item || item.type !== "passion") return;
@@ -2837,7 +2811,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #addSkillFromPack(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const group = event.currentTarget.dataset.skillGroup;
 
     const ignoresExperienceCost = Boolean(this._editMode);
@@ -2980,7 +2954,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #createCombatStyle() {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const ignoresExperienceCost = Boolean(this._editMode);
     const acquisition = skillAcquisition({
       experienceRolls: this.actor.system.experienceRolls,
@@ -3059,7 +3033,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #adjustResource(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const button = event.currentTarget;
     const key = button.dataset.resource;
@@ -3073,7 +3047,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateSkillField(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const field = event.currentTarget;
     const itemId = field.closest("[data-item-id]")?.dataset.itemId;
@@ -3087,7 +3061,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updatePassionField(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
 
     const field = event.currentTarget;
     const itemId = field.closest("[data-item-id]")?.dataset.itemId;

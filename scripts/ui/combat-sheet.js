@@ -1,3 +1,4 @@
+import { canManageActor } from "./actor-visibility.js";
 import { FREE_COMBAT_ACTIONS, requestFreeCombatAction } from "../rules/free-combat-actions.js";
 import { resolveActorConditions, actorLoadState } from "../rules/actor-conditions.js";
 import { intrinsicUnarmedWeapon, unarmedAbilities, resolveUnarmedAbility, hasIntrinsicUnarmed, UNARMED_PROFILE } from "../rules/unarmed-combat.js";
@@ -127,9 +128,10 @@ export class CombatSheetController {
 
   get actor() { return this.sheet.actor; }
   get element() { return this.sheet.element; }
-  get editable() { return this.sheet.isEditable; }
+  get editable() { return this.sheet.isEditable && canManageActor(this.actor); }
 
   bind() {
+    if (!this.editable) return;
     this.element.querySelectorAll("[data-combat-style], [data-combat-familiarity]").forEach((field) =>
       field.addEventListener("change", (event) => this.updateWeaponChoice(event)));
     this.element.querySelectorAll("[data-action='roll-weapon-attack']").forEach((button) =>
@@ -185,6 +187,7 @@ export class CombatSheetController {
   }
 
   async chooseWeaponAttack(event) {
+    if (!this.editable) return;
     const manual = Boolean(event?.shiftKey);
     const rows = preferAttackChoices(Array.from(this.element
       .querySelectorAll("[data-action='roll-weapon-attack']"))
@@ -210,6 +213,7 @@ export class CombatSheetController {
   }
 
   async rollWeaponAttack(event) {
+    if (!this.editable) return;
     event.preventDefault();
     const manual = Boolean(event.shiftKey);
     if (!canActorAttack(this.actor.statuses)) return ui.notifications.warn(

@@ -18,6 +18,15 @@ instalables se distribuyen mediante las releases de GitHub.
 
 El sistema incluye actualmente:
 
+- hojas de PJ y PNJ con vista completa para propietarios y GM; LIMITED y
+  OBSERVER acceden a una vista de consulta, sin tiradas ni operaciones: encabezado,
+  armas y localizaciones de Combate, Estado, Trasfondo público del PJ y Galería.
+  NONE no abre la hoja. Cuatro opciones de mundo, activadas por defecto, controlan
+  armas, localizaciones, Estado y magia/suerte del encabezado para otros jugadores;
+  los cambios actualizan las hojas abiertas y no restringen a propietarios ni GM;
+- galería compartida por PJ y PNJ: propietarios y GM añaden o eliminan imágenes,
+  y los visitantes con acceso a la hoja pueden ampliarlas;
+
 - acciones gratuitas Hablar y Hacer gestos con descripción publicada en el chat;
   Soltar arma desequipa el arma elegida sin retirarla del inventario y lo anuncia;
   Valorar situación pide confirmar que se desea continuar tras advertir que no
@@ -45,8 +54,6 @@ El sistema incluye actualmente:
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,
   habilidades, estilos de combate, dinero, equipo inicial y tiradas opcionales
   y únicas para familia, reputación, conexiones y matrimonio;
-- galería de imágenes del personaje con miniaturas ampliables y gestión desde
-  la propia hoja;
 - Maximizar Daño automatizado sobre los dados propios del arma, priorizando los
   de más caras e identificando visualmente los valores sustituidos;
 - Dañar Arma automatizado cuando existe una parada: el uso ofensivo daña el arma

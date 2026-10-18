@@ -5,7 +5,7 @@ import { actorLoadState, resolveActorConditions } from "../rules/actor-condition
 import { UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { MORPHOLOGY_KEYS } from "../rules/morphologies.js";
 
-const { BooleanField, HTMLField, NumberField, SchemaField, StringField } = foundry.data.fields;
+const { ArrayField, BooleanField, HTMLField, NumberField, SchemaField, StringField } = foundry.data.fields;
 
 const textField = () => new StringField({
   required: true, nullable: false, initial: "", blank: true
@@ -39,6 +39,7 @@ export class NpcData extends foundry.abstract.TypeDataModel {
     );
 
     return {
+      gallery: new ArrayField(new SchemaField({ src: textField(), title: textField() }), { required: true, nullable: false, initial: [] }),
       morphologyKey: new StringField({ required: true, nullable: false, initial: "custom",
         choices: MORPHOLOGY_KEYS }),
       ...characteristics,

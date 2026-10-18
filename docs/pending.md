@@ -93,9 +93,7 @@ La pestaña Trasfondo ya existe y contiene historia, descripción, personalidad,
 motivaciones, familia, relaciones, secretos y notas. Queda por decidir:
 
 - si la descripción física debe desglosarse en edad aparente, altura, peso,
-  complexión, cabello, ojos y rasgos distintivos;
-- si la galería de imágenes compartida debe incorporarse también a la hoja de
-  PNJ.
+  complexión, cabello, ojos y rasgos distintivos.
 
 ## Deuda técnica no priorizada
 

@@ -1,6 +1,10 @@
 export const SYSTEM_ID = "mythras-foundry";
 
 export const SETTING_KEYS = Object.freeze({
+  showOtherActorWeapons: "showOtherActorWeapons",
+  showOtherActorLocations: "showOtherActorLocations",
+  showOtherActorStatus: "showOtherActorStatus",
+  showOtherActorResources: "showOtherActorResources",
   actionPointMethod: "actionPointMethod",
   actionPointFixedValue: "actionPointFixedValue",
   culturePointMinimum: "culturePointMinimum",
@@ -37,6 +41,18 @@ export const PERMANENT_WOUND_HIT_LOCATION_RULES = Object.freeze({
   checkD3: "checkD3",
   reduceD20Range: "reduceD20Range"
 });
+
+function refreshActorSheets() {
+  const instances = globalThis.foundry?.applications?.instances;
+  const apps = new Set(instances instanceof Map ? instances.values() : Object.values(instances ?? {}));
+  for (const app of Object.values(globalThis.ui?.windows ?? {})) apps.add(app);
+  for (const actor of game.actors ?? []) {
+    for (const app of Object.values(actor.apps ?? {})) apps.add(app);
+  }
+  for (const app of apps) {
+    if (["character", "npc"].includes(app.actor?.type)) app.render(false);
+  }
+}
 
 export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -201,6 +217,42 @@ export const SYSTEM_SETTING_DEFINITIONS = Object.freeze([
       }),
       default: SILHOUETTE_ORIENTATIONS.front,
       requiresReload: false
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.showOtherActorWeapons,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.showOtherActorWeapons.Name",
+      hint: "MYTHRASF.Settings.OtherActorVisibility.Hint",
+      scope: "world", config: true, type: Boolean, default: true,
+      onChange: refreshActorSheets
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.showOtherActorLocations,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.showOtherActorLocations.Name",
+      hint: "MYTHRASF.Settings.OtherActorVisibility.Hint",
+      scope: "world", config: true, type: Boolean, default: true,
+      onChange: refreshActorSheets
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.showOtherActorStatus,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.showOtherActorStatus.Name",
+      hint: "MYTHRASF.Settings.OtherActorVisibility.Hint",
+      scope: "world", config: true, type: Boolean, default: true,
+      onChange: refreshActorSheets
+    })
+  }),
+  Object.freeze({
+    key: SETTING_KEYS.showOtherActorResources,
+    options: Object.freeze({
+      name: "MYTHRASF.Settings.showOtherActorResources.Name",
+      hint: "MYTHRASF.Settings.OtherActorVisibility.Hint",
+      scope: "world", config: true, type: Boolean, default: true,
+      onChange: refreshActorSheets
     })
   }),
   Object.freeze({

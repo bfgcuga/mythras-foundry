@@ -34,20 +34,17 @@ caso, si la acción es reglamentaria o debe sustituirse por la tirada o decisió
 correspondiente. Evitar cierres accidentales, consecuencias omitidas y bloqueos
 en intercambios, estados y peligros.
 
-## 3. Definir y aplicar la matriz de permisos y visibilidad
+## 3. Definir y aplicar los permisos y la visibilidad de Items
 
-Definir el comportamiento de `NONE`, `LIMITED`, `OBSERVER` y `OWNER` antes de
-ampliar las hojas. La matriz debe cubrir:
+La matriz de actores ya está aplicada: GM y OWNER ven la hoja completa; LIMITED
+y OBSERVER comparten la vista de consulta sin tiradas ni edición; NONE no abre
+la hoja. Las opciones de mundo controlan armas, localizaciones, Estado y magia/
+suerte para no propietarios. PJ y PNJ comparten Galería.
 
-- permiso para abrir cada hoja;
-- pestañas y datos visibles;
-- campos editables;
-- acciones y tiradas permitidas;
-- visibilidad de las pestañas administrativas de Items;
-- si `OBSERVER` puede tirar o únicamente consultar.
-
-Aplicar después la matriz de forma coherente a personajes, PNJ e Items y cubrir
-los límites relevantes con pruebas.
+Queda definir y aplicar la matriz de Items: apertura de sus hojas, datos visibles,
+campos editables, acciones permitidas y pestañas administrativas, con pruebas de
+los límites relevantes. No ampliar automáticamente a Items la vista pública de
+los actores.
 
 ## 4. Separar las responsabilidades de las consecuencias de asalto
 

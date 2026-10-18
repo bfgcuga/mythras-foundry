@@ -1,4 +1,11 @@
 {
+  "MYTHRASF.Sheet.AccessDenied": "You do not have access to this sheet.",
+  "MYTHRASF.Settings.showOtherActorWeapons.Name": "Show weapons to other players",
+  "MYTHRASF.Settings.showOtherActorLocations.Name": "Show hit locations to other players",
+  "MYTHRASF.Settings.showOtherActorStatus.Name": "Show Status to other players",
+  "MYTHRASF.Settings.showOtherActorResources.Name": "Show magic and luck points to other players",
+  "MYTHRASF.Settings.OtherActorVisibility.Hint": "Applies to character and NPC sheets for non-owner players. GMs and owners always see the full sheet.",
+
   "MYTHRASF.Action.speak": "Speak",
   "MYTHRASF.Action.gesture": "Gesture",
   "MYTHRASF.Action.dropWeapon": "Drop weapon",

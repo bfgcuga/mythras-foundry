@@ -1,0 +1,50 @@
+  <header class="sheet-header">
+    <div class="portrait-frame">
+      <button type="button" class="portrait-view" data-action="view-portrait"
+        aria-label="{{localize "MYTHRASF.Identity.ViewPortrait"}}"
+        title="{{localize "MYTHRASF.Identity.ViewPortrait"}}">
+        <img src="{{actor.img}}" alt="{{actor.name}}">
+      </button>
+      
+    </div>
+    <div class="identity-fields">
+      <label class="identity-name">
+        <span>{{localize "MYTHRASF.Identity.CharacterName"}}</span>
+        <output class="sheet-field-readonly">{{actor.name}}</output>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.PlayerName"}}</span>
+        <output class="sheet-field-readonly">{{actor.system.identity.playerName}}</output>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.Culture"}}</span>
+        <output class="identity-readonly sheet-field-readonly">{{actor.system.identity.culture.name}}</output>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.Profession"}}</span>
+        <output class="identity-readonly sheet-field-readonly">{{actor.system.identity.profession.name}}</output>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.SocialClass"}}</span>
+        <output class="identity-readonly sheet-field-readonly"
+          title="{{actor.system.identity.socialClass.resources}}">{{actor.system.identity.socialClass.name}}</output>
+      </label>
+      <label>
+        <span>{{localize "MYTHRASF.Identity.Age"}}</span>
+        <output class="sheet-field-readonly">{{actor.system.identity.age}}</output>
+      </label>
+    </div>
+    <section class="header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
+      <label><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><output class="sheet-field-readonly penalized-value">{{headerStatus.actionPoints.base}}{{#if headerStatus.actionPoints.penalized}} <span class="penalized-value-modifier">({{headerStatus.actionPoints.effective}})</span>{{/if}}</output></label>
+{{#if visibility.resources}}      <label><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output></label>{{/if}}
+      <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
+      <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
+      <label title="{{headerStatus.encumbranceTitle}}"><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
+{{#if visibility.resources}}      <label><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output></label>{{/if}}
+    </section>
+    <section class="body-silhouette" data-body-silhouette aria-label="{{localize 'MYTHRASF.Silhouette.Label'}}"></section>
+    <label class="header-experience-rolls">
+      <span><i class="fas fa-dice" aria-hidden="true"></i>{{localize "MYTHRASF.Header.ExperienceRolls"}}</span>
+      <output class="sheet-field-readonly">{{actor.system.experienceRolls}}</output>
+    </label>
+  </header>

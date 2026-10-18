@@ -1,3 +1,5 @@
+import { canViewActor, canManageActor, actorVisibility, bindObserverSheet, visibleSheetTab } from "../ui/actor-visibility.js";
+import { GallerySheetController } from "../ui/gallery-sheet.js";
 import { removeManeuverProtection } from "../rules/maneuver-protection.js";
 import { CHARACTERISTIC_KEYS } from "../rules/derived-attributes.js";
 import { fatigueLevel, FATIGUE_LEVELS } from "../rules/fatigue.js";
@@ -41,6 +43,7 @@ const { FilePicker, ImagePopout } = foundry.applications.apps;
 
 export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
+    viewPermission: 1,
     classes: ["mythras-foundry", "mythras-paper-sheet", "actor-sheet", "npc-sheet"],
     tag: "form",
     window: { resizable: true },
@@ -59,7 +62,13 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   };
 
+  _canRender(options) {
+    if (!canViewActor(this.actor)) throw new Error(game.i18n.localize("MYTHRASF.Sheet.AccessDenied"));
+    return super._canRender?.(options);
+  }
+
   static async _onSubmitForm(event, form, formData) {
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     await updateActorFromSheet(this.actor, formData.object);
   }
 
@@ -139,7 +148,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
-      editable: this.isEditable,
+      visibility: actorVisibility(this.actor),
+      editable: this.isEditable && canManageActor(this.actor),
       isTemplate: !this.actor.isToken,
       canRegenerate: Boolean(this.actor.isToken && !this.actor.token?.isLinked && game.user.isGM),
       isInstinct: intelligenceKind === "instinct",
@@ -219,6 +229,11 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   _onRender(context, options) {
     super._onRender(context, options);
+    new GallerySheetController(this).bind();
+    if (!canManageActor(this.actor)) {
+      bindObserverSheet(this);
+      return;
+    }
     decorateCombatActionButtons(this.actor, this.element);
     this.element.querySelectorAll("[data-tab]").forEach((button) =>
       button.addEventListener("click", (event) => this.#activateTab(event)));
@@ -276,7 +291,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     new CombatSheetController(this, { resolveSituationalDifficulty: (difficulty, physical) =>
       this.#resolveSituationalDifficulty(difficulty, physical) }).bind();
 
-    if (!this.isEditable) {
+    if (!canManageActor(this.actor) || !this.isEditable) {
       this.element.querySelectorAll("input[name], textarea[name], select[name]")
         .forEach((field) => { field.disabled = true; });
     }
@@ -289,6 +304,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #showTab(tab) {
+    tab = visibleSheetTab(this.element, tab);
+    this._activeTab = tab;
     this.element.querySelectorAll("[data-tab]").forEach((button) =>
       button.classList.toggle("active", button.dataset.tab === tab));
     this.element.querySelectorAll("[data-tab-content]").forEach((panel) =>
@@ -296,13 +313,13 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleEditMode() {
-    if (!this.isEditable || this.actor.isToken) return;
+    if (!canManageActor(this.actor) || !this.isEditable || this.actor.isToken) return;
     this._editMode = !this._editMode;
     await this.render({ force: true });
   }
 
   async #choosePortrait() {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const directory = `worlds/${game.world.id}`;
     const picker = new FilePicker({ type: "image", current: directory,
       callback: async (path) => { if (path) await this.actor.update({ img: path }); } });
@@ -325,7 +342,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #applyMorphology() {
-    if (!this.isEditable || this.actor.isToken || !this._editMode) return;
+    if (!canManageActor(this.actor) || !this.isEditable || this.actor.isToken || !this._editMode) return;
     const morphologyKey = this.element.querySelector("select[name='system.morphologyKey']")?.value
       ?? this.actor.system.morphologyKey;
     if (!MORPHOLOGIES[morphologyKey]) return;
@@ -349,7 +366,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #createItem(event, forcedType = "") {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const type = forcedType || event.currentTarget.dataset.type;
     if (type === "passion") {
       const result = await DialogV2.input({
@@ -386,6 +403,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #editItem(event) {
+    if (!canManageActor(this.actor)) return;
     event.preventDefault();
     this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId)
       ?.sheet.render(true);
@@ -393,7 +411,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #deleteItem(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     if (itemId) {
       const item = this.actor.items.get(itemId);
@@ -403,6 +421,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #rollSkill(event) {
+    if (!canManageActor(this.actor)) return;
     event.preventDefault();
     const row = event.currentTarget.closest("[data-item-id]");
     const item = this.actor.items.get(row?.dataset.itemId);
@@ -414,6 +433,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #rollPassion(event) {
+    if (!canManageActor(this.actor)) return;
     event.preventDefault();
     const itemId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     await this.actor.items.get(itemId)?.rollPassion({ manual: event.shiftKey });
@@ -439,7 +459,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleStatus(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     if (event.currentTarget.dataset.statusToggle === "maneuverProtected" && !event.currentTarget.checked) {
       return removeManeuverProtection(this.actor);
     }
@@ -449,7 +469,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #toggleEquipped(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !["weapon", "armor"].includes(item.type)) return;
     if (item.type === "weapon" && weaponIsPinned(item, this.actor)) return ui.notifications.warn(
@@ -492,7 +512,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #adjustResource(event) {
     event.preventDefault();
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const key = event.currentTarget.dataset.resource;
     const resource = this.actor.system.resources[key];
     const maximum = this.actor.system.attributes[`${key}Max`];
@@ -503,7 +523,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateActorField(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const field = event.currentTarget;
     if (!field.name) return;
     let value = field.type === "checkbox" ? field.checked : field.value;
@@ -512,7 +532,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateManualValue(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item) return;
     await item.update({ "system.manualValue": Math.max(0,
@@ -520,7 +540,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateItemField(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const field = event.currentTarget;
     const item = this.actor.items.get(field.closest("[data-item-id]")?.dataset.itemId);
     if (!item) return;
@@ -530,7 +550,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateLocationDisabled(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const location = this.actor.items.get(
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
@@ -538,7 +558,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #adjustLocationHitPoints(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const location = this.actor.items.get(
       event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (location?.type !== "hitLocation") return;
@@ -548,7 +568,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #updateLocationArmor(event) {
-    if (!this.isEditable) return;
+    if (!canManageActor(this.actor) || !this.isEditable) return;
     const locationId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
     const armors = this.actor.items.filter((item) => item.type === "armor");
     const current = armors.find((item) => item.system.equipped

@@ -1,3 +1,9 @@
+{{#if visibility.restricted}}
+<div class="npc-sheet-content">
+{{> "systems/mythras-foundry/templates/actor/parts/npc-observer-header.hbs"}}
+{{> "systems/mythras-foundry/templates/actor/parts/observer-body.hbs" characterView=false}}
+</div>
+{{else}}
 <div class="npc-sheet-content">
   <header class="sheet-header npc-sheet-header">
     <div class="portrait-frame">
@@ -35,6 +41,7 @@
     <button type="button" data-tab="combat">{{localize "MYTHRASF.Tab.Combat"}}</button>
     <button type="button" data-tab="inventory">{{localize "MYTHRASF.Tab.Inventory"}}</button>
     <button type="button" data-tab="penalties">{{localize "MYTHRASF.Tab.Status"}}</button>
+    <button type="button" data-tab="gallery">{{localize "MYTHRASF.Tab.Gallery"}}</button>
     {{#if canRegenerate}}<button type="button" class="npc-regenerate" data-action="regenerate-npc"
       title="{{localize "MYTHRASF.Npc.RegenerateWarning"}}"><i class="fas fa-dice" aria-hidden="true"></i>
       {{localize "MYTHRASF.Npc.Regenerate"}}</button>{{/if}}
@@ -129,5 +136,8 @@
     <section class="tab-panel" data-tab-content="penalties">
       {{> "systems/mythras-foundry/templates/actor/parts/penalties-tab.hbs"}}
     </section>
+    <section class="tab-panel" data-tab-content="gallery">{{> "systems/mythras-foundry/templates/actor/parts/gallery-tab.hbs" gallery=actor.system.gallery editable=editable}}</section>
   </main>
 </div>
+
+{{/if}}

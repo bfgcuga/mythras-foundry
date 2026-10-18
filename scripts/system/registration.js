@@ -38,6 +38,10 @@ import { createStatusAssignmentApi } from "../rules/status-assignment.js";
 import { createDiceApi } from "../rules/system-roll.js";
 
 const PARTIALS = [
+  "systems/mythras-foundry/templates/actor/parts/character-observer-header.hbs",
+  "systems/mythras-foundry/templates/actor/parts/npc-observer-header.hbs",
+  "systems/mythras-foundry/templates/actor/parts/observer-body.hbs",
+
   "systems/mythras-foundry/templates/actor/parts/background-wizard.hbs",
   "systems/mythras-foundry/templates/actor/parts/characteristics.hbs",
   "systems/mythras-foundry/templates/actor/parts/combat-tab.hbs",

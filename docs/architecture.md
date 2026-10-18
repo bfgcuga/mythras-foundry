@@ -64,10 +64,10 @@ una instancia propia de las fórmulas de su plantilla.
 
 ## Modelos y cálculos derivados
 
-La galería de personaje se persiste en `system.gallery` como una colección de
-referencias `{ src, title }`. Su interfaz vive en el parcial reutilizable
-`templates/actor/parts/gallery-tab.hbs`; actualmente solo la monta la hoja de
-personaje, dejando abierta su adopción posterior por la hoja de PNJ.
+La galería de personajes y PNJ se persiste en `system.gallery` como una colección
+de referencias `{ src, title }`. Ambas hojas comparten el parcial
+`templates/actor/parts/gallery-tab.hbs` y el controlador `gallery-sheet.js`: los
+propietarios y el GM gestionan las imágenes; LIMITED y OBSERVER pueden ampliarlas.
 
 La automatización de Maximizar Daño selecciona primero los dados del arma con
 más caras y conserva partes estructuradas de la fórmula para distinguir en la
@@ -1250,3 +1250,37 @@ las explicaciones canónicas de los estados Afianzado y protección de Maniobrar
 Las tarjetas de enfrentadas sitúan la penalización por competición de fuerza
 bajo la fila del participante, ocupando todas las columnas y con salto de línea.
 El porcentaje y los dados conservan sus columnas sin incorporar explicaciones.
+
+
+### Permisos y vista de consulta de actores
+
+`actor-visibility.js` centraliza las capacidades de las hojas: GM y propietario
+ven la hoja completa; LIMITED y OBSERVER abren la misma vista de consulta; NONE
+no puede abrirla. Ambas hojas requieren como mínimo LIMITED y comprueban acceso
+antes de renderizar. La consulta no enlaza acciones operativas ni admite envío
+de formularios. El modo edición y los controladores de modificación exigen
+propiedad o GM, además de la editabilidad habitual. Se mantienen los límites
+anatómicos de los tokens.
+
+La vista de consulta renderiza un encabezado de solo lectura y un cuerpo
+compartido: Combate contiene únicamente localizaciones y armas; Estado muestra
+sus estados y penalizaciones sin poder cambiarlos; Trasfondo del PJ excluye el
+recuadro privado completo; Galería permite ampliar imágenes. Personaje/General,
+Inventario, acciones y estilos no se renderizan. Los nombres de Items y la
+silueta pública no abren documentos. La silueta permanece visible en el encabezado
+independientemente del recuadro de localizaciones de Combate.
+
+Las opciones de mundo `showOtherActorWeapons`, `showOtherActorLocations`,
+`showOtherActorStatus` y `showOtherActorResources` son booleanas, verdaderas por
+defecto y compartidas por PJ y PNJ. Solo restringen a jugadores no propietarios;
+la última controla conjuntamente magia y suerte del encabezado. Ocultar Estado
+no oculta sus indicadores del encabezado. Sin armas ni localizaciones se omite
+Combate; una pestaña anterior no disponible se sustituye por la primera visible.
+Cambiar estas opciones vuelve a renderizar las hojas abiertas, incluidas las de
+tokens. Son reglas de presentación de estas hojas, sin modificar la distribución
+de datos de documentos de Foundry ni las reglas de permisos de Items.
+
+`gallery-sheet.js` comparte la gestión de `system.gallery` entre los dos tipos
+de Actor y vuelve a comprobar propiedad antes de guardar. El PNJ usa el mismo
+esquema de imágenes `{src, title}`, con una lista vacía inicial; no se reconstruyen
+ni sobrescriben documentos existentes. El PNJ no incorpora una pestaña Trasfondo.

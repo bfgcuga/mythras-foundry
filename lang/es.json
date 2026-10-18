@@ -1,4 +1,11 @@
 {
+  "MYTHRASF.Sheet.AccessDenied": "No tienes acceso a esta hoja.",
+  "MYTHRASF.Settings.showOtherActorWeapons.Name": "Mostrar armas a otros jugadores",
+  "MYTHRASF.Settings.showOtherActorLocations.Name": "Mostrar localizaciones a otros jugadores",
+  "MYTHRASF.Settings.showOtherActorStatus.Name": "Mostrar Estado a otros jugadores",
+  "MYTHRASF.Settings.showOtherActorResources.Name": "Mostrar puntos de magia y suerte a otros jugadores",
+  "MYTHRASF.Settings.OtherActorVisibility.Hint": "Se aplica a las hojas de PJ y PNJ para jugadores no propietarios. El GM y los propietarios siempre ven la hoja completa.",
+
   "MYTHRASF.Action.speak": "Hablar",
   "MYTHRASF.Action.gesture": "Hacer gestos",
   "MYTHRASF.Action.dropWeapon": "Soltar arma",
