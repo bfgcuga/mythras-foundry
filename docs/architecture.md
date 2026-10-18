@@ -1232,3 +1232,7 @@ no solo en Afianzarse y Maniobrar. Su diálogo explica el comportamiento
 implementado y muestra estado, coste registrado y notas de la ejecución; las
 descripciones se localizan en `MYTHRASF.Action.Description.<key>`, conservando
 las explicaciones canónicas de los estados Afianzado y protección de Maniobrar.
+
+Las tarjetas de enfrentadas sitúan la penalización por competición de fuerza
+bajo la fila del participante, ocupando todas las columnas y con salto de línea.
+El porcentaje y los dados conservan sus columnas sin incorporar explicaciones.

@@ -39,3 +39,33 @@ test("la enfrentada general y liberar una presa resuelven la misma penalización
     sides: { initiator: { participantIds: [victim.id] } } });
   assert.equal(unopposed.participants[0].target, 90);
 });
+
+
+test("la competición de fuerza ocupa una fila completa fuera del porcentaje y los dados", async t => {
+  const { installHost, css } = await import('./helpers/ui.js');
+  const { renderContestCard } = await import('../scripts/rules/contest-chat.js');
+  installHost(t);
+  const participants = [
+    { ...participant('a', 21), actorId: 'a', actorName: 'Vikingo', abilityName: 'Músculo', pending: false },
+    { ...participant('b', 31), actorId: 'b', actorName: 'Hodei', abilityName: 'Atletismo', pending: false }
+  ];
+  const contest = { type: 'opposed', initiatorId: 'a', participants, status: 'resolved', revision: 1 };
+  contest.resolution = resolveContest(contest);
+  document.body.innerHTML = renderContestCard(contest);
+  const row = document.querySelector('[data-actor-id="a"]');
+  const modifier = row.querySelector('.contest-participant-modifier');
+  assert.match(modifier.textContent, /Competición de fuerza/);
+  assert.equal(modifier.parentElement, row);
+  assert.equal(row.querySelector('.contest-participant-target').textContent, '45%');
+  assert.equal(row.querySelector('.contest-participant-values').contains(modifier), false);
+  assert.equal(document.querySelector('[data-actor-id="b"] .contest-participant-modifier'), null);
+  const postcss = (await import('postcss')).default;
+  const declarations = {};
+  postcss.parse(css).walkRules(rule => {
+    if (rule.selector === '.chat-message .mythras-contest-card .contest-participant-modifier') {
+      rule.walkDecls(decl => { declarations[decl.prop] = decl.value; });
+    }
+  });
+  assert.equal(declarations['grid-column'], '1 / -1');
+  assert.equal(declarations['white-space'], 'normal');
+});

@@ -3119,6 +3119,7 @@
 .chat-message .mythras-contest-card .contest-team-representative { margin-left: 0.3rem; font-weight: normal; }
 .chat-message .mythras-contest-card .contest-participant-identity .mythras-chat-luck-spent { margin-top: 0.15rem; line-height: 1.15; overflow-wrap: anywhere; }
 .chat-message .mythras-contest-card .contest-participant-values { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.45rem; min-width: 0; }
+.chat-message .mythras-contest-card .contest-participant-modifier { grid-column: 1 / -1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .chat-message .mythras-contest-card .contest-participant-target { padding-top: 0.22rem; white-space: nowrap; }
 .chat-message .mythras-contest-card .contest-roll-attempts { display: grid; justify-items: end; gap: 0.28rem; min-width: 0; }
 .chat-message .mythras-contest-card .contest-roll-attempt { display: flex; align-items: center; justify-content: flex-end; gap: 0.35rem; min-width: 0; }

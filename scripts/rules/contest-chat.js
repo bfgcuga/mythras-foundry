@@ -163,8 +163,9 @@ export function renderContestCard(contest) {
     const attempts = `${oldAttempts}<div class="contest-roll-attempt contest-roll-attempt--current"><strong class="mythras-chat-roll-value">${escape(roll)}</strong>${result}</div>`;
     const html = `<div class="contest-participant mythras-chat-row" data-actor-id="${escape(participant.actorId)}">
       <span class="contest-participant-identity"><strong>${escape(participantDisplayName(participant))}${representative}</strong><small>${escape(ability)}</small>${luckNotes}</span>
-      <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}${final.strengthSteps ? `<small class="skill-roll-modifier-effect--penalty">${escape(game.i18n.format("MYTHRASF.Contest.StrengthPenalty", { steps: final.strengthSteps }))}</small>` : ""}</span><span class="contest-roll-attempts">${attempts}</span></span>
+      <span class="contest-participant-values"><span class="contest-participant-target">${escape(target)}</span><span class="contest-roll-attempts">${attempts}</span></span>
       <span class="contest-participant-actions">${button}${luck}</span>
+      ${final.strengthSteps ? `<div class="contest-participant-modifier skill-roll-modifier-effect--penalty">${escape(game.i18n.format("MYTHRASF.Contest.StrengthPenalty", { steps: final.strengthSteps }))}</div>` : ""}
     </div>`;
     return [participant.id, html];
   });
