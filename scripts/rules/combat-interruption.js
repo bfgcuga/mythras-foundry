@@ -94,6 +94,11 @@ export function interruptionCard(session) {
 
 async function save(combat, session) {
   session.revision = Number(session.revision ?? 0) + 1;
+  if (session.phase === "awaitingDecision" && !session.messageUuid) {
+    const message = await ChatMessage.create({ content: interruptionCard(session),
+      flags: { [SCOPE]: { interruption: { combatId: combat.id, sessionId: session.id } } } });
+    session.messageUuid = message.uuid;
+  }
   await combat.setFlag(SCOPE, FLAG, session);
   const message = session.messageUuid ? await fromUuid(session.messageUuid) : null;
   if (message) await message.update({ content: interruptionCard(session),
@@ -208,10 +213,6 @@ export async function applyInterruptionRequest(request) {
       round: Number(combat.round), cycle: Number(combat.mythrasTurnEconomy?.cycle ?? 1),
       turnRevision: Number(combat.mythrasTurnEconomy?.revision ?? 0),
       waiting: foundry.utils.deepClone(waiting), ...captureDeclaration(combat, combat.combatant.id) };
-    await save(combat, session);
-    const message = await ChatMessage.create({ content: interruptionCard(session),
-      flags: { [SCOPE]: { interruption: { combatId: combat.id, sessionId: session.id } } } });
-    session.messageUuid = message.uuid;
     await save(combat, session);
     return true;
   }

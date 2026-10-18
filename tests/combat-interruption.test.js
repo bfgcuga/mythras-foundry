@@ -170,6 +170,44 @@ test("un ataque fuera de turno espera defensas y efectos antes de la decisión",
   assert.equal(f.combat.advanced, 0);
 });
 
+test("el mensaje del DJ se crea después del ataque, sus efectos y su daño", async t => {
+  const f = setup(t);
+  const decisionMessages = () => game.messages.filter(message => message.getFlag(scope, 'interruption'));
+  await f.begin();
+  assert.equal(decisionMessages().length, 0);
+  await spendActorActionPoint(f.actor, { actionKind: 'attack' });
+  const state = { status: 'awaitingDefense', revision: 0,
+    turnEconomy: { combatId: f.combat.id, combatantId: 'a', round: 1,
+      interruptionId: combatInterruption(f.combat).id, attackSpent: true, turnAdvanced: false } };
+  const attack = f.message({ combat: state });
+  await bindInterruptionAction(f.combat, 'a', { kind: 'attack', messageUuid: attack.uuid });
+  const advance = () => advanceCombatExchange(attack, state, {
+    force: true, combatById: () => f.combat, render: () => 'attack'
+  });
+  assert.equal(await advance(), false);
+  assert.equal(decisionMessages().length, 0);
+  state.status = 'awaitingEffects';
+  assert.equal(await advance(), false);
+  assert.equal(decisionMessages().length, 0);
+  Object.assign(state, { status: 'resolved', effects: { checks: [{ status: 'pending' }] }, damage: { status: 'ready' } });
+  assert.equal(await advance(), false);
+  state.effects.checks[0].status = 'resolved';
+  assert.equal(await advance(), false);
+  assert.equal(decisionMessages().length, 0);
+  state.damage.status = 'applied';
+  assert.equal(await advance(), true);
+  assert.equal(decisionMessages().length, 1);
+  assert.ok(game.messages.indexOf(decisionMessages()[0]) > game.messages.indexOf(attack));
+  assert.equal(combatInterruption(f.combat).phase, 'awaitingDecision');
+  assert.equal(f.combat.advanced, 0);
+});
+
+test("cancelar la elección no deja una tarjeta de decisión anticipada en el chat", async t => {
+  const f = setup(t);
+  await f.begin(); await submitInterruption(f.combat, 'cancel');
+  assert.equal(game.messages.filter(message => message.getFlag(scope, 'interruption')).length, 0);
+});
+
 test("cancelar un ataque reembolsado restaura la espera y reanuda el turno", async t => {
   const f = setup(t);
   await f.begin(); await spendActorActionPoint(f.actor, { actionKind: "attack" });

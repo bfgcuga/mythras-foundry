@@ -1203,7 +1203,10 @@ avanza condiciones de turno propio. Cancelar una elección mantiene la espera;
 cancelar un ataque con reembolso restaura la espera mientras el turno capturado
 siga vigente. Las consecuencias ya aplicadas no se revierten automáticamente.
 
-Una tarjeta persistente permite únicamente al DJ decidir si la acción original
+La elección se indica en la hoja con su control de cancelación y no publica
+una tarjeta anticipada en el chat. Solo al terminar la acción interruptora,
+incluidas las defensas, efectos, comprobaciones y daño pendientes, se crea
+la tarjeta persistente que permite únicamente al DJ decidir si la acción original
 queda impedida. Si continúa, se desbloquea la resolución suspendida. Si se impide,
 se cierran sus controles y pasos pendientes y se pasa una vez al siguiente turno:
 el PA ya pagado se conserva como coste y solo se descuenta uno cuando no había
@@ -1212,3 +1215,10 @@ Las solicitudes se serializan por combate; identificadores y fases impiden el
 consumo repetido, y ronda/ciclo/revisión invalidan respuestas de otro turno.
 Las sesiones válidas sobreviven a la recarga; las obsoletas o sin participante
 se limpian. Finalizar/eliminar combate o eliminar participantes cierra la sesión.
+
+
+Las tarjetas de acciones generales ofrecen `ruleHelpButton` junto al estado,
+no solo en Afianzarse y Maniobrar. Su diálogo explica el comportamiento
+implementado y muestra estado, coste registrado y notas de la ejecución; las
+descripciones se localizan en `MYTHRASF.Action.Description.<key>`, conservando
+las explicaciones canónicas de los estados Afianzado y protección de Maniobrar.

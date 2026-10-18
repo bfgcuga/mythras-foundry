@@ -280,7 +280,7 @@ export function actionCard(action) {
   }).join("") ?? "";
   const confirmation = action.status === "awaitingConfirmation"
     ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.CombatEffect.Confirm"))}</button><button type="button" data-action-transaction="cancel">${escape(localize("MYTHRASF.Cancel"))}</button></div>` : "";
-  const help = ["brace", "maneuver"].includes(action.key)
+  const help = COMBAT_ACTIONS[action.key]
     ? ruleHelpButton(`data-action-help="${escape(action.key)}"`) : "";
   const outcome = action.key === "hesitate" && action.status === "resolved"
     ? `<p>${escape(localize("MYTHRASF.Action.HesitateResult"))}</p>` : "";
@@ -540,8 +540,20 @@ export function activateCombatActionCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
   root?.querySelectorAll?.("[data-action-help]").forEach((button) => {
     const key = button.dataset.actionHelp;
-    button.addEventListener("click", () => openRuleHelp(localize(`MYTHRASF.Action.${key}`),
-      localize(`MYTHRASF.Status.Description.${key === "brace" ? "braced" : "maneuverProtected"}`)));
+    button.addEventListener("click", () => {
+      const action = combatActionState(game.combats.get(reference.combatId)).actions[reference.actionId];
+      const description = key === "brace" ? localize("MYTHRASF.Status.Description.braced")
+        : key === "maneuver" ? localize("MYTHRASF.Status.Description.maneuverProtected")
+          : localize(`MYTHRASF.Action.Description.${key}`);
+      const details = [description];
+      if (action) {
+        details.push(`${localize("MYTHRASF.Action.StatusLabel")}: ${localize(`MYTHRASF.Action.Status.${action.status}`)}`);
+        details.push(localize("MYTHRASF.Action.Cost").replace("{cost}", action.cost ?? COMBAT_ACTIONS[key].cost));
+        if (action.parameters?.mode) details.push(localize(`MYTHRASF.Action.Movement.${action.parameters.mode}`));
+        if (action.note) details.push(action.note);
+      }
+      return openRuleHelp(localize(`MYTHRASF.Action.${key}`), details.join("\n\n"));
+    });
   });
   root?.querySelectorAll?.("[data-action-transaction]").forEach((button) => {
     const candidateId = button.dataset.combatantId;

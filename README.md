@@ -110,7 +110,9 @@ El sistema incluye actualmente:
   sin gastar PA y aplica Esperando: la primera reacción de pago retira el estado;
   si llega el siguiente turno o termina la ronda, pierde un PA. Las acciones
   activas siguen bloqueadas fuera de turno hasta pulsar Interrumpir, que abre
-  una única acción activa sin cambiar la iniciativa. Al terminar, el DJ decide
+  una única acción activa sin cambiar la iniciativa. Las tarjetas incluyen ayuda
+  contextual sobre lo que hace cada acción. Al terminar por completo la acción
+  interruptora se publica la pregunta con la que el DJ decide
   si impide la acción del turno suspendido: en ese caso cuesta un PA total y
   pasa el turno; de lo contrario continúa su resolución. El movimiento es una
   declaración táctica y las acciones de magia y montura se

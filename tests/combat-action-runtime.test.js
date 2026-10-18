@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { actionCard, activateCombatActionCard, executeAction } from "../scripts/rules/combat-action-runtime.js";
+import { COMBAT_ACTIONS } from "../scripts/rules/combat-actions.js";
 
 function fixture(t) {
   const dom = new JSDOM('<main></main>');
@@ -46,6 +47,28 @@ test('action cards use the current character name and open brace help on click',
   activateCombatActionCard({ getFlag: () => ({ combatId: 'combat', actionId: 'action' }) }, root);
   root.querySelector('[data-action-help]').click();
   assert.match(globals.dialog.content, /Status.Description.braced/);
+});
+
+test('all registered action cards offer the shared help button', t => {
+  const { action, root } = fixture(t);
+  for (const key of Object.keys(COMBAT_ACTIONS)) {
+    root.innerHTML = actionCard({ ...action, key, status: 'resolved' });
+    const help = root.querySelector(`[data-action-help="${key}"]`);
+    assert.ok(help, key);
+    assert.ok(help.classList.contains('mythras-help-button'));
+    assert.ok(help.getAttribute('aria-label'));
+  }
+});
+
+test('resolved action help includes its description, recorded cost and execution note', t => {
+  const { action, root, globals } = fixture(t);
+  Object.assign(action, { key: 'delay', status: 'resolved', cost: 0, note: 'Espera hasta el siguiente turno' });
+  root.innerHTML = actionCard(action);
+  activateCombatActionCard({ getFlag: () => ({ combatId: 'combat', actionId: action.id }) }, root);
+  root.querySelector('[data-action-help]').click();
+  assert.match(globals.dialog.content, /Action.Description.delay/);
+  assert.match(globals.dialog.content, /Action.Status.resolved/);
+  assert.match(globals.dialog.content, /Espera hasta el siguiente turno/);
 });
 
 test('brace creates one visible status and Move removes it', async t => {
