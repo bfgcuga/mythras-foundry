@@ -67,3 +67,13 @@ test("Titubear consume condiciones de turno propio sin duplicarlas al avanzar", 
   assert.match(runtime, /skipCurrentActorConditions: current\.actorTurnConditionsAdvanced/);
   assert.match(combat, /!skipCurrentActorConditions[\s\S]*advanceActorTurnConditions/);
 });
+
+
+test("generic action requires its turn and PA; passive block is free outside the turn", () => {
+  assert.equal(availableCombatActions({ inCombat: true, isActive: true, actionPoints: 1 }).generic, true);
+  assert.equal(availableCombatActions({ inCombat: true, isActive: true, actionPoints: 0 }).generic, false);
+  assert.equal(availableCombatActions({ inCombat: true, isActive: false, actionPoints: 1 }).generic, false);
+  assert.equal(availableCombatActions({ inCombat: true, isActive: false, actionPoints: 0,
+    hasPreparedWeapon: true, interrupting: true }).passiveBlock, true);
+  assert.equal(availableCombatActions({ hasPreparedWeapon: true }).passiveBlock, false);
+});

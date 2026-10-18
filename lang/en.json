@@ -1,4 +1,9 @@
 {
+  "MYTHRASF.Action.ActiveActions": "Active combat actions",
+  "MYTHRASF.Action.FreeActions": "Free combat actions",
+  "MYTHRASF.Action.generic": "Perform generic action",
+  "MYTHRASF.Action.Description.generic": "Spend one action point to perform the described action.",
+
   "MYTHRASF.Action.MovementDescription": "Movement description (optional)",
   "MYTHRASF.Action.ConfirmMovement": "Confirm movement",
   "MYTHRASF.Action.MovementLimit": "Up to {distance} metres per round",

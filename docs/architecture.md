@@ -112,7 +112,8 @@ retirarlos; los que tienen consecuencias mecánicas aparecen además en la tabla
 Los estados inactivos no ocupan espacio en la pestaña.
 
 Las hojas de personaje y PNJ comparten los parciales y preparadores de las
-pestañas Combate e Inventario. Combate conserva una única jerarquía de acciones,
+pestañas Combate e Inventario. Combate separa acciones activas y gratuitas en
+dos recuadros y conserva una única jerarquía de
 localizaciones, armas y estilos; las diferencias del PNJ, como la durabilidad de
 un arma natural vinculada a una localización, se resuelven al preparar los datos.
 Inventario comparte monederos, propiedades, contenedores y operaciones. Las
@@ -527,6 +528,11 @@ sistema todavía no representa.
 `actionPresentation`, que añade coste y causa estable de indisponibilidad sin
 eliminar acciones del DOM. Los controladores especializados de alcance,
 bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
+La acción genérica exige descripción antes de gastar un PA, publica esa descripción
+y se resuelve automáticamente con el avance habitual del turno. Bloqueo Pasivo
+es gratuito y no exige turno propio ni PA: la hoja abre la declaración pendiente
+o el mismo editor de corrección de situación táctica cuando ya no hay una
+declaración pendiente, incluso si todavía no existe un bloqueo guardado.
 
 Ponerse en Pie abre un diálogo con la traba táctica detectada y permite corregirla
 sin modificar las relaciones tácticas. Sin traba retira Tumbado automáticamente.

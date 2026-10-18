@@ -18,6 +18,11 @@ instalables se distribuyen mediante las releases de GitHub.
 
 El sistema incluye actualmente:
 
+- acciones activas y gratuitas de combate en recuadros separados en personajes
+  y PNJ; acción genérica con descripción obligatoria, coste de un PA y mensaje
+  en el chat; declaración o modificación gratuita del Bloqueo Pasivo en cualquier
+  momento del combate desde la hoja, con el mismo menú de situación táctica;
+
 - hojas Application V2 para personajes, PNJ y todos los tipos de Item;
 - Puño/Patada intrínseco para personajes y PNJ de morfología humanoide, sin
   añadir Items al inventario: daño 1d3 más Modificador de Daño, Tamaño Pequeño

@@ -13,12 +13,8 @@ Revisar prioritariamente estas acciones:
 - Buscar cobertura.
 - Cambiar alcance.
 - Forcejear.
-- Montar.
-- Mover.
-- Titubear.
 - Retener Magia.
 - Usar Magia.
-- Cambiar «Añadir acción» por «Realizar acción genérica».
 
 Revisar las acciones del sistema una por una, contrastando su comportamiento
 actual con las reglas aplicables. Identificar las que tienen lógica incorrecta,
@@ -28,16 +24,22 @@ tiradas, consecuencias y cierre o avance del turno, con pruebas de los
 comportamientos corregidos. La revisión determinará el alcance concreto de las
 acciones diferenciales pendientes del punto 6.
 
+Montar, Mover y Titubear ya están revisadas y aprobadas. La acción genérica
+ya permite describir una acción, gastar un PA y publicarla en el chat.
+
 ## 2. Añadir acciones gratuitas
 
 Añadir las siguientes acciones, que pueden usarse en cualquier momento sin
 gastar puntos de acción:
 
 - Hablar.
-- Cambiar bloqueo pasivo.
 - Hacer gestos.
 - Soltar arma.
 - Valorar situación.
+
+Las hojas de personaje y PNJ ya separan acciones activas y gratuitas. Declarar
+o modificar Bloqueo Pasivo está en el bloque gratuito y disponible en cualquier
+momento del combate, sin gastar PA, mediante el mismo menú de situación táctica.
 
 ## 3. Revisar las resoluciones manuales de flujos interactivos
 

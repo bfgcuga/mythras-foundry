@@ -316,6 +316,7 @@ async function createTransaction(context, key, parameters = {}) {
       ui.notifications.warn(localize("MYTHRASF.Maneuver.InvalidParticipants")); return null;
     }
   }
+  if (key === "generic" && !String(parameters.note ?? "").trim()) return null;
   const definition = COMBAT_ACTIONS[key];
   if (!definition || !(definition.cost === 0 || (definition.type === "reactive"
     ? await spendActorActionPoint(context.combatant.actor, { reactive: true })
@@ -448,6 +449,7 @@ export async function executeAction(combat, action) {
     current.status = "resolved";
     current.actorTurnConditionsAdvanced = true;
   }
+  else if (current.key === "generic") current.status = "resolved";
   else current.status = "awaitingConfirmation";
   current.resolvedAt = current.status === "resolved" ? Date.now() : null;
   current.revision += 1; await save(combat, state); await updateCard(current);
@@ -523,11 +525,11 @@ export async function requestCombatAction(actor, key) {
   }
   if (key === "move") { parameters = await chooseMovement(context); if (!parameters) return; }
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }
-  if (["mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {
+  if (["generic", "mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {
     const note = await foundry.applications.api.DialogV2.prompt({ window: { title: localize(`MYTHRASF.Action.${key}`) },
-      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Action.Note"))}</span><textarea name="note"></textarea></label></div>`,
+      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Action.Note"))}</span><textarea name="note" ${key === "generic" ? "required" : ""}></textarea></label></div>`,
       ok: { callback: (event, button) => button.form.elements.note.value.trim() } });
-    if (note == null) return; parameters.note = note;
+    if (note == null || (key === "generic" && !note.trim())) return; parameters.note = note;
   }
   if (key === "brace") {
     const weapon = actor.items.find((item) => item.type === "weapon" && item.system.equipped

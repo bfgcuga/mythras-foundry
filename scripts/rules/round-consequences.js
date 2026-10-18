@@ -540,6 +540,7 @@ async function sendPassiveBlockRequest(message, state, entryId, resolution) {
 export async function openPassiveBlockDeclaration(actor) {
   const combat = game.combat;
   const combatant = combat?.combatants.find((entry) => entry.actor?.uuid === actor?.uuid);
+  if (!combat?.started || !combatant || (!game.user.isGM && !actor?.isOwner)) return false;
   const message = game.messages?.find((candidate) => {
     const state = candidate.getFlag?.(SCOPE, "roundConsequences");
     return state?.combatId === combat?.id && Number(state.round) === Number(combat.round)
@@ -549,15 +550,15 @@ export async function openPassiveBlockDeclaration(actor) {
   const state = message?.getFlag(SCOPE, "roundConsequences");
   const entry = state?.queue.find((candidate) => candidate.combatantId === combatant?.id
     && candidate.key === "passiveBlock" && candidate.status === "pending");
-  if (!message || !entry) return ui.notifications.warn(
-    game.i18n.localize("MYTHRASF.PassiveBlock.NoPendingDeclaration"));
+  if (!message || !entry) return combatant
+    ? openPassiveBlockCorrection(combat, combatant.id) : false;
   return requestPassiveBlock(message, state, entry.id);
 }
 
 export async function openPassiveBlockCorrection(combat, combatantId) {
   const entry = passiveBlockEntries(combat).find((candidate) => candidate.combatantId === combatantId);
   const actor = combat?.combatants.get(combatantId)?.actor;
-  const current = tacticalState(combat).passiveBlocks?.[combatantId];
+  const current = tacticalState(combat).passiveBlocks?.[combatantId] ?? {};
   if ((!game.user.isGM && !actor?.isOwner) || !entry || !actor || !current) return false;
   const weaponOptions = entry.choices.map((choice) => {
     const value = `${choice.weaponId}:${choice.modeKey}`;

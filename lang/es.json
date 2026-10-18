@@ -1,4 +1,9 @@
 {
+  "MYTHRASF.Action.ActiveActions": "Acciones activas de combate",
+  "MYTHRASF.Action.FreeActions": "Acciones gratuitas de combate",
+  "MYTHRASF.Action.generic": "Realizar acción genérica",
+  "MYTHRASF.Action.Description.generic": "Gasta un punto de acción para realizar la acción descrita.",
+
   "MYTHRASF.Action.MovementDescription": "Descripción del movimiento (opcional)",
   "MYTHRASF.Action.ConfirmMovement": "Confirmar movimiento",
   "MYTHRASF.Action.MovementLimit": "Hasta {distance} metros por asalto",

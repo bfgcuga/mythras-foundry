@@ -122,3 +122,17 @@ test('movement cards show mode and maximum distance followed by the optional des
   assert.equal(movementDistance(0, 'run'), 0);
   assert.equal(movementDistance(3, 'sprint'), 15);
 });
+
+
+test('generic action resolves with its description and advances the turn', async t => {
+  const { action, combat, root } = fixture(t);
+  action.key = 'generic'; action.note = 'Abrir la puerta';
+  combat.combatant = { id: 'c' };
+  let advanced = 0; combat.nextTurn = async () => { advanced++; };
+  await executeAction(combat, action);
+  assert.equal(action.status, 'resolved');
+  assert.equal(advanced, 1);
+  root.innerHTML = actionCard(action);
+  assert.match(root.textContent, /Abrir la puerta/);
+  assert.equal(root.querySelector('[data-action-transaction]'), null);
+});
