@@ -110,7 +110,8 @@ verificación visual o de integración realmente realizadas.
 ## Publicación de versiones
 
 - En este repositorio, «publicar» significa completar el flujo hasta crear y subir la etiqueta de versión; subir únicamente los commits a `main` no publica una versión instalable.
-- La publicación se realiza con Git, directamente sobre `main`, sin depender de GitHub CLI ni de la creación de un pull request.
+- La publicación se realiza desde el terminal con Git, directamente sobre `main` en el remoto `origin` configurado del proyecto. No usar el conector/API de GitHub, GitHub CLI ni pull requests para publicar. La release y sus adjuntos los crea exclusivamente el workflow al subir la etiqueta; no crearlos manualmente.
+- Cuando el usuario solicite publicar, seguir este procedimiento completo. Consultar esta sección antes de elegir herramientas de publicación en una conversación nueva.
 - Antes de publicar, comprobar que el árbol de trabajo contiene únicamente los cambios previstos, ejecutar todos los tests y validar el proyecto. Los archivos ajenos al alcance no se incorporan al commit sin autorización.
 - Incrementar la versión de parche de `system.json` y actualizar en el mismo cambio la versión incluida en la URL `download`.
 - La etiqueta sigue el formato `v<versión>`, por ejemplo `v0.0.100`, y debe coincidir exactamente con la versión declarada en `system.json`.
