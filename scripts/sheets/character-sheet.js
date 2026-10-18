@@ -1,3 +1,4 @@
+import { removeManeuverProtection } from "../rules/maneuver-protection.js";
 import { CHARACTERISTIC_KEYS, calculateDerivedAttributes } from "../rules/derived-attributes.js";
 import {
   CULTURES,
@@ -735,6 +736,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async #toggleStatus(event) {
     if (!this.isEditable) return;
+    if (event.currentTarget.dataset.statusToggle === "maneuverProtected" && !event.currentTarget.checked) {
+      return removeManeuverProtection(this.actor);
+    }
     await this.actor.toggleStatusEffect(event.currentTarget.dataset.statusToggle, {
       active: event.currentTarget.checked
     });

@@ -25,6 +25,7 @@ export const ENTANGLED_STATUS_ID = "entangled";
 export const IMPALED_STATUS_ID = "impaled";
 
 export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
+  { id: "maneuverProtected", name: "MYTHRASF.Status.ManeuverProtected", img: "icons/svg/shield.svg", assignment: "maneuver" },
   { id: "braced", name: "MYTHRASF.Status.Braced", img: "icons/svg/shield.svg" },
   { id: IMPALED_STATUS_ID, name: "MYTHRASF.Status.Impaled",
     img: "icons/svg/blood.svg" },

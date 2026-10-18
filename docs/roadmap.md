@@ -48,9 +48,11 @@ extracción. Las fronteras y restricciones del refactor están detalladas en
 
 ## 5. Integrar las acciones diferenciales pendientes
 
-Conectar Forcejear, Maniobrar, Ponerse en Pie y Cargar con la transacción
+Conectar Forcejear, Ponerse en Pie y Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
-pero la resolución sigue siendo guiada.
+pero la resolución de esas acciones sigue siendo guiada. Maniobrar ya utiliza
+una enfrentada de Evadir con una respuesta individual por rival y confirmación
+de consecuencias.
 
 ## 6. Implementar venenos, enfermedades y trampas
 

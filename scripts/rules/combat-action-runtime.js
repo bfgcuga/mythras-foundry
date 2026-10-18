@@ -1,3 +1,4 @@
+import { ruleHelpButton, openRuleHelp } from "../ui/rule-help.js";
 import { unarmedAbilities } from "./unarmed-combat.js";
 import { isGrabbed } from "./grappling.js";
 import { currentActionPoints } from "./action-points.js";
@@ -25,6 +26,7 @@ import { COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
 const SCOPE = "mythras-foundry";
 const FLAG = "combatActions";
 const SOCKET = "system.mythras-foundry";
+const pendingManeuverRequests = new Set();
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const localize = (key) => game.i18n.localize(key);
 
@@ -71,7 +73,8 @@ export function actionPresentation(actor) {
       || Number(combat?.turn) !== Number(entry.appliedTurn));
   return combatActionPresentation({ inCombat: Boolean(combat?.started && combatant),
     isActive: combat?.combatant?.id === combatant?.id, actionPoints: currentActionPoints(actor),
-    canTakeProactiveTurn: conditions.capabilities.canTakeProactiveTurn,
+    canTakeProactiveTurn: conditions.capabilities.canTakeProactiveTurn
+      && !Object.values(state.actions).some((action) => action.combatantId === combatant?.id && action.status === "awaitingContest"),
     canAttack: conditions.capabilities.canAttack,
     engaged: isEngaged(tacticalState(combat).relations, combatant?.id),
     prone: actor?.statuses?.has?.("prone"), hasRangedWeapon: modes.some((mode) =>
@@ -274,8 +277,8 @@ export function actionCard(action) {
   }).join("") ?? "";
   const confirmation = action.status === "awaitingConfirmation"
     ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.CombatEffect.Confirm"))}</button><button type="button" data-action-transaction="cancel">${escape(localize("MYTHRASF.Cancel"))}</button></div>` : "";
-  const help = action.key === "brace" ? `<button type="button" class="sheet-icon-button" data-action-help="brace"
-    title="${escape(localize("MYTHRASF.Combat.CheckHelp"))}" aria-label="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"><i class="fas fa-circle-question" aria-hidden="true"></i></button>` : "";
+  const help = ["brace", "maneuver"].includes(action.key)
+    ? ruleHelpButton(`data-action-help="${escape(action.key)}"`) : "";
   return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
 }
 
@@ -285,6 +288,13 @@ async function save(combat, state) {
 }
 
 async function createTransaction(context, key, parameters = {}) {
+  if (key === "maneuver") {
+    const { validateManeuverSelection } = await import("./maneuver-runtime.js");
+    if (!activeContext(context.combatant.actor) || !await validateManeuverSelection(context.combat,
+      context.combatant.actor, context.combatant.token?.uuid, parameters, game.user)) {
+      ui.notifications.warn(localize("MYTHRASF.Maneuver.InvalidParticipants")); return null;
+    }
+  }
   const definition = COMBAT_ACTIONS[key];
   if (!definition || !await spend(context.combatant.actor, definition.cost)) {
     ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints")); return null;
@@ -333,7 +343,7 @@ async function chooseReadyWeapon(actor) {
 
 export async function executeAction(combat, action) {
   const state = combatActionState(combat); const current = state.actions[action.id];
-  if (!current || current.status === "resolved") return;
+  if (!current || ["resolved", "cancelled", "awaitingContest"].includes(current.status)) return;
   const combatant = combat.combatants.get(current.combatantId); const actor = combatant?.actor;
   if (!actor) { current.status = "awaitingConfirmation"; current.note = localize("MYTHRASF.Action.MissingActor"); }
   else if (current.key === "delay") {
@@ -348,6 +358,17 @@ export async function executeAction(combat, action) {
     const braced = actor.effects.filter((effect) => effect.statuses?.has?.("braced"));
     if (braced.length) await actor.deleteEmbeddedDocuments("ActiveEffect", braced.map((effect) => effect.id));
     delete state.braces[combatant.id]; current.status = "resolved";
+  } else if (current.key === "maneuver") {
+    const { startManeuverContest } = await import("./maneuver-runtime.js");
+    current.status = "awaitingContest";
+    current.revision += 1; await save(combat, state);
+    try { await startManeuverContest(combat, current, actor); }
+    catch (error) {
+      current.status = "awaitingConfirmation"; current.note = error.message;
+      await save(combat, state); await updateCard(current);
+      ui.notifications.warn(error.message);
+    }
+    return;
   } else if (current.key === "brace") {
     if (!actor.statuses?.has?.("braced")) await applyTimedCondition(actor, {
       key: "braced", statusId: "braced", name: localize("MYTHRASF.Status.Braced"),
@@ -388,6 +409,7 @@ export async function executeAction(combat, action) {
 }
 
 async function updateCard(action) {
+  if (action.key === "maneuver" && action.status === "awaitingContest") return;
   const message = action.messageUuid ? await fromUuid(action.messageUuid) : null;
   if (message) await message.update({ content: actionCard(action),
     [`flags.${SCOPE}.combatAction.revision`]: action.revision });
@@ -398,12 +420,20 @@ export async function requestCombatAction(actor, key) {
   if (!context || (!game.user.isGM && !actor.isOwner) || !actionAvailability(actor)[key]) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.turn"));
   }
+  if (key === "maneuver" && pendingManeuverRequests.has(actor.uuid)) return;
+  if (key === "maneuver") pendingManeuverRequests.add(actor.uuid);
+  try {
   let parameters = {};
   if (key === "releaseGrab") return requestGrabRelease(actor);
   if (key === "recoverImpaledWeapon") return requestRecoverImpaledWeapon(actor);
   if (key === "releaseWeapon") return requestWeaponRelease(actor);
   if (key === "releaseEntangle") return requestEntangleRelease(actor);
   if (key === "entangleTrip") return requestEntangleTrip(actor);
+  if (key === "maneuver") {
+    const { chooseManeuverRivals } = await import("./maneuver-runtime.js");
+    parameters = await chooseManeuverRivals(actor, context.combatant.token?.uuid);
+    if (!parameters) return;
+  }
   if (key === "move") { parameters = await chooseMovement(context); if (!parameters) return; }
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }
   if (["mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {
@@ -430,6 +460,7 @@ export async function requestCombatAction(actor, key) {
   const action = await createTransaction(context, key, parameters); if (!action) return;
   Hooks.callAll("mythrasCombatActionDeclared", context.combat, action);
   if (action.status === "resolving") await executeAction(context.combat, action);
+  } finally { if (key === "maneuver") pendingManeuverRequests.delete(actor.uuid); }
 }
 
 async function applyCardRequest(request) {
@@ -457,7 +488,8 @@ async function applyCardRequest(request) {
   } else if (["confirm", "cancel"].includes(request.operation)) {
     const actor = combat.combatants.get(action.combatantId)?.actor;
     if (!user.isGM && !actor?.testUserPermission(user, "OWNER")) return;
-    action.status = request.operation === "confirm" ? "resolved" : "cancelled";
+    if (action.key === "maneuver" && action.status !== "awaitingConfirmation") return;
+    action.status = request.operation === "confirm" ? (action.key === "maneuver" ? "resolving" : "resolved") : "cancelled";
     action.note = request.note ?? action.note; action.resolvedAt = Date.now();
   }
   action.revision += 1; await save(combat, state); await updateCard(action);
@@ -469,12 +501,10 @@ async function applyCardRequest(request) {
 export function activateCombatActionCard(message, html) {
   const reference = message.getFlag?.(SCOPE, "combatAction"); if (!reference) return;
   const root = html instanceof HTMLElement ? html : html?.[0];
-  root?.querySelectorAll?.('[data-action-help="brace"]').forEach((button) => {
-    button.addEventListener("click", () => foundry.applications.api.DialogV2.wait({
-      window: { title: localize("MYTHRASF.Action.brace") }, position: { width: 480 },
-      content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize("MYTHRASF.Status.Description.braced"))}</p></div>`,
-      buttons: [{ action: "close", label: localize("MYTHRASF.Close") }], rejectClose: false
-    }));
+  root?.querySelectorAll?.("[data-action-help]").forEach((button) => {
+    const key = button.dataset.actionHelp;
+    button.addEventListener("click", () => openRuleHelp(localize(`MYTHRASF.Action.${key}`),
+      localize(`MYTHRASF.Status.Description.${key === "brace" ? "braced" : "maneuverProtected"}`)));
   });
   root?.querySelectorAll?.("[data-action-transaction]").forEach((button) => {
     const candidateId = button.dataset.combatantId;
@@ -509,4 +539,14 @@ export async function expireCombatActionTurn(combat, combatantId) {
   if (!combat || !combatantId) return;
   const state = combatActionState(combat); const delay = state.delays[combatantId];
   if (delay?.status === "reserved") { delay.status = "expired"; delay.expiredAt = Date.now(); await save(combat, state); }
+}
+
+
+export async function finishManeuverAction(combat, actionId) {
+  const state = combatActionState(combat); const action = state.actions[actionId];
+  if (!action || action.key !== "maneuver" || action.status !== "awaitingContest") return;
+  action.status = "resolved"; action.resolvedAt = Date.now(); action.revision += 1;
+  await save(combat, state);
+  Hooks.callAll("mythrasCombatActionResolved", combat, action);
+  if (combat.combatant?.id === action.combatantId) await combat.nextTurn();
 }

@@ -5,6 +5,7 @@ import { activateContestCard, registerContestSocket } from "../rules/contest-cha
 import { activateSkillRollCard } from "../rules/skill-roll-chat.js";
 import { activateActionPointSettingVisibility } from "../settings.js";
 import { activateDelayedTooltips } from "../ui/tooltips.js";
+import { clearCombatManeuvers } from "../rules/maneuver-protection.js";
 import { effectiveActionPointMaximum } from "../rules/action-points.js";
 import { getActionPointRules } from "../settings.js";
 import { isCombatCoordinator, restoreCombatActors,
@@ -174,7 +175,10 @@ export function registerUiHooks() {
       await synchronizeCombatantInitiative(combatant);
     }
   });
-  Hooks.on("deleteCombat", async (combat) => restoreCombatActors(combat));
+  Hooks.on("deleteCombat", async (combat) => {
+    if (isCombatCoordinator()) await clearCombatManeuvers(combat);
+    await restoreCombatActors(combat);
+  });
   Hooks.on("combatEnd", async (combat) => {
     await restoreCombatActors(combat);
     if (isCombatCoordinator()) await combat.unsetFlag("mythras-foundry", "tacticalState");

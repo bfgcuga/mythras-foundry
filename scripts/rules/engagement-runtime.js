@@ -7,6 +7,7 @@ import { applyTimedCondition } from "./timed-condition-runtime.js";
 import { weaponCanEquip } from "./weapon-durability.js";
 import { hitLocationDisplayName } from "./hit-locations.js";
 import { clearWeaponPinsBetween, weaponIsPinned } from "./weapon-pinning.js";
+import { actorManeuverRestriction, maneuverAttackRestriction, maneuverTokenUuid } from "./maneuver-protection.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "tacticalState";
@@ -58,8 +59,9 @@ export async function consumeMatchingCombatRuses(combat, { ownerCombatantId,
   return matches;
 }
 export function combatantForActor(combat, actor, tokenUuid = "") {
-  return combat?.combatants?.find((entry) => entry.token?.uuid === tokenUuid
-    || entry.actor?.uuid === actor?.uuid) ?? null;
+  if (!tokenUuid && combat?.combatant && actor?.uuid && combat.combatant.actor?.uuid === actor.uuid) return combat.combatant;
+  return combat?.combatants?.find((entry) => tokenUuid ? entry.token?.uuid === tokenUuid
+    : entry.actor?.uuid === actor?.uuid) ?? null;
 }
 export function preparedMeleeWeapons(actor) {
   const weapons = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
@@ -80,10 +82,12 @@ function side(combatant, weapon, mode) {
     weaponId: weapon?.id ?? "", intrinsicKey: weapon?.intrinsicKey ?? "", weaponName: weapon?.name ?? "",
     modeKey: mode?.key ?? "", modeName: mode?.name ?? "", reach: mode?.reach ?? "" };
 }
-export async function ensureEngagement(combat, attacker, defender, weapon, mode, userId = game.user.id) {
+export async function ensureEngagement(combat, attacker, defender, weapon, mode, userId = game.user.id,
+  { attackerTokenUuid = maneuverTokenUuid(combat, attacker), defenderTokenUuid = maneuverTokenUuid(combat, defender) } = {}) {
+  if (maneuverAttackRestriction(combat, attackerTokenUuid, { actor: defender, uuid: defenderTokenUuid })) return null;
   if (!detailedReachEnabled() || !combat?.started || !["melee", "shield"].includes(mode?.weaponType)) return null;
-  const left = combatantForActor(combat, attacker, attacker.token?.uuid);
-  const right = combatantForActor(combat, defender, defender.token?.uuid);
+  const left = combatantForActor(combat, attacker, attackerTokenUuid);
+  const right = combatantForActor(combat, defender, defenderTokenUuid);
   if (!left || !right) return null;
   const id = engagementId(left.id, right.id); const state = foundry.utils.deepClone(tacticalState(combat));
   if (state.relations[id]) return state.relations[id];
@@ -97,18 +101,31 @@ export async function ensureEngagement(combat, attacker, defender, weapon, mode,
 export function relationFor(combat, leftCombatantId, rightCombatantId) {
   return tacticalState(combat).relations?.[engagementId(leftCombatantId, rightCombatantId)] ?? null;
 }
-export async function validateReachAttack(combat, attacker, defender, weapon, mode) {
+export async function validateReachAttack(combat, attacker, defender, weapon, mode, tokens = {}) {
+  if (actorManeuverRestriction(combat, attacker, defender, tokens.defenderTokenUuid)) return { allowed: false, reason: "maneuver" };
   if (!detailedReachEnabled() || !combat?.started || !["melee", "shield"].includes(mode?.weaponType)) return { allowed: true };
-  const relation = await ensureEngagement(combat, attacker, defender, weapon, mode);
+  const relation = await ensureEngagement(combat, attacker, defender, weapon, mode, game.user.id, tokens);
   const own = combatantForActor(combat, attacker, attacker.token?.uuid);
   const restriction = engagementRestriction(relation, own?.id, mode.reach);
   return restriction.pommel ? { ...restriction, damage: "1d3+1",
     weaponSize: shiftedWeaponSize(mode.size, restriction.effectiveSizeSteps) } : restriction;
 }
 export async function setRelationPosition(combat, relationId, position, { userId = game.user.id,
-  reason = "manual", status = "engaged" } = {}) {
+  reason = "manual", status = "engaged", initiatorCombatantId = "" } = {}) {
   const state = foundry.utils.deepClone(tacticalState(combat)); const relation = state.relations?.[relationId];
   if (!relation) return null;
+  if (status === "engaged" && relation.status !== "engaged") {
+    const sides = Object.values(relation.sides ?? {});
+    if (sides.some((own, index) => {
+      if (initiatorCombatantId && own.combatantId !== initiatorCombatantId) return false;
+      const rival = sides[1 - index];
+      const defender = rival && combat.combatants.get(rival.combatantId)?.actor;
+      return maneuverAttackRestriction(combat, own.tokenUuid, { actor: defender, uuid: rival?.tokenUuid });
+    })) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Maneuver.Blocked"));
+      return null;
+    }
+  }
   Object.assign(relation, { position, status, userId, reason, updatedAt: Date.now(),
     revision: Number(relation.revision ?? 0) + 1 }); state.revision += 1;
   await combat.setFlag(SCOPE, FLAG, state);

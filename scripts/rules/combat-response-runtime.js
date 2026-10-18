@@ -62,7 +62,7 @@ export async function applyChosenTargetTransition(message, current, { token, ent
 export async function applyCombatDefenseTransition(message, request, { clone, flagScope,
   resolveActor, userById, warn, localize, combatById, actionPointRules, spendActionPoint,
   consumePassiveBlock, applyCondition, recordFumbles, consumeSurprise, render, appendRolls,
-  advance, validateParry } = {}) {
+  advance, validateParry, validateAttack } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   const actor = await resolveActor(combat?.defender?.tokenUuid, combat?.defender?.actorUuid);
   const invalid = combat && validateCombatResponse(combat, request,
@@ -71,6 +71,7 @@ export async function applyCombatDefenseTransition(message, request, { clone, fl
     warn(localize(`MYTHRASF.Combat.Rejected.${invalid ?? "state"}`));
     return false;
   }
+  if (validateAttack && !await validateAttack(combat, actor)) return false;
   if (request.defense.type === "parry" && validateParry) {
     if (!Number.isInteger(request.defense.rawRoll) || request.defense.rawRoll < 1 || request.defense.rawRoll > 100) {
       warn(localize("MYTHRASF.Combat.Rejected.invalid")); return false;

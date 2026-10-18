@@ -1,3 +1,4 @@
+import { actorManeuverRestriction, maneuverAttackRestriction, maneuverTokenUuid, releaseManeuverRival } from "./maneuver-protection.js";
 import { intrinsicUnarmedWeapon, hasIntrinsicUnarmed, unarmedAbilities, resolveUnarmedAbility,
   unarmedParrySize, unarmedTouchState } from "./unarmed-combat.js";
 import { isNaturalWeaponMode } from "./passive-block.js";
@@ -276,8 +277,11 @@ function locationSnapshot(item) {
 function activeCombatForActor(actor) {
   const combat = game.combat ?? game.combats?.active;
   if (!combat?.started) return null;
-  const candidates = combat.combatants.filter((entry) => entry.actor?.uuid === actor?.uuid
-    || (actor?.token?.id && entry.tokenId === actor.token.id));
+  const candidates = combat.combatants.filter((entry) => actor?.token?.uuid
+    ? entry.token?.uuid === actor.token.uuid : entry.actor?.uuid === actor?.uuid);
+  if (candidates.length > 1 && combat.combatant?.actor?.uuid === actor?.uuid) {
+    return { combat, combatant: combat.combatant };
+  }
   if (candidates.length !== 1) return { combat, invalid: "participation" };
   return { combat, combatant: candidates[0] };
 }
@@ -413,7 +417,11 @@ function attackSetupFields(actor, suggestedTarget = null, mode = null) {
   const targets = visibleTargets(actor);
   if (!targets.length) return "";
   const suggestedUuid = tokenUuid(suggestedTarget);
-  const options = targets.map((token) => `<option value="${escape(tokenUuid(token))}" ${tokenUuid(token) === suggestedUuid ? "selected" : ""}>${escape(tokenDisplayName(token))}</option>`).join("");
+  const tracker = activeCombatForActor(actor)?.combat ?? game.combat;
+  const options = targets.map((token) => {
+    const blocked = maneuverAttackRestriction(tracker, maneuverTokenUuid(tracker, actor), { actor: token.actor, uuid: tokenUuid(token) });
+    return `<option value="${escape(tokenUuid(token))}" ${blocked ? "disabled" : ""} ${!blocked && tokenUuid(token) === suggestedUuid ? "selected" : ""}>${escape(tokenDisplayName(token))}${blocked ? ` — ${escape(localize("MYTHRASF.Maneuver.Blocked"))}` : ""}</option>`;
+  }).join("");
   return `<fieldset class="combat-attack-setup"><legend>${escape(localize("MYTHRASF.Combat.AttackSetup"))}</legend><label><span>${escape(localize("MYTHRASF.Combat.Defender"))}</span><select name="targetTokenUuid">${options}</select></label><label><span>${escape(localize("MYTHRASF.Combat.DefenseDeclaredBefore"))}</span><input type="checkbox" class="sheet-state-box" name="predeclared"></label><label><span>${escape(localize("MYTHRASF.Combat.ContainedBlow"))}</span><input type="checkbox" class="sheet-state-box" name="containedBlow"></label><label><span>${escape(localize("MYTHRASF.Combat.ExtraordinaryDamage"))}</span><input type="text" name="extraordinaryDamage" placeholder="0"></label></fieldset>${rangedSetupFields(mode)}`;
 }
 
@@ -477,6 +485,10 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   const targetToken = await fromUuid(setup.targetTokenUuid);
   const defender = targetToken?.actor;
   if (!defender) return ui.notifications.warn(localize("MYTHRASF.Combat.TargetUnavailable"));
+  const maneuverTracker = activeCombatForActor(actor)?.combat ?? game.combat;
+  if (actorManeuverRestriction(maneuverTracker, actor, defender, setup.targetTokenUuid)) {
+    return ui.notifications.warn(localize("MYTHRASF.Maneuver.Blocked"));
+  }
   let ranged = null;
   if (["ranged", "siege"].includes(mode.weaponType)) {
     const ranges = modeRangeProfile(mode);
@@ -534,17 +546,18 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     `MYTHRASF.Tracker.Rejected.${turnEconomy.invalid}`));
   if (turnEconomy) {
     const defenderEntry = game.combats.get(turnEconomy.combatId)?.combatants.find((entry) =>
-      entry.token?.uuid === setup.targetTokenUuid || entry.actor?.uuid === defender.uuid);
+      entry.token?.uuid === setup.targetTokenUuid);
     if (!defenderEntry) return ui.notifications.warn(localize(
       "MYTHRASF.Tracker.Rejected.participation"));
     turnEconomy.defenderCombatantId = defenderEntry.id;
   }
   let reachRule = { allowed: true };
   if (turnEconomy) reachRule = await validateReachAttack(game.combats.get(turnEconomy.combatId),
-    actor, defender, weapon, mode);
+    actor, defender, weapon, mode, { defenderTokenUuid: setup.targetTokenUuid });
+  if (reachRule.reason === "maneuver") return ui.notifications.warn(localize("MYTHRASF.Maneuver.Blocked"));
   if (!reachRule.allowed) {
     const relation = turnEconomy ? await ensureEngagement(game.combats.get(turnEconomy.combatId),
-      actor, defender, weapon, mode) : null;
+      actor, defender, weapon, mode, game.user.id, { defenderTokenUuid: setup.targetTokenUuid }) : null;
     const ownId = turnEconomy?.combatantId;
     const targetSide = Object.entries(relation?.sides ?? {}).find(([id]) => id !== ownId)?.[1];
     const attackWeapon = targetSide?.weaponId && await foundry.applications.api.DialogV2.confirm({
@@ -572,6 +585,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   if (turnEconomy && !await spendActionPoint(actor)) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
   }
+  await releaseManeuverRival(maneuverTracker, actor, setup.targetTokenUuid, maneuverTokenUuid(maneuverTracker, actor));
   await clearAim(actor);
   let ammunition = null;
   if (ranged && mode.ammoTracking) {
@@ -639,6 +653,10 @@ export async function createResolvedReactionAttack({ tracker, attackerCombatantI
   const actor = attackerEntry?.actor; const defender = defenderEntry?.actor;
   const weapon = intrinsicKey === "puno-patada" ? intrinsicUnarmedWeapon(actor) : actor?.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
   if (!actor || !defender || !weapon || !mode) return null;
+  if (maneuverAttackRestriction(tracker, attackerEntry.token?.uuid, { actor: defender, uuid: defenderEntry.token?.uuid })) {
+    ui.notifications.warn(localize("MYTHRASF.Maneuver.Blocked")); return null;
+  }
+  await releaseManeuverRival(tracker, actor, defenderEntry.token?.uuid, attackerEntry.token?.uuid);
   const defense = { type: "evade", target: evadeTarget, baseTarget: evadeTarget,
     rawRoll: evadeRoll, abilityName: localize("MYTHRASF.Combat.Evade") };
   const resolution = resolveCombatExchange({ attack: { target: attackTarget, rawRoll: attackRoll },
@@ -887,6 +905,11 @@ async function applyCombatDefense(message, request) {
     warn: (text) => ui.notifications.warn(text), localize,
     combatById: (id) => game.combats.get(id), actionPointRules: getActionPointRules,
     spendActionPoint, consumePassiveBlock, applyCondition: applyTimedCondition,
+    validateAttack: (data, defender) => {
+      const tracker = game.combats.get(data.turnEconomy?.combatId) ?? game.combat;
+      if (!maneuverAttackRestriction(tracker, data.attacker.tokenUuid, { actor: defender, uuid: data.defender.tokenUuid })) return true;
+      ui.notifications.warn(localize("MYTHRASF.Maneuver.Blocked")); return false;
+    },
     validateParry: canonicalParryDefense,
     recordFumbles: recordCombatResolutionFumbles, consumeSurprise: consumeSurpriseBonus,
     render: renderCombatExchange, appendRolls: appendSerializedRolls,

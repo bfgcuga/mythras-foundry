@@ -11,6 +11,7 @@ import { prepareCombatEndFatigue, prepareRoundConsequences }
   from "../rules/round-consequences.js";
 import { combatActionState, expireCombatActionTurn } from "../rules/combat-action-runtime.js";
 import { renderInitiativeChat } from "../rules/initiative-chat.js";
+import { clearCombatManeuvers } from "../rules/maneuver-protection.js";
 
 const SCOPE = "mythras-foundry";
 const FLAG = "turnEconomy";
@@ -106,7 +107,10 @@ export class MythrasCombat extends Combat {
   }
 
   async endCombat() {
-    if (coordinator() === game.user.id) await prepareCombatEndFatigue(this);
+    if (coordinator() === game.user.id) {
+      await prepareCombatEndFatigue(this);
+      await clearCombatManeuvers(this);
+    }
     return super.endCombat();
   }
 

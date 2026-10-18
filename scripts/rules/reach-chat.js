@@ -1,3 +1,5 @@
+import { maneuverAttackRestriction, releaseManeuverRival } from "./maneuver-protection.js";
+import { ruleHelpButton } from "../ui/rule-help.js";
 import { intrinsicUnarmedWeapon, resolveUnarmedAbility } from "./unarmed-combat.js";
 import { isGrabbed } from "./grappling.js";
 import { classifyContestRoll } from "./contest-rolls.js";
@@ -85,6 +87,11 @@ export async function requestReachChange(actor, { manual = false } = {}) {
 async function respond(message, state, type, manual = false) {
   const combat = game.combats.get(state.combatId); const target = combat?.combatants.get(state.targetCombatantId);
   const actor = target?.actor; if (!actor || (!game.user.isGM && !actor.isOwner)) return;
+  const initiator = combat.combatants.get(state.actorCombatantId);
+  if (type === "attack" && maneuverAttackRestriction(combat, target.token?.uuid,
+    { actor: initiator?.actor, uuid: initiator?.token?.uuid })) {
+    return ui.notifications.warn(game.i18n.localize("MYTHRASF.Maneuver.Blocked"));
+  }
   let response = { type };
   if (type !== "none") {
     if (type === "evade") {
@@ -120,10 +127,14 @@ async function apply(message, request) {
   const user = game.users.get(request.userId);
   if (!state || state.status !== "awaitingResponse" || state.revision !== request.revision || !user
     || (!user.isGM && !target?.actor?.testUserPermission(user, "OWNER"))) return;
-  if (isGrabbed(combat.combatants.get(state.actorCombatantId)?.actor)) return;
+  const actor = combat.combatants.get(state.actorCombatantId);
+  if (!actor || isGrabbed(actor.actor)) return;
+  if (request.response?.type === "attack" && maneuverAttackRestriction(combat, target.token?.uuid,
+    { actor: actor.actor, uuid: actor.token?.uuid })) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Maneuver.Blocked"));
   const response = request.response; let succeeds = response.type === "none"; let winner = null;
   if (response.type !== "none" && !await spend(target.actor)) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Tracker.Rejected.actionPoints"));
+  if (response.type === "attack") await releaseManeuverRival(combat, target.actor, actor.token?.uuid, target.token?.uuid);
   if (response.type !== "none") {
     winner = opposedEffectWinner({ leftResult: state.evade.result, leftRoll: state.evade.rawRoll,
       rightResult: response.result, rightRoll: response.rawRoll });
@@ -131,7 +142,7 @@ async function apply(message, request) {
   }
   if (succeeds) await setRelationPosition(combat, state.relationId,
     state.intent === "disengage" ? "neutral" : state.intent, { userId: user.id,
-      reason: "changeReach", status: state.intent === "disengage" ? "disengaged" : "engaged" });
+      reason: "changeReach", initiatorCombatantId: state.actorCombatantId, status: state.intent === "disengage" ? "disengaged" : "engaged" });
   state.status = "resolved"; state.response = response; state.winner = winner;
   state.outcome = response.type === "attack" && winner === "right" ? "changedAndHit"
     : succeeds ? "changed" : "resisted"; state.revision += 1;
@@ -213,7 +224,7 @@ export function renderTacticalOverview(combat) {
   const addButton = (action, label) => { const enabled = game.user?.isGM || (action === "add-cover"
     && combatants.some((entry) => entry.actor?.isOwner && state.covers?.[entry.id]?.status !== "active"));
     return `<button type="button" class="sheet-add-button" data-tactical-action="${action}" title="${escape(label)}" aria-label="${escape(label)}" ${enabled ? "" : "disabled"}><i class="fas fa-plus" aria-hidden="true"></i></button>`; };
-  return `<div class="mythras-foundry mythras-dialog">${title("MYTHRASF.Reach.RelationsTable")}<table><thead><tr><th>A</th><th>B</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Engagement"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Reach"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Position"))}</th><th>${addButton("add-relation", game.i18n.localize("MYTHRASF.Reach.CreateRelation"))}</th></tr></thead><tbody>${rows}</tbody></table>${title("MYTHRASF.PassiveBlock.Table")}<table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Edit"))}</th></tr></thead><tbody>${blocks}</tbody></table>${title("MYTHRASF.Ranged.CoversTable")}<table class="tactical-cover-table"><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverSource"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverProtection"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th><th><span>CCP</span><button type="button" class="sheet-icon-button tactical-help-button" data-tactical-action="explain-complete-cover" title="${escape(game.i18n.localize("MYTHRASF.Ranged.CompleteCover"))}" aria-label="${escape(game.i18n.localize("MYTHRASF.Ranged.CompleteCover"))}">?</button></th><th>${addButton("add-cover", game.i18n.localize("MYTHRASF.Ranged.DeclareCover"))}</th></tr></thead><tbody>${covers}</tbody></table>${renderReachReference()}</div>`;
+  return `<div class="mythras-foundry mythras-dialog">${title("MYTHRASF.Reach.RelationsTable")}<table><thead><tr><th>A</th><th>B</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Engagement"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Reach"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Reach.Position"))}</th><th>${addButton("add-relation", game.i18n.localize("MYTHRASF.Reach.CreateRelation"))}</th></tr></thead><tbody>${rows}</tbody></table>${title("MYTHRASF.PassiveBlock.Table")}<table><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Weapon.Name"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Edit"))}</th></tr></thead><tbody>${blocks}</tbody></table>${title("MYTHRASF.Ranged.CoversTable")}<table class="tactical-cover-table"><thead><tr><th>${escape(game.i18n.localize("MYTHRASF.Combat.Defender"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverSource"))}</th><th>${escape(game.i18n.localize("MYTHRASF.HitLocations"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Ranged.CoverProtection"))}</th><th>${escape(game.i18n.localize("MYTHRASF.Contest.StatusLabel"))}</th><th><span>CCP</span>${ruleHelpButton('data-tactical-action="explain-complete-cover"', game.i18n.localize("MYTHRASF.Ranged.CompleteCover"))}</th><th>${addButton("add-cover", game.i18n.localize("MYTHRASF.Ranged.DeclareCover"))}</th></tr></thead><tbody>${covers}</tbody></table>${renderReachReference()}</div>`;
 }
 function weaponOptions(combat, combatantId, selected = "") {
   const combatant = combat.combatants.get(combatantId);
@@ -270,7 +281,7 @@ async function createRelationFromDialog(combat) {
     await setRelationWeapons(combat, relation.id, { [result.left.combatantId]: result.left,
       [result.right.combatantId]: result.right });
     await setRelationPosition(combat, relation.id, initialReachPosition(mode.reach, rightMode.reach),
-      { status: "engaged", reason: "gmCreation" });
+      { status: "engaged", reason: "gmCreation", initiatorCombatantId: leftCombatant.id });
   }
 }
 function tacticalMenuContent(combat) { return renderTacticalOverview(combat); }

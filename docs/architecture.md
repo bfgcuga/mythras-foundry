@@ -513,8 +513,9 @@ Las acciones generales se definen en `scripts/rules/combat-actions.js`, que no
 depende de Foundry y calcula disponibilidad, movimiento, cargas, Afianzarse y
 prioridad de interrupción. El controlador persiste su estado en
 `flags.mythras-foundry.combatActions`: las colecciones de acciones, reservas de
-Retrasar, movimiento, Afianzarse, restricciones de Maniobrar y progresos de
-Aprestar comparten una revisión. Las tarjetas usan el mismo coordinador por
+Retrasar, movimiento y progresos de Aprestar comparten una revisión. Los mapas
+históricos de Afianzarse y restricciones de Maniobrar se conservan por
+compatibilidad del esquema, pero no son fuentes de efectos operativos. Las tarjetas usan el mismo coordinador por
 socket que el resto del combate. Las acciones guiadas conservan su coste,
 parámetros, usuario y confirmación sin crear reglas de magia o monturas que el
 sistema todavía no representa.
@@ -1099,3 +1100,53 @@ las nuevas acciones no lo escriben y el indicador táctico consulta el estado.
 `braceSize` conserva el cálculo situacional de TAM (×1,5 ante Empujones y ×2 ante
 Golpetazos); el estado no modifica el TAM base. El recuadro compartido de Estado
 se titula «Modificadores aplicados» porque reúne ajustes positivos y negativos.
+
+
+### Maniobrar: enfrentada y protección por token
+
+`maneuver-runtime.js` valida la selección de tokens de la escena, exige Evadir
+antes de cobrar 1 PA y conecta la acción con `contest-chat.js`. La tarjeta de la
+acción se transforma en la enfrentada existente: un iniciador individual frente
+a un equipo con respuestas individuales. Cada propietario o el DJ tira Evadir;
+las respuestas no gastan PA. No hay inferencia de bandos: el selector respeta la
+visibilidad, preselecciona objetivos actuales e incluye marcar/desmarcar todos.
+Los participantes sin Evadir se muestran deshabilitados y con explicación.
+
+`createContestMessage` acepta un cuarto argumento opcional con `actionContext`,
+`requiredAbilitySlug`, `initiatorTokenUuid` y `message` para reutilizar una tarjeta.
+`openContestResponseDialog` acepta `requiredAbilitySlug` y no ofrece habilidades
+alternativas ni tiradas especiales en ese caso. El coordinador vuelve a validar
+la habilidad e impone las condiciones físicas del Actor al calcular el objetivo.
+La cola por mensaje serializa respuestas, Suerte y confirmación. Para estas
+acciones admite respuestas simultáneas de participantes distintos basadas en una
+revisión anterior, siempre que sigan pendientes; rechaza duplicados y revisiones
+futuras. Suerte conserva revisión estricta y se cobra en el coordinador.
+
+Mientras falten tiradas o confirmación, la acción permanece `awaitingContest` y
+no avanza el turno. La tarjeta permite Suerte hasta confirmar. El ejecutor o el
+DJ confirma mediante `contestActionConfirm`; el coordinador verifica permisos,
+combate y asalto vigentes, aplica únicamente las victorias del ejecutor y cierra
+la acción una sola vez. Empates exactos y fallos mutuos terminan sin protección;
+no se ofrecen repetir, reabrir ni Suerte tras confirmar esta acción.
+
+`maneuver-protection.js` concentra el ActiveEffect canónico `maneuverProtected`
+y la consulta de restricciones. La condición temporal conserva `combatUuid`,
+`appliedRound`, `protectedTokenUuid`, `restrictedTokenUuids`, nombres auxiliares
+y `actionIds`. Los UUID de TokenDocument son la identidad operativa; los nombres
+solo sirven como respaldo de presentación. Maniobras sucesivas unen rivales sin
+duplicados. Estado muestra «Protegido por maniobra (rivales…)» en PJ y PNJ y
+permite retirarlo; una hoja de Actor sintético filtra por su token.
+
+Confirmar destraba las relaciones existentes con los rivales vencidos mediante
+la operación normal, incluidas sus limpiezas. La restricción bloquea ataques
+cuerpo a cuerpo, a distancia y de reacción y la creación/reactivación de trabas,
+aunque esté desactivado el alcance detallado. La interfaz informa del bloqueo y
+los ejecutores vuelven a comprobarlo; seleccionar el token como objetivo sigue
+permitido. Declarar un ataque válido contra un rival elimina solo a ese rival de
+la protección propia, aunque falle. Cancelar o rechazar el ataque no la consume.
+El efecto desaparece al vaciarse la lista, al final del asalto actual o al terminar
+el combate. No se escribe un segundo registro en `maneuverRestrictions`.
+
+Las ayudas de acciones, comprobaciones de combate y cobertura táctica usan
+`ruleHelpButton` y `.mythras-help-button`, con el mismo icono, tamaño, alineación,
+foco y hover. El clic abre un DialogV2 y el tooltip compartido describe el botón.

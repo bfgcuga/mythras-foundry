@@ -81,7 +81,7 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - El resultado o total operativo usa `mythras-chat-total`, con borde y valor en negrita.
 - Las tarjetas interactivas de combate conservan sus controles, pero siguen la misma jerarquía de título, desglose etiquetado y total destacado.
 
-- La información adicional de reglas en el chat usa un botón `sheet-icon-button` con interrogación en círculo, `aria-label` y título localizados. Al pulsarlo abre un `DialogV2` de ayuda, siguiendo las ayudas de comprobaciones de combate; el tooltip compartido describe el botón y no sustituye la explicación.
+- La información adicional de reglas en el chat y la situación táctica reutiliza `ruleHelpButton` de `scripts/ui/rule-help.js`: clases `sheet-icon-button mythras-help-button`, icono `fas fa-circle-question`, `aria-label` y título localizados. Tamaño, alineación, foco y hover se definen una sola vez en el CSS compartido; no usar interrogaciones de texto ni variantes locales. Al pulsarlo abre un `DialogV2` de ayuda, siguiendo las ayudas de comprobaciones de combate; el tooltip compartido describe el botón y no sustituye la explicación.
 
 ## Implementación
 

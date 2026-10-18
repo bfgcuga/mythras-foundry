@@ -7,6 +7,7 @@ import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG,
 import { activeStatusRules } from "./statuses.js";
 import { actorHasVitalEntanglement, actorIsRooted } from "./entanglement.js";
 import { impalementConditionDescriptors } from "./impalement.js";
+import { maneuverEffects, MANEUVER_STATUS } from "./maneuver-protection.js";
 
 const actorItems = (actor) => Array.from(actor?.items ?? []);
 
@@ -28,7 +29,8 @@ export function actorConditionState(actor, { fatigueKey = actor?.system?.fatigue
       || actor?.statuses?.has?.(INCAPACITATED_STATUS_ID)),
     loadState,
     armorPenalty: armorInitiativePenalty(armors),
-    statuses: activeStatusRules(actor?.statuses)
+    statuses: activeStatusRules(actor?.statuses).filter((status) => status.id !== MANEUVER_STATUS
+      || maneuverEffects(actor, actor?.token?.uuid).length)
   });
 }
 

@@ -394,7 +394,6 @@
   justify-content: space-between;
   gap: 0.4rem;
 }
-.mythras-chat-card .combat-check-help { flex: 0 0 auto; }
 .mythras-chat-card .combat-check-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .mythras-chat-card .combat-check-detail { display: grid; gap: 0.1rem; }
 .mythras-chat-card .combat-check-detail > strong,
@@ -3323,7 +3322,6 @@
 .mythras-foundry .tactical-cover-location-cell span { flex: 1 1 auto; }
 .mythras-foundry .tactical-cover-location-cell button,
 .mythras-foundry .tactical-row-actions button { flex: 0 0 auto; }
-.mythras-foundry .tactical-help-button { display: inline-grid; width: 1.2rem; padding: 0; }
 .mythras-foundry .tactical-control-row {
   display: grid;
   grid-auto-flow: column;
@@ -3417,3 +3415,38 @@
 .manual-roll-dialog .manual-roll-error {
   color: #a1241b;
 }
+
+
+/* Shared rule help in sheets, dialogs and chat. */
+.mythras-foundry .mythras-help-button,
+.mythras-chat-card .mythras-help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1.4rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mythras-ink);
+  box-shadow: none;
+  font-size: var(--mythras-font-size-table);
+  line-height: 1;
+  vertical-align: middle;
+}
+.mythras-foundry .mythras-help-button:hover,
+.mythras-chat-card .mythras-help-button:hover,
+.mythras-foundry .mythras-help-button:focus-visible,
+.mythras-chat-card .mythras-help-button:focus-visible {
+  color: var(--mythras-accent);
+  box-shadow: 0 0 0 1px var(--mythras-accent);
+  outline: none;
+}
+.mythras-help-button i { margin: 0; font-size: inherit; }
+.maneuver-candidate { display: flex; align-items: center; gap: 0.5rem; }
+.maneuver-candidate img { width: 2rem; height: 2rem; object-fit: cover; border: 0; }
+.maneuver-selection-actions { display: flex; gap: 0.5rem; }

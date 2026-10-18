@@ -110,7 +110,9 @@ El sistema incluye actualmente:
   vez. El movimiento es una declaración táctica, Retrasar abre ventanas de
   interrupción ordenadas por iniciativa y las acciones de magia y montura se
   conservan como confirmaciones guiadas; Titubear consume explícitamente un
-  turno propio de las condiciones temporales;
+  turno propio de las condiciones temporales. Maniobrar solicita Evadir contra
+  cada rival elegido en la escena: el ejecutor tira una vez y cada rival responde
+  individualmente. Permite Suerte antes de confirmar las consecuencias;
 - el cuadro de acciones de Combate permanece siempre visible y muestra el coste
   y la causa localizada cuando una acción no puede utilizarse;
 - el cuadro de acciones encabeza la pestaña Combate tanto en personajes como en PNJ;
@@ -486,3 +488,12 @@ PNJ; Mover lo retira automáticamente. Su tarjeta muestra el nombre vigente del
 personaje y ofrece una interrogación en círculo que abre la explicación al pulsar.
 El panel de Estado se denomina **Modificadores aplicados** para incluir tanto
 bonificaciones como penalizaciones.
+
+
+Maniobrar aplica **Protegido por maniobra (rivales…)** en Estado hasta el final
+del asalto actual. Destraba de los rivales vencidos e impide que ataquen o inicien
+una traba con ese token. Declarar un ataque contra uno de ellos libera solo a ese
+rival de la restricción. Empates y fallos mutuos no conceden protección. El selector
+incluye objetivos actuales, retratos y marcar/desmarcar todos; los tokens sin
+Evadir aparecen deshabilitados. Las ayudas de chat y situación táctica comparten
+interrogación en círculo y explicación mediante clic.

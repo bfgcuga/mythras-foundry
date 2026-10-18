@@ -1,3 +1,5 @@
+import { maneuverCondition, maneuverEffects, MANEUVER_STATUS } from "../rules/maneuver-protection.js";
+import { tokenDisplayName } from "../rules/document-names.js";
 import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID } from "../rules/incapacitated.js";
 import { activeStatusRules, STUNNED_STATUS_ID,
@@ -24,14 +26,16 @@ export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
             `MYTHRASF.Status.IncapacitatedCause.${cause}`)).join(", ")
         }) : ""
     }] : []),
-    ...Array.from(actor.statuses).filter((id) => id !== INCAPACITATED_STATUS_ID)
+    ...Array.from(actor.statuses).filter((id) => id !== INCAPACITATED_STATUS_ID
+      && (id !== MANEUVER_STATUS || maneuverEffects(actor, actor.token?.uuid).length))
       .map((id) => {
         const status = mythrasById.get(id);
         const foundryStatus = configuredById.get(id);
         const name = status?.name ?? foundryStatus?.name ?? foundryStatus?.label ?? id;
         const timed = Array.from(actor.effects ?? []).map((effect) =>
           effect.getFlag?.(TIMED_CONDITION_SCOPE, TIMED_CONDITION_FLAG))
-          .filter((condition) => condition?.statusId === id);
+          .filter((condition) => condition?.statusId === id && (id !== MANEUVER_STATUS
+            || !actor.token?.uuid || condition.protectedTokenUuid === actor.token.uuid));
         const durationNote = timed.map((condition) => {
           const duration = condition.unit === "actorTurn"
             ? game.i18n.format("MYTHRASF.Status.TurnsRemaining", { remaining: condition.remaining })
@@ -47,9 +51,18 @@ export function prepareActiveStatusControls(actor, { fatigueKey = "fresh",
           return [duration, location, source].filter(Boolean).join(" — ");
         })
           .join("; ");
+        const rivals = id === MANEUVER_STATUS ? [...new Set(maneuverEffects(actor, actor.token?.uuid)
+          .flatMap((effect) => {
+            const condition = maneuverCondition(effect);
+            return (condition.restrictedTokenUuids ?? []).map((uuid) => {
+              const token = globalThis.fromUuidSync?.(uuid);
+              return tokenDisplayName(token) || condition.rivalNames?.[uuid] || uuid;
+            });
+          }))] : [];
+        const label = game.i18n.has(name) ? game.i18n.localize(name) : name;
         return {
           id,
-          label: game.i18n.has(name) ? game.i18n.localize(name) : name,
+          label: rivals.length ? `${label} (${rivals.join(", ")})` : label,
           locked: false,
           note: durationNote
         };

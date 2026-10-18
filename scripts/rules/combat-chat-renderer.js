@@ -1,3 +1,4 @@
+import { ruleHelpButton } from "../ui/rule-help.js";
 import { evasionWinner } from "./combat.js";
 import { pinConsequenceHtml } from "./weapon-pin-runtime.js";
 import { combatRollLuckAllowed } from "./combat-luck-availability.js";
@@ -87,11 +88,7 @@ function combatCheckHtml(check, combat) {
   const reason = wound ? game.i18n.format("MYTHRASF.Combat.WoundCheck.Reason", {
     wound: localize(`MYTHRASF.Wound.${severity}`), location: check.locationName ?? "—"
   }) : game.i18n.format("MYTHRASF.Combat.CheckReason.Effect", { effect: check.label });
-  const help = `<button type="button" class="sheet-icon-button combat-check-help"
-    data-combat-action="check-help" data-check-id="${escape(check.id)}"
-    title="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"
-    aria-label="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"><i class="fas fa-question"
-    aria-hidden="true"></i></button>`;
+  const help = ruleHelpButton(`data-combat-action="check-help" data-check-id="${escape(check.id)}"`);
   const woundLuck = wound && severity === "major" && combat.damage?.status === "proposed"
     && !(combat.effects?.selections ?? []).some((effect) => effect.status === "pending")
     ? `<button type="button" class="combat-wound-luck-button"
