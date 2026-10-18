@@ -102,6 +102,13 @@ motivaciones, familia, relaciones, secretos y notas. Queda por decidir:
 
 ## Deuda técnica no priorizada
 
+- Resolver la contradicción de `architecture.md` sobre el orden de aplicación
+  del daño y las comprobaciones de Aguante: unos párrafos sitúan la aplicación
+  de PG antes de las consecuencias dependientes de la resistencia, mientras
+  que el párrafo sobre la cola de comprobaciones secundarias exige resolverlas
+  antes de aplicar los PG. Contrastar ambas descripciones con los runtimes y
+  sus pruebas y documentar el flujo vigente de forma coherente, distinguiendo
+  comprobaciones de efectos y de heridas y sus fases.
 - Aplicar los candidatos sin prioridad descritos en
   [`refactoring.md`](refactoring.md): extraer el asistente de creación de
   trasfondo, aligerar la fachada de combate y el registro principal de hooks,

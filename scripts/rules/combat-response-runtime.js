@@ -62,7 +62,7 @@ export async function applyChosenTargetTransition(message, current, { token, ent
 export async function applyCombatDefenseTransition(message, request, { clone, flagScope,
   resolveActor, userById, warn, localize, combatById, actionPointRules, spendActionPoint,
   consumePassiveBlock, applyCondition, recordFumbles, consumeSurprise, render, appendRolls,
-  advance } = {}) {
+  advance, validateParry } = {}) {
   const combat = clone(message.getFlag(flagScope, "combat"));
   const actor = await resolveActor(combat?.defender?.tokenUuid, combat?.defender?.actorUuid);
   const invalid = combat && validateCombatResponse(combat, request,
@@ -70,6 +70,14 @@ export async function applyCombatDefenseTransition(message, request, { clone, fl
   if (!combat || invalid) {
     warn(localize(`MYTHRASF.Combat.Rejected.${invalid ?? "state"}`));
     return false;
+  }
+  if (request.defense.type === "parry" && validateParry) {
+    if (!Number.isInteger(request.defense.rawRoll) || request.defense.rawRoll < 1 || request.defense.rawRoll > 100) {
+      warn(localize("MYTHRASF.Combat.Rejected.invalid")); return false;
+    }
+    const defense = validateParry(actor, combat, request.defense);
+    if (!defense) { warn(localize("MYTHRASF.Combat.Rejected.invalid")); return false; }
+    request = { ...request, defense };
   }
   if (!["none", "cover"].includes(request.defense.type) && combat.turnEconomy
     && !combat.turnEconomy.defenseSpent) {
@@ -379,7 +387,7 @@ export async function applyCombatLuckTransition(message, request, { clone, flagS
     spenderName: actorName(spender.actor), mode: request.mode }];
   if (request.side === "attacker") entry.rawRoll = Number(request.rawRoll);
   else entry.defense.rawRoll = Number(request.rawRoll);
-  const ability = request.side === "attacker" ? actor.items.get(entry.styleId)
+  const ability = request.side === "attacker" ? actor.items.get(entry.abilityId ?? entry.styleId)
     : actor.items.get(entry.defense.abilityId ?? entry.defense.styleId);
   const target = request.side === "attacker" ? entry.target : entry.defense.target;
   await recordFumble(ability, classifyContestRoll(request.rawRoll, target));

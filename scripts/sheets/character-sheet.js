@@ -95,7 +95,7 @@ import { activeSkillStatusPenalties, activeStatusRules,
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
 import { prepareHitLocationTable } from "../ui/hit-location-table.js";
 import { InventorySheetController, prepareInventoryView } from "../ui/inventory-sheet.js";
-import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponView,
+import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponViews,
   splitCombatWeapons } from "../ui/combat-sheet.js";
 import { bindSheetEvents } from "../ui/sheet-events.js";
 import { nextNumberedItemName } from "../rules/item-names.js";
@@ -230,10 +230,9 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       baseAttributes.actionPointsMax,
       effectiveAttributes.actionPointsMax
     );
-    const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon).map((mode) =>
-      prepareCombatWeaponView({ actor: this.actor, weapon, mode, styles: combatStyles,
-        hitLocations, resolveDifficulty: (difficulty) => this.#conditionResolution({
-          baseDifficulty: difficulty, physical: true }).difficulty })));
+    const combatWeapons = prepareCombatWeaponViews({ actor: this.actor, weapons, styles: combatStyles,
+      hitLocations, resolveDifficulty: (difficulty) => this.#conditionResolution({
+        baseDifficulty: difficulty, physical: true }).difficulty });
     const combatWeaponGroups = splitCombatWeapons(combatWeapons);
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,

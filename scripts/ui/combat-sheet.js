@@ -1,3 +1,5 @@
+import { resolveActorConditions, actorLoadState } from "../rules/actor-conditions.js";
+import { intrinsicUnarmedWeapon, unarmedAbilities, resolveUnarmedAbility, hasIntrinsicUnarmed, UNARMED_PROFILE } from "../rules/unarmed-combat.js";
 import { difficultyTarget, resolveWeaponStyle,
   UNTRAINED_COMBAT_STYLE_ID } from "../rules/combat.js";
 import { weaponHandsRequired } from "../rules/equipment.js";
@@ -72,6 +74,31 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
   };
 }
 
+export function prepareIntrinsicCombatView(actor, resolveDifficulty) {
+  const weapon = intrinsicUnarmedWeapon(actor, game.i18n.localize("MYTHRASF.Combat.Unarmed"));
+  if (!weapon) return null;
+  const resolution = resolveUnarmedAbility(actor);
+  const difficulty = resolveDifficulty("standard");
+  const effectiveTarget = difficultyTarget(resolution.target, difficulty);
+  return { intrinsicKey: weapon.intrinsicKey, item: weapon, mode: weaponModes(weapon)[0],
+    displayName: weapon.name, prepared: true, hasDirectStyle: true,
+    styleOptions: unarmedAbilities(actor).map((ability) => ({ id: ability.id, name: ability.name,
+      selected: ability.id === resolution.ability?.id })),
+    baseTarget: resolution.target, effectiveTarget, hasTargetPenalty: resolution.target !== effectiveTarget,
+    difficultyLabel: game.i18n.localize(`MYTHRASF.Difficulty.${difficulty}`),
+    canAttack: Boolean(resolution.ability) && canActorAttack(actor.statuses) && difficulty !== "impossible" };
+}
+
+export function prepareCombatWeaponViews({ actor, weapons, styles, hitLocations, resolveDifficulty }) {
+  const rows = weapons.flatMap((weapon) => weaponModes(weapon)
+    .filter((mode) => !hasIntrinsicUnarmed(actor)
+      || (mode.profileKey || weapon.system.profileKey) !== UNARMED_PROFILE)
+    .map((mode) => prepareCombatWeaponView({ actor, weapon, mode, styles, hitLocations, resolveDifficulty })));
+  const intrinsic = prepareIntrinsicCombatView(actor, resolveDifficulty);
+  if (intrinsic) rows.push(intrinsic);
+  return rows;
+}
+
 export function splitCombatWeapons(rows) {
   return {
     meleeCombatWeapons: rows.filter((row) =>
@@ -123,7 +150,25 @@ export class CombatSheetController {
   async updateWeaponChoice(event) {
     if (!this.editable) return;
     const row = event.currentTarget.closest("[data-item-id]");
-    const weapon = this.actor.items.get(row?.dataset.itemId);
+    const weapon = row?.dataset.intrinsicKey ? intrinsicUnarmedWeapon(this.actor, game.i18n.localize("MYTHRASF.Combat.Unarmed")) : this.actor.items.get(row?.dataset.itemId);
+    if (row?.dataset.intrinsicKey) {
+      const resolution = resolveUnarmedAbility(this.actor, event.currentTarget.value);
+      const difficulty = resolveActorConditions(this.actor, { baseAttributes:
+        this.actor.system.baseAttributes ?? this.actor.system.attributes ?? {},
+        baseDifficulty: "standard", physical: true, loadState: actorLoadState(this.actor) }).difficulty;
+      const target = difficultyTarget(resolution.target, difficulty);
+      const output = row.querySelector("strong.penalized-value");
+      if (output) {
+        output.textContent = `${resolution.target}%`;
+        if (target !== resolution.target) {
+          const modifier = document.createElement("span");
+          modifier.className = "penalized-value-modifier";
+          modifier.textContent = ` (${target}%)`;
+          output.append(modifier);
+        }
+      }
+      return;
+    }
     if (weapon?.type !== "weapon") return;
     const modes = weaponModes(weapon).map((mode) => ({ ...mode }));
     const mode = modes.find((entry) => entry.key === row.dataset.modeKey);
@@ -140,10 +185,10 @@ export class CombatSheetController {
       .querySelectorAll("[data-action='roll-weapon-attack']"))
       .filter((button) => !button.disabled).map((button, index) => {
         const row = button.closest("[data-item-id]");
-        const weapon = this.actor.items.get(row?.dataset.itemId);
+        const weapon = row?.dataset.intrinsicKey ? intrinsicUnarmedWeapon(this.actor, game.i18n.localize("MYTHRASF.Combat.Unarmed")) : this.actor.items.get(row?.dataset.itemId);
         const mode = weapon ? findWeaponMode(weapon, row.dataset.modeKey) : null;
         return { button, index, weaponType: mode?.weaponType,
-          label: row?.querySelector("[data-action='edit-item']")?.textContent?.trim() };
+          label: row?.querySelector("[data-weapon-name], [data-action='edit-item']")?.textContent?.trim() };
       }));
     if (!rows.length) return ui.notifications.warn(
       game.i18n.localize("MYTHRASF.Action.Unavailable.preparedWeapon"));
@@ -165,13 +210,13 @@ export class CombatSheetController {
     if (!canActorAttack(this.actor.statuses)) return ui.notifications.warn(
       game.i18n.localize("MYTHRASF.Status.CannotAttack"));
     const row = event.currentTarget.closest("[data-item-id]");
-    const weapon = this.actor.items.get(row?.dataset.itemId);
+    const weapon = row?.dataset.intrinsicKey ? intrinsicUnarmedWeapon(this.actor, game.i18n.localize("MYTHRASF.Combat.Unarmed")) : this.actor.items.get(row?.dataset.itemId);
     const mode = weapon ? findWeaponMode(weapon, row.dataset.modeKey) : null;
     if (!weapon || !mode || !weaponCanEquip(weapon) || weaponIsPinned(weapon, this.actor) || !weapon.system.equipped
       || weapon.system.activeModeKey !== mode.key) {
       return ui.notifications.warn(game.i18n.localize("MYTHRASF.Weapon.ModeNotPrepared"));
     }
-    const resolution = resolveWeaponStyle({
+    const resolution = weapon.intrinsicKey ? resolveUnarmedAbility(this.actor, row.querySelector("[data-combat-style]")?.value) : resolveWeaponStyle({
       weapon: weaponModeView(weapon, mode),
       styles: this.actor.items.filter((item) => item.type === "combatStyle"),
       selectedStyleId: row.querySelector("[data-combat-style]")?.value,

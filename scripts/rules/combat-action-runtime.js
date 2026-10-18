@@ -1,3 +1,4 @@
+import { unarmedAbilities } from "./unarmed-combat.js";
 import { isGrabbed } from "./grappling.js";
 import { currentActionPoints } from "./action-points.js";
 import { weaponPins, weaponIsPinned } from "./weapon-pinning.js";
@@ -74,7 +75,7 @@ export function actionPresentation(actor) {
     canAttack: conditions.capabilities.canAttack,
     engaged: isEngaged(tacticalState(combat).relations, combatant?.id),
     prone: actor?.statuses?.has?.("prone"), hasRangedWeapon: modes.some((mode) =>
-      ["ranged", "siege"].includes(mode.weaponType)), hasPreparedWeapon: modes.length > 0,
+      ["ranged", "siege"].includes(mode.weaponType)), hasPreparedWeapon: modes.length > 0, hasUnarmedAttack: unarmedAbilities(actor).length > 0,
     hasRestraint: restraintEffects(actor).length > 0,
     grabbed: isGrabbed(actor),
     entangled: activeEntanglements(actor).length > 0,

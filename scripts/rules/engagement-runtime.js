@@ -1,3 +1,4 @@
+import { intrinsicUnarmedWeapon, hasIntrinsicUnarmed, UNARMED_PROFILE } from "./unarmed-combat.js";
 import { engagementId, engagementRestriction, relationSnapshot, reachIndex,
   shiftedWeaponSize } from "./engagements.js";
 import { findWeaponMode, weaponModes } from "./weapon-modes.js";
@@ -61,10 +62,14 @@ export function combatantForActor(combat, actor, tokenUuid = "") {
     || entry.actor?.uuid === actor?.uuid) ?? null;
 }
 export function preparedMeleeWeapons(actor) {
-  return actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
+  const weapons = actor?.items?.filter((item) => item.type === "weapon" && item.system.equipped
     && weaponCanEquip(item) && !weaponIsPinned(item, actor))
-    .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType))
+    .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType)
+      && (!hasIntrinsicUnarmed(actor) || (mode.profileKey || weapon.system.profileKey) !== UNARMED_PROFILE))
       .map((mode) => ({ weapon, mode }))) ?? [];
+  const intrinsic = intrinsicUnarmedWeapon(actor, globalThis.game?.i18n?.localize("MYTHRASF.Combat.Unarmed"));
+  if (intrinsic) weapons.push({ weapon: intrinsic, mode: findWeaponMode(intrinsic, "unarmed") });
+  return weapons;
 }
 export function longestPreparedWeapon(actor) {
   return preparedMeleeWeapons(actor).sort((a, b) => reachIndex(b.mode.reach) - reachIndex(a.mode.reach))[0] ?? null;
@@ -72,7 +77,7 @@ export function longestPreparedWeapon(actor) {
 function side(combatant, weapon, mode) {
   return { combatantId: combatant.id, actorUuid: combatant.actor?.uuid ?? "",
     tokenUuid: combatant.token?.uuid ?? "", actorName: combatant.name,
-    weaponId: weapon?.id ?? "", weaponName: weapon?.name ?? "",
+    weaponId: weapon?.id ?? "", intrinsicKey: weapon?.intrinsicKey ?? "", weaponName: weapon?.name ?? "",
     modeKey: mode?.key ?? "", modeName: mode?.name ?? "", reach: mode?.reach ?? "" };
 }
 export async function ensureEngagement(combat, attacker, defender, weapon, mode, userId = game.user.id) {
@@ -119,7 +124,8 @@ export async function setRelationWeapons(combat, relationId, selections, userId 
   for (const [combatantId, selection] of Object.entries(selections ?? {})) {
     if (!relation.sides?.[combatantId]) continue;
     const combatant = combat.combatants.get(combatantId);
-    const weapon = combatant?.actor?.items.get(selection.weaponId);
+    const weapon = !selection.weaponId && selection.modeKey === "unarmed"
+      ? intrinsicUnarmedWeapon(combatant?.actor) : combatant?.actor?.items.get(selection.weaponId);
     const mode = weapon ? findWeaponMode(weapon, selection.modeKey) : null;
     if (!weapon?.system.equipped || !mode) continue;
     relation.sides[combatantId] = side(combatant, weapon, mode);

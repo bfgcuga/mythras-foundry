@@ -1,3 +1,7 @@
+import { intrinsicUnarmedWeapon, hasIntrinsicUnarmed, unarmedAbilities, resolveUnarmedAbility,
+  unarmedParrySize, unarmedTouchState } from "./unarmed-combat.js";
+import { isNaturalWeaponMode } from "./passive-block.js";
+import { hasTrait } from "./traits.js";
 import { isGrabbed } from "./grappling.js";
 import { combatAttackHits, damageModifierFormula, difficultyTarget,
   resolveCombatExchange, resolveWeaponStyle } from "./combat.js";
@@ -23,7 +27,7 @@ import { applyTimedCondition, timedAttackRestriction,
   timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { consumeMatchingCombatRuses, consumePassiveBlock, coverFor, ensureEngagement,
-  passiveBlockFor, registerCombatRuse, relationFor, tacticalState,
+  passiveBlockFor, registerCombatRuse, relationFor, tacticalState, detailedReachEnabled,
   validateReachAttack } from "./engagement-runtime.js";
 import { engagementRestriction } from "./engagements.js";
 import { ammunitionState, canFireAmmunition,
@@ -371,7 +375,7 @@ async function recordCombatResolutionFumbles(combat) {
   if (!combat?.resolution) return;
   const attacker = await combatActor(combat.attacker.tokenUuid, combat.attacker.actorUuid);
   const defender = await combatActor(combat.defender.tokenUuid, combat.defender.actorUuid);
-  await recordAbilityFumble(attacker?.items.get(combat.attacker.styleId),
+  await recordAbilityFumble(attacker?.items.get(combat.attacker.abilityId ?? combat.attacker.styleId),
     combat.resolution.attack?.result);
   await recordAbilityFumble(defender?.items.get(combat.defender.defense?.abilityId
     ?? combat.defender.defense?.styleId), combat.resolution.defense?.result);
@@ -431,6 +435,14 @@ function collectAttackSetup(form) {
 
 export async function createAttackMessage({ actor, weapon, mode, resolution, target = null,
   manual = false }) {
+  if (weapon?.intrinsicKey) {
+    weapon = intrinsicUnarmedWeapon(actor, localize("MYTHRASF.Combat.Unarmed"));
+    if (!weapon) return null;
+    mode = findWeaponMode(weapon, "unarmed");
+    const current = resolveUnarmedAbility(actor, resolution.ability?.id);
+    if (!current.ability) return null;
+    resolution = { ...resolution, ...current, difficulty: resolution.difficulty };
+  }
   if (weaponIsPinned(weapon, actor)) return ui.notifications.warn(localize("MYTHRASF.Pin.Blocked"));
   if (!weaponCanEquip(weapon)) return ui.notifications.warn(
     localize(weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
@@ -440,8 +452,8 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   try {
   const setupFields = attackSetupFields(actor, target, mode);
   if (!setupFields) return ui.notifications.warn(localize("MYTHRASF.Combat.NoAvailableTargets"));
-  const rollAbility = { id: resolution.style?.id ?? "__combat_base__", actor,
-    name: resolution.style?.name ?? (resolution.untrained
+  const rollAbility = { id: resolution.ability?.id ?? resolution.style?.id ?? "__combat_base__", actor,
+    name: resolution.ability?.name ?? resolution.style?.name ?? (resolution.untrained
       ? localize("MYTHRASF.Combat.Untrained") : localize("MYTHRASF.Combat.BaseStyle")),
     system: { total: Number(resolution.target) || 0 } };
   const initialModifiers = resolution.difficulty !== "standard" ? [{
@@ -572,8 +584,8 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   }
   const roll = await evaluateSystemRoll("1d100", { manual });
   const targetValue = difficultyTarget(resolution.target, resolution.difficulty);
-  await recordAbilityFumble(resolution.style, classifyContestRoll(roll.total, targetValue));
-  const styleName = resolution.untrained ? localize("MYTHRASF.Combat.Untrained")
+  await recordAbilityFumble(resolution.ability ?? resolution.style, classifyContestRoll(roll.total, targetValue));
+  const styleName = resolution.ability ? resolution.ability.name : resolution.untrained ? localize("MYTHRASF.Combat.Untrained")
     : resolution.usesBase ? localize("MYTHRASF.Combat.BaseStyle") : resolution.style?.name ?? "";
   if (ranged) {
     ranged.modifiedTarget = targetValue;
@@ -588,9 +600,10 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     declarations: { containedBlow: Boolean(setup.containedBlow),
       extraordinaryDamage: setup.extraordinaryDamage },
     attacker: { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: actorDisplayName(actor),
-      tokenUuid: actor.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
+      tokenUuid: actor.token?.uuid ?? "", weaponId: weapon.id, intrinsicKey: weapon.intrinsicKey ?? "", weaponName: weapon.name,
       weaponDurable: weaponHasDurability(weapon),
-      modeKey: mode.key, modeName: mode.name, styleId: resolution.style?.id ?? "", styleName,
+      modeKey: mode.key, modeName: mode.name, abilityId: resolution.ability?.id ?? resolution.style?.id ?? "",
+      styleId: resolution.style?.id ?? "", styleName,
       difficulty: resolution.difficulty,
       baseTarget: resolution.rollConfiguration?.baseTarget ?? resolution.target,
       target: targetValue,
@@ -598,7 +611,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       damage: reachRule.pommel ? reachRule.damage : mode.damage,
       damageModifierMode: mode.damageModifierMode,
       weaponSize: reachRule.pommel ? reachRule.weaponSize : ranged?.effectivePower ?? mode.size,
-      modeSnapshot: { key: mode.key, weaponType: mode.weaponType, size: mode.size,
+      modeSnapshot: { key: mode.key, weaponType: mode.weaponType, size: mode.size, reach: mode.reach,
         impalingSize: mode.impalingSize, handsRequired: mode.handsRequired, effects: mode.effects },
       rawRoll: roll.total, serializedRoll: roll.toJSON(), luckHistory: [] },
     defender: { actorUuid: defender.uuid, actorId: actorIdentity(defender), actorName: tokenDisplayName(target),
@@ -619,12 +632,12 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
 }
 
 export async function createResolvedReactionAttack({ tracker, attackerCombatantId,
-  defenderCombatantId, weaponId, modeKey, attackTarget, attackRoll, evadeTarget, evadeRoll,
+  defenderCombatantId, weaponId, modeKey, intrinsicKey = "", abilityId = "", attackTarget, attackRoll, evadeTarget, evadeRoll,
   authorUserId }) {
   const attackerEntry = tracker?.combatants.get(attackerCombatantId);
   const defenderEntry = tracker?.combatants.get(defenderCombatantId);
   const actor = attackerEntry?.actor; const defender = defenderEntry?.actor;
-  const weapon = actor?.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
+  const weapon = intrinsicKey === "puno-patada" ? intrinsicUnarmedWeapon(actor) : actor?.items.get(weaponId); const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
   if (!actor || !defender || !weapon || !mode) return null;
   const defense = { type: "evade", target: evadeTarget, baseTarget: evadeTarget,
     rawRoll: evadeRoll, abilityName: localize("MYTHRASF.Combat.Evade") };
@@ -638,9 +651,9 @@ export async function createResolvedReactionAttack({ tracker, attackerCombatantI
     status: totalSlots ? "awaitingEffects" : "resolved", authorUserId,
     predeclared: false, declarations: { containedBlow: false, extraordinaryDamage: "0" },
     attacker: { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: actorDisplayName(actor),
-      tokenUuid: attackerEntry.token?.uuid ?? "", weaponId: weapon.id, weaponName: weapon.name,
+      tokenUuid: attackerEntry.token?.uuid ?? "", weaponId: weapon.id, intrinsicKey, abilityId, weaponName: weapon.name,
       weaponDurable: weaponHasDurability(weapon),
-      modeKey: mode.key, modeName: mode.name, styleId: "", styleName: "",
+      modeKey: mode.key, modeName: mode.name, styleId: actor.items.get(abilityId)?.type === "combatStyle" ? abilityId : "", styleName: actor.items.get(abilityId)?.name ?? "",
       difficulty: "standard", baseTarget: attackTarget, target: attackTarget,
       damage: mode.damage, damageModifierMode: mode.damageModifierMode, weaponSize: mode.size,
       modeSnapshot: { key: mode.key, weaponType: mode.weaponType, size: mode.size,
@@ -667,13 +680,34 @@ function effectiveDifficulty(actor, baseDifficulty = "standard") {
     baseDifficulty, physical: true, loadState: actorLoadState(actor) }).difficulty;
 }
 
-function parryChoices(actor, combatData = null) {
+function unarmedParryTouch(combat) {
+  const tracker = combat?.turnEconomy ? game.combats.get(combat.turnEconomy.combatId) : null;
+  const relation = tracker ? relationFor(tracker, combat.turnEconomy.combatantId,
+    combat.turnEconomy.defenderCombatantId) : null;
+  return unarmedTouchState(relation, detailedReachEnabled());
+}
+
+// Rebuild eligibility from live documents before the coordinator spends resources.
+export function canonicalParryDefense(actor, combat, defense) {
+  if (!actor) return null;
+  if (!resolveActorConditions(actor, { baseAttributes:
+    actor.system.baseAttributes ?? actor.system.attributes ?? {} }).capabilities.canDefend) return null;
+  const choice = parryChoices(actor, combat).find((entry) => entry.value === defense.value);
+  if (!choice || (choice.intrinsicKey && choice.touch === "unknown" && defense.touchConfirmed !== true)) return null;
+  return { ...choice, type: "parry", rawRoll: defense.rawRoll, serializedRoll: defense.serializedRoll,
+    touchConfirmed: choice.touch === "unknown"
+    ? defense.touchConfirmed === true : false };
+}
+
+export function parryChoices(actor, combatData = null) {
   const styles = actor.items.filter((item) => item.type === "combatStyle");
   const choices = actor.items.filter((item) => item.type === "weapon" && item.system.equipped
     && weaponCanEquip(item) && !weaponIsPinned(item, actor))
     .flatMap((weapon) => weaponModes(weapon).filter((mode) => mode.key === weapon.system.activeModeKey)
       .flatMap((mode) => styles.map((style) => {
         if (combatData?.ranged && mode.weaponType !== "shield") return null;
+        if (isNaturalWeaponMode(mode) && !hasTrait(actor, "formidable-natural-weapons")) return null;
+        if (hasIntrinsicUnarmed(actor) && (mode.profileKey || weapon.system.profileKey) === "puno-patada") return null;
         const tracker = combatData?.turnEconomy ? game.combats.get(combatData.turnEconomy.combatId) : null;
         const relation = tracker ? relationFor(tracker, combatData.turnEconomy.combatantId,
           combatData.turnEconomy.defenderCombatantId) : null;
@@ -692,15 +726,21 @@ function parryChoices(actor, combatData = null) {
           difficulty, baseTarget: resolved.target, target: difficultyTarget(resolved.target, difficulty),
           weaponSize: mode.size, weaponType: mode.weaponType };
       }).filter(Boolean)));
-  if (weaponPins(actor).length && !combatData?.ranged) {
-    const skill = actor.items.find((item) => item.type === "skill" && item.system.slug === "pelea");
+  if (hasIntrinsicUnarmed(actor) && !combatData?.ranged) {
+    const touch = unarmedParryTouch(combatData);
     const difficulty = effectiveDifficulty(actor);
-    if (skill && difficulty !== "impossible") choices.push({ value: `unarmed:${skill.id}`,
-      abilityId: skill.id, abilityName: skill.name, styleName: skill.name, modeName: skill.name,
-      modeKey: "unarmed",
-      weaponName: skill.name, weaponId: "", weaponDurable: false, weaponSize: "P",
-      difficulty, baseTarget: Number(skill.system.total ?? 0),
-      target: difficultyTarget(skill.system.total, difficulty) });
+    if (touch !== "blocked" && difficulty !== "impossible") {
+      for (const ability of unarmedAbilities(actor)) choices.push({
+        value: `intrinsic:puno-patada:${ability.id}`, intrinsicKey: "puno-patada",
+        abilityId: ability.id, abilityName: ability.name,
+        styleId: ability.type === "combatStyle" ? ability.id : "",
+        styleName: ability.name, modeName: localize("MYTHRASF.Combat.Unarmed"),
+        modeKey: "unarmed", weaponName: localize("MYTHRASF.Combat.Unarmed"), weaponId: "",
+        weaponDurable: false, weaponSize: unarmedParrySize(ability), weaponType: "melee",
+        reach: "T", damage: "1d3", damageModifierMode: "full", touch,
+        difficulty, baseTarget: Number(ability.system.total ?? 0),
+        target: difficultyTarget(ability.system.total, difficulty) });
+    }
   }
   return [...new Map(choices.map((choice) => [choice.value, choice])).values()];
 }
@@ -766,7 +806,14 @@ async function defenseConfiguration(actor, type, combatData = null) {
     { action: "cancel", label: localize("MYTHRASF.Cancel"), icon: "fas fa-times",
       callback: () => null }], rejectClose: false });
   const choice = selectedParryChoice(choices, selected);
-  return choice ? { type, ...choice } : null;
+  if (!choice) return null;
+  if (choice.intrinsicKey && choice.touch === "unknown") {
+    const confirmed = await DialogV2.confirm({ window: { title: localize("MYTHRASF.Combat.Parry") },
+      content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize("MYTHRASF.Combat.ConfirmTouch"))}</p></div>` });
+    if (!confirmed) return null;
+    return { type, ...choice, touchConfirmed: true };
+  }
+  return { type, ...choice };
 }
 
 async function respondToAttack(message, combat, type, manual = false) {
@@ -840,6 +887,7 @@ async function applyCombatDefense(message, request) {
     warn: (text) => ui.notifications.warn(text), localize,
     combatById: (id) => game.combats.get(id), actionPointRules: getActionPointRules,
     spendActionPoint, consumePassiveBlock, applyCondition: applyTimedCondition,
+    validateParry: canonicalParryDefense,
     recordFumbles: recordCombatResolutionFumbles, consumeSurprise: consumeSurpriseBonus,
     render: renderCombatExchange, appendRolls: appendSerializedRolls,
     advance: advanceCombatTurnForExchange });
@@ -1255,7 +1303,9 @@ async function requestCombatDamage(message, combat, manual = false) {
     || guidedPending) return;
   const weaponId = weaponPlan?.sourceWeaponId ?? combat.attacker.weaponId;
   const modeKey = weaponPlan?.sourceModeKey ?? combat.attacker.modeKey;
-  const weapon = actor.items.get(weaponId);
+  const sourceProfile = weaponPlan?.sourceSide === "defender" ? combat.defender.defense : combat.attacker;
+  const weapon = sourceProfile?.intrinsicKey === "puno-patada"
+    ? intrinsicUnarmedWeapon(actor, localize("MYTHRASF.Combat.Unarmed")) : actor.items.get(weaponId);
   const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
   if (!weapon || !mode) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
   if (!weaponCanEquip(weapon)) return ui.notifications.warn(

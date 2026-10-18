@@ -6,15 +6,15 @@ El trabajo confirmado que todavía no tiene prioridad ni posición se mantiene e
 [`README.md`](../README.md) y las decisiones técnicas vigentes en
 [`architecture.md`](architecture.md).
 
-## 1. Completar las opciones fundamentales de ataque y parada
+## 1. Revisar la lógica y la implementación de las acciones
 
-- Garantizar que todo personaje pueda atacar con el perfil estable
-  `puno-patada`: usar un estilo compatible cuando exista y, en caso contrario,
-  el porcentaje efectivo de la habilidad básica `pelea`.
-- Asociar la tirada y una posible pifia a la habilidad realmente utilizada.
-- Permitir parar con armas naturales únicamente cuando el Actor posea el rasgo
-  `formidable-natural-weapons`. Las armas manufacturadas no dependen de él.
-- Cubrir ambos comportamientos con pruebas.
+Revisar las acciones del sistema una por una, contrastando su comportamiento
+actual con las reglas aplicables. Identificar las que tienen lógica incorrecta,
+implementación incompleta o resolución únicamente guiada, y corregir o completar
+su flujo según corresponda. Comprobar requisitos, disponibilidad, coste en PA,
+tiradas, consecuencias y cierre o avance del turno, con pruebas de los
+comportamientos corregidos. La revisión determinará el alcance concreto de las
+acciones diferenciales pendientes del punto 5.
 
 ## 2. Revisar las resoluciones manuales de flujos interactivos
 

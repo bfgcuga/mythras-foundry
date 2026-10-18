@@ -58,7 +58,7 @@ export function delayIsValid(delay, { round, cycle, turnSerial = 0 } = {}) {
 
 export function availableCombatActions({ inCombat = false, isActive = false, actionPoints = 0,
   canTakeProactiveTurn = true, canAttack = true, engaged = false, prone = false,
-  hasRangedWeapon = false, hasPreparedWeapon = false, hasRestraint = false,
+  hasRangedWeapon = false, hasPreparedWeapon = false, hasUnarmedAttack = false, hasRestraint = false,
   hasDelay = false, canCharge = false, hasPinnedWeapon = false, grabbed = false,
   entangled = false, holdsEntanglement = false, rooted = false,
   hasReachableImpaledWeapon = false } = {}) {
@@ -67,7 +67,7 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     let allowed = definition.type !== "proactive" || (inCombat && isActive
       && actionPoints >= definition.cost && canTakeProactiveTurn);
     if (definition.requiresCombat && !inCombat) allowed = false;
-    if (key === "attack") allowed &&= canAttack && hasPreparedWeapon;
+    if (key === "attack") allowed &&= canAttack && (hasPreparedWeapon || hasUnarmedAttack);
     if (["aim", "reload"].includes(key)) allowed &&= hasRangedWeapon;
     if (["brace", "readyWeapon", "passiveBlock"].includes(key)) allowed &&= hasPreparedWeapon;
     if (key === "struggle") allowed &&= hasRestraint;
@@ -100,7 +100,7 @@ export function combatActionPresentation(context = {}) {
       else if (Number(context.actionPoints ?? 0) < definition.cost) reason = "actionPoints";
       else if (!context.canTakeProactiveTurn) reason = "proactiveBlocked";
       else if (key === "attack" && !context.canAttack) reason = "attackBlocked";
-      else if (key === "attack" && !context.hasPreparedWeapon) reason = "preparedWeapon";
+      else if (key === "attack" && !context.hasPreparedWeapon && !context.hasUnarmedAttack) reason = "preparedWeapon";
       else if (["aim", "reload"].includes(key) && !context.hasRangedWeapon) reason = "rangedWeapon";
       else if (["brace", "readyWeapon", "passiveBlock"].includes(key) && !context.hasPreparedWeapon) reason = "preparedWeapon";
       else if (key === "struggle" && !context.hasRestraint) reason = "restraint";

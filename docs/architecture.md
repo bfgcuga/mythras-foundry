@@ -117,9 +117,44 @@ localizaciones, armas y estilos; las diferencias del PNJ, como la durabilidad de
 un arma natural vinculada a una localización, se resuelven al preparar los datos.
 Inventario comparte monederos, propiedades, contenedores y operaciones. Las
 armas cuyos modos son íntegramente naturales permanecen visibles en Combate y
-se excluyen del Inventario para ambos tipos de Actor. Esta clasificación solo
-decide la presentación del inventario: no crea automáticamente Puño/Patada ni
+se excluyen del Inventario para ambos tipos de Actor. Esta clasificación no
 concede por sí misma capacidad de ataque o parada.
+
+`scripts/rules/unarmed-combat.js` prepara un perfil intrínseco y transitorio para
+Actors `character` y `npc` con `system.morphologyKey: humanoid`, reutilizando
+`UNARMED_WEAPON_SOURCE`: no crea un documento Item ni ocupa manos o inventario.
+La preparación compartida de Combate omite las filas del perfil `puno-patada`
+que ya existan como Items, sin borrarlas ni ocultar otras armas naturales.
+Pelea y los estilos con ese perfil explícito son las habilidades elegibles; se
+preselecciona el estilo de mayor porcentaje y, si no existe, Pelea. No se deduce
+la compatibilidad del nombre de un estilo ni se aplica familiaridad a esta opción.
+
+Las instantáneas de ataque y defensa identifican el perfil mediante
+`intrinsicKey: puno-patada`, separado de un `weaponId` vacío. `abilityId` identifica
+la habilidad usada y `styleId` se conserva cuando es un estilo, para sus rasgos.
+El daño reconstruye el perfil sin resolver un Item inexistente; las pifias,
+incluidas las repeticiones de Suerte, se registran en la habilidad seleccionada.
+Las tarjetas antiguas que solo poseen `styleId` mantienen su lectura compatible.
+El perfil usa daño 1d3, Modificador de Daño completo, Tamaño Pequeño y alcance T.
+La parada usa Tamaño Medio únicamente si el estilo elegido tiene
+`maestria-sin-armas`; Pelea conserva Pequeño.
+
+La parada intrínseca requiere Toque. Una relación táctica trabada con dos alcances
+válidos y posición no neutral determina la distancia; si no es T, se rechaza.
+Sin alcance detallado o sin distancia determinada se pide confirmación explícita,
+persistida como `touchConfirmed` en la defensa. Una relación destrabada no permite
+parar sin armas. El coordinador reconstruye las opciones desde el Actor y la
+relación vigentes antes de gastar PA; no acepta porcentajes ni tamaños enviados
+por el cliente. Cancelar el selector o denegar Toque no crea una defensa.
+Las relaciones y los selectores de alcance también admiten el perfil intrínseco,
+sin introducir distancias basadas en coordenadas del lienzo.
+
+Las armas naturales reales se identifican mediante `isNaturalWeaponMode` y solo
+pueden parar si su Actor posee el rasgo canónico `formidable-natural-weapons`
+(Armas Naturales Formidables), consultado mediante `hasTrait`. Conservan sus
+propios tamaños y alcances. Esta restricción no afecta a armas manufacturadas ni
+a la parada intrínseca humanoide. El perfil intrínseco no tiene durabilidad ni
+puede desarmarse, transferirse o inmovilizarse como un Item.
 
 Cada Actor persiste `system.morphologyKey`. Los personajes parten de `humanoid`,
 los PNJ de `custom`, y las criaturas oficiales declaran una morfología cuando su

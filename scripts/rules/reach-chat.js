@@ -1,3 +1,4 @@
+import { intrinsicUnarmedWeapon, resolveUnarmedAbility } from "./unarmed-combat.js";
 import { isGrabbed } from "./grappling.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
@@ -52,10 +53,7 @@ export async function requestReachChange(actor, { manual = false } = {}) {
   const combat = game.combat; const active = combatantForActor(combat, actor, actor.token?.uuid);
   if (!combat?.started || combat.combatant?.id !== active?.id || currentActionPoints(actor) < 1) return;
   const opponents = combat.combatants.filter((entry) => entry.id !== active.id && entry.actor);
-  const weapons = actor.items.filter((item) => item.type === "weapon" && item.system.equipped
-    && weaponCanEquip(item))
-    .flatMap((weapon) => weaponModes(weapon).filter((mode) => ["melee", "shield"].includes(mode.weaponType))
-      .map((mode) => ({ weapon, mode })));
+  const weapons = preparedMeleeWeapons(actor);
   if (!opponents.length || !weapons.length || !evade(actor)) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Combat.SourceMissing"));
   const result = await foundry.applications.api.DialogV2.wait({
@@ -66,7 +64,7 @@ export async function requestReachChange(actor, { manual = false } = {}) {
         intent: button.form.elements.intent.value, weapon: button.form.elements.weapon.value }) }], rejectClose: false });
   if (!result || isGrabbed(actor) || !await spend(actor)) return;
   const target = combat.combatants.get(result.targetId); const [weaponId, modeKey] = result.weapon.split(":");
-  const weapon = actor.items.get(weaponId); const mode = findWeaponMode(weapon, modeKey);
+  const weapon = !weaponId && modeKey === "unarmed" ? intrinsicUnarmedWeapon(actor) : actor.items.get(weaponId); const mode = findWeaponMode(weapon, modeKey);
   const relation = await ensureEngagement(combat, actor, target.actor, weapon, mode);
   const skill = evade(actor); const roll = await evaluateSystemRoll("1d100", { manual });
   const evadeResult = classifyContestRoll(roll.total, Number(skill.system.total ?? 0));
@@ -98,14 +96,15 @@ async function respond(message, state, type, manual = false) {
     } else {
       const selected = longestPreparedWeapon(actor); if (!selected) return;
       const styles = actor.items.filter((item) => item.type === "combatStyle");
-      const resolved = resolveWeaponStyle({ weapon: { id: selected.weapon.id, name: selected.weapon.name,
+      const resolved = selected.weapon.intrinsicKey ? resolveUnarmedAbility(actor) : resolveWeaponStyle({ weapon: { id: selected.weapon.id, name: selected.weapon.name,
         system: selected.mode }, styles, selectedStyleId: selected.mode.preferredCombatStyleId,
       familiarity: selected.mode.familiarity });
       const targetValue = difficultyTarget(resolved.target, resolved.difficulty);
       const roll = await evaluateAnimatedRoll("1d100", { manual });
       const result = classifyContestRoll(roll.total, targetValue);
-      await recordAbilityFumble(resolved.style, result);
+      await recordAbilityFumble(resolved.ability ?? resolved.style, result);
       response = { type, weaponId: selected.weapon.id, modeKey: selected.mode.key,
+        intrinsicKey: selected.weapon.intrinsicKey ?? "", abilityId: resolved.ability?.id ?? resolved.style?.id ?? "",
         target: targetValue, rawRoll: roll.total, result };
       await consumePassiveBlock(combat, target.id, selected.weapon.id, "reactionAttack");
     }
@@ -140,7 +139,7 @@ async function apply(message, request) {
   if (response.type === "attack" && winner === "right") {
     await createResolvedReactionAttack({ tracker: combat,
       attackerCombatantId: state.targetCombatantId, defenderCombatantId: state.actorCombatantId,
-      weaponId: response.weaponId, modeKey: response.modeKey, attackTarget: response.target,
+      weaponId: response.weaponId, modeKey: response.modeKey, intrinsicKey: response.intrinsicKey, abilityId: response.abilityId, attackTarget: response.target,
       attackRoll: response.rawRoll, evadeTarget: state.evade.target, evadeRoll: state.evade.rawRoll,
       authorUserId: request.userId });
   } else if (combat.combatant?.id === state.actorCombatantId) await combat.nextTurn();
@@ -181,7 +180,8 @@ export function renderTacticalOverview(combat) {
     .filter(([, relation]) => relation.status !== "removed").map(([relationId, relation]) => {
     const sides = Object.values(relation.sides ?? {});
     const incomplete = sides.some((side) => {
-      const weapon = combat.combatants.get(side.combatantId)?.actor?.items.get(side.weaponId);
+      const actor = combat.combatants.get(side.combatantId)?.actor;
+      const weapon = side.intrinsicKey ? intrinsicUnarmedWeapon(actor) : actor?.items.get(side.weaponId);
       return !weapon || !weapon.system.equipped
         || !weaponModes(weapon).some((mode) => mode.key === side.modeKey);
     });
@@ -255,12 +255,15 @@ async function createRelationFromDialog(combat) {
         button.form.elements.newRightWeapon.value) }) }], rejectClose: false
   });
   if (!result || result.left.combatantId === result.right.combatantId
-    || !result.left.weaponId || !result.right.weaponId) return;
+    || (!result.left.weaponId && result.left.modeKey !== "unarmed")
+    || (!result.right.weaponId && result.right.modeKey !== "unarmed")) return;
   const leftCombatant = combat.combatants.get(result.left.combatantId);
   const rightCombatant = combat.combatants.get(result.right.combatantId);
-  const weapon = leftCombatant.actor.items.get(result.left.weaponId);
+  const weapon = !result.left.weaponId && result.left.modeKey === "unarmed"
+    ? intrinsicUnarmedWeapon(leftCombatant.actor) : leftCombatant.actor.items.get(result.left.weaponId);
   const mode = findWeaponMode(weapon, result.left.modeKey);
-  const rightWeapon = rightCombatant.actor.items.get(result.right.weaponId);
+  const rightWeapon = !result.right.weaponId && result.right.modeKey === "unarmed"
+    ? intrinsicUnarmedWeapon(rightCombatant.actor) : rightCombatant.actor.items.get(result.right.weaponId);
   const rightMode = findWeaponMode(rightWeapon, result.right.modeKey);
   const relation = await ensureEngagement(combat, leftCombatant.actor, rightCombatant.actor, weapon, mode);
   if (relation && rightMode) {

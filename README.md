@@ -19,6 +19,17 @@ instalables se distribuyen mediante las releases de GitHub.
 El sistema incluye actualmente:
 
 - hojas Application V2 para personajes, PNJ y todos los tipos de Item;
+- Puño/Patada intrínseco para personajes y PNJ de morfología humanoide, sin
+  añadir Items al inventario: daño 1d3 más Modificador de Daño, Tamaño Pequeño
+  y alcance Toque. Permite elegir Pelea o un estilo asociado a `puno-patada`;
+  preselecciona el estilo compatible con mayor porcentaje o, si no existe, Pelea.
+  La parada sin armas requiere Toque: se valida mediante el alcance táctico
+  vigente o se solicita confirmación cuando no puede determinarse. Maestría sin
+  Armas aumenta a Medio el tamaño de la parada si pertenece al estilo elegido.
+  Las criaturas solo paran con sus armas naturales cuando poseen Armas Naturales
+  Formidables; las armas manufacturadas no requieren ese rasgo. Pifias y Suerte
+  registran la habilidad realmente utilizada. Los Items Puño/Patada anteriores
+  se conservan y no duplican la opción estándar en Combate;
 - creación de personajes por tiradas, intercambio, reparto de puntos o
   asignación libre desde los mínimos;
 - asistente de trasfondo con cultura, profesión, clase social, edad, pasiones,

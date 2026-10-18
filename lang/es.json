@@ -2012,5 +2012,7 @@
   "MYTHRASF.WeaponReference.Group.twoHanded": "Armas cuerpo a cuerpo de dos manos",
   "MYTHRASF.WeaponReference.Group.shields": "Escudos",
   "MYTHRASF.WeaponReference.Group.ranged": "Armas a distancia",
-  "MYTHRASF.WeaponReference.Group.siege": "Armas de asedio"
+  "MYTHRASF.WeaponReference.Group.siege": "Armas de asedio",
+  "MYTHRASF.Combat.Unarmed": "Puño/Patada",
+  "MYTHRASF.Combat.ConfirmTouch": "¿Están los combatientes a alcance Toque? La parada sin armas solo puede realizarse a esa distancia."
 }

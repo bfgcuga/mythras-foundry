@@ -27,7 +27,7 @@ import { resolveSkillRollConditions } from "../rules/skill-roll-resolution.js";
 import { decorateCombatActionButtons } from "../rules/combat-action-runtime.js";
 import { prepareHitLocationTable } from "../ui/hit-location-table.js";
 import { InventorySheetController, prepareInventoryView } from "../ui/inventory-sheet.js";
-import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponView,
+import { CombatSheetController, prepareCombatStyleViews, prepareCombatWeaponViews,
   splitCombatWeapons } from "../ui/combat-sheet.js";
 import { rollSpecial } from "../rules/special-roll.js";
 import { updateActorFromSheet } from "../rules/document-names.js";
@@ -130,10 +130,9 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         display: penalizedValue(baseAttributes?.[attributeKey], effectiveAttributes?.[attributeKey])
       };
     });
-    const combatWeapons = weapons.flatMap((weapon) => weaponModes(weapon).map((mode) =>
-      prepareCombatWeaponView({ actor: this.actor, weapon, mode, styles: combatStyles,
-        hitLocations, resolveDifficulty: (difficulty) => this.#conditionResolution({
-          baseDifficulty: difficulty, physical: true }).difficulty })));
+    const combatWeapons = prepareCombatWeaponViews({ actor: this.actor, weapons, styles: combatStyles,
+      hitLocations, resolveDifficulty: (difficulty) => this.#conditionResolution({
+        baseDifficulty: difficulty, physical: true }).difficulty });
     const combatWeaponGroups = splitCombatWeapons(combatWeapons);
     const inventoryView = prepareInventoryView(items);
 
