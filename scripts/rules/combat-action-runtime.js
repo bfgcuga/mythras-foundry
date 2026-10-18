@@ -282,7 +282,9 @@ export function actionCard(action) {
     ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.CombatEffect.Confirm"))}</button><button type="button" data-action-transaction="cancel">${escape(localize("MYTHRASF.Cancel"))}</button></div>` : "";
   const help = ["brace", "maneuver"].includes(action.key)
     ? ruleHelpButton(`data-action-help="${escape(action.key)}"`) : "";
-  return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
+  const outcome = action.key === "hesitate" && action.status === "resolved"
+    ? `<p>${escape(localize("MYTHRASF.Action.HesitateResult"))}</p>` : "";
+  return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${outcome}${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
 }
 
 async function save(combat, state) {

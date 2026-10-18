@@ -1788,6 +1788,7 @@
   "MYTHRASF.Action.Biped": "Biped (+1 damage category)",
   "MYTHRASF.Action.Quadruped": "Quadruped (+2 damage categories)",
   "MYTHRASF.Action.delay": "Delay",
+  "MYTHRASF.Action.HesitateResult": "The character has lost an action.",
   "MYTHRASF.Action.hesitate": "Dither",
   "MYTHRASF.Action.mount": "Mount or dismount",
   "MYTHRASF.Action.retainMagic": "Hold magic",

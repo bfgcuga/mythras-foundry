@@ -1788,6 +1788,7 @@
   "MYTHRASF.Action.Biped": "Bípedo (+1 categoría de daño)",
   "MYTHRASF.Action.Quadruped": "Cuadrúpedo (+2 categorías de daño)",
   "MYTHRASF.Action.delay": "Retrasar",
+  "MYTHRASF.Action.HesitateResult": "El personaje ha perdido una acción.",
   "MYTHRASF.Action.hesitate": "Titubear",
   "MYTHRASF.Action.mount": "Montar o desmontar",
   "MYTHRASF.Action.retainMagic": "Retener magia",

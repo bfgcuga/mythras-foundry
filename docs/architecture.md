@@ -925,7 +925,9 @@ final y su retirada está registrada en `docs/pending.md`.
 La tarjeta presenta la etiqueta «Consecuencia:» sobre su explicación para que
 el texto operativo disponga del ancho completo del panel.
 Las condiciones medidas en turnos propios se descuentan normalmente desde
-`MythrasCombat.nextTurn`. «Titubear» realiza ese consumo al resolver la acción y
+`MythrasCombat.nextTurn`. La tarjeta resuelta de «Titubear» muestra directamente
+«El personaje ha perdido una acción», sin ayuda emergente. «Titubear» realiza
+ese consumo al resolver la acción y
 marca el avance posterior para no repetirlo; así el contador progresa incluso si
 el cambio de turno dependiente del coordinador no llega a completarse.
 «Cerrar intercambio y avanzar» permite al DJ resolver conjuntamente cualquier
