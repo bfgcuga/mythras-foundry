@@ -320,3 +320,34 @@ test('accepting an attack releases only its rival even when the attack roll fail
   assert.ok(maneuverAttackRestriction(f.combat,f.tokens[2].uuid,f.tokens[0]));
   assert.equal(actor.system.resources.actionPoints.value,2);
 });
+
+test('Maniobrar uses the initiator token scene when combat is not linked to a scene',async t=>{
+  const f=setup(t);
+  f.combat.scene=null;
+  foundry.applications.api.DialogV2.wait=async()=>[f.tokens[1].uuid];
+  await requestCombatAction(f.actors[0],'maneuver');
+  const action=Object.values(f.combat.flags[scope].combatActions.actions)[0];
+  assert.ok(action,'a scene-independent combat must accept rivals in the initiator scene');
+  assert.equal(action.status,'awaitingContest');
+  assert.equal(f.actors[0].system.resources.actionPoints.value,2);
+  assert.equal(f.warnings.length,0);
+});
+
+test('Maniobrar rejects rivals in another scene before spending AP even without a linked combat scene',async t=>{
+  const f=setup(t);
+  f.combat.scene=null;f.tokens[1].parent={id:'other-scene'};
+  foundry.applications.api.DialogV2.wait=async()=>[f.tokens[1].uuid];
+  await requestCombatAction(f.actors[0],'maneuver');
+  assert.equal(Object.values(f.combat.flags[scope].combatActions.actions).length,0);
+  assert.equal(f.actors[0].system.resources.actionPoints.value,3);
+  assert.match(f.warnings[0],/participantes de Maniobrar/);
+});
+
+test('Maniobrar revalidates the initiator scene after an interruption independently of the viewed or linked scene',async t=>{
+  const f=setup(t);const {action,message}=f.makeAction([f.tokens[1]]);
+  f.combat.scene={id:'different-linked-scene'};canvas.scene={id:'coordinator-viewed-scene'};
+  await executeAction(f.combat,action);
+  assert.equal(action.status,'awaitingContest');
+  assert.equal(message.getFlag(scope,'contest').participants.length,2);
+  assert.equal(f.warnings.length,0);
+});

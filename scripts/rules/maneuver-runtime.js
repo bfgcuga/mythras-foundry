@@ -12,6 +12,20 @@ const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 const localize = (key) => game.i18n.localize(key);
 export const evadeSkill = (actor) => actor?.items?.find((item) => item.type === "skill" && item.system.slug === "evadir");
 
+async function resolveManeuverRivals(actor, tokenUuid, parameters) {
+  const uuids = parameters?.rivalTokenUuids;
+  if (!evadeSkill(actor) || !tokenUuid || !Array.isArray(uuids) || !uuids.length
+    || new Set(uuids).size !== uuids.length || uuids.includes(tokenUuid)) return null;
+  const [initiator, ...rivals] = await Promise.all([tokenUuid, ...uuids]
+    .map((uuid) => typeof uuid === "string" ? fromUuid(uuid) : null));
+  // Encounters may be scene-independent. The initiating TokenDocument defines
+  // the scene for this action, including when the coordinator views another one.
+  const sceneId = initiator?.parent?.id;
+  if (!sceneId || initiator.actor?.uuid !== actor.uuid || rivals.some((token) => !token?.actor
+    || token.parent?.id !== sceneId || !evadeSkill(token.actor))) return null;
+  return rivals;
+}
+
 export function maneuverCandidates(tokens, ownUuid, user, targets = []) {
   const selected = new Set(Array.from(targets).map((token) => token.document?.uuid ?? token.uuid));
   return Array.from(tokens).filter((token) => token.actor && (token.document?.uuid ?? token.uuid) !== ownUuid
@@ -52,9 +66,8 @@ export async function startManeuverContest(combat, action, actor) {
     throw new Error(localize("MYTHRASF.Maneuver.Expired"));
   }
   const skill = evadeSkill(actor);
-  const rivals = await Promise.all((action.parameters.rivalTokenUuids ?? []).map((uuid) => fromUuid(uuid)));
-  if (!skill || !rivals.length || rivals.some((token) => !token?.actor || !evadeSkill(token.actor)
-    || token.parent?.id !== combat.scene?.id)) throw new Error(localize("MYTHRASF.Maneuver.InvalidParticipants"));
+  const rivals = await resolveManeuverRivals(actor, action.tokenUuid, action.parameters);
+  if (!rivals) throw new Error(localize("MYTHRASF.Maneuver.InvalidParticipants"));
   const difficulty = (subject) => resolveActorConditions(subject, { physical: true }).difficulty;
   const configured = { difficulty: difficulty(actor), targets: resolveSkillRollTargets({
     baseTarget: skill.system.total, difficulty: difficulty(actor) }), contest: {
@@ -74,11 +87,9 @@ export async function startManeuverContest(combat, action, actor) {
 }
 
 export async function validateManeuverSelection(combat, actor, tokenUuid, parameters, user) {
-  const uuids = parameters?.rivalTokenUuids;
-  if (!evadeSkill(actor) || !Array.isArray(uuids) || !uuids.length || new Set(uuids).size !== uuids.length) return false;
-  const tokens = await Promise.all(uuids.map((uuid) => typeof uuid === "string" ? fromUuid(uuid) : null));
-  return tokens.every((token) => token?.actor && token.uuid !== tokenUuid
-    && token.parent?.id === combat.scene?.id && evadeSkill(token.actor) && (user.isGM || !token.hidden));
+  if (!combat?.started) return false;
+  const tokens = await resolveManeuverRivals(actor, tokenUuid, parameters);
+  return Boolean(tokens && tokens.every((token) => user.isGM || !token.hidden));
 }
 
 export function maneuverContestIsCurrent(contest) {

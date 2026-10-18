@@ -1108,7 +1108,12 @@ se titula «Modificadores aplicados» porque reúne ajustes positivos y negativo
 ### Maniobrar: enfrentada y protección por token
 
 `maneuver-runtime.js` valida la selección de tokens de la escena, exige Evadir
-antes de cobrar 1 PA y conecta la acción con `contest-chat.js`. La tarjeta de la
+antes de cobrar 1 PA y conecta la acción con `contest-chat.js`. La escena de
+referencia procede del TokenDocument del ejecutor, tanto al validar la selección
+como al iniciar la enfrentada después de una interrupción. No depende de que el
+combate esté vinculado a una escena ni de la escena que esté viendo el
+coordinador. Se rechazan tokens de otras escenas y selecciones inválidas antes
+de gastar PA. La tarjeta de la
 acción se transforma en la enfrentada existente: un iniciador individual frente
 a un equipo con respuestas individuales. Cada propietario o el DJ tira Evadir;
 las respuestas no gastan PA. No hay inferencia de bandos: el selector respeta la
