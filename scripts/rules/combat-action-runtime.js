@@ -270,6 +270,12 @@ async function requestEntangleTrip(actor) {
   if (!await finishInterruptionAction(context.combat, context.combatant.id)) await context.combat.nextTurn();
 }
 
+function actionDescription(key) {
+  return localize(key === "brace" ? "MYTHRASF.Status.Description.braced"
+    : key === "maneuver" ? "MYTHRASF.Status.Description.maneuverProtected"
+      : `MYTHRASF.Action.Description.${key}`);
+}
+
 export function actionCard(action) {
   const responses = action.interruptCandidates?.map((candidate) => {
     const response = action.interruptResponses?.[candidate.combatantId];
@@ -282,9 +288,11 @@ export function actionCard(action) {
     ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.CombatEffect.Confirm"))}</button><button type="button" data-action-transaction="cancel">${escape(localize("MYTHRASF.Cancel"))}</button></div>` : "";
   const help = COMBAT_ACTIONS[action.key]
     ? ruleHelpButton(`data-action-help="${escape(action.key)}"`) : "";
+  const description = COMBAT_ACTIONS[action.key]
+    ? `<p class="combat-action-description">${escape(actionDescription(action.key))}</p>` : "";
   const outcome = action.key === "hesitate" && action.status === "resolved"
     ? `<p>${escape(localize("MYTHRASF.Action.HesitateResult"))}</p>` : "";
-  return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${outcome}${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
+  return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3>${description}<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${outcome}${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
 }
 
 async function save(combat, state) {
@@ -542,9 +550,7 @@ export function activateCombatActionCard(message, html) {
     const key = button.dataset.actionHelp;
     button.addEventListener("click", () => {
       const action = combatActionState(game.combats.get(reference.combatId)).actions[reference.actionId];
-      const description = key === "brace" ? localize("MYTHRASF.Status.Description.braced")
-        : key === "maneuver" ? localize("MYTHRASF.Status.Description.maneuverProtected")
-          : localize(`MYTHRASF.Action.Description.${key}`);
+      const description = actionDescription(key);
       const details = [description];
       if (action) {
         details.push(`${localize("MYTHRASF.Action.StatusLabel")}: ${localize(`MYTHRASF.Action.Status.${action.status}`)}`);

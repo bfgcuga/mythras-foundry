@@ -1217,7 +1217,8 @@ Las sesiones válidas sobreviven a la recarga; las obsoletas o sin participante
 se limpian. Finalizar/eliminar combate o eliminar participantes cierra la sesión.
 
 
-Las tarjetas de acciones generales ofrecen `ruleHelpButton` junto al estado,
+Las tarjetas de acciones generales muestran la descripción localizada del efecto
+directamente bajo el título en todas sus fases y ofrecen `ruleHelpButton` junto al estado,
 no solo en Afianzarse y Maniobrar. Su diálogo explica el comportamiento
 implementado y muestra estado, coste registrado y notas de la ejecución; las
 descripciones se localizan en `MYTHRASF.Action.Description.<key>`, conservando

@@ -60,6 +60,22 @@ test('all registered action cards offer the shared help button', t => {
   }
 });
 
+test('every registered action displays its effect directly in the card in every phase', t => {
+  const { action, root } = fixture(t);
+  for (const key of Object.keys(COMBAT_ACTIONS)) {
+    for (const status of ['awaitingConfirmation', 'resolving', 'resolved', 'cancelled']) {
+      root.innerHTML = actionCard({ ...action, key, status });
+      const description = root.querySelector('.combat-action-description');
+      const expected = key === 'brace' ? 'MYTHRASF.Status.Description.braced'
+        : key === 'maneuver' ? 'MYTHRASF.Status.Description.maneuverProtected'
+          : `MYTHRASF.Action.Description.${key}`;
+      assert.equal(description?.textContent, expected, `${key}: ${status}`);
+      assert.equal(description.hidden, false);
+      assert.equal(description.previousElementSibling.className, 'mythras-chat-title');
+    }
+  }
+});
+
 test('resolved action help includes its description, recorded cost and execution note', t => {
   const { action, root, globals } = fixture(t);
   Object.assign(action, { key: 'delay', status: 'resolved', cost: 0, note: 'Espera hasta el siguiente turno' });
