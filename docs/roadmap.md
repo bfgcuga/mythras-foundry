@@ -65,3 +65,13 @@ hasta que sus reglas estén definidas.
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.
+
+## 8. Revisar y poner en orden los estados
+
+Revisar conjuntamente el catálogo del sistema y los estados nativos de Foundry:
+
+- Revisar los iconos de los estados.
+- Ordenar los estados alfabéticamente por su nombre localizado.
+- Decidir qué estados del sistema y de Foundry conservar, identificando
+  equivalencias, estados nativos útiles y estados prescindibles.
+- Revisar la integración de visión —por ejemplo, Cegado— al unificar el catálogo.

@@ -59,9 +59,6 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Estados y tiempo
 
-- Revisar conjuntamente el catálogo del sistema y los estados nativos de
-  Foundry: equivalencias, integración de visión —por ejemplo, Cegado—, estados
-  nativos útiles y estados prescindibles.
 - Ampliar el motor temporal cuando existan acciones generales, alcance y tiempo
   mundial que lo necesiten. Las duraciones por turno y asalto y las
   consecuencias actuales de Sangrando, Desangrándose, Agonizando, Ahogándose y
