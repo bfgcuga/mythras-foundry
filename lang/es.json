@@ -1,4 +1,6 @@
 {
+  "MYTHRASF.Status.Waiting": "Esperando",
+  "MYTHRASF.Status.Description.waiting": "Conserva su PA para reaccionar. La primera reacción que gaste PA retira la espera. Si llega su siguiente turno o termina la ronda sin reaccionar, pierde un PA. No permite acciones activas fuera de turno.",
   "MYTHRASF.Maneuver.Expired": "La maniobra pertenece a un asalto terminado o a un combate inactivo.",
   "MYTHRASF.Status.ManeuverProtected": "Protegido por maniobra",
   "MYTHRASF.Status.Description.maneuverProtected": "Maniobrar cuesta 1 PA: realiza una tirada de Evadir enfrentada individualmente a la de cada rival seleccionado. Los rivales ante los que venzas quedan destrabados de ti y no pueden atacarte ni iniciar una traba contigo hasta el final del asalto actual, aunque antes no estuvieran trabados. Un empate o fallo mutuo no concede protección. Si declaras un ataque válido contra uno de esos rivales, ese rival recupera inmediatamente la posibilidad de atacarte y trabarse contigo; los demás siguen restringidos. La protección no impide seleccionar tu token para otras acciones. Las consecuencias se aplican al confirmar el resultado, después de las respuestas y del posible uso de Suerte.",

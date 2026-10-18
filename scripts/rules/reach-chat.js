@@ -5,6 +5,7 @@ import { isGrabbed } from "./grappling.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { opposedEffectWinner } from "./combat-effects.js";
+import { spendActorActionPoint } from "./combat-resource-runtime.js";
 import { currentActionPoints } from "./action-points.js";
 import { engagementId, initialReachPosition, relationSituationReach } from "./engagements.js";
 import { combatantForActor, deactivatePassiveBlock, ensureEngagement, longestPreparedWeapon,
@@ -35,8 +36,7 @@ function combatantDisplayName(combatant) {
   return combatant.actor.type === "character" ? actorDisplayName(combatant.actor)
     : tokenDisplayName(combatant.token) || actorDisplayName(combatant.actor) || combatant.name || "";
 }
-async function spend(actor) { const value = currentActionPoints(actor); if (value < 1) return false;
-  await actor.update({ "system.resources.actionPoints.value": value - 1 }); return true; }
+async function spend(actor, options) { return spendActorActionPoint(actor, options); }
 
 function evade(actor) { return actor.items.find((item) => item.type === "skill" && item.system.slug === "evadir"); }
 function render(state) {
@@ -132,7 +132,7 @@ async function apply(message, request) {
   if (request.response?.type === "attack" && maneuverAttackRestriction(combat, target.token?.uuid,
     { actor: actor.actor, uuid: actor.token?.uuid })) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Maneuver.Blocked"));
   const response = request.response; let succeeds = response.type === "none"; let winner = null;
-  if (response.type !== "none" && !await spend(target.actor)) return ui.notifications.warn(
+  if (response.type !== "none" && !await spend(target.actor, { reactive: true })) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Tracker.Rejected.actionPoints"));
   if (response.type === "attack") await releaseManeuverRival(combat, target.actor, actor.token?.uuid, target.token?.uuid);
   if (response.type !== "none") {

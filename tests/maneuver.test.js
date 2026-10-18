@@ -256,7 +256,7 @@ test('cancelled and missing-skill selections never spend AP; duplicate execution
   assert.equal(message.getFlag(scope,'contest'),before);
 });
 
-test('interruption responses preserve the manoeuvre and spend only one initiator AP',async t=>{
+test('waiting never pauses a manoeuvre for interruption and spends only one initiator AP',async t=>{
   const f=setup(t);let onSocket;
   game.socket={on:(channel,callback)=>{onSocket=callback;}};
   registerCombatActionSocket();
@@ -264,7 +264,8 @@ test('interruption responses preserve the manoeuvre and spend only one initiator
   foundry.applications.api.DialogV2.wait=async()=>[f.tokens[1].uuid];
   await requestCombatAction(f.actors[0],'maneuver');
   const action=Object.values(f.combat.flags[scope].combatActions.actions)[0];
-  assert.equal(action.status,'awaitingInterrupts');
+  assert.equal(action.status,'awaitingContest');
+  assert.deepEqual(action.interruptCandidates,[]);
   await onSocket({action:'combatAction',operation:'pass',combatId:f.combat.id,actionId:action.id,
     revision:action.revision,combatantId:'1',userId:'gm'});
   assert.equal(action.status,'awaitingContest');

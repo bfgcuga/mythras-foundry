@@ -1,4 +1,5 @@
-import { effectiveActionPointMaximum, combatantActionPointState } from "../rules/action-points.js";
+import { clearCombatWaiting } from "../rules/combat-waiting.js";
+import { currentActionPoints, effectiveActionPointMaximum, combatantActionPointState } from "../rules/action-points.js";
 import { composedInitiative, nextCombatPosition, splitComposedInitiative,
   dynamicInitiativePrimary, TURN_ECONOMY_SCHEMA_VERSION,
   uniqueActorEntries } from "../rules/combat-turns.js";
@@ -110,6 +111,7 @@ export class MythrasCombat extends Combat {
     if (coordinator() === game.user.id) {
       await prepareCombatEndFatigue(this);
       await clearCombatManeuvers(this);
+      await clearCombatWaiting(this, { charge: false });
     }
     return super.endCombat();
   }
@@ -143,6 +145,9 @@ export class MythrasCombat extends Combat {
       conditionHistory: history, transitioning: false };
     await this.update({ turn: next.turn, [`flags.${SCOPE}.${FLAG}`]: flags });
     if (this.combatant?.id) await expireCombatActionTurn(this, this.combatant.id);
+    if (this.combatant?.actor && currentActionPoints(this.combatant.actor) === 0) {
+      return this.nextTurn({ skipCurrentActorConditions: true });
+    }
     await revealSurprisedTurn(this.combatant?.actor);
     if (next.transition === "cycle") Hooks.callAll("mythrasCycleStart", this, next.cycle);
     return this;
@@ -151,6 +156,7 @@ export class MythrasCombat extends Combat {
   async nextRound() {
     if (coordinator() !== game.user.id) return this;
     const round = Math.max(1, Number(this.round ?? 0) + 1);
+    await clearCombatWaiting(this);
     Hooks.callAll("mythrasRoundEnd", this, this.round ?? 0);
     const history = [...(this.mythrasTurnEconomy.conditionHistory ?? [])];
     await expireRoundConditions(this, history);

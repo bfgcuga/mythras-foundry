@@ -304,8 +304,8 @@ function combatTurnContext(actor) {
     turnAdvanced: false };
 }
 
-async function spendActionPoint(actor) {
-  return spendActorActionPoint(actor);
+async function spendActionPoint(actor, options) {
+  return spendActorActionPoint(actor, options);
 }
 
 async function advanceCombatTurnForExchange(message, combat, { force = false } = {}) {

@@ -1,3 +1,5 @@
+import { clearCombatWaiting, settleWaiting } from "../rules/combat-waiting.js";
+import { migrateCombatWaiting } from "../rules/combat-action-runtime.js";
 import { activateContestResponseDialog, activateSkillRollDialog } from "../apps/skill-roll-dialog.js";
 import { activateWeaponPinCard, registerWeaponPinSocket } from "../rules/weapon-pin-runtime.js";
 import { activateCombatCard, registerCombatSocket } from "../rules/combat-chat.js";
@@ -66,6 +68,7 @@ export function registerUiHooks() {
     registerCombatActionSocket();
     registerFatigueCheckSocket();
     if (isCombatCoordinator()) {
+      for (const combat of game.combats) await migrateCombatWaiting(combat);
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
       for (const combat of game.combats.filter((entry) => entry.started)) {
         for (const combatant of combat.combatants) {
@@ -133,7 +136,7 @@ export function registerUiHooks() {
       }
       const actions = combatActionState(combat);
       const tactical = [];
-      if (actions.delays[entry.id]?.status === "reserved") tactical.push(game.i18n.localize("MYTHRASF.Action.delay"));
+      if (actions.delays[entry.id]?.status === "reserved") tactical.push(game.i18n.localize("MYTHRASF.Status.Waiting"));
       if (entry.actor.statuses?.has?.("braced")) tactical.push(game.i18n.localize("MYTHRASF.Action.brace"));
       if (actions.movements[entry.id]) tactical.push(game.i18n.localize(`MYTHRASF.Action.Movement.${actions.movements[entry.id].mode}`));
       if (entry.actor.statuses?.has?.("prone")) tactical.push(game.i18n.localize("MYTHRASF.Status.Prone"));
@@ -161,7 +164,8 @@ export function registerUiHooks() {
     }
   });
   Hooks.on("updateCombat", (combat, changed) => {
-    if (!foundry.utils.hasProperty(changed, "flags.mythras-foundry.tacticalState")) return;
+    if (!["flags.mythras-foundry.tacticalState", "flags.mythras-foundry.combatActions", "turn", "round"]
+      .some(path => foundry.utils.hasProperty(changed, path))) return;
     for (const combatant of combat.combatants) combatant.actor?.sheet?.render?.();
   });
   Hooks.on("updateActor", async (actor, changed) => {
@@ -175,8 +179,14 @@ export function registerUiHooks() {
       await synchronizeCombatantInitiative(combatant);
     }
   });
+  Hooks.on("deleteCombatant", async (combatant) => {
+    if (isCombatCoordinator()) await settleWaiting(combatant.parent, combatant, { charge: false });
+  });
   Hooks.on("deleteCombat", async (combat) => {
-    if (isCombatCoordinator()) await clearCombatManeuvers(combat);
+    if (isCombatCoordinator()) {
+      await clearCombatManeuvers(combat);
+      await clearCombatWaiting(combat, { charge: false });
+    }
     await restoreCombatActors(combat);
   });
   Hooks.on("combatEnd", async (combat) => {

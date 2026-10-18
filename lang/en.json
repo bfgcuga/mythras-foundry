@@ -1,4 +1,6 @@
 {
+  "MYTHRASF.Status.Waiting": "Waiting",
+  "MYTHRASF.Status.Description.waiting": "Keeps AP for a reaction. The first reaction spending AP removes waiting. At the next turn or round end, an unused wait costs one AP. Proactive actions remain restricted to your turn.",
   "MYTHRASF.Maneuver.Expired": "This manoeuvre belongs to an ended round or an inactive combat.",
   "MYTHRASF.Status.ManeuverProtected": "Protected by manoeuvre",
   "MYTHRASF.Status.Description.maneuverProtected": "Manoeuvre costs 1 AP: roll Evade once, opposed individually by each selected rival. Rivals you defeat are disengaged from you and cannot attack you or initiate engagement with you until the end of the current round, even if they were not previously engaged. A tie or mutual failure grants no protection. Declaring a valid attack against a restricted rival immediately lets that rival attack and engage you again; other rivals remain restricted. Protection does not prevent targeting your token for other actions. Consequences apply on confirmation, after responses and any Luck use.",

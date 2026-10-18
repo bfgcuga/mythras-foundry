@@ -106,9 +106,11 @@ El sistema incluye actualmente:
   localizada y desvíos al disparar a una melé comparten la transacción de chat;
 - catálogo contextual de acciones proactivas compartido por personajes y PNJ:
   Afianzarse, Aprestar Arma, Forcejear, Maniobrar, Mover, Ponerse en Pie,
-  Retrasar, Titubear y Cargar se registran en el combate y gastan PA una sola
-  vez. El movimiento es una declaración táctica, Retrasar abre ventanas de
-  interrupción ordenadas por iniciativa y las acciones de magia y montura se
+  Retrasar, Titubear y Cargar se registran en el combate. Retrasar pasa el turno
+  sin gastar PA y aplica Esperando: la primera reacción de pago retira el estado;
+  si llega el siguiente turno o termina la ronda, pierde un PA. Las acciones
+  activas siguen bloqueadas fuera de turno. El movimiento es una declaración
+  táctica y las acciones de magia y montura se
   conservan como confirmaciones guiadas; Titubear consume explícitamente un
   turno propio de las condiciones temporales. Maniobrar solicita Evadir contra
   cada rival elegido en la escena: el ejecutor tira una vez y cada rival responde

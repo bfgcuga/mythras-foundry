@@ -1,4 +1,4 @@
-export const COMBAT_ACTION_SCHEMA_VERSION = 1;
+export const COMBAT_ACTION_SCHEMA_VERSION = 2;
 
 export const COMBAT_ACTIONS = Object.freeze({
   recoverImpaledWeapon: { type: "proactive", cost: 1, requiresCombat: true },
@@ -19,7 +19,7 @@ export const COMBAT_ACTIONS = Object.freeze({
   move: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   stand: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   charge: { type: "proactive", cost: 1, observable: true, guided: true, requiresCombat: true },
-  delay: { type: "proactive", cost: 1, observable: false, requiresCombat: true },
+  delay: { type: "proactive", cost: 0, observable: false, requiresCombat: true },
   hesitate: { type: "proactive", cost: 1, observable: false, requiresCombat: true },
   mount: { type: "proactive", cost: 1, observable: true, guided: true, requiresCombat: true },
   retainMagic: { type: "proactive", cost: 1, observable: true, guided: true, requiresCombat: true },
@@ -57,7 +57,7 @@ export function delayIsValid(delay, { round, cycle, turnSerial = 0 } = {}) {
 }
 
 export function availableCombatActions({ inCombat = false, isActive = false, actionPoints = 0,
-  canTakeProactiveTurn = true, canAttack = true, engaged = false, prone = false,
+  canTakeProactiveTurn = true, canAttack = true, canDefend = true, engaged = false, prone = false,
   hasRangedWeapon = false, hasPreparedWeapon = false, hasUnarmedAttack = false, hasRestraint = false,
   hasDelay = false, canCharge = false, hasPinnedWeapon = false, grabbed = false,
   entangled = false, holdsEntanglement = false, rooted = false,
@@ -80,9 +80,9 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     if (key === "move") allowed &&= !engaged && !rooted;
     if (key === "stand") allowed &&= prone;
     if (key === "charge") allowed &&= canCharge && hasPreparedWeapon;
-    if (key === "delay") allowed &&= !hasDelay;
-    if (definition.type === "reactive") allowed = inCombat && actionPoints >= definition.cost;
-    if (key === "interrupt") allowed &&= hasDelay;
+    if (key === "delay") allowed &&= !hasDelay && actionPoints >= 1;
+    if (definition.type === "reactive") allowed = inCombat && canDefend && actionPoints >= definition.cost;
+    if (key === "interrupt") allowed = false;
     available[key] = allowed;
   }
   return Object.freeze(available);
@@ -97,7 +97,7 @@ export function combatActionPresentation(context = {}) {
         reason = "combatRequired";
       }
       else if (definition.type === "proactive" && !context.isActive) reason = "activeTurnRequired";
-      else if (Number(context.actionPoints ?? 0) < definition.cost) reason = "actionPoints";
+      else if (Number(context.actionPoints ?? 0) < (key === "delay" ? 1 : definition.cost)) reason = "actionPoints";
       else if (!context.canTakeProactiveTurn) reason = "proactiveBlocked";
       else if (key === "attack" && !context.canAttack) reason = "attackBlocked";
       else if (key === "attack" && !context.hasPreparedWeapon && !context.hasUnarmedAttack) reason = "preparedWeapon";

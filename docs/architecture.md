@@ -511,7 +511,7 @@ contextual de la propia entrada.
 
 Las acciones generales se definen en `scripts/rules/combat-actions.js`, que no
 depende de Foundry y calcula disponibilidad, movimiento, cargas, Afianzarse y
-prioridad de interrupción. El controlador persiste su estado en
+disponibilidad de Retrasar. El controlador persiste su estado en
 `flags.mythras-foundry.combatActions`: las colecciones de acciones, reservas de
 Retrasar, movimiento y progresos de Aprestar comparten una revisión. Los mapas
 históricos de Afianzarse y restricciones de Maniobrar se conservan por
@@ -1150,3 +1150,17 @@ el combate. No se escribe un segundo registro en `maneuverRestrictions`.
 Las ayudas de acciones, comprobaciones de combate y cobertura táctica usan
 `ruleHelpButton` y `.mythras-help-button`, con el mismo icono, tamaño, alineación,
 foco y hover. El clic abre un DialogV2 y el tooltip compartido describe el botón.
+
+### Retrasar y Esperando
+
+El esquema 2 de combatActions registra esperas por combatiente con pago diferido
+(`payment: onReaction`). Retrasar cuesta cero PA pero requiere uno disponible y
+pasa el turno. El efecto waiting referencia combate y combatiente; el registro
+de espera gobierna su consumo. combat-waiting serializa gasto y caducidad por
+actor. Las defensas, respuestas de alcance y reacciones generales retiran la
+espera después de gastar su PA habitual, sin un segundo coste ni avance de turno.
+La siguiente oportunidad del combatiente descuenta un PA si sigue esperando;
+si queda a cero se omite su turno. El cierre de ronda liquida las esperas antes
+de restaurar PA. Finalizar combate o eliminar combatiente limpia sin penalizar.
+Las reservas anteriores ya estaban pagadas: la migración las invalida sin cobro
+y reanuda las acciones suspendidas por ofertas antiguas de interrupción.

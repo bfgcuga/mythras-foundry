@@ -88,7 +88,7 @@ export async function applyCombatDefenseTransition(message, request, { clone, fl
       warn(localize("MYTHRASF.Tracker.Rejected.participation")); return false;
     }
     if (effectiveActionPointMaximum(actor, actionPointRules()) < 1
-      || !await spendActionPoint(actor)) {
+      || !await spendActionPoint(actor, { reactive: true })) {
       warn(localize("MYTHRASF.Tracker.Rejected.actionPoints")); return false;
     }
     combat.turnEconomy.defenseSpent = true;

@@ -1,12 +1,16 @@
+import { withActionPointLock, consumeActorWaiting } from "./combat-waiting.js";
 import { currentActionPoints } from "./action-points.js";
 import { consumeAmmunition } from "./ranged-combat.js";
 import { weaponModes } from "./weapon-modes.js";
 
-export async function spendActorActionPoint(actor) {
-  const points = currentActionPoints(actor);
-  if (points < 1) return false;
-  await actor.update({ "system.resources.actionPoints.value": points - 1 });
-  return true;
+export async function spendActorActionPoint(actor, { reactive = false } = {}) {
+  return withActionPointLock(actor, async () => {
+    const points = currentActionPoints(actor);
+    if (points < 1) return false;
+    await actor.update({ "system.resources.actionPoints.value": points - 1 });
+    if (reactive) await consumeActorWaiting(actor);
+    return true;
+  });
 }
 
 export async function spendActorLuckPoint(actor) {
