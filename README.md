@@ -115,7 +115,10 @@ El sistema incluye actualmente:
   interruptora se publica la pregunta con la que el DJ decide
   si impide la acción del turno suspendido: en ese caso cuesta un PA total y
   pasa el turno; de lo contrario continúa su resolución. El movimiento es una
-  declaración táctica y las acciones de magia y montura se
+  declaración táctica: el diálogo permite elegir andar, correr o esprintar, muestra
+  el máximo de metros por asalto según el movimiento efectivo (×1, ×3 o ×5) y
+  admite una descripción opcional. El chat indica el gasto de PA, el modo y
+  la distancia máxima, seguidos de la descripción si existe. Las acciones de magia y montura se
   conservan como confirmaciones guiadas; Titubear consume explícitamente un
   turno propio de las condiciones temporales. Maniobrar solicita Evadir contra
   cada rival elegido en la escena: el ejecutor tira una vez y cada rival responde

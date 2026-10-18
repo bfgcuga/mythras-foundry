@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { actionCard, activateCombatActionCard, executeAction } from "../scripts/rules/combat-action-runtime.js";
-import { COMBAT_ACTIONS } from "../scripts/rules/combat-actions.js";
+import { COMBAT_ACTIONS, movementDistance } from "../scripts/rules/combat-actions.js";
+import { readFileSync } from "node:fs";
 
 function fixture(t) {
   const dom = new JSDOM('<main></main>');
@@ -98,4 +99,26 @@ test('brace creates one visible status and Move removes it', async t => {
   await executeAction(combat, action);
   assert.equal(actor.statuses.has('braced'), false);
   assert.equal(actor.effects.length, 0);
+});
+
+test('movement cards show mode and maximum distance followed by the optional description', t => {
+  const { action, root } = fixture(t);
+  const translations = JSON.parse(readFileSync(new URL('../lang/es.json', import.meta.url), 'utf8'));
+  game.i18n.localize = key => translations[key] ?? key;
+  game.i18n.format = (key, data) => game.i18n.localize(key).replace('{distance}', data.distance);
+  foundry.utils.escapeHTML = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  for (const [mode, word, distance] of [['walk', 'andando', 6], ['run', 'corriendo', 18], ['sprint', 'esprintando', 30]]) {
+    assert.equal(movementDistance(6, mode), distance);
+    root.innerHTML = actionCard({ ...action, key: 'move', parameters: {
+      mode, distance, direction: '<b>Hasta la puerta</b>' } });
+    const description = root.querySelector('.combat-action-description');
+    assert.equal(description.textContent, `Gasta un PA para moverse ${word} hasta ${distance} metros.`);
+    assert.equal(description.nextElementSibling.textContent, '<b>Hasta la puerta</b>');
+    assert.equal(description.nextElementSibling.querySelector('b'), null);
+    assert.doesNotMatch(root.textContent, /Afianzado|automáticamente|token/);
+  }
+  root.innerHTML = actionCard({ ...action, key: 'move', parameters: { mode: 'walk', distance: 0 } });
+  assert.equal(root.querySelectorAll('p').length, 1);
+  assert.equal(movementDistance(0, 'run'), 0);
+  assert.equal(movementDistance(3, 'sprint'), 15);
 });

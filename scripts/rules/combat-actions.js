@@ -116,6 +116,10 @@ export function combatActionPresentation(context = {}) {
   })));
 }
 
+export function movementDistance(movementRate, mode) {
+  return Math.max(0, Number(movementRate) || 0) * ({ stationary: 0, walk: 1, run: 3, sprint: 5 }[mode] ?? 0);
+}
+
 export function movementDeclaration({ mode, round, cycle = 1, targetTokenUuid = "",
   direction = "", userId = "", previous = null, now = Date.now() }) {
   if (!["stationary", "walk", "run", "sprint"].includes(mode)) throw new Error("Invalid movement mode");

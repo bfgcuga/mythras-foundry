@@ -24,7 +24,7 @@ import { impalementsReachableBy, extractionDamage } from "./impalement.js";
 import { applyStrengthContestPenalties } from "./strength-contests.js";
 import { difficultyTarget } from "./combat.js";
 import { COMBAT_ACTIONS, emptyCombatActionState, isEngaged,
-  chargeEligibility, chargeModifiers, movementDeclaration,
+  chargeEligibility, chargeModifiers, movementDeclaration, movementDistance,
   normalizeCombatActionState, combatActionPresentation } from "./combat-actions.js";
 
 const SCOPE = "mythras-foundry";
@@ -288,8 +288,10 @@ export function actionCard(action) {
     ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.CombatEffect.Confirm"))}</button><button type="button" data-action-transaction="cancel">${escape(localize("MYTHRASF.Cancel"))}</button></div>` : "";
   const help = COMBAT_ACTIONS[action.key]
     ? ruleHelpButton(`data-action-help="${escape(action.key)}"`) : "";
+  const movementText = action.key === "move" && action.parameters?.mode && action.parameters?.distance != null
+    ? game.i18n.format(`MYTHRASF.Action.MoveResult.${action.parameters.mode}`, { distance: action.parameters.distance }) : null;
   const description = COMBAT_ACTIONS[action.key]
-    ? `<p class="combat-action-description">${escape(actionDescription(action.key))}</p>` : "";
+    ? `<p class="combat-action-description">${escape(movementText ?? actionDescription(action.key))}</p>${action.key === "move" && action.parameters?.direction ? `<p>${escape(action.parameters.direction)}</p>` : ""}` : "";
   const outcome = action.key === "hesitate" && action.status === "resolved"
     ? `<p>${escape(localize("MYTHRASF.Action.HesitateResult"))}</p>` : "";
   return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3>${description}<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${outcome}${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
@@ -342,10 +344,15 @@ async function createTransaction(context, key, parameters = {}) {
 }
 
 async function chooseMovement(context) {
+  const actor = context.combatant.actor;
+  const rate = resolveActorConditions(actor, { baseAttributes:
+    actor.system?.baseAttributes ?? actor.system?.attributes ?? {} }).attributes.movementRate;
+  const distances = Object.fromEntries(["walk", "run", "sprint"].map(mode => [mode, movementDistance(rate, mode)]));
   return foundry.applications.api.DialogV2.wait({ window: { title: localize("MYTHRASF.Action.move") },
-    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Action.MovementMode"))}</span><select name="mode"><option value="stationary">${escape(localize("MYTHRASF.Action.Movement.stationary"))}</option><option value="walk">${escape(localize("MYTHRASF.Action.Movement.walk"))}</option><option value="run">${escape(localize("MYTHRASF.Action.Movement.run"))}</option><option value="sprint">${escape(localize("MYTHRASF.Action.Movement.sprint"))}</option></select></label><label><span>${escape(localize("MYTHRASF.Action.Direction"))}</span><input name="direction"></label></div>`,
-    buttons: [{ action: "confirm", label: localize("MYTHRASF.CombatEffect.Confirm"),
+    content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Action.MovementMode"))}</span><select name="mode">${Object.entries(distances).map(([mode, distance]) => `<option value="${mode}">${escape(localize(`MYTHRASF.Action.Movement.${mode}`))} — ${escape(game.i18n.format("MYTHRASF.Action.MovementLimit", { distance }))}</option>`).join("")}</select></label><label><span>${escape(localize("MYTHRASF.Action.MovementDescription"))}</span><textarea name="direction" rows="3"></textarea></label></div>`,
+    buttons: [{ action: "confirm", label: localize("MYTHRASF.Action.ConfirmMovement"),
       callback: (event, button) => ({ mode: button.form.elements.mode.value,
+        distance: distances[button.form.elements.mode.value],
         direction: button.form.elements.direction.value.trim() }) },
     { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false });
 }
