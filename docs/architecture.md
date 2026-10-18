@@ -533,6 +533,14 @@ y se resuelve automáticamente con el avance habitual del turno. Bloqueo Pasivo
 es gratuito y no exige turno propio ni PA: la hoja abre la declaración pendiente
 o el mismo editor de corrección de situación táctica cuando ya no hay una
 declaración pendiente, incluso si todavía no existe un bloqueo guardado.
+`free-combat-actions.js` gestiona Hablar, Hacer gestos, Soltar arma y Valorar
+situación desde el parcial compartido por personajes y PNJ. Comprueba propiedad
+del Actor y no usa la economía de turnos ni PA. Soltar arma desequipa
+el Item elegido y consume su bloqueo pasivo si estaba activo; excluye armas
+naturales y vuelve a validar la
+elección después del diálogo. Valorar situación advierte sobre la traba sin
+consultarla como restricción y reutiliza Percepción con el resolvedor común de
+condiciones y el diálogo de impacto de heridas.
 
 Ponerse en Pie abre un diálogo con la traba táctica detectada y permite corregirla
 sin modificar las relaciones tácticas. Sin traba retira Tumbado automáticamente.

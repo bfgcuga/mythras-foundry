@@ -1,4 +1,14 @@
 {
+  "MYTHRASF.Action.speak": "Hablar",
+  "MYTHRASF.Action.gesture": "Hacer gestos",
+  "MYTHRASF.Action.dropWeapon": "Soltar arma",
+  "MYTHRASF.Action.assessSituation": "Valorar situación",
+  "MYTHRASF.PassiveBlock.Change": "Cambiar bloqueo pasivo",
+  "MYTHRASF.FreeAction.NoHeldWeapon": "No hay armas empuñadas que se puedan soltar.",
+  "MYTHRASF.FreeAction.DroppedWeapon": "Ha soltado {weapon}.",
+  "MYTHRASF.FreeAction.AssessWarning": "Para valorar la situación no debes estar trabado en combate. ¿Quieres continuar con una tirada de Percepción?",
+  "MYTHRASF.FreeAction.NoPerception": "No se encuentra la habilidad Percepción.",
+
   "MYTHRASF.Action.ActiveActions": "Acciones activas de combate",
   "MYTHRASF.Action.FreeActions": "Acciones gratuitas de combate",
   "MYTHRASF.Action.generic": "Realizar acción genérica",

@@ -1,3 +1,4 @@
+import { FREE_COMBAT_ACTIONS, requestFreeCombatAction } from "../rules/free-combat-actions.js";
 import { resolveActorConditions, actorLoadState } from "../rules/actor-conditions.js";
 import { intrinsicUnarmedWeapon, unarmedAbilities, resolveUnarmedAbility, hasIntrinsicUnarmed, UNARMED_PROFILE } from "../rules/unarmed-combat.js";
 import { difficultyTarget, resolveWeaponStyle,
@@ -135,6 +136,10 @@ export class CombatSheetController {
       button.addEventListener("click", (event) => this.rollWeaponAttack(event)));
     this.element.querySelector("[data-action='choose-weapon-attack']")
       ?.addEventListener("click", (event) => this.chooseWeaponAttack(event));
+    for (const key of FREE_COMBAT_ACTIONS) {
+      this.element.querySelector(`[data-free-combat-action="${key}"]`)?.addEventListener("click", (event) =>
+        requestFreeCombatAction(this.actor, key, { manual: event.shiftKey }));
+    }
     const tacticalActions = {
       "change-reach": "changeReach", "declare-passive-block": "declarePassiveBlock",
       "declare-cover": "declareCover", "aim-ranged": "aim", "reload-ranged": "reload"

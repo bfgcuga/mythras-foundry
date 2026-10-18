@@ -22,33 +22,19 @@ implementación incompleta o resolución únicamente guiada, y corregir o comple
 su flujo según corresponda. Comprobar requisitos, disponibilidad, coste en PA,
 tiradas, consecuencias y cierre o avance del turno, con pruebas de los
 comportamientos corregidos. La revisión determinará el alcance concreto de las
-acciones diferenciales pendientes del punto 6.
+acciones diferenciales pendientes del punto 5.
 
 Montar, Mover y Titubear ya están revisadas y aprobadas. La acción genérica
 ya permite describir una acción, gastar un PA y publicarla en el chat.
 
-## 2. Añadir acciones gratuitas
-
-Añadir las siguientes acciones, que pueden usarse en cualquier momento sin
-gastar puntos de acción:
-
-- Hablar.
-- Hacer gestos.
-- Soltar arma.
-- Valorar situación.
-
-Las hojas de personaje y PNJ ya separan acciones activas y gratuitas. Declarar
-o modificar Bloqueo Pasivo está en el bloque gratuito y disponible en cualquier
-momento del combate, sin gastar PA, mediante el mismo menú de situación táctica.
-
-## 3. Revisar las resoluciones manuales de flujos interactivos
+## 2. Revisar las resoluciones manuales de flujos interactivos
 
 Revisar todas las apariciones de «Resolver manualmente» y determinar, caso por
 caso, si la acción es reglamentaria o debe sustituirse por la tirada o decisión
 correspondiente. Evitar cierres accidentales, consecuencias omitidas y bloqueos
 en intercambios, estados y peligros.
 
-## 4. Definir y aplicar la matriz de permisos y visibilidad
+## 3. Definir y aplicar la matriz de permisos y visibilidad
 
 Definir el comportamiento de `NONE`, `LIMITED`, `OBSERVER` y `OWNER` antes de
 ampliar las hojas. La matriz debe cubrir:
@@ -63,7 +49,7 @@ ampliar las hojas. La matriz debe cubrir:
 Aplicar después la matriz de forma coherente a personajes, PNJ e Items y cubrir
 los límites relevantes con pruebas.
 
-## 5. Separar las responsabilidades de las consecuencias de asalto
+## 4. Separar las responsabilidades de las consecuencias de asalto
 
 Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
 renderizado y el transporte antes de ampliar significativamente los peligros.
@@ -71,7 +57,7 @@ Conservar las transiciones y validaciones actuales mediante pruebas durante la
 extracción. Las fronteras y restricciones del refactor están detalladas en
 [`refactoring.md`](refactoring.md).
 
-## 6. Integrar las acciones diferenciales pendientes
+## 5. Integrar las acciones diferenciales pendientes
 
 Conectar Forcejear y Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
@@ -79,19 +65,19 @@ pero la resolución de esas acciones sigue siendo guiada. Maniobrar ya utiliza
 una enfrentada de Evadir con una respuesta individual por rival y confirmación
 de consecuencias.
 
-## 7. Implementar venenos, enfermedades y trampas
+## 6. Implementar venenos, enfermedades y trampas
 
 Incorporar reglas, configuración, resolución, persistencia y presentación para
 venenos, enfermedades y trampas sobre la infraestructura separada de
 consecuencias. Mantener fuera de este alcance las inclemencias y macros de clima
 hasta que sus reglas estén definidas.
 
-## 8. Implementar Entrenar Habilidad
+## 7. Implementar Entrenar Habilidad
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.
 
-## 9. Revisar y poner en orden los estados
+## 8. Revisar y poner en orden los estados
 
 Revisar conjuntamente el catálogo del sistema y los estados nativos de Foundry:
 

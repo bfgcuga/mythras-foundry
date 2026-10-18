@@ -1,4 +1,14 @@
 {
+  "MYTHRASF.Action.speak": "Speak",
+  "MYTHRASF.Action.gesture": "Gesture",
+  "MYTHRASF.Action.dropWeapon": "Drop weapon",
+  "MYTHRASF.Action.assessSituation": "Assess situation",
+  "MYTHRASF.PassiveBlock.Change": "Change passive block",
+  "MYTHRASF.FreeAction.NoHeldWeapon": "There are no held weapons to drop.",
+  "MYTHRASF.FreeAction.DroppedWeapon": "Dropped {weapon}.",
+  "MYTHRASF.FreeAction.AssessWarning": "To assess the situation you must not be engaged in combat. Continue with a Perception roll?",
+  "MYTHRASF.FreeAction.NoPerception": "Perception skill was not found.",
+
   "MYTHRASF.Action.ActiveActions": "Active combat actions",
   "MYTHRASF.Action.FreeActions": "Free combat actions",
   "MYTHRASF.Action.generic": "Perform generic action",

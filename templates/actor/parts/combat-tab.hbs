@@ -19,7 +19,12 @@
     <button type="button" data-combat-action-key="generic" title="{{localize 'MYTHRASF.Action.generic'}}"><i class="fas fa-pen" aria-hidden="true"></i> {{localize "MYTHRASF.Action.generic"}}</button>
   </div></fieldset>
   <fieldset class="combat-paper-panel"><legend>{{localize "MYTHRASF.Action.FreeActions"}}</legend><div class="combat-tactical-actions">
-    <span data-action-presentation><button type="button" data-action="declare-passive-block" data-combat-action-key="passiveBlock"><i class="fas fa-shield-halved" aria-hidden="true"></i> {{localize "MYTHRASF.PassiveBlock.Declare"}}</button></span>
+    <button type="button" data-free-combat-action="speak" title="{{localize 'MYTHRASF.Action.speak'}}"><i class="fas fa-comment" aria-hidden="true"></i> {{localize "MYTHRASF.Action.speak"}}</button>
+    <button type="button" data-free-combat-action="gesture" title="{{localize 'MYTHRASF.Action.gesture'}}"><i class="fas fa-hand" aria-hidden="true"></i> {{localize "MYTHRASF.Action.gesture"}}</button>
+    <button type="button" data-free-combat-action="dropWeapon" title="{{localize 'MYTHRASF.Action.dropWeapon'}}"><i class="fas fa-hand-holding" aria-hidden="true"></i> {{localize "MYTHRASF.Action.dropWeapon"}}</button>
+    <button type="button" data-free-combat-action="assessSituation" title="{{localize 'MYTHRASF.Action.assessSituation'}}"><i class="fas fa-eye" aria-hidden="true"></i> {{localize "MYTHRASF.Action.assessSituation"}}</button>
+
+    <span data-action-presentation><button type="button" data-action="declare-passive-block" data-combat-action-key="passiveBlock"><i class="fas fa-shield-halved" aria-hidden="true"></i> {{localize "MYTHRASF.PassiveBlock.Change"}}</button></span>
   </div></fieldset>
   </div>
   {{> "systems/mythras-foundry/templates/actor/parts/hit-location-table.hbs"

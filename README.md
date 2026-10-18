@@ -18,9 +18,14 @@ instalables se distribuyen mediante las releases de GitHub.
 
 El sistema incluye actualmente:
 
+- acciones gratuitas Hablar y Hacer gestos con descripción publicada en el chat;
+  Soltar arma desequipa el arma elegida sin retirarla del inventario y lo anuncia;
+  Valorar situación pide confirmar que se desea continuar tras advertir que no
+  debe estar trabado, y abre la tirada habitual de Percepción sin bloqueo
+  automático por traba. Ninguna gasta PA ni avanza el turno;
 - acciones activas y gratuitas de combate en recuadros separados en personajes
   y PNJ; acción genérica con descripción obligatoria, coste de un PA y mensaje
-  en el chat; declaración o modificación gratuita del Bloqueo Pasivo en cualquier
+  en el chat; botón Cambiar bloqueo pasivo para su declaración o modificación gratuita en cualquier
   momento del combate desde la hoja, con el mismo menú de situación táctica;
 
 - hojas Application V2 para personajes, PNJ y todos los tipos de Item;
