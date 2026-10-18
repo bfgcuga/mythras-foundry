@@ -1,4 +1,6 @@
 {
+  "MYTHRASF.Status.Braced": "Afianzado",
+  "MYTHRASF.Status.Description.braced": "Mientras permanezcas afianzado, tu TAM se considera un 50 % mayor para resistir Empujones y el doble para resistir Golpetazos, redondeando hacia arriba. Requiere un arma preparada. El estado se retira al ejecutar Mover y también puede retirarse desde la pestaña Estado. Estos ajustes específicos de TAM se consultan para resolver la resistencia; no cambian tu TAM base.",
   "MYTHRASF.Combat.BypassArmor.Title": "Superar Armadura",
   "MYTHRASF.Combat.BypassArmor.Type": "Armadura ignorada",
   "MYTHRASF.Combat.BypassArmor.worn": "Armadura equipada",
@@ -315,7 +317,7 @@
   "MYTHRASF.Tab.Skills": "Habilidades",
   "MYTHRASF.Tab.Inventory": "Inventario",
   "MYTHRASF.Tab.Penalties": "Penalizaciones",
-  "MYTHRASF.Penalties.Title": "Penalizaciones aplicadas",
+  "MYTHRASF.Penalties.Title": "Modificadores aplicados",
   "MYTHRASF.Penalties.Source": "Fuente",
   "MYTHRASF.Penalties.Skills": "Habilidades",
   "MYTHRASF.Penalties.Wounds": "Heridas",

@@ -81,6 +81,8 @@ Estas reglas se aplican a todas las hojas, pestañas, parciales y diálogos del 
 - El resultado o total operativo usa `mythras-chat-total`, con borde y valor en negrita.
 - Las tarjetas interactivas de combate conservan sus controles, pero siguen la misma jerarquía de título, desglose etiquetado y total destacado.
 
+- La información adicional de reglas en el chat usa un botón `sheet-icon-button` con interrogación en círculo, `aria-label` y título localizados. Al pulsarlo abre un `DialogV2` de ayuda, siguiendo las ayudas de comprobaciones de combate; el tooltip compartido describe el botón y no sustituye la explicación.
+
 ## Implementación
 
 - Variables de tema y componentes compartidos se definen una sola vez en `styles/mythras-foundry.css`.

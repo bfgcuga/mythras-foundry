@@ -133,7 +133,7 @@ export function registerUiHooks() {
       const actions = combatActionState(combat);
       const tactical = [];
       if (actions.delays[entry.id]?.status === "reserved") tactical.push(game.i18n.localize("MYTHRASF.Action.delay"));
-      if (actions.braces[entry.id]?.status === "active") tactical.push(game.i18n.localize("MYTHRASF.Action.brace"));
+      if (entry.actor.statuses?.has?.("braced")) tactical.push(game.i18n.localize("MYTHRASF.Action.brace"));
       if (actions.movements[entry.id]) tactical.push(game.i18n.localize(`MYTHRASF.Action.Movement.${actions.movements[entry.id].mode}`));
       if (entry.actor.statuses?.has?.("prone")) tactical.push(game.i18n.localize("MYTHRASF.Status.Prone"));
       const block = combat.getFlag("mythras-foundry", "tacticalState")

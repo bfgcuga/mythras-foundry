@@ -9,7 +9,7 @@ import { evaluateSystemRoll } from "./system-roll.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { opposedEffectWinner } from "./combat-effects.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
-import { actorDisplayName } from "./document-names.js";
+import { actorDisplayName, actorSpeaker, tokenDisplayName } from "./document-names.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { combatantForActor, tacticalState } from "./engagement-runtime.js";
 import { weaponModes } from "./weapon-modes.js";
@@ -261,10 +261,10 @@ function eligibleDelays(combat, state, actorCombatantId) {
   return combat.turns.filter((entry) => entry.id !== actorCombatantId
     && state.delays[entry.id]?.status === "reserved" && entry.actor
     && currentActionPoints(entry.actor) >= 0).map((entry) => ({ combatantId: entry.id,
-      actorUuid: entry.actor.uuid, name: entry.name, initiative: Number(entry.initiative ?? -Infinity) }));
+      actorUuid: entry.actor.uuid, name: tokenDisplayName(entry.token) || actorDisplayName(entry.actor), initiative: Number(entry.initiative ?? -Infinity) }));
 }
 
-function actionCard(action) {
+export function actionCard(action) {
   const responses = action.interruptCandidates?.map((candidate) => {
     const response = action.interruptResponses?.[candidate.combatantId];
     const controls = !response && action.status === "awaitingInterrupts"
@@ -274,7 +274,9 @@ function actionCard(action) {
   }).join("") ?? "";
   const confirmation = action.status === "awaitingConfirmation"
     ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.CombatEffect.Confirm"))}</button><button type="button" data-action-transaction="cancel">${escape(localize("MYTHRASF.Cancel"))}</button></div>` : "";
-  return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))}</span></div>${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
+  const help = action.key === "brace" ? `<button type="button" class="sheet-icon-button" data-action-help="brace"
+    title="${escape(localize("MYTHRASF.Combat.CheckHelp"))}" aria-label="${escape(localize("MYTHRASF.Combat.CheckHelp"))}"><i class="fas fa-circle-question" aria-hidden="true"></i></button>` : "";
+  return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize(`MYTHRASF.Action.${action.key}`))}</h3><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.Actor"))}</span><span>${escape(actorDisplayName(game.combats?.get(action.combatId)?.combatants.get(action.combatantId)?.actor) || action.actorName)}</span></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Action.StatusLabel"))}</span><span>${escape(localize(`MYTHRASF.Action.Status.${action.status}`))} ${help}</span></div>${responses}${action.note ? `<p>${escape(action.note)}</p>` : ""}${confirmation}</section>`;
 }
 
 async function save(combat, state) {
@@ -290,7 +292,7 @@ async function createTransaction(context, key, parameters = {}) {
   const id = foundry.utils.randomID(); const candidates = definition.observable
     ? eligibleDelays(context.combat, context.state, context.combatant.id) : [];
   const action = { schemaVersion: 1, id, revision: 0, key, type: definition.type,
-    actorUuid: context.combatant.actor.uuid, actorName: context.combatant.name,
+    actorUuid: context.combatant.actor.uuid, actorName: actorDisplayName(context.combatant.actor),
     tokenUuid: context.combatant.token?.uuid ?? "", combatantId: context.combatant.id,
     combatId: context.combat.id, round: context.combat.round,
     cycle: context.combat.mythrasTurnEconomy?.cycle ?? 1, turn: context.combat.turn,
@@ -302,7 +304,7 @@ async function createTransaction(context, key, parameters = {}) {
     note: parameters.note ?? "", interruptCandidates: candidates,
     interruptResponses: {}, createdAt: Date.now() };
   context.state.actions[id] = action; await save(context.combat, context.state);
-  const message = await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: context.combatant.actor }),
+  const message = await ChatMessage.create({ speaker: actorSpeaker(context.combatant.actor),
     content: actionCard(action), flags: { [SCOPE]: { combatAction: { combatId: context.combat.id,
       actionId: id, revision: action.revision } } } });
   action.messageUuid = message.uuid; await save(context.combat, context.state);
@@ -329,7 +331,7 @@ async function chooseReadyWeapon(actor) {
     { action: "cancel", label: localize("MYTHRASF.Cancel") }], rejectClose: false });
 }
 
-async function executeAction(combat, action) {
+export async function executeAction(combat, action) {
   const state = combatActionState(combat); const current = state.actions[action.id];
   if (!current || current.status === "resolved") return;
   const combatant = combat.combatants.get(current.combatantId); const actor = combatant?.actor;
@@ -343,10 +345,16 @@ async function executeAction(combat, action) {
     state.movements[combatant.id] = movementDeclaration({ ...current.parameters,
       round: combat.round, cycle: combat.mythrasTurnEconomy?.cycle ?? 1,
       previous: state.movements[combatant.id], userId: current.userId });
+    const braced = actor.effects.filter((effect) => effect.statuses?.has?.("braced"));
+    if (braced.length) await actor.deleteEmbeddedDocuments("ActiveEffect", braced.map((effect) => effect.id));
     delete state.braces[combatant.id]; current.status = "resolved";
   } else if (current.key === "brace") {
-    state.braces[combatant.id] = { status: "active", round: combat.round,
-      weaponId: current.parameters.weaponId ?? "", userId: current.userId, updatedAt: Date.now() };
+    if (!actor.statuses?.has?.("braced")) await applyTimedCondition(actor, {
+      key: "braced", statusId: "braced", name: localize("MYTHRASF.Status.Braced"),
+      img: "icons/svg/shield.svg", source: { actorUuid: actor.uuid, name: actorDisplayName(actor) },
+      duration: { unit: "manual", phase: "manual" },
+      metadata: { weaponId: current.parameters.weaponId ?? "" } });
+    delete state.braces[combatant.id];
     current.status = "resolved";
   } else if (current.key === "readyWeapon") {
     const weapon = actor.items.get(current.parameters.weaponId);
@@ -461,6 +469,13 @@ async function applyCardRequest(request) {
 export function activateCombatActionCard(message, html) {
   const reference = message.getFlag?.(SCOPE, "combatAction"); if (!reference) return;
   const root = html instanceof HTMLElement ? html : html?.[0];
+  root?.querySelectorAll?.('[data-action-help="brace"]').forEach((button) => {
+    button.addEventListener("click", () => foundry.applications.api.DialogV2.wait({
+      window: { title: localize("MYTHRASF.Action.brace") }, position: { width: 480 },
+      content: `<div class="mythras-foundry mythras-dialog"><p>${escape(localize("MYTHRASF.Status.Description.braced"))}</p></div>`,
+      buttons: [{ action: "close", label: localize("MYTHRASF.Close") }], rejectClose: false
+    }));
+  });
   root?.querySelectorAll?.("[data-action-transaction]").forEach((button) => {
     const candidateId = button.dataset.combatantId;
     const candidateActor = candidateId

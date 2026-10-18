@@ -479,3 +479,10 @@ Derribar Oponente permite resistir desde la tarjeta de ataque con Músculo, Evad
 o Acrobacias. El selector «¿Bípedo?» comienza en Sí; No añade Atletismo y reduce
 un grado la dificultad de cualquiera de esas habilidades. Si pierde la
 resistencia, el oponente recibe Derribado.
+
+
+Afianzarse aplica el estado **Afianzado**, visible y retirable en Estado para PJ y
+PNJ; Mover lo retira automáticamente. Su tarjeta muestra el nombre vigente del
+personaje y ofrece una interrogación en círculo que abre la explicación al pulsar.
+El panel de Estado se denomina **Modificadores aplicados** para incluir tanto
+bonificaciones como penalizaciones.

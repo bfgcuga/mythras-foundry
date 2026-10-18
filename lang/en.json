@@ -1,4 +1,6 @@
 {
+  "MYTHRASF.Status.Braced": "Braced",
+  "MYTHRASF.Status.Description.braced": "While braced, treat your SIZ as 50% greater when resisting a Push and double when resisting a Bash, rounding up. Requires a readied weapon. The status is removed when you perform Move and can also be removed from the Status tab. These situational SIZ adjustments are consulted when resolving resistance; they do not change your base SIZ.",
   "MYTHRASF.Combat.BypassArmor.Title": "Bypass Armour",
   "MYTHRASF.Combat.BypassArmor.Type": "Ignored armour",
   "MYTHRASF.Combat.BypassArmor.worn": "Worn armour",
@@ -315,7 +317,7 @@
   "MYTHRASF.Tab.Skills": "Skills",
   "MYTHRASF.Tab.Inventory": "Inventory",
   "MYTHRASF.Tab.Penalties": "Penalties",
-  "MYTHRASF.Penalties.Title": "Applied penalties",
+  "MYTHRASF.Penalties.Title": "Applied modifiers",
   "MYTHRASF.Penalties.Source": "Source",
   "MYTHRASF.Penalties.Skills": "Skills",
   "MYTHRASF.Penalties.Wounds": "Wounds",

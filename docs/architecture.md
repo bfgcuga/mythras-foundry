@@ -1080,3 +1080,22 @@ efectiva de todas ellas, después de las condiciones del Actor. La elección,
 dificultad y objetivo se conservan en la resolución y en sus repeticiones de
 Suerte. El fallo aplica el estado canónico `prone` de duración manual; no usa
 la incapacitación de «Tumbar oponente».
+
+
+### Afianzamiento y ayuda de acciones
+
+Las transacciones de acciones reutilizan `actorDisplayName` y `actorSpeaker`;
+no usan `Combatant.name`, que puede conservar el nombre inicial de un token.
+La tarjeta consulta el Actor vigente al regenerarse y conserva el nombre guardado
+si el combatiente ya no existe. Las ayudas de reglas del chat se abren mediante
+un botón con interrogación en círculo y un `DialogV2`, como las ayudas de
+comprobaciones de combate; el tooltip compartido solo describe el botón.
+
+Afianzado (`braced`) pertenece al catálogo canónico de estados y se representa
+mediante un ActiveEffect, visible y retirable en Estado tanto en PJ como en PNJ.
+Afianzarse no duplica el efecto si ya está activo. Mover lo elimina. El mapa
+`combatActions.braces` se conserva solo para compatibilidad de lectura del esquema;
+las nuevas acciones no lo escriben y el indicador táctico consulta el estado.
+`braceSize` conserva el cálculo situacional de TAM (×1,5 ante Empujones y ×2 ante
+Golpetazos); el estado no modifica el TAM base. El recuadro compartido de Estado
+se titula «Modificadores aplicados» porque reúne ajustes positivos y negativos.
