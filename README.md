@@ -507,3 +507,7 @@ rival de la restricción. Empates y fallos mutuos no conceden protección. El se
 incluye objetivos actuales, retratos y marcar/desmarcar todos; los tokens sin
 Evadir aparecen deshabilitados. Las ayudas de chat y situación táctica comparten
 interrogación en círculo y explicación mediante clic.
+
+Ponerse en Pie permite confirmar o corregir la traba detectada. Sin traba retira
+Tumbado; con traba resuelve una enfrentada de Músculo o Atletismo contra los
+oponentes elegidos y retira Tumbado al confirmar si se vence a todos.

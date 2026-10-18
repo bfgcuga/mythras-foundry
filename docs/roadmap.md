@@ -15,7 +15,6 @@ Revisar prioritariamente estas acciones:
 - Forcejear.
 - Montar.
 - Mover.
-- Ponerse en pie.
 - Titubear.
 - Retener Magia.
 - Usar Magia.
@@ -72,7 +71,7 @@ extracción. Las fronteras y restricciones del refactor están detalladas en
 
 ## 6. Integrar las acciones diferenciales pendientes
 
-Conectar Forcejear, Ponerse en Pie y Cargar con la transacción
+Conectar Forcejear y Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
 pero la resolución de esas acciones sigue siendo guiada. Maniobrar ya utiliza
 una enfrentada de Evadir con una respuesta individual por rival y confirmación

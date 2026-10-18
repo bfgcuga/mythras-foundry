@@ -301,7 +301,7 @@ export async function openContestResponseDialog(actor, defaultAbilityId, default
   { specialName = "", specialTarget = 50, requiredAbilitySlug = null } = {}) {
   const { DialogV2 } = foundry.applications.api;
   const abilities = actor.items.filter((item) => ABILITY_TYPES.includes(item.type)
-    && (!requiredAbilitySlug || (item.type === "skill" && item.system.slug === requiredAbilitySlug)));
+    && (!requiredAbilitySlug || (item.type === "skill" && [requiredAbilitySlug].flat().includes(item.system.slug))));
   const options = [...abilities.map((item) => `<option value="${escape(item.id)}" ${item.id === defaultAbilityId ? "selected" : ""}>${escape(item.name)} (${Number(item.system.total ?? 0)}%)</option>`),
     ...(requiredAbilitySlug ? [] : [`<option value="${SPECIAL_ABILITY_ID}" ${defaultAbilityId === SPECIAL_ABILITY_ID ? "selected" : ""}>${escape(game.i18n.localize("MYTHRASF.SpecialRoll.Title"))}</option>`])].join("");
   const sceneParticipants = sceneRollParticipants();

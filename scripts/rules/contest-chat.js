@@ -242,7 +242,9 @@ function renderConfiguredResolution(contest, resolved) {
       : localize(`MYTHRASF.Contest.Resolution.${entry.reason}`);
     return `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Contest.Against"))}</span><strong>${escape(`${participantDisplayName(protagonist)} / ${participantDisplayName(antagonist)}`)}</strong></div><div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(outcome)}</strong></div>`;
   }).join("");
-  return summaries + comparisons;
+  const standOutcome = contest.actionContext?.key === "stand"
+    ? `<div class="mythras-chat-total"><span>${escape(localize("MYTHRASF.Contest.Outcome"))}</span><strong>${escape(localize(resolved.comparisons.length && resolved.comparisons.every((entry) => entry.winnerId === contest.initiatorId) ? "MYTHRASF.Stand.Success" : "MYTHRASF.Stand.Failure"))}</strong></div>` : "";
+  return summaries + comparisons + standOutcome;
 }
 
 function configuredWinnerName(contest, winner) {
@@ -276,6 +278,10 @@ export function validateContestResponse(contest, { revision, participantId, user
 
 async function actionContestCurrent(contest) {
   if (!contest?.actionContext) return true;
+  if (contest.actionContext.key === "stand") {
+    const { standContestIsCurrent } = await import("./stand-runtime.js");
+    return standContestIsCurrent(contest);
+  }
   const { maneuverContestIsCurrent } = await import("./maneuver-runtime.js");
   return maneuverContestIsCurrent(contest);
 }
@@ -290,6 +296,10 @@ export async function queueContestMutation(message, operation) {
 
 export async function requestContestActionConfirmation(message, request) {
   return queueContestMutation(message, async () => {
+    if (message.getFlag(FLAG_SCOPE, "contest")?.actionContext?.key === "stand") {
+      const { confirmStandContest } = await import("./stand-runtime.js");
+      return confirmStandContest(message, request);
+    }
     const { confirmManeuverContest } = await import("./maneuver-runtime.js");
     return confirmManeuverContest(message, request);
   });
@@ -326,7 +336,7 @@ async function applyContestResponseUnlocked(message, request) {
       type: "special", actor, system: { total: Math.max(0, Number(request.config.specialTarget) || 0) } }
     : actor.items.get(request.config.abilityId);
   if (!ability || !["skill", "combatStyle", "passion", "special"].includes(ability.type)) return;
-  if (contest.requiredAbilitySlug && (ability.type !== "skill" || ability.system.slug !== contest.requiredAbilitySlug)) return;
+  if (contest.requiredAbilitySlug && (ability.type !== "skill" || ![contest.requiredAbilitySlug].flat().includes(ability.system.slug))) return;
   if (!Number.isInteger(Number(request.rawRoll)) || Number(request.rawRoll) < 1 || Number(request.rawRoll) > 100) return;
   const affecting = (reference) => {
     const [actorId, itemId] = String(reference ?? "").split("|");
@@ -391,7 +401,7 @@ export function activateContestCard(message, html) {
     const button = event.target.closest("[data-contest-action]");
     if (!button) return;
     if (button.dataset.contestAction === "help" && contest.actionContext) return openRuleHelp(
-      localize(`MYTHRASF.Action.${contest.actionContext.key}`), localize("MYTHRASF.Status.Description.maneuverProtected"));
+      localize(`MYTHRASF.Action.${contest.actionContext.key}`), localize(contest.actionContext.key === "stand" ? "MYTHRASF.Action.Description.stand" : "MYTHRASF.Status.Description.maneuverProtected"));
     if (button.dataset.contestAction === "confirm-action") {
       const request = { action: "contestActionConfirm", messageId: message.id, revision: contest.revision, userId: game.user.id };
       if (preferredContestCoordinator(game.users, contest.authorUserId) === game.user.id) return requestContestActionConfirmation(message, request);

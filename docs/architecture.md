@@ -528,6 +528,15 @@ sistema todavía no representa.
 eliminar acciones del DOM. Los controladores especializados de alcance,
 bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
 
+Ponerse en Pie abre un diálogo con la traba táctica detectada y permite corregirla
+sin modificar las relaciones tácticas. Sin traba retira Tumbado automáticamente.
+Con traba, `stand-runtime.js` valida los oponentes elegidos antes de gastar el PA
+y reutiliza la tarjeta de enfrentadas: cada participante elige Músculo o Atletismo.
+La confirmación retira Tumbado solo si el iniciador vence a todos los oponentes;
+empates, fallos mutuos o derrotas conservan la postura. Los rivales no gastan PA.
+El turno avanza al confirmar las consecuencias; permisos, revisión y vigencia
+del asalto impiden aplicar respuestas obsoletas o duplicadas.
+
 La silueta se monta desde `scripts/ui/body-silhouette.js` incrustando el SVG de
 `assets/Silueta`. El ajuste de mundo `silhouetteOrientation` decide si las
 localizaciones izquierdas y derechas se proyectan como vista frontal o dorsal.

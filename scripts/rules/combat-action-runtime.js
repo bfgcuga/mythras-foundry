@@ -303,6 +303,12 @@ async function save(combat, state) {
 }
 
 async function createTransaction(context, key, parameters = {}) {
+  if (key === "stand" && parameters.engaged) {
+    const { validateStandSelection } = await import("./stand-runtime.js");
+    if (!await validateStandSelection(context.combat, context.combatant.actor, context.combatant.token?.uuid, parameters, game.users.get(context.userId) ?? game.user)) {
+      ui.notifications.warn(localize("MYTHRASF.Stand.InvalidParticipants")); return null;
+    }
+  }
   if (key === "maneuver") {
     const { validateManeuverSelection } = await import("./maneuver-runtime.js");
     if (!activeContext(context.combatant.actor) || !await validateManeuverSelection(context.combat,
@@ -422,7 +428,18 @@ export async function executeAction(combat, action) {
       if (progress >= 2) { await weapon.update({ "system.equipped": true }); delete state.readyProgress[combatant.id]; }
       current.status = "resolved";
     } else { await weapon.update({ "system.equipped": current.parameters.operation === "ready" }); current.status = "resolved"; }
-  } else if (current.key === "stand" && !isEngaged(tacticalState(combat).relations, combatant.id)) {
+  } else if (current.key === "stand" && current.parameters.engaged) {
+    current.status = "awaitingContest"; current.revision += 1; await save(combat, state);
+    try {
+      const { startStandContest } = await import("./stand-runtime.js");
+      await startStandContest(combat, current, actor);
+    } catch (error) {
+      current.status = "awaitingConfirmation"; current.note = error.message;
+      await save(combat, state); await updateCard(current);
+      ui.notifications.warn(error.message);
+    }
+    return;
+  } else if (current.key === "stand" && (current.parameters.engaged === false || !isEngaged(tacticalState(combat).relations, combatant.id))) {
     const prone = actor.effects.filter((effect) => effect.statuses?.has?.("prone"));
     if (prone.length) await actor.deleteEmbeddedDocuments("ActiveEffect", prone.map((effect) => effect.id));
     current.status = "resolved";
@@ -489,6 +506,11 @@ export async function requestCombatAction(actor, key) {
   if (key === "maneuver") pendingManeuverRequests.add(actor.uuid);
   try {
   let parameters = {};
+  if (key === "stand") {
+    const { chooseStandParameters } = await import("./stand-runtime.js");
+    parameters = await chooseStandParameters(actor, context.combatant.token?.uuid, context.combat);
+    if (!parameters) return;
+  }
   if (key === "releaseGrab") return requestGrabRelease(actor);
   if (key === "recoverImpaledWeapon") return requestRecoverImpaledWeapon(actor);
   if (key === "releaseWeapon") return requestWeaponRelease(actor);
@@ -539,7 +561,7 @@ async function applyCardRequest(request) {
     const actor = combat.combatants.get(action.combatantId)?.actor;
     if (!user.isGM && !actor?.testUserPermission(user, "OWNER")) return;
     if (action.key === "maneuver" && action.status !== "awaitingConfirmation") return;
-    action.status = request.operation === "confirm" ? (action.key === "maneuver" ? "resolving" : "resolved") : "cancelled";
+    action.status = request.operation === "confirm" ? (["maneuver", "stand"].includes(action.key) ? "resolving" : "resolved") : "cancelled";
     action.note = request.note ?? action.note; action.resolvedAt = Date.now();
   }
   action.revision += 1; await save(combat, state); await updateCard(action);
@@ -631,9 +653,9 @@ export async function migrateCombatWaiting(combat) {
 }
 
 
-export async function finishManeuverAction(combat, actionId) {
+export async function finishCombatActionContest(combat, actionId) {
   const state = combatActionState(combat); const action = state.actions[actionId];
-  if (!action || action.key !== "maneuver" || action.status !== "awaitingContest") return;
+  if (!action || !["maneuver", "stand"].includes(action.key) || action.status !== "awaitingContest") return;
   action.status = "resolved"; action.resolvedAt = Date.now(); action.revision += 1;
   await save(combat, state);
   Hooks.callAll("mythrasCombatActionResolved", combat, action);

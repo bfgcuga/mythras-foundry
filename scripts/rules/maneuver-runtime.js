@@ -125,7 +125,7 @@ export async function confirmManeuverContest(message, request) {
   contest.revision += 1;
   const { renderContestCard } = await import("./contest-chat.js");
   await message.update({ content: renderContestCard(contest), [`flags.${SCOPE}.contest`]: contest });
-  const { finishManeuverAction } = await import("./combat-action-runtime.js");
-  await finishManeuverAction(combat, context.actionId);
+  const { finishCombatActionContest } = await import("./combat-action-runtime.js");
+  await finishCombatActionContest(combat, context.actionId);
   return true;
 }

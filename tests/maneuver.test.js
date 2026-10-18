@@ -351,3 +351,89 @@ test('Maniobrar revalidates the initiator scene after an interruption independen
   assert.equal(message.getFlag(scope,'contest').participants.length,2);
   assert.equal(f.warnings.length,0);
 });
+
+function prepareStand(f) {
+  for (const actor of f.actors) {
+    for (const slug of ['musculo','atletismo']) {
+      const skill=documentDouble({id:`${slug}-${actor.id}`,name:slug,type:'skill',system:{slug,total:70}});
+      skill.actor=actor; actor.items.push(skill);
+    }
+  }
+  f.actors[0].statuses.add('prone');
+  f.actors[0].effects.push(documentDouble({id:'prone-effect',statuses:new Set(['prone'])}));
+}
+
+test('Ponerse en pie lets users override detected engagement and cancels without spending',async t=>{
+  const f=setup(t);prepareStand(f);
+  f.combat.flags[scope].tacticalState.relations.r={status:'engaged',sides:{'0':{},'1':{}}};
+  foundry.applications.api.DialogV2.wait=async options=>{
+    document.body.innerHTML=`<form>${options.content}<button data-action="confirm"></button></form>`;
+    options.render(null,{element:document.body});
+    const engaged=document.querySelector('[name=engaged]');
+    assert.equal(engaged.checked,true);
+    assert.equal(document.querySelector('[name=rival]').checked,true);
+    engaged.checked=false;engaged.dispatchEvent(new window.Event('change',{bubbles:true}));
+    assert.equal(document.querySelector('[data-stand-rivals]').hidden,true);
+    assert.equal(document.querySelector('[data-action=confirm]').disabled,false);
+    return null;
+  };
+  await requestCombatAction(f.actors[0],'stand');
+  assert.equal(f.actors[0].system.resources.actionPoints.value,3);
+  assert.equal(f.actors[0].statuses.has('prone'),true);
+  foundry.applications.api.DialogV2.wait=async()=>({engaged:false,rivalTokenUuids:[]});
+  await requestCombatAction(f.actors[0],'stand');
+  assert.equal(f.actors[0].system.resources.actionPoints.value,2);
+  assert.equal(f.actors[0].statuses.has('prone'),false);
+  assert.equal(f.combat.advanced,1);
+});
+
+test('Ponerse en pie allows manual engagement, chooses Brawn or Athletics and applies success once',async t=>{
+  const f=setup(t);prepareStand(f);
+  foundry.applications.api.DialogV2.wait=async()=>({engaged:true,rivalTokenUuids:[f.tokens[1].uuid]});
+  await requestCombatAction(f.actors[0],'stand');
+  const action=Object.values(f.combat.flags[scope].combatActions.actions)[0];
+  const message=f.docs.get(action.messageUuid);
+  assert.equal(action.status,'awaitingContest');
+  assert.equal(f.actors[0].system.resources.actionPoints.value,2);
+  await executeAction(f.combat,action);
+  assert.equal(f.actors[0].system.resources.actionPoints.value,2);
+  let contest=message.getFlag(scope,'contest');
+  // An unrelated skill is rejected by the coordinator.
+  await applyContestResponse(message,{revision:0,participantId:contest.initiatorId,userId:'gm',rawRoll:40,
+    serializedRoll:{total:40},config:{abilityId:'evade-a',difficulty:'standard'}});
+  assert.equal(message.getFlag(scope,'contest').participants[0].pending,true);
+  // Participants may independently switch between the two permitted skills.
+  for (const [i,entry] of contest.participants.entries()) {
+    const roll=i===0?3:30;
+    await applyContestResponse(message,{revision:0,participantId:entry.id,userId:'gm',rawRoll:roll,
+      serializedRoll:{total:roll},config:{abilityId:`${i===0?'atletismo':'musculo'}-${f.actors[i].id}`,difficulty:'standard'}});
+  }
+  contest=message.getFlag(scope,'contest');
+  assert.equal(contest.status,'resolved');assert.equal(f.actors[0].statuses.has('prone'),true);
+  assert.equal(await requestContestActionConfirmation(message,{revision:contest.revision,userId:'other'}),false);
+  assert.equal(await requestContestActionConfirmation(message,{revision:contest.revision-1,userId:'owner'}),false);
+  await requestContestActionConfirmation(message,{revision:contest.revision,userId:'owner'});
+  assert.equal(f.actors[0].statuses.has('prone'),false);assert.equal(action.status,'resolved');
+  assert.equal(f.combat.advanced,1);assert.equal(f.actors[1].system.resources.actionPoints.value,3);
+  assert.equal(await requestContestActionConfirmation(message,{revision:contest.revision,userId:'owner'}),false);
+  assert.equal(f.combat.advanced,1);
+});
+
+test('Ponerse en pie keeps Prone on a tie, a loss or mutual failure; invalid rivals spend no AP',async t=>{
+  const f=setup(t);prepareStand(f);
+  foundry.applications.api.DialogV2.wait=async()=>({engaged:true,rivalTokenUuids:[]});
+  await requestCombatAction(f.actors[0],'stand');
+  assert.equal(f.actors[0].system.resources.actionPoints.value,3);
+  for (const rolls of [[40,40],[30,50],[90,95]]) {
+    f.combat.combatant=f.combat.combatants[0];
+    foundry.applications.api.DialogV2.wait=async()=>({engaged:true,rivalTokenUuids:[f.tokens[1].uuid]});
+    await requestCombatAction(f.actors[0],'stand');
+    const action=Object.values(f.combat.flags[scope].combatActions.actions).at(-1);
+    const message=f.docs.get(action.messageUuid);
+    await f.respondAll(message,rolls);
+    const contest=message.getFlag(scope,'contest');
+    await requestContestActionConfirmation(message,{revision:contest.revision,userId:'owner'});
+    assert.equal(f.actors[0].statuses.has('prone'),true);assert.equal(action.status,'resolved');
+  }
+  assert.equal(f.combat.advanced,3);
+});
