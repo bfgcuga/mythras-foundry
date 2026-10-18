@@ -7,7 +7,7 @@ import { HOMEBREW_ITEM_TYPES, buildHomebrewItem, homebrewPackName }
 test("el creador homebrew cubre todos los tipos Item del sistema", () => {
   assert.deepEqual(new Set(HOMEBREW_ITEM_TYPES), new Set([
     "skill", "combatStyle", "culture", "profession", "passion",
-    "equipment", "weapon", "armor", "hitLocation", "trait", "combatEffect"
+    "equipment", "weapon", "armor", "hitLocation", "trait", "combatEffect", "trap", "poison", "disease"
   ]));
   for (const type of HOMEBREW_ITEM_TYPES) {
     const fields = { name: `Prueba ${type}`, rules: "{}", objectDescription: "Prueba" };

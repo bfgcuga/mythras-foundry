@@ -1,4 +1,7 @@
 export const ITEM_TYPE_ICONS = Object.freeze({
+  trap: "icons/svg/trap.svg",
+  poison: "icons/svg/poison.svg",
+  disease: "icons/svg/biohazard.svg",
   skill: "icons/svg/book.svg",
   combatStyle: "systems/mythras-foundry/assets/icons/combat-style.svg",
   culture: "icons/svg/village.svg",

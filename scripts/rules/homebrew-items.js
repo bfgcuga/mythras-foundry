@@ -3,7 +3,7 @@ import { COMBAT_EFFECT_ROLL_RESTRICTIONS,
 
 export const HOMEBREW_ITEM_TYPES = Object.freeze([
   "equipment", "weapon", "armor", "skill", "combatStyle",
-  "trait", "combatEffect", "culture", "profession", "passion", "hitLocation"
+  "trait", "combatEffect", "culture", "profession", "passion", "hitLocation", "trap", "poison", "disease"
 ]);
 
 const number = (value, fallback = 0) => {
@@ -30,6 +30,10 @@ export function buildHomebrewItem(type, fields = {}) {
   const description = String(fields.description ?? "").trim();
   const img = String(fields.img ?? "").trim();
   const common = { name, type, ...(img ? { img } : {}) };
+
+  if (["trap", "poison", "disease"].includes(type)) return { ...common, system: {
+    key: homebrewSlug(name), source, description
+  } };
 
   if (type === "skill") return { ...common, system: {
     slug: homebrewSlug(name), source, description,

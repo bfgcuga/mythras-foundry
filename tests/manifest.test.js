@@ -5,6 +5,9 @@ import { readFileSync } from "node:fs";
 const manifest = JSON.parse(readFileSync(new URL("../system.json", import.meta.url), "utf8"));
 
 const EXPECTED_PACKS = Object.freeze({
+  traps: { label: "Trampas", path: "packs/traps", type: "Item" },
+  poisons: { label: "Venenos", path: "packs/poisons", type: "Item" },
+  diseases: { label: "Enfermedades", path: "packs/diseases", type: "Item" },
   skills: { label: "Habilidades", path: "packs/skills", type: "Item" },
   cultures: { label: "Culturas", path: "packs/cultures", type: "Item" },
   professions: { label: "Profesiones", path: "packs/professions", type: "Item" },

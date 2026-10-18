@@ -1,0 +1,59 @@
+{{#*inline "hazardFields"}}
+  <div class="hazard-field-grid">
+  {{#each fields as |field|}}
+    <label class="{{#if field.multiline}}hazard-field-wide{{/if}}"><span>{{field.label}}</span>
+      {{#if field.checkbox}}<input class="sheet-state-box" type="checkbox" name="{{field.path}}" {{checked field.value}}>
+      {{else}}{{#if field.multiline}}<textarea class="sheet-field-editable" name="{{field.path}}">{{field.value}}</textarea>
+      {{else}}{{#if field.choices}}<select class="sheet-field-editable" name="{{field.path}}">{{selectOptions field.choices selected=field.value labelAttr="label" valueAttr="value"}}</select>
+      {{else}}<input class="sheet-field-editable" type="text" name="{{field.path}}" value="{{field.value}}">{{/if}}{{/if}}{{/if}}
+    </label>
+  {{/each}}
+  </div>
+{{/inline}}
+<div class="item-sheet-content">
+  <header class="sheet-header">
+    <span class="item-image-frame"><img src="{{item.img}}" alt="{{itemName}}" data-edit="img"></span>
+    <label><span>{{localize "MYTHRASF.Hazard.name"}}</span><input name="name" value="{{itemName}}"></label>
+  </header>
+  <fieldset><legend>{{localize "MYTHRASF.Hazard.Profile"}}</legend>
+    <label><span>{{localize "MYTHRASF.Skill.Source"}}</span><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}"></label>
+    {{#if isTrap}}<label><span>{{localize "MYTHRASF.Hazard.difficulty"}} (%)</span><input type="number" min="0" step="1" name="system.difficulty" value="{{item.system.difficulty}}"></label>
+    {{else}}<label><span>{{localize "MYTHRASF.Hazard.potency"}} (%)</span><input type="number" min="0" step="1" name="system.potency" value="{{item.system.potency}}"></label>{{/if}}
+    {{> hazardFields fields=hazardFields}}
+  </fieldset>
+  <fieldset><legend>{{localize "MYTHRASF.Hazard.Actions"}}</legend>
+    <div class="hazard-actions">
+      {{#if isTrap}}<button type="button" data-hazard-action="detect">{{localize "MYTHRASF.Hazard.detect"}}</button>
+      <button type="button" data-hazard-action="disarm">{{localize "MYTHRASF.Hazard.disarm"}}</button>{{/if}}
+      <button type="button" data-hazard-action="resist">{{localize "MYTHRASF.Hazard.resist"}}</button>
+      {{#if canRollDamage}}<button type="button" data-hazard-action="damage">{{localize "MYTHRASF.Hazard.Damage"}}</button>{{/if}}
+    </div>
+    <p>{{localize "MYTHRASF.Hazard.ManualConsequences"}}</p>
+    <p>{{localize "MYTHRASF.Hazard.ConfigurationHelp"}}</p>
+  </fieldset>
+  <fieldset><legend>{{localize "MYTHRASF.Hazard.Variants"}}</legend>
+    {{#if editable}}<button type="button" class="sheet-add-button" data-hazard-action="add" data-collection="variants" aria-label="{{localize "MYTHRASF.Hazard.AddVariant"}}" title="{{localize "MYTHRASF.Hazard.AddVariant"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+    {{#each hazardVariants as |variant|}}<fieldset><legend>{{localize "MYTHRASF.Hazard.Variant"}}</legend>
+      {{> hazardFields fields=variant.fields}}
+      {{#if ../editable}}<button type="button" class="sheet-icon-button" data-hazard-action="delete" data-collection="variants" data-index="{{variant.index}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
+    </fieldset>{{/each}}
+  </fieldset>
+  <fieldset><legend>{{localize "MYTHRASF.Hazard.Stages"}}</legend>
+    {{#if editable}}<button type="button" class="sheet-add-button" data-hazard-action="add" data-collection="stages" aria-label="{{localize "MYTHRASF.Hazard.AddStage"}}" title="{{localize "MYTHRASF.Hazard.AddStage"}}"><i class="fas fa-plus" aria-hidden="true"></i></button>{{/if}}
+    {{#each hazardStages as |stage|}}<fieldset><legend>{{localize "MYTHRASF.Hazard.Stage"}}</legend>
+      {{> hazardFields fields=stage.fields}}
+      {{#if ../editable}}<button type="button" class="sheet-icon-button" data-hazard-action="delete" data-collection="stages" data-index="{{stage.index}}" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}
+    </fieldset>{{/each}}
+  </fieldset>
+  <fieldset><legend>{{localize "MYTHRASF.Item.Description"}}</legend>
+    <textarea class="sheet-field-editable hazard-description" name="system.description" aria-label="{{localize "MYTHRASF.Item.Description"}}">{{item.system.description}}</textarea>
+  </fieldset>
+  {{#if isTrap}}<details><summary>{{localize "MYTHRASF.Hazard.Construction"}}</summary>
+    <p>{{localize "MYTHRASF.Hazard.ConstructionRules"}}</p>
+    <table class="combat-effect-table"><thead><tr><th scope="col">{{localize "MYTHRASF.Hazard.CreatorSkill"}}</th><th scope="col">{{localize "MYTHRASF.Hazard.Damage"}}</th><th scope="col">{{localize "MYTHRASF.Hazard.size"}}</th></tr></thead>
+      <tbody>{{#each trapDamageRows}}<tr><th scope="row">{{range}}</th><td>{{damage}}</td><td>{{size}}</td></tr>{{/each}}</tbody></table>
+  </details>{{else}}<details><summary>{{localize "MYTHRASF.Hazard.ConditionReference"}}</summary>
+    <p>{{localize "MYTHRASF.Hazard.AfflictionRules"}}</p>
+    <dl>{{#each conditionRules}}<dt>{{name}}</dt><dd>{{effect}}</dd>{{/each}}</dl>
+  </details>{{/if}}
+</div>

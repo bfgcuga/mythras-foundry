@@ -18,6 +18,12 @@ instalables se distribuyen mediante las releases de GitHub.
 
 El sistema incluye actualmente:
 
+- Items de trampa, veneno y enfermedad con hojas editables, variantes y etapas;
+  tres compendios contienen los nueve ejemplos del manual. Permiten detectar,
+  desactivar y resistir mediante enfrentadas, y tirar daño con aplicación
+  opcional por el DJ tras confirmar objetivo y protecciones. El DJ gestiona
+  tiempos, condiciones, curas y secuelas;
+
 - hojas de PJ y PNJ con vista completa para propietarios y GM; LIMITED y
   OBSERVER acceden a una vista de consulta, sin tiradas ni operaciones: encabezado,
   armas y localizaciones de Combate, Estado, Trasfondo público del PJ y Galería.
@@ -528,3 +534,32 @@ interrogación en círculo y explicación mediante clic.
 Ponerse en Pie permite confirmar o corregir la traba detectada. Sin traba retira
 Tumbado; con traba resuelve una enfrentada de Músculo o Atletismo contra los
 oponentes elegidos y retira Tumbado al confirmar si se vence a todos.
+
+## Trampas, venenos y enfermedades
+
+Los compendios **Trampas**, **Venenos** y **Enfermedades** contienen techo
+aplastante, foso, trampa de venablo, pócima somnífera, polvo de loto, veneno de
+cobra, pirohoxia, succión del alma y viruela roja. Se pueden crear también desde
+el directorio de Items o el creador homebrew y editar sus hojas. Las variantes
+son perfiles completos dentro de un mismo Item; las etapas indican su aparición,
+intervalo, condiciones y efectos. Las etapas son instrucciones del DJ, no
+instancias activas de una infección sobre un personaje.
+
+Los botones Detectar, Desactivar y Resistir permiten elegir un personaje
+controlable y una habilidad, después su dificultad y apoyos con el diálogo
+habitual. Se enfrentan al porcentaje de dificultad o potencia usando las reglas
+compartidas de grados, desempates y valores superiores a 100%. Para las
+alternativas Difíciles de Atletismo o parada con escudo, elegir esa habilidad y
+la dificultad correspondiente. Las reglas especiales de Músculo colectivo del
+techo y los Efectos de Combate del venablo se resuelven según sus indicaciones.
+El chat muestra ambas tiradas y los efectos; no aplica condiciones ni avanza el
+tiempo. Empates y fallos mutuos indican repetir.
+
+Tirar daño permite publicar solo los dados o, para el DJ, elegir un objetivo.
+En este caso se tira una localización aleatoria, se calcula la protección de
+armadura cuando corresponde y se confirma el daño final, ajustándolo por
+escudos u otras protecciones. Solo entonces se delega su aplicación al flujo
+de daño directo, que gestiona PG y heridas. Cancelar la confirmación conserva
+la tirada sin aplicar daño. El techo y el foso ignoran armadura; el venablo
+permite armadura y parada. Las referencias desplegables incluyen construcción,
+la tabla de daño de trampas y las dieciocho condiciones de las aflicciones.

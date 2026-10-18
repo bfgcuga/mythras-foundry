@@ -2,9 +2,9 @@
   "id": "mythras-foundry",
   "title": "Mythras Foundry",
   "description": "Sistema de Mythras desarrollado para Foundry Virtual Tabletop.",
-  "version": "0.1.101",
+  "version": "0.1.102",
   "manifest": "https://github.com/bfgcuga/mythras-foundry/releases/latest/download/system.json",
-  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.1.101/mythras-foundry.zip",
+  "download": "https://github.com/bfgcuga/mythras-foundry/releases/download/v0.1.102/mythras-foundry.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
@@ -25,7 +25,10 @@
       "armor": {},
       "hitLocation": {},
       "trait": {},
-      "combatEffect": {}
+      "combatEffect": {},
+      "trap": {},
+      "poison": {},
+      "disease": {}
     }
   },
   "authors": [
@@ -155,6 +158,27 @@
       "label": "Referencia de Mythras",
       "path": "packs/reference",
       "type": "JournalEntry",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "traps",
+      "label": "Trampas",
+      "path": "packs/traps",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "poisons",
+      "label": "Venenos",
+      "path": "packs/poisons",
+      "type": "Item",
+      "system": "mythras-foundry"
+    },
+    {
+      "name": "diseases",
+      "label": "Enfermedades",
+      "path": "packs/diseases",
+      "type": "Item",
       "system": "mythras-foundry"
     }
   ]

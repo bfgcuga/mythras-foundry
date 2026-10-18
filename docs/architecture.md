@@ -44,7 +44,7 @@ o configuración.
 Durante `init` registra:
 
 - los modelos `character` y `npc`;
-- la clase de documento de Item y los modelos de los once tipos de Item;
+- la clase de documento de Item y los modelos de los catorce tipos de Item;
 - hojas Application V2, ajustes y menús de administración;
 - las APIs `game.mythrasFoundry.shop`, `homebrew`, `party` y `traits`;
 - los parciales Handlebars compartidos.
@@ -1284,3 +1284,21 @@ de datos de documentos de Foundry ni las reglas de permisos de Items.
 de Actor y vuelve a comprobar propiedad antes de guardar. El PNJ usa el mismo
 esquema de imágenes `{src, title}`, con una lista vacía inicial; no se reconstruyen
 ni sobrescriben documentos existentes. El PNJ no incorpora una pestaña Trasfondo.
+
+## Items de peligros y aflicciones
+
+`trap`, `poison` y `disease` comparten `HazardData`: perfil editable, porcentaje
+de dificultad/potencia, variantes completas y etapas descriptivas. Su hoja
+`HazardItemSheet` conserva la superficie y componentes de las hojas de Item.
+No requieren migración de mundo, porque son tipos nuevos con valores iniciales.
+
+Las fuentes de `scripts/data/hazard-items.js` y sus descripciones de referencia
+alimentan los compendios `traps`, `poisons` y `diseases` con identificadores
+estables. `hazard-items.js` en reglas contiene las selecciones de perfiles y
+adaptación pura al motor de enfrentadas existente. `hazard-item-runtime.js`
+coordina selección del actor propietario, configuración de habilidad, tiradas y
+chat. El daño aplicado requiere GM y confirmación de la cantidad final; resta
+antes la armadura aplicable y delega esa cantidad fija a `applyDirectDamage`,
+sin volver a tirar ni absorber protección dos veces. No crea estados ni colas
+temporales: las condiciones de referencia no son un catálogo paralelo de
+ActiveEffects; los tiempos, efectos y secuelas siguen a cargo del DJ.

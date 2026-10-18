@@ -1,3 +1,4 @@
+import { TRAP_SOURCES, POISON_SOURCES, DISEASE_SOURCES } from "../data/hazard-items.js";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -308,6 +309,9 @@ async function buildJournalPack(name, sources, idNamespace) {
 }
 
 const packBuilders = new Map([
+  ["traps", () => buildPack("traps", TRAP_SOURCES, "trap")],
+  ["poisons", () => buildPack("poisons", POISON_SOURCES, "poison")],
+  ["diseases", () => buildPack("diseases", DISEASE_SOURCES, "disease")],
   ["skills", () => buildPack("skills", FULL_SKILL_SOURCES, "skill")],
   ["cultures", () => buildPack("cultures", CULTURE_SOURCES, "culture")],
   ["professions", () => buildPack("professions", PROFESSION_SOURCES, "profession")],

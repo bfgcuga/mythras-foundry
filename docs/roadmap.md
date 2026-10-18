@@ -62,19 +62,12 @@ pero la resolución de esas acciones sigue siendo guiada. Maniobrar ya utiliza
 una enfrentada de Evadir con una respuesta individual por rival y confirmación
 de consecuencias.
 
-## 6. Implementar venenos, enfermedades y trampas
-
-Incorporar reglas, configuración, resolución, persistencia y presentación para
-venenos, enfermedades y trampas sobre la infraestructura separada de
-consecuencias. Mantener fuera de este alcance las inclemencias y macros de clima
-hasta que sus reglas estén definidas.
-
-## 7. Implementar Entrenar Habilidad
+## 6. Implementar Entrenar Habilidad
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.
 
-## 8. Revisar y poner en orden los estados
+## 7. Revisar y poner en orden los estados
 
 Revisar conjuntamente el catálogo del sistema y los estados nativos de Foundry:
 

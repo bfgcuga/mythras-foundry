@@ -400,3 +400,28 @@ export class CombatEffectData extends foundry.abstract.TypeDataModel {
     };
   }
 }
+
+const hazardProfileSchema = () => ({
+  name: textField(), application: textField(), purpose: textField(),
+  trigger: textField(), resistance: textField(), resistanceSkill: textField("aguante"),
+  resistanceDifficulty: textField("standard"), onset: textField(), duration: textField(),
+  conditions: textField(), cure: textField(), damage: textField(), size: textField(),
+  armorIgnored: new BooleanField({ required: true, nullable: false, initial: false }),
+  effect: textField(), rearm: textField(), notes: textField()
+});
+
+export class HazardData extends foundry.abstract.TypeDataModel {
+  static defineSchema() {
+    return {
+      ...hazardProfileSchema(), key: textField(), source: textField(),
+      potency: nonNegativeNumber(50, true), difficulty: nonNegativeNumber(50, true),
+      description: descriptionField(),
+      variants: new ArrayField(new SchemaField(hazardProfileSchema()), {
+        required: true, nullable: false, initial: [] }),
+      stages: new ArrayField(new SchemaField({
+        name: textField(), variant: textField(), onset: textField(), interval: textField(),
+        conditions: textField(), effect: textField()
+      }), { required: true, nullable: false, initial: [] })
+    };
+  }
+}

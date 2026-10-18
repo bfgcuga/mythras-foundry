@@ -66,6 +66,11 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 ## Peligros
 
+Los Items de trampas, venenos y enfermedades, sus nueve ejemplos y tiradas
+guiadas ya están implementados. Su alcance actual deja al DJ el seguimiento
+de aparición, duración, condiciones, curación y secuelas; no hay una ampliación
+temporal automática acordada.
+
 - Definir el alcance de las inclemencias del tiempo —frío, calor, exposición u
   otros peligros— antes de crear sus macros.
 - Crear las macros de clima una vez definidas esas reglas.
