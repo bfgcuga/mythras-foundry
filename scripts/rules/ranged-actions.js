@@ -1,4 +1,6 @@
-import { currentActionPoints, effectiveActionPointMaximum } from "./action-points.js";
+import { canStartProactiveAction, finishInterruptionAction } from "./combat-interruption.js";
+import { spendActorActionPoint } from "./combat-resource-runtime.js";
+import { effectiveActionPointMaximum } from "./action-points.js";
 import { getActionPointRules } from "../settings.js";
 import { advanceReload, ammunitionState } from "./ranged-combat.js";
 import { weaponModes } from "./weapon-modes.js";
@@ -14,13 +16,13 @@ function activeEntry(actor) {
   if (!combat?.started) return null;
   const entry = combat.combatants.find((candidate) => candidate.actor?.uuid === actor.uuid
     || candidate.token?.actor?.uuid === actor.uuid);
-  return entry && combat.combatant?.id === entry.id ? { combat, entry } : null;
+  return entry && canStartProactiveAction(combat, entry) ? { combat, entry } : null;
 }
 
 async function spend(actor) {
+  if (!activeEntry(actor)) return false;
   if (effectiveActionPointMaximum(actor, getActionPointRules()) < 1) return false;
-  const current = currentActionPoints(actor); if (current < 1) return false;
-  await actor.update({ "system.resources.actionPoints.value": current - 1 }); return true;
+  return spendActorActionPoint(actor, { actionKind: "immediate" });
 }
 
 function rangedChoices(actor) {
@@ -57,6 +59,7 @@ export async function declareAim(actor) {
     targetTokenUuid: targets[0].document?.uuid ?? targets[0].uuid, declaredRound: active.combat.round,
     declaredCycle: economy.cycle ?? 1, userId: game.user.id, declaredAt: Date.now() });
   ui.notifications.info(game.i18n.localize("MYTHRASF.Ranged.AimDeclared"));
+  await finishInterruptionAction(active.combat, active.entry.id);
 }
 
 export function readyAim(actor, { weaponId, modeKey, targetTokenUuid, combat } = {}) {
@@ -89,4 +92,5 @@ export async function reloadRangedWeapon(actor) {
   await choice.weapon.update({ "system.modes": modes });
   ui.notifications.info(game.i18n.localize(next.completed
     ? "MYTHRASF.Ranged.ReloadComplete" : "MYTHRASF.Ranged.ReloadProgress"));
+  await finishInterruptionAction(active.combat, active.entry.id);
 }

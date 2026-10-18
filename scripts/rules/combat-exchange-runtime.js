@@ -1,3 +1,4 @@
+import { combatInterruption, finishInterruptionAction, interruptionBlocksMessage } from "./combat-interruption.js";
 import { currentActionPoints } from "./action-points.js";
 import { combatCanBeCancelled } from "./combat-cancellation.js";
 import { exchangeTerminal, resolvePendingExchangeSteps } from "./combat-exchange-state.js";
@@ -6,27 +7,34 @@ import { disarmHasFreeHand } from "./combat-disarm.js";
 
 export async function advanceCombatExchange(message, combat, { force = false, combatById,
   render, flagScope = "mythras-foundry" } = {}) {
+  if (interruptionBlocksMessage(message)) return false;
   if (!combat.turnEconomy || combat.turnEconomy.turnAdvanced || !exchangeTerminal(combat)
     || (!force && combatCanBeCancelled(combat))) return false;
   const tracker = combatById(combat.turnEconomy.combatId);
-  if (!tracker?.started || tracker.combatant?.id !== combat.turnEconomy.combatantId
+  const session = combatInterruption(tracker);
+  const interrupting = combat.turnEconomy.interruptionId && session?.id === combat.turnEconomy.interruptionId
+    && session.combatantId === combat.turnEconomy.combatantId;
+  if (!tracker?.started || (!interrupting && tracker.combatant?.id !== combat.turnEconomy.combatantId)
     || Number(tracker.round) !== Number(combat.turnEconomy.round)) return false;
   combat.turnEconomy.turnAdvanced = true;
   combat.turnEconomy.advancedAt = Date.now();
   combat.revision += 1;
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
-  if (!combat.turnEconomy.retainTurn) await tracker.nextTurn();
+  if (interrupting) await finishInterruptionAction(tracker, combat.turnEconomy.combatantId);
+  else if (!combat.turnEconomy.retainTurn) await tracker.nextTurn();
   return true;
 }
 
 export async function closeTerminalCombatExchange(message, current, { clone, combatById,
   render, advance, flagScope = "mythras-foundry" } = {}) {
+  if (interruptionBlocksMessage(message)) return false;
   if (!current.turnEconomy || current.turnEconomy.turnAdvanced || !exchangeTerminal(current)) {
     return false;
   }
   const combat = clone(current);
   const tracker = combatById(combat.turnEconomy.combatId);
-  if (tracker?.started && tracker.combatant?.id === combat.turnEconomy.combatantId
+  if (tracker?.started && (tracker.combatant?.id === combat.turnEconomy.combatantId
+    || (combat.turnEconomy.interruptionId && combat.turnEconomy.interruptionId === combatInterruption(tracker)?.id))
     && Number(tracker.round) === Number(combat.turnEconomy.round)) {
     await advance(message, combat, { force: true });
   } else {
@@ -40,6 +48,7 @@ export async function closeTerminalCombatExchange(message, current, { clone, com
 
 export async function refundCombatExchangeActionPoints(combat, { resolveActor } = {}) {
   const economy = combat.turnEconomy;
+  if (combat.impeded || economy?.impeded) return;
   for (const [spentKey, refundedKey, entry] of [
     ["attackSpent", "attackRefunded", combat.attacker],
     ["defenseSpent", "defenseRefunded", combat.defender]
@@ -55,7 +64,7 @@ export async function refundCombatExchangeActionPoints(combat, { resolveActor } 
 
 export async function applyCombatExchangeCancellation(message, current, { reason = "", userId,
   clone, resolveActor, render, flagScope = "mythras-foundry" } = {}) {
-  if (!combatCanBeCancelled(current)) return false;
+  if (interruptionBlocksMessage(message) || current.impeded || !combatCanBeCancelled(current)) return false;
   const combat = clone(current);
   combat.cancelReason = reason;
   combat.cancelledBy = userId;
@@ -63,6 +72,10 @@ export async function applyCombatExchangeCancellation(message, current, { reason
   combat.status = "cancelled";
   combat.revision += 1;
   await message.update({ content: render(combat), [`flags.${flagScope}.combat`]: combat });
+  if (combat.turnEconomy?.interruptionId) {
+    const tracker = game.combats.get(combat.turnEconomy.combatId);
+    await finishInterruptionAction(tracker, combat.turnEconomy.combatantId, { cancelled: true });
+  }
   return true;
 }
 
@@ -72,6 +85,7 @@ export function resolveCombatExchangePending(combat, { note = "", userId = "" } 
 
 export async function resolveCombatExchangeConsequence(message, current, index, { note = "",
   userId, clone, render, advance, flagScope = "mythras-foundry" } = {}) {
+  if (interruptionBlocksMessage(message)) return false;
   const combat = clone(current);
   const consequence = combat.consequences?.[Number(index)];
   if (!consequence || consequence.status !== "pending") return false;
@@ -84,6 +98,7 @@ export async function resolveCombatExchangeConsequence(message, current, index, 
 
 export async function applyDroppedCombatItem(message, request, { clone, flagScope,
   resolveActor, userById, render, advance } = {}) {
+  if (interruptionBlocksMessage(message)) return false;
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || Number(request.revision) !== Number(combat.revision)) return false;
   const consequence = combat.consequences?.[Number(request.consequenceIndex)];
@@ -110,6 +125,7 @@ export async function applyDroppedCombatItem(message, request, { clone, flagScop
 
 export async function applyDisarmChoice(message, request, { clone, flagScope,
   resolveActor, userById, render, advance } = {}) {
+  if (interruptionBlocksMessage(message)) return false;
   const combat = clone(message.getFlag(flagScope, "combat"));
   if (!combat || Number(request.revision) !== Number(combat.revision)
     || !["take", "throw"].includes(request.choice)) return false;

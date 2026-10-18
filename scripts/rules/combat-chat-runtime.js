@@ -1,3 +1,5 @@
+import { interruptionBlocksMessage } from "./combat-interruption.js";
+
 const COMBAT_SOCKET_ACTIONS = Object.freeze([
   "combatDefense", "combatLuck", "combatEffects", "combatRuseReplacement", "combatDamage", "combatDamageLuck",
   "combatApplyDamage", "combatCheck", "combatWoundLuck",
@@ -14,7 +16,7 @@ export function registerCombatSocketRuntime({ socket, messages, users, currentUs
     if (!COMBAT_SOCKET_ACTIONS.includes(request?.action)) return;
     const message = messages.get(request.messageId);
     const combat = message?.getFlag(flagScope, "combat");
-    if (!combat || coordinator(users, combat.authorUserId) !== currentUserId) return;
+    if (!combat || interruptionBlocksMessage(message) || coordinator(users, combat.authorUserId) !== currentUserId) return;
     const handler = handlers[request.action];
     if (handler) await handler(message, request);
   });

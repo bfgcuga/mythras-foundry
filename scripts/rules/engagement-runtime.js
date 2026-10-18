@@ -1,3 +1,5 @@
+import { choosingInterruption, finishInterruptionAction, combatInterruption, canStartProactiveAction } from "./combat-interruption.js";
+import { spendActorActionPoint } from "./combat-resource-runtime.js";
 import { intrinsicUnarmedWeapon, hasIntrinsicUnarmed, UNARMED_PROFILE } from "./unarmed-combat.js";
 import { engagementId, engagementRestriction, relationSnapshot, reachIndex,
   shiftedWeaponSize } from "./engagements.js";
@@ -282,9 +284,14 @@ async function applyCoverDeclaration(request) {
   const combatant = combat?.combatants.get(request.combatantId); const user = game.users.get(request.userId);
   if (!combat || Number(state.revision ?? 0) !== Number(request.revision) || !combatant?.actor
     || !user || (!user.isGM && !combatant.actor.testUserPermission(user, "OWNER"))) return;
+  if (combatInterruption(combat) && !canStartProactiveAction(combat, combatant)) return;
+  const interrupting = Boolean(choosingInterruption(combat, combatant.id));
+  if (interrupting && request.result !== "remove"
+    && !await spendActorActionPoint(combatant.actor, { actionKind: "immediate" })) return;
   if (request.result === "remove") await removeCoverCorrection(combat, combatant.id);
   else await setCoverCorrection(combat, combatant.id,
     { status: "active", ...request.result }, request.userId);
+  if (interrupting && request.result !== "remove") await finishInterruptionAction(combat, combatant.id);
 }
 
 export function registerTacticalSocket() {

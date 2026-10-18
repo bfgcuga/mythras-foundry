@@ -1,3 +1,4 @@
+import { interruptionBlocksAction } from "./combat-interruption.js";
 import { createContestMessage } from "./contest-chat.js";
 import { tokenDisplayName } from "./document-names.js";
 import { resolveActorConditions } from "./actor-conditions.js";
@@ -86,7 +87,7 @@ export function maneuverContestIsCurrent(contest) {
   const combat = game.combats.get(context.combatId);
   const action = combat?.getFlag(SCOPE, "combatActions")?.actions?.[context.actionId];
   return Boolean(combat?.started && combat.uuid === context.combatUuid && Number(combat.round) === Number(context.round)
-    && action?.status === "awaitingContest" && !context.confirmedAt);
+    && !interruptionBlocksAction(combat, context.actionId) && action?.status === "awaitingContest" && !context.confirmedAt);
 }
 
 export async function confirmManeuverContest(message, request) {

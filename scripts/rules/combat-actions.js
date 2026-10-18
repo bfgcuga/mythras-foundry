@@ -59,7 +59,7 @@ export function delayIsValid(delay, { round, cycle, turnSerial = 0 } = {}) {
 export function availableCombatActions({ inCombat = false, isActive = false, actionPoints = 0,
   canTakeProactiveTurn = true, canAttack = true, canDefend = true, engaged = false, prone = false,
   hasRangedWeapon = false, hasPreparedWeapon = false, hasUnarmedAttack = false, hasRestraint = false,
-  hasDelay = false, canCharge = false, hasPinnedWeapon = false, grabbed = false,
+  hasDelay = false, hasInterruption = false, interrupting = false, isOwnTurn = isActive, canCharge = false, hasPinnedWeapon = false, grabbed = false,
   entangled = false, holdsEntanglement = false, rooted = false,
   hasReachableImpaledWeapon = false } = {}) {
   const available = {};
@@ -80,9 +80,11 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     if (key === "move") allowed &&= !engaged && !rooted;
     if (key === "stand") allowed &&= prone;
     if (key === "charge") allowed &&= canCharge && hasPreparedWeapon;
-    if (key === "delay") allowed &&= !hasDelay && actionPoints >= 1;
+    if (interrupting && definition.type === "setup") allowed = false;
+    if (key === "delay") allowed &&= !hasDelay && !interrupting && actionPoints >= 1;
     if (definition.type === "reactive") allowed = inCombat && canDefend && actionPoints >= definition.cost;
-    if (key === "interrupt") allowed = false;
+    if (key === "interrupt") allowed = inCombat && hasDelay && actionPoints >= 1
+      && canTakeProactiveTurn && !isOwnTurn && !hasInterruption;
     available[key] = allowed;
   }
   return Object.freeze(available);
@@ -110,7 +112,7 @@ export function combatActionPresentation(context = {}) {
       else if (key === "delay" && context.hasDelay) reason = "delayReserved";
       else reason = "unavailable";
     }
-    return [key, Object.freeze({ key, available: Boolean(available[key]), cost: definition.cost, reason })];
+    return [key, Object.freeze({ key, available: Boolean(available[key]), visible: key !== "interrupt" || Boolean(context.hasDelay), cost: definition.cost, reason })];
   })));
 }
 

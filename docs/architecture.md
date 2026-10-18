@@ -438,7 +438,10 @@ toda pifia de una habilidad o estilo de combate marca `system.fumbled`, incluida
 las respuestas interactivas y las repeticiones por Suerte.
 `scripts/rules/document-names.js` es la fuente común de nombres operativos: los
 personajes usan el nombre actual del Actor del directorio y los PNJ sintéticos el
-nombre individual de su TokenDocument. Las tiradas especiales se coordinan desde
+nombre individual de su TokenDocument. Las tiradas de iniciativa, individuales y
+grupales, usan este mismo resolver en cada recuadro; el remitente de la tirada
+individual conserva ese nombre, sin depender del nombre almacenado del Combatant.
+Las tiradas especiales se coordinan desde
 `scripts/rules/special-roll.js` y reutilizan los mismos diálogos y resoluciones.
 Cuando una tarjeta interactiva recibe una respuesta, sus `rolls` se amplían con
 objetos Roll reconstruidos; así Foundry y Dice So Nice procesan también paradas,
@@ -1164,3 +1167,41 @@ si queda a cero se omite su turno. El cierre de ronda liquida las esperas antes
 de restaurar PA. Finalizar combate o eliminar combatiente limpia sin penalizar.
 Las reservas anteriores ya estaban pagadas: la migración las invalida sin cobro
 y reanuda las acciones suspendidas por ofertas antiguas de interrupción.
+
+
+### Interrumpir durante Esperando
+
+`combat-interruption.js` comparte la autorización de acciones fuera de turno y
+coordina una sesión persistida en `flags.mythras-foundry.combatInterruption`, con
+esquema propio 1. Las fases operativas son `choosing`, `resolving` y
+`awaitingDecision`; guardan combatientes, ronda, ciclo, revisión de turno,
+referencias de la declaración suspendida, gasto previo y acción elegida.
+No se modifica el orden, la iniciativa ni la posición del tracker.
+
+El botón Interrumpir es la primera acción circunstancial y reutiliza
+`sheet-action-attention`. Seleccionarlo no cobra ni consume Esperando; habilita
+una acción proactiva, excepto Retrasar, y ofrece cancelar la elección. Las
+validaciones de turno de acciones generales, ataques, alcance, recarga,
+apuntado, cobertura y liberación consultan el mismo contexto. El servicio de PA
+reclama la oportunidad de forma coordinada: descuenta el coste normal, consume
+la espera y bloquea una segunda acción. Una reacción habitual sigue teniendo su
+flujo propio; si ocurre durante la elección, consume la espera y cancela esa
+elección sin preguntar si se impidió una declaración.
+
+La sesión bloquea los avances de turno/ronda y las mutaciones pendientes de la
+declaración original. Los controladores enlazan su acción o mensaje con la
+sesión y notifican el cierre únicamente al completar su resolución documental,
+incluidas defensas, efectos y confirmaciones. La ejecución fuera de turno no
+avanza condiciones de turno propio. Cancelar una elección mantiene la espera;
+cancelar un ataque con reembolso restaura la espera mientras el turno capturado
+siga vigente. Las consecuencias ya aplicadas no se revierten automáticamente.
+
+Una tarjeta persistente permite únicamente al DJ decidir si la acción original
+queda impedida. Si continúa, se desbloquea la resolución suspendida. Si se impide,
+se cierran sus controles y pasos pendientes y se pasa una vez al siguiente turno:
+el PA ya pagado se conserva como coste y solo se descuenta uno cuando no había
+pago. La finalización por impedimento no utiliza la cancelación con reembolso.
+Las solicitudes se serializan por combate; identificadores y fases impiden el
+consumo repetido, y ronda/ciclo/revisión invalidan respuestas de otro turno.
+Las sesiones válidas sobreviven a la recarga; las obsoletas o sin participante
+se limpian. Finalizar/eliminar combate o eliminar participantes cierra la sesión.

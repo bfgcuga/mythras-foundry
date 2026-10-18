@@ -1,3 +1,5 @@
+import { canStartProactiveAction, bindInterruptionAction,
+  finishInterruptionAction, interruptionBlocksMessage } from "./combat-interruption.js";
 import { maneuverAttackRestriction, releaseManeuverRival } from "./maneuver-protection.js";
 import { ruleHelpButton } from "../ui/rule-help.js";
 import { intrinsicUnarmedWeapon, resolveUnarmedAbility } from "./unarmed-combat.js";
@@ -53,7 +55,7 @@ export async function requestReachChange(actor, { manual = false } = {}) {
   pendingActors.add(actor.uuid);
   try {
   const combat = game.combat; const active = combatantForActor(combat, actor, actor.token?.uuid);
-  if (!combat?.started || combat.combatant?.id !== active?.id || currentActionPoints(actor) < 1) return;
+  if (!combat?.started || !canStartProactiveAction(combat, active) || currentActionPoints(actor) < 1) return;
   const opponents = combat.combatants.filter((entry) => entry.id !== active.id && entry.actor);
   const weapons = preparedMeleeWeapons(actor);
   if (!opponents.length || !weapons.length || !evade(actor)) return ui.notifications.warn(
@@ -64,7 +66,7 @@ export async function requestReachChange(actor, { manual = false } = {}) {
     buttons: [{ action: "confirm", label: game.i18n.localize("MYTHRASF.Reach.Change"),
       callback: (event, button) => ({ targetId: button.form.elements.target.value,
         intent: button.form.elements.intent.value, weapon: button.form.elements.weapon.value }) }], rejectClose: false });
-  if (!result || isGrabbed(actor) || !await spend(actor)) return;
+  if (!result || isGrabbed(actor) || !canStartProactiveAction(combat, active) || !await spend(actor, { actionKind: "reach" })) return;
   const target = combat.combatants.get(result.targetId); const [weaponId, modeKey] = result.weapon.split(":");
   const weapon = !weaponId && modeKey === "unarmed" ? intrinsicUnarmedWeapon(actor) : actor.items.get(weaponId); const mode = findWeaponMode(weapon, modeKey);
   const relation = await ensureEngagement(combat, actor, target.actor, weapon, mode);
@@ -80,11 +82,14 @@ export async function requestReachChange(actor, { manual = false } = {}) {
   const messageData = { speaker: ChatMessage.getSpeaker({ actor }), content: render(state),
     rolls: [roll], flags: { [SCOPE]: { reachChange: state } } };
   ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
-  return ChatMessage.create(messageData);
+  const message = await ChatMessage.create(messageData);
+  await bindInterruptionAction(combat, active.id, { kind: "reach", messageUuid: message.uuid });
+  return message;
   } finally { pendingActors.delete(actor.uuid); }
 }
 
 async function respond(message, state, type, manual = false) {
+  if (interruptionBlocksMessage(message)) return;
   const combat = game.combats.get(state.combatId); const target = combat?.combatants.get(state.targetCombatantId);
   const actor = target?.actor; if (!actor || (!game.user.isGM && !actor.isOwner)) return;
   const initiator = combat.combatants.get(state.actorCombatantId);
@@ -122,6 +127,7 @@ async function respond(message, state, type, manual = false) {
 }
 
 async function apply(message, request) {
+  if (interruptionBlocksMessage(message)) return;
   const state = foundry.utils.deepClone(message.getFlag(SCOPE, "reachChange"));
   const combat = game.combats.get(state?.combatId); const target = combat?.combatants.get(state?.targetCombatantId);
   const user = game.users.get(request.userId);
@@ -153,14 +159,15 @@ async function apply(message, request) {
       weaponId: response.weaponId, modeKey: response.modeKey, intrinsicKey: response.intrinsicKey, abilityId: response.abilityId, attackTarget: response.target,
       attackRoll: response.rawRoll, evadeTarget: state.evade.target, evadeRoll: state.evade.rawRoll,
       authorUserId: request.userId });
-  } else if (combat.combatant?.id === state.actorCombatantId) await combat.nextTurn();
+  } else if (!await finishInterruptionAction(combat, state.actorCombatantId)
+    && combat.combatant?.id === state.actorCombatantId) await combat.nextTurn();
 }
 
 export function activateReachCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0]; const card = root?.querySelector?.(".mythras-reach-card") ?? root;
   const state = message.getFlag?.(SCOPE, "reachChange"); if (!card?.classList?.contains("mythras-reach-card") || !state) return;
   card.addEventListener("click", (event) => { const button = event.target.closest("[data-reach-action]");
-    if (button) respond(message, state, button.dataset.reachAction, event.shiftKey); });
+    if (button && !interruptionBlocksMessage(message)) respond(message, state, button.dataset.reachAction, event.shiftKey); });
 }
 export function registerReachSocket() { game.socket.on(SOCKET, async (request) => {
   if (request?.action !== "reachResponse" || !coordinator()) return;

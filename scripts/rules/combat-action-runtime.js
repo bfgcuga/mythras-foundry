@@ -1,3 +1,5 @@
+import { canStartProactiveAction, choosingInterruption, combatInterruption, submitInterruption,
+  bindInterruptionAction, finishInterruptionAction, interruptionBlocksAction } from "./combat-interruption.js";
 import { settleWaiting, clearCombatWaiting } from "./combat-waiting.js";
 import { spendActorActionPoint } from "./combat-resource-runtime.js";
 import { ruleHelpButton, openRuleHelp } from "../ui/rule-help.js";
@@ -41,7 +43,7 @@ function activeContext(actor, { reactive = false } = {}) {
   const combatant = combatantForActor(combat, actor, actor?.token?.uuid);
   if (!combat?.started || !combatant) return null;
   const state = combatActionState(combat);
-  if (combat.combatant?.id !== combatant.id && !reactive) return null;
+  if (!canStartProactiveAction(combat, combatant) && !reactive) return null;
   return { combat, combatant, state };
 }
 
@@ -72,7 +74,10 @@ export function actionPresentation(actor) {
     .filter((entry) => Number(combat?.round) > Number(entry.appliedRound)
       || Number(combat?.turn) !== Number(entry.appliedTurn));
   return combatActionPresentation({ inCombat: Boolean(combat?.started && combatant),
-    isActive: combat?.combatant?.id === combatant?.id && state.delays[combatant?.id]?.status !== "reserved", actionPoints: currentActionPoints(actor),
+    isActive: canStartProactiveAction(combat, combatant)
+      && (state.delays[combatant?.id]?.status !== "reserved" || Boolean(choosingInterruption(combat, combatant?.id))),
+    isOwnTurn: combat?.combatant?.id === combatant?.id,
+    hasInterruption: Boolean(combatInterruption(combat)), interrupting: Boolean(choosingInterruption(combat, combatant?.id)), actionPoints: currentActionPoints(actor),
     canTakeProactiveTurn: conditions.capabilities.canTakeProactiveTurn
       && !Object.values(state.actions).some((action) => action.combatantId === combatant?.id && action.status === "awaitingContest"),
     canAttack: conditions.capabilities.canAttack,
@@ -93,10 +98,17 @@ export function actionPresentation(actor) {
 
 export function decorateCombatActionButtons(actor, root) {
   const presentation = actionPresentation(actor);
+  const combat = game.combat ?? game.combats?.active;
+  const combatant = combatantForActor(combat, actor, actor?.token?.uuid);
+  const choosing = Boolean(choosingInterruption(combat, combatant?.id));
+  const hint = root?.querySelector?.("[data-interruption-hint]");
+  if (hint) { hint.hidden = !choosing; hint.textContent = localize("MYTHRASF.Interruption.Phase.choosing"); }
+  const cancel = root?.querySelector?.("[data-interruption-cancel]");
+  if (cancel) { cancel.hidden = !choosing; cancel.onclick = () => submitInterruption(combat, "cancel"); }
   root?.querySelectorAll?.("[data-combat-action-key]").forEach((button) => {
     const key = button.dataset.combatActionKey;
     const state = presentation[key] ?? { available: false, cost: 1, reason: "unavailable" };
-    button.hidden = (key === "releaseWeapon" && !weaponPins(actor).length)
+    button.hidden = state.visible === false || (key === "releaseWeapon" && !weaponPins(actor).length)
       || (key === "recoverImpaledWeapon" && !presentation.recoverImpaledWeapon?.available)
       || (key === "releaseGrab" && !isGrabbed(actor))
       || (key === "releaseEntangle" && !activeEntanglements(actor).length)
@@ -113,10 +125,7 @@ export function decorateCombatActionButtons(actor, root) {
 }
 
 async function spend(actor, cost = 1) {
-  const current = currentActionPoints(actor);
-  if (current < cost) return false;
-  await actor.update({ "system.resources.actionPoints.value": current - cost });
-  return true;
+  return cost === 0 || spendActorActionPoint(actor);
 }
 
 async function requestRecoverImpaledWeapon(actor) {
@@ -163,7 +172,7 @@ export async function applyImpaledWeaponRecoveryRequest(request) {
     && Number(request.ownRoll) <= 100 && (!request.resisted
       || (Number.isInteger(Number(request.rivalRoll)) && Number(request.rivalRoll) >= 1
         && Number(request.rivalRoll) <= 100));
-  if (!combat?.started || combat.combatant?.id !== combatant?.id || !actor || !user || !rollsValid
+  if (!combat?.started || !canStartProactiveAction(combat, combatant) || !actor || !user || !rollsValid
     || (!user.isGM && !actor.testUserPermission(user, "OWNER"))
     || currentActionPoints(actor) < 1) return false;
   const chosen = impalementsReachableBy(combat, actor).find((entry) =>
@@ -218,7 +227,7 @@ export async function applyImpaledWeaponRecoveryRequest(request) {
       "MYTHRASF.Pin.Outcome"))}</span><strong>${escape(localize(recovered
         ? "MYTHRASF.Impale.Recovered" : "MYTHRASF.Impale.Stuck"))}</strong></div>${recovered
       ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Damage"))}</span><strong>${dealt}</strong></div>` : ""}</section>` });
-  await combat.nextTurn();
+  if (!await finishInterruptionAction(combat, combatant.id)) await combat.nextTurn();
   return true;
 }
 
@@ -242,7 +251,7 @@ async function requestEntangleTrip(actor) {
   if (!chosen) return;
   const resistance = await chooseTripResistance(chosen.actor, "standard", {
     Dialog: foundry.applications.api.DialogV2, localize, escape });
-  if (!resistance || !await spend(actor, 1)) return;
+  if (!resistance || !activeContext(actor) || !await spend(actor, 1)) return;
   const roll = await evaluateSystemRoll("1d100");
   const right = { result: classifyContestRoll(roll.total, resistance.target), rawRoll: roll.total };
   const left = { result: chosen.sourceResult ?? "success", rawRoll: chosen.sourceRoll };
@@ -258,7 +267,7 @@ async function requestEntangleTrip(actor) {
       "MYTHRASF.Pin.Outcome"))}</span><strong>${escape(localize(tripped
         ? "MYTHRASF.Entangle.Tripped" : "MYTHRASF.Entangle.Resisted"))}</strong></div></section>`,
     rolls: [roll] });
-  await context.combat.nextTurn();
+  if (!await finishInterruptionAction(context.combat, context.combatant.id)) await context.combat.nextTurn();
 }
 
 export function actionCard(action) {
@@ -297,7 +306,9 @@ async function createTransaction(context, key, parameters = {}) {
   }
   const id = foundry.utils.randomID(); const candidates = [];
   context.state = combatActionState(context.combat);
-  const action = { schemaVersion: 1, id, requestId: context.requestId, revision: 0, key, type: definition.type,
+  const interruptionId = combatInterruption(context.combat)?.phase === "resolving"
+    && combatInterruption(context.combat).combatantId === context.combatant.id ? combatInterruption(context.combat).id : null;
+  const action = { schemaVersion: 1, id, interruptionId, requestId: context.requestId, revision: 0, key, type: definition.type,
     actorUuid: context.combatant.actor.uuid, actorName: actorDisplayName(context.combatant.actor),
     tokenUuid: context.combatant.token?.uuid ?? "", combatantId: context.combatant.id,
     combatId: context.combat.id, round: context.combat.round,
@@ -314,6 +325,9 @@ async function createTransaction(context, key, parameters = {}) {
     content: actionCard(action), flags: { [SCOPE]: { combatAction: { combatId: context.combat.id,
       actionId: id, revision: action.revision } } } });
   action.messageUuid = message.uuid; await save(context.combat, context.state);
+  if (action.type === "proactive") {
+    await bindInterruptionAction(context.combat, context.combatant.id, { kind: "general", actionId: id });
+  }
   return action;
 }
 
@@ -339,7 +353,8 @@ async function chooseReadyWeapon(actor) {
 
 export async function executeAction(combat, action) {
   const state = combatActionState(combat); const current = state.actions[action.id];
-  if (!current || ["resolved", "cancelled", "awaitingContest"].includes(current.status)) return;
+  if (!current || interruptionBlocksAction(combat, current.id)
+    || ["resolved", "cancelled", "awaitingContest"].includes(current.status)) return;
   const combatant = combat.combatants.get(current.combatantId); const actor = combatant?.actor;
   if (!actor) { current.status = "awaitingConfirmation"; current.note = localize("MYTHRASF.Action.MissingActor"); }
   else if (current.key === "delay") {
@@ -395,7 +410,7 @@ export async function executeAction(combat, action) {
     if (prone.length) await actor.deleteEmbeddedDocuments("ActiveEffect", prone.map((effect) => effect.id));
     current.status = "resolved";
   } else if (current.key === "hesitate") {
-    await advanceActorTurnConditions(actor, [], { consumeCurrent: true });
+    if (!combatInterruption(combat)) await advanceActorTurnConditions(actor, [], { consumeCurrent: true });
     current.status = "resolved";
     current.actorTurnConditionsAdvanced = true;
   }
@@ -403,6 +418,8 @@ export async function executeAction(combat, action) {
   current.resolvedAt = current.status === "resolved" ? Date.now() : null;
   current.revision += 1; await save(combat, state); await updateCard(current);
   Hooks.callAll("mythrasCombatActionResolved", combat, current);
+  if (current.status === "resolved" && current.type !== "reactive"
+    && await finishInterruptionAction(combat, current.combatantId)) return;
   if (current.status === "resolved" && current.type !== "reactive" && combat.combatant?.id === current.combatantId) {
     await combat.nextTurn({ skipCurrentActorConditions: current.actorTurnConditionsAdvanced });
   }
@@ -441,6 +458,12 @@ export async function declareCombatAction(request) {
 }
 
 export async function requestCombatAction(actor, key) {
+  if (key === "interrupt") {
+    const combat = game.combat ?? game.combats?.active;
+    const combatant = combatantForActor(combat, actor, actor?.token?.uuid);
+    if (combatant) return submitInterruption(combat, "begin", { combatantId: combatant.id });
+    return;
+  }
   const context = activeContext(actor, { reactive: COMBAT_ACTIONS[key]?.type === "reactive" });
   if (!context || (!game.user.isGM && !actor.isOwner) || !actionAvailability(actor)[key]) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.turn"));
@@ -492,7 +515,7 @@ export async function requestCombatAction(actor, key) {
 async function applyCardRequest(request) {
   const combat = game.combats.get(request.combatId); const state = combatActionState(combat);
   const action = state.actions[request.actionId]; const user = game.users.get(request.userId);
-  if (!combat || !action || !user || Number(action.revision) !== Number(request.revision)) return;
+  if (!combat || !action || interruptionBlocksAction(combat, action.id) || !user || Number(action.revision) !== Number(request.revision)) return;
   if (["interrupt", "pass"].includes(request.operation)) return;
   if (["confirm", "cancel"].includes(request.operation)) {
     if (action.status !== "awaitingConfirmation") return;
@@ -504,6 +527,8 @@ async function applyCardRequest(request) {
   }
   action.revision += 1; await save(combat, state); await updateCard(action);
   if (action.status === "resolving") await executeAction(combat, action);
+  if (["resolved", "cancelled"].includes(action.status) && action.type !== "reactive"
+    && await finishInterruptionAction(combat, action.combatantId)) return;
   if (["resolved", "cancelled"].includes(action.status)
     && action.type !== "reactive" && combat.combatant?.id === action.combatantId) await combat.nextTurn();
 }
@@ -585,5 +610,6 @@ export async function finishManeuverAction(combat, actionId) {
   action.status = "resolved"; action.resolvedAt = Date.now(); action.revision += 1;
   await save(combat, state);
   Hooks.callAll("mythrasCombatActionResolved", combat, action);
-  if (combat.combatant?.id === action.combatantId) await combat.nextTurn();
+  if (!await finishInterruptionAction(combat, action.combatantId)
+    && combat.combatant?.id === action.combatantId) await combat.nextTurn();
 }

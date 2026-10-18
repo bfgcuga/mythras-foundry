@@ -1,3 +1,5 @@
+import { canStartProactiveAction, choosingInterruption, combatInterruption, bindInterruptionAction,
+  interruptionBlocksMessage } from "./combat-interruption.js";
 import { actorManeuverRestriction, maneuverAttackRestriction, maneuverTokenUuid, releaseManeuverRival } from "./maneuver-protection.js";
 import { intrinsicUnarmedWeapon, hasIntrinsicUnarmed, unarmedAbilities, resolveUnarmedAbility,
   unarmedParrySize, unarmedTouchState } from "./unarmed-combat.js";
@@ -294,14 +296,15 @@ function combatTurnContext(actor) {
   const simultaneousCombats = game.combats.filter((entry) => entry.started
     && entry.combatants.some((candidate) => candidate.actor?.uuid === actor.uuid));
   if (simultaneousCombats.length > 1) return { invalid: "multipleCombats" };
-  if (combat.combatant?.id !== combatant.id) return { invalid: "turn" };
+  if (!canStartProactiveAction(combat, combatant)) return { invalid: "turn" };
   if (effectiveActionPointMaximum(actor, getActionPointRules()) < 1
     || currentActionPoints(actor) < 1) return { invalid: "actionPoints" };
   const economy = combat.getFlag(FLAG_SCOPE, "turnEconomy") ?? {};
   return { combatUuid: combat.uuid, combatId: combat.id, combatantId: combatant.id,
     round: combat.round, cycle: economy.cycle ?? 1, turn: combat.turn,
     turnRevision: economy.revision ?? 0, attackSpent: false, defenseSpent: false,
-    turnAdvanced: false };
+    turnAdvanced: false, interruptionId: choosingInterruption(combat, combatant.id)?.id ?? null,
+    retainTurn: Boolean(choosingInterruption(combat, combatant.id)) };
 }
 
 async function spendActionPoint(actor, options) {
@@ -582,7 +585,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       abilityId: configured.reinforcedSkill.id, abilityName: configured.reinforcedSkill.name,
       target: Number(configured.reinforcedSkill.system.total ?? 0) } : null
   };
-  if (turnEconomy && !await spendActionPoint(actor)) {
+  if (turnEconomy && !await spendActionPoint(actor, { actionKind: "attack" })) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
   }
   await releaseManeuverRival(maneuverTracker, actor, setup.targetTokenUuid, maneuverTokenUuid(maneuverTracker, actor));
@@ -641,7 +644,10 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   const messageData = { speaker: actorSpeaker(actor), content: renderCombatExchange(combat),
     flags: { [FLAG_SCOPE]: { combat } }, rolls: [roll] };
   ChatMessage.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
-  return ChatMessage.create(messageData);
+  const message = await ChatMessage.create(messageData);
+  if (turnEconomy?.interruptionId) await bindInterruptionAction(game.combats.get(turnEconomy.combatId),
+    turnEconomy.combatantId, { kind: "attack", messageUuid: message.uuid });
+  return message;
   } finally { pendingAttackActors.delete(actor.uuid); }
 }
 
@@ -688,7 +694,9 @@ export async function createResolvedReactionAttack({ tracker, attackerCombatantI
       combatantId: defenderCombatantId, defenderCombatantId: attackerCombatantId,
       round: tracker.round, cycle: economy.cycle ?? 1, turn: tracker.turn,
       turnRevision: economy.revision ?? 0, attackSpent: true, defenseSpent: true,
-      turnAdvanced: false }, reactionAttack: true };
+      turnAdvanced: false, interruptionId: combatInterruption(tracker)?.phase === "resolving"
+        && combatInterruption(tracker).combatantId === defenderCombatantId ? combatInterruption(tracker).id : null,
+      retainTurn: Boolean(combatInterruption(tracker)) }, reactionAttack: true };
   return ChatMessage.create({ speaker: actorSpeaker(actor),
     content: renderCombatExchange(combat), flags: { [FLAG_SCOPE]: { combat } } });
 }
@@ -878,6 +886,7 @@ async function chooseAccidentalTarget(message, combat) {
   const entry = tracker?.combatants.find((candidate) => candidate.token?.uuid === selected
     || candidate.actor?.uuid === actor.uuid);
   if (tracker && !entry) return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.participation"));
+  if (interruptionBlocksMessage(message)) return false;
   return applyAccidentalTargetTransition(message, combat, { token, entry, userId: game.user.id,
     clone: foundry.utils.deepClone, actorIdentity, tokenIdentity: tokenUuid,
     tokenName: tokenDisplayName, locationSnapshot, render: renderCombatExchange,
@@ -900,6 +909,7 @@ async function consumeSurpriseBonus(defender, combat) {
 }
 
 async function applyCombatDefense(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyCombatDefenseTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     warn: (text) => ui.notifications.warn(text), localize,
@@ -1085,6 +1095,7 @@ async function chooseCombatEffects(message, combat) {
 
 async function applyCombatEffects(message, request, surrenderAuthorizedBy = "",
   penetrationAuthorizedBy = "", coverAuthorizedBy = "", chosenTargetAuthorizedBy = "") {
+  if (interruptionBlocksMessage(message)) return false;
   return applyCombatEffectsTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     catalogDocuments: combatEffectDocuments, effectView, effectContext,
@@ -1150,6 +1161,7 @@ async function chooseCombatRuseReplacement(message, combat) {
 }
 
 async function applyCombatRuseReplacement(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyCombatRuseReplacementTransition(message, request, {
     clone: foundry.utils.deepClone, flagScope: FLAG_SCOPE, resolveActor: combatActor,
     userById: (id) => game.users.get(id), catalogDocuments: combatEffectDocuments,
@@ -1188,6 +1200,7 @@ async function cancelCombat(message, current, suppliedReason = "") {
 }
 
 async function closeCombatExchange(message, current) {
+  if (interruptionBlocksMessage(message)) return false;
   if (!game.user.isGM || !current.turnEconomy || current.turnEconomy.turnAdvanced) return;
   if (exchangeTerminal(current)) {
     return closeTerminalCombatExchange(message, current, { clone: foundry.utils.deepClone,
@@ -1253,6 +1266,7 @@ async function requestDisarmChoice(message, current, index, choice) {
 }
 
 async function applyDropHeldItem(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyDroppedCombatItem(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     render: renderCombatExchange, advance: advanceCombatTurnForExchange });
@@ -1308,6 +1322,7 @@ async function spendCombatLuck(message, current, side, manual = false) {
 }
 
 async function applyCombatLuck(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyCombatLuckTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     warn: (text) => ui.notifications.warn(text), localize, actorName: actorDisplayName,
@@ -1425,6 +1440,7 @@ async function requestCombatDamage(message, combat, manual = false) {
 }
 
 async function applyCombatDamage(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyRolledCombatDamage(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     permanentWoundRule: getSystemSetting(SETTING_KEYS.permanentWoundHitLocationRule),
@@ -1452,6 +1468,7 @@ async function requestDamageLuck(message, combat, manual = false) {
 }
 
 async function applyDamageLuck(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyCombatDamageLuck(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     refreshProposal: refreshDamageProposal, render: renderCombatExchange,
@@ -1624,12 +1641,14 @@ async function requestWoundLuck(message, combat, checkId) {
 }
 
 async function applyWoundLuck(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyMajorWoundLuck(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     warn: (text) => ui.notifications.warn(text), localize, render: renderCombatExchange });
 }
 
 async function applyCombatCheck(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyCombatCheckTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     warn: (text) => ui.notifications.warn(text), localize, actorName: actorDisplayName,
@@ -1639,6 +1658,7 @@ async function applyCombatCheck(message, request) {
 }
 
 async function applyProposedDamage(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyProposedCombatDamage(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveActor: combatActor, userById: (id) => game.users.get(id),
     armorPoints: (location, defender, targetType) => targetType === "weapon"
@@ -1769,7 +1789,7 @@ export function activateCombatCard(message, html) {
   card.querySelectorAll("[data-gm-only]").forEach((button) => { button.hidden = !game.user.isGM; });
   const gm = card.querySelector("[data-combat-gm-actions]"); if (gm) gm.hidden = !game.user.isGM;
   card.addEventListener("click", async (event) => {
-    const button = event.target.closest("[data-combat-action]"); if (!button) return;
+    const button = event.target.closest("[data-combat-action]"); if (!button || interruptionBlocksMessage(message)) return;
     const action = button.dataset.combatAction;
     const manual = event.shiftKey;
     if (["parry", "evade", "cover", "none"].includes(action)) return respondToAttack(message, combat, action, manual);
@@ -1864,6 +1884,7 @@ async function chooseChosenTarget(message, combat) {
 }
 
 async function applyChosenTarget(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   const current = message?.getFlag(FLAG_SCOPE, "combat");
   if (!current || Number(request.revision) !== Number(current.revision)) return false;
   const token = await fromUuid(request.tokenUuid).catch(() => null);
@@ -1910,6 +1931,7 @@ async function choosePenetrationTarget(message, combat, manual = false) {
 }
 
 async function applyPenetrationTarget(message, request) {
+  if (interruptionBlocksMessage(message)) return false;
   return applyPenetrationTargetTransition(message, request, { clone: foundry.utils.deepClone,
     flagScope: FLAG_SCOPE, resolveToken: fromUuid, resolveActor: combatActor,
     userById: (id) => game.users.get(id), actorIdentity, tokenIdentity: tokenUuid,

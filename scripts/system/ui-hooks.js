@@ -1,3 +1,5 @@
+import { activateInterruptionCard, registerInterruptionSocket, combatInterruption,
+  clearCombatInterruption, interruptionTurnIsCurrent, interruptionBlocksMessage } from "../rules/combat-interruption.js";
 import { clearCombatWaiting, settleWaiting } from "../rules/combat-waiting.js";
 import { migrateCombatWaiting } from "../rules/combat-action-runtime.js";
 import { activateContestResponseDialog, activateSkillRollDialog } from "../apps/skill-roll-dialog.js";
@@ -28,6 +30,11 @@ import { activateFatigueCheckCard, registerFatigueCheckSocket }
   from "../rules/fatigue-check-chat.js";
 
 function activateChatCards(message, html) {
+  activateInterruptionCard(message, html);
+  if (interruptionBlocksMessage(message)) {
+    const root = html instanceof HTMLElement ? html : html?.[0];
+    root?.querySelectorAll?.("button").forEach(button => { button.disabled = true; });
+  }
   activateWeaponPinCard(message, html);
   activateCombatCard(message, html);
   activateRoundConsequenceCard(message, html);
@@ -66,9 +73,15 @@ export function registerUiHooks() {
     registerReachSocket();
     registerTacticalSocket();
     registerCombatActionSocket();
+    registerInterruptionSocket();
     registerFatigueCheckSocket();
     if (isCombatCoordinator()) {
-      for (const combat of game.combats) await migrateCombatWaiting(combat);
+      for (const combat of game.combats) {
+        await migrateCombatWaiting(combat);
+        const session = combatInterruption(combat);
+        if (session && (!interruptionTurnIsCurrent(combat, session)
+          || !combat.combatants.get(session.combatantId))) await clearCombatInterruption(combat);
+      }
       await Promise.all(game.combats.map((combat) => combat.ensureInitiativeTieBreaks?.()));
       for (const combat of game.combats.filter((entry) => entry.started)) {
         for (const combatant of combat.combatants) {
@@ -164,7 +177,7 @@ export function registerUiHooks() {
     }
   });
   Hooks.on("updateCombat", (combat, changed) => {
-    if (!["flags.mythras-foundry.tacticalState", "flags.mythras-foundry.combatActions", "turn", "round"]
+    if (!["flags.mythras-foundry.tacticalState", "flags.mythras-foundry.combatActions", "flags.mythras-foundry.combatInterruption", "turn", "round"]
       .some(path => foundry.utils.hasProperty(changed, path))) return;
     for (const combatant of combat.combatants) combatant.actor?.sheet?.render?.();
   });
@@ -180,11 +193,16 @@ export function registerUiHooks() {
     }
   });
   Hooks.on("deleteCombatant", async (combatant) => {
-    if (isCombatCoordinator()) await settleWaiting(combatant.parent, combatant, { charge: false });
+    if (isCombatCoordinator()) {
+      const session = combatInterruption(combatant.parent);
+      if ([session?.combatantId, session?.interruptedCombatantId].includes(combatant.id)) await clearCombatInterruption(combatant.parent);
+      await settleWaiting(combatant.parent, combatant, { charge: false });
+    }
   });
   Hooks.on("deleteCombat", async (combat) => {
     if (isCombatCoordinator()) {
       await clearCombatManeuvers(combat);
+      await clearCombatInterruption(combat);
       await clearCombatWaiting(combat, { charge: false });
     }
     await restoreCombatActors(combat);

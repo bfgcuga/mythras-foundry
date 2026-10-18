@@ -109,8 +109,11 @@ El sistema incluye actualmente:
   Retrasar, Titubear y Cargar se registran en el combate. Retrasar pasa el turno
   sin gastar PA y aplica Esperando: la primera reacción de pago retira el estado;
   si llega el siguiente turno o termina la ronda, pierde un PA. Las acciones
-  activas siguen bloqueadas fuera de turno. El movimiento es una declaración
-  táctica y las acciones de magia y montura se
+  activas siguen bloqueadas fuera de turno hasta pulsar Interrumpir, que abre
+  una única acción activa sin cambiar la iniciativa. Al terminar, el DJ decide
+  si impide la acción del turno suspendido: en ese caso cuesta un PA total y
+  pasa el turno; de lo contrario continúa su resolución. El movimiento es una
+  declaración táctica y las acciones de magia y montura se
   conservan como confirmaciones guiadas; Titubear consume explícitamente un
   turno propio de las condiciones temporales. Maniobrar solicita Evadir contra
   cada rival elegido en la escena: el ejecutor tira una vez y cada rival responde

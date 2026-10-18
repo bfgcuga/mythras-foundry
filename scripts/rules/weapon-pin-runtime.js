@@ -1,4 +1,7 @@
 import { activeGrabs, grabData } from "./grappling.js";
+import { canStartProactiveAction, bindInterruptionAction, finishInterruptionAction, interruptionBlocksMessage } from "./combat-interruption.js";
+import { spendActorActionPoint } from "./combat-resource-runtime.js";
+import { combatantForActor } from "./engagement-runtime.js";
 import { strengthContestAdjustment } from "./strength-contests.js";
 import { PIN_SCOPE, pinnableWeapons, releaseWeaponSkills, resolveWeaponRelease, weaponPinData, weaponPins
 } from "./weapon-pinning.js";
@@ -117,8 +120,8 @@ async function submit(request) {
 async function startRelease(request, user) {
   const actor = await fromUuid(request.actorUuid);
   const combat = game.combats.get(request.combatId);
-  const active = combat?.combatant;
-  if (!actor || !combat?.started || active?.actor?.uuid !== actor.uuid
+  const active = combatantForActor(combat, actor, actor?.token?.uuid);
+  if (!actor || !canStartProactiveAction(combat, active)
     || (!user.isGM && !actor.testUserPermission(user, "OWNER")) || currentActionPoints(actor) < 1) return;
   const kind = ["grab", "entangle"].includes(request.kind) ? request.kind : "weapon";
   const effect = restraints(actor, kind).find((entry) => entry.id === request.effectId);
@@ -141,12 +144,15 @@ async function startRelease(request, user) {
     combatantId: active.id, round: combat.round, turn: combat.turn,
     victim: { actorUuid: actor.uuid, tokenUuid: actor.token?.uuid ?? "", name: actorDisplayName(actor) },
     holder: { actorUuid: holder.uuid, tokenUuid: data.sourceTokenUuid, name: actorDisplayName(holder) } };
-  await actor.update({ "system.resources.actionPoints.value": currentActionPoints(actor) - 1 });
+  if (!canStartProactiveAction(combat, active)
+    || !await spendActorActionPoint(actor, { actionKind: "release" })) return;
   try {
-    await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), content: renderRelease(state),
+    const message = await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), content: renderRelease(state),
       flags: { [PIN_SCOPE]: { weaponRelease: state } } });
+    await bindInterruptionAction(combat, active.id, { kind: "release", messageUuid: message.uuid });
   } catch (error) {
     await actor.update({ "system.resources.actionPoints.value": currentActionPoints(actor) + 1 });
+    await finishInterruptionAction(combat, active.id, { cancelled: true });
     throw error;
   }
 }
@@ -154,7 +160,7 @@ async function startRelease(request, user) {
 export async function applyWeaponPinRequest(request) {
   const user = game.users.get(request.userId); if (!user) return;
   if (request.operation === "start") return startRelease(request, user);
-  const message = game.messages.get(request.messageId); if (!message) return;
+  const message = game.messages.get(request.messageId); if (!message || interruptionBlocksMessage(message)) return;
   if (request.operation === "pin") {
     const combat = foundry.utils.deepClone(message.getFlag(PIN_SCOPE, "combat"));
     const entry = combat?.consequences?.[request.index];
@@ -208,6 +214,7 @@ export async function applyWeaponPinRequest(request) {
   await message.update({ content: renderRelease(state), rolls: appendSerializedRolls(message, roll.toJSON()),
     [`flags.${PIN_SCOPE}.weaponRelease`]: state });
   const combat = game.combats.get(state.combatId);
+  if (state.status === "resolved" && await finishInterruptionAction(combat, state.combatantId)) return;
   if (state.status === "resolved" && combat?.combatant?.id === state.combatantId
     && combat.round === state.round && combat.turn === state.turn) await combat.nextTurn();
 }

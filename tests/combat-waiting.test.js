@@ -34,7 +34,7 @@ test("Retrasar es gratuito pero exige PA y turno propio; no habilita acciones ac
   const waiting = availableCombatActions({ ...context, isActive: false, hasDelay: true });
   assert.equal(waiting.move, false);
   assert.equal(waiting.counterspell, true);
-  assert.equal(waiting.interrupt, false);
+  assert.equal(waiting.interrupt, true);
 });
 
 test("una reacción paga una vez y retira Esperando; la siguiente paga normalmente", async t => {

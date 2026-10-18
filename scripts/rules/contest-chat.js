@@ -1,3 +1,4 @@
+import { interruptionBlocksMessage } from "./combat-interruption.js";
 import { ruleHelpButton, openRuleHelp } from "../ui/rule-help.js";
 import { resolveActorConditions } from "./actor-conditions.js";
 import { openContestResponseDialog, SPECIAL_ABILITY_ID } from "../apps/skill-roll-dialog.js";
@@ -281,7 +282,7 @@ async function actionContestCurrent(contest) {
 
 export async function queueContestMutation(message, operation) {
   const previous = contestResponseQueues.get(message.id) ?? Promise.resolve();
-  const current = previous.catch(() => {}).then(operation);
+  const current = previous.catch(() => {}).then(() => interruptionBlocksMessage(message) ? false : operation());
   contestResponseQueues.set(message.id, current);
   try { return await current; }
   finally { if (contestResponseQueues.get(message.id) === current) contestResponseQueues.delete(message.id); }

@@ -1,3 +1,4 @@
+import { combatInterruption, clearCombatInterruption } from "../rules/combat-interruption.js";
 import { clearCombatWaiting } from "../rules/combat-waiting.js";
 import { currentActionPoints, effectiveActionPointMaximum, combatantActionPointState } from "../rules/action-points.js";
 import { composedInitiative, nextCombatPosition, splitComposedInitiative,
@@ -12,6 +13,7 @@ import { prepareCombatEndFatigue, prepareRoundConsequences }
   from "../rules/round-consequences.js";
 import { combatActionState, expireCombatActionTurn } from "../rules/combat-action-runtime.js";
 import { renderInitiativeChat } from "../rules/initiative-chat.js";
+import { actorDisplayName, tokenDisplayName } from "../rules/document-names.js";
 import { clearCombatManeuvers } from "../rules/maneuver-protection.js";
 
 const SCOPE = "mythras-foundry";
@@ -111,13 +113,14 @@ export class MythrasCombat extends Combat {
     if (coordinator() === game.user.id) {
       await prepareCombatEndFatigue(this);
       await clearCombatManeuvers(this);
+      await clearCombatInterruption(this);
       await clearCombatWaiting(this, { charge: false });
     }
     return super.endCombat();
   }
 
   async nextTurn({ skipCurrentActorConditions = false } = {}) {
-    if (coordinator() !== game.user.id) return this;
+    if (coordinator() !== game.user.id || combatInterruption(this)) return this;
     if (hasPendingExchange(this.combatant)) {
       ui.notifications.warn(game.i18n.localize("MYTHRASF.Tracker.PendingExchange"));
       return this;
@@ -154,7 +157,7 @@ export class MythrasCombat extends Combat {
   }
 
   async nextRound() {
-    if (coordinator() !== game.user.id) return this;
+    if (coordinator() !== game.user.id || combatInterruption(this)) return this;
     const round = Math.max(1, Number(this.round ?? 0) + 1);
     await clearCombatWaiting(this);
     Hooks.callAll("mythrasRoundEnd", this, this.round ?? 0);
@@ -273,12 +276,13 @@ export class MythrasCombat extends Combat {
     if (updates.length) await this.updateEmbeddedDocuments("Combatant", updates,
       { mythrasTieBreak: true });
     if (rolled.length) {
-      const entries = rolled.map((entry) => ({ name: entry.combatant.name,
+      const entries = rolled.map((entry) => ({ name: tokenDisplayName(entry.combatant.token)
+          || actorDisplayName(entry.combatant.actor) || entry.combatant.name || "",
         roll: entry.raw, bonus: entry.bonus, total: entry.total, tieBreak: entry.tieBreak }));
       const rolls = rolled.flatMap((entry) => [entry.primaryRoll, entry.tieRoll].filter(Boolean));
       const messageData = { ...messageOptions,
         speaker: rolled.length === 1
-          ? ChatMessage.getSpeaker({ actor: rolled[0].combatant.actor })
+          ? { ...ChatMessage.getSpeaker({ actor: rolled[0].combatant.actor }), alias: entries[0].name }
           : ChatMessage.getSpeaker(),
         content: renderInitiativeChat(entries, { localize: (key) => game.i18n.localize(key),
           format: (key, data) => game.i18n.format(key, data) }), rolls };
