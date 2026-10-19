@@ -66,3 +66,10 @@ de consecuencias.
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.
+
+## 7. Reparar armas y armaduras dañadas o destruidas
+
+Diseñar acciones para reparar armas y armaduras dañadas o destruidas. Queda
+por decidir si viven en la hoja del Item o en Inventario y cómo se calcula y
+cobra su coste económico antes de restaurar sus PG o PA. No incluye la marca
+«Inutilizada», cuya reparación gratuita ya se resuelve desde Inventario.

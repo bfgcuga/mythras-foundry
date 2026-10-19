@@ -226,7 +226,9 @@ mientras Aturdido permite las defensas.
 Los estados temporales administrados son `ActiveEffect` con
 `flags.mythras-foundry.timedCondition`. Los turnos se descuentan únicamente al
 terminar el turno propio; las duraciones de asalto vencen en `mythrasRoundEnd`
-y los plazos en minutos u horas permanecen manuales. Las fuentes son
+y los plazos en minutos u horas permanecen manuales. El alcance temporal se
+considera completo y se limita al Combat Tracker: no se automatiza tiempo real
+ni tiempo mundial fuera de él. Las fuentes son
 independientes, por lo que retirar una no elimina otros bloqueos equivalentes.
 Sangrando y Ahogándose crean una cola de Aguante antes del primer turno del
 asalto. Esas tiradas resuelven su objetivo efectivo en el momento de lanzar los

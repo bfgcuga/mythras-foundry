@@ -158,6 +158,12 @@ El sistema incluye actualmente:
   hoja de personaje añade Trasfondo narrativo y una silueta humana interactiva
   vinculada por datos canónicos a sus localizaciones de golpe cuando la
   morfología es humanoide;
+- Trasfondo narrativo se considera cerrado por ahora: la descripción física se
+  conserva como texto libre, sin desglosarla en campos adicionales;
+- Estados y tiempo se consideran implementados dentro del Combat Tracker. Las
+  duraciones por turno y asalto y las consecuencias de Sangrando, Desangrándose,
+  Agonizando, Ahogándose y Sorpresa están integradas; no se automatiza tiempo
+  real ni tiempo mundial fuera del tracker;
 - antes de cada tirada física, personaje y PNJ permiten decidir si una Herida
   Grave aumenta su dificultad y si una localización marcada como inutilizada
   hace imposible esa acción concreta; una lesión permanente no participa en
