@@ -12,7 +12,6 @@ Revisar prioritariamente estas acciones:
 
 - Buscar cobertura.
 - Cambiar alcance.
-- Forcejear.
 - Retener Magia.
 - Usar Magia.
 
@@ -56,9 +55,9 @@ extracción. Las fronteras y restricciones del refactor están detalladas en
 
 ## 5. Integrar las acciones diferenciales pendientes
 
-Conectar Forcejear y Cargar con la transacción
+Conectar Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
-pero la resolución de esas acciones sigue siendo guiada. Maniobrar ya utiliza
+pero la resolución de esta acción sigue siendo guiada. Maniobrar ya utiliza
 una enfrentada de Evadir con una respuesta individual por rival y confirmación
 de consecuencias.
 

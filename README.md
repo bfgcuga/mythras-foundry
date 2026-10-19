@@ -158,6 +158,9 @@ El sistema incluye actualmente:
   hoja de personaje añade Trasfondo narrativo y una silueta humana interactiva
   vinculada por datos canónicos a sus localizaciones de golpe cuando la
   morfología es humanoide;
+- Forcejear permite describir un forcejeo genérico aprobado por el DJ por 1 PA,
+  sin exigir restricciones activas. Su resolución y validación manuales son
+  definitivas, independientes de las acciones específicas de liberación;
 - Trasfondo narrativo se considera cerrado por ahora: la descripción física se
   conserva como texto libre, sin desglosarla en campos adicionales;
 - Estados y tiempo se consideran implementados dentro del Combat Tracker. Las

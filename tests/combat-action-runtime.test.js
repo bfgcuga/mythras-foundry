@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import { actionCard, activateCombatActionCard, executeAction } from "../scripts/rules/combat-action-runtime.js";
+import { bindStruggleApproval, actionCard, activateCombatActionCard, executeAction } from "../scripts/rules/combat-action-runtime.js";
 import { COMBAT_ACTIONS, movementDistance } from "../scripts/rules/combat-actions.js";
 import { readFileSync } from "node:fs";
 
@@ -50,9 +50,9 @@ test('action cards use the current character name and open brace help on click',
   assert.match(globals.dialog.content, /Status.Description.braced/);
 });
 
-test('all registered action cards offer the shared help button', t => {
+test('standard action cards offer the shared help button', t => {
   const { action, root } = fixture(t);
-  for (const key of Object.keys(COMBAT_ACTIONS)) {
+  for (const key of Object.keys(COMBAT_ACTIONS).filter(key => key !== "struggle")) {
     root.innerHTML = actionCard({ ...action, key, status: 'resolved' });
     const help = root.querySelector(`[data-action-help="${key}"]`);
     assert.ok(help, key);
@@ -61,9 +61,9 @@ test('all registered action cards offer the shared help button', t => {
   }
 });
 
-test('every registered action displays its effect directly in the card in every phase', t => {
+test('every standard action displays its effect directly in the card in every phase', t => {
   const { action, root } = fixture(t);
-  for (const key of Object.keys(COMBAT_ACTIONS)) {
+  for (const key of Object.keys(COMBAT_ACTIONS).filter(key => key !== "struggle")) {
     for (const status of ['awaitingConfirmation', 'resolving', 'resolved', 'cancelled']) {
       root.innerHTML = actionCard({ ...action, key, status });
       const description = root.querySelector('.combat-action-description');
@@ -135,4 +135,35 @@ test('generic action resolves with its description and advances the turn', async
   root.innerHTML = actionCard(action);
   assert.match(root.textContent, /Abrir la puerta/);
   assert.equal(root.querySelector('[data-action-transaction]'), null);
+});
+
+test('Forcejear publica solo la descripción y una validación manual sin aplicar restricciones', async t => {
+  const { action, root, actor, combat } = fixture(t);
+  Object.assign(action, { key: 'struggle', note: 'Abrir una puerta atascada', status: 'resolving' });
+  await executeAction(combat, action);
+  assert.equal(action.status, 'awaitingConfirmation');
+  assert.equal(actor.effects.length, 0);
+  root.innerHTML = actionCard(action);
+  assert.equal(root.querySelector('.combat-action-description').textContent, action.note);
+  assert.equal(root.querySelectorAll('button').length, 1);
+  assert.ok(root.querySelector('[data-action-transaction="confirm"]'));
+  root.innerHTML = actionCard({ ...action, status: 'resolved' });
+  assert.equal(root.querySelectorAll('button').length, 0);
+});
+
+test('Forcejear exige descripción y tick de aprobación antes de habilitar Validar', t => {
+  const { root } = fixture(t);
+  root.innerHTML = '<textarea name="note"></textarea><input type="checkbox" name="gmApproved"><button data-action="ok">Validar</button>';
+  bindStruggleApproval(root);
+  const note = root.querySelector('textarea'), tick = root.querySelector('input'), button = root.querySelector('button');
+  const change = (el, event) => el.dispatchEvent(new root.ownerDocument.defaultView.Event(event));
+  assert.equal(button.disabled, true);
+  note.value = 'Forcejear con una puerta'; change(note, 'input');
+  assert.equal(button.disabled, true);
+  tick.checked = true; change(tick, 'change');
+  assert.equal(button.disabled, false);
+  tick.checked = false; change(tick, 'change');
+  assert.equal(button.disabled, true);
+  tick.checked = true; note.value = '   '; change(note, 'input');
+  assert.equal(button.disabled, true);
 });

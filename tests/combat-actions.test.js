@@ -77,3 +77,10 @@ test("generic action requires its turn and PA; passive block is free outside the
     hasPreparedWeapon: true, interrupting: true }).passiveBlock, true);
   assert.equal(availableCombatActions({ hasPreparedWeapon: true }).passiveBlock, false);
 });
+
+test("Forcejear no exige restricciones pero conserva turno y PA", () => {
+  const context = { inCombat: true, isActive: true, actionPoints: 1, hasRestraint: false };
+  assert.equal(availableCombatActions(context).struggle, true);
+  assert.equal(availableCombatActions({ ...context, isActive: false }).struggle, false);
+  assert.equal(availableCombatActions({ ...context, actionPoints: 0 }).struggle, false);
+});

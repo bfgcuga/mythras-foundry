@@ -39,7 +39,7 @@
   "MYTHRASF.Stand.Failure": "Remains prone",
   "MYTHRASF.Action.Description.stand": "Spends one AP. Confirm engagement and select opponents. Unengaged, removes Prone; engaged, win an opposed Brawn or Athletics test and confirm the result.",
   "MYTHRASF.Action.Description.charge": "Spends one AP and records the charge and its modifiers for the chosen locomotion. This declaration requires manual confirmation and does not automatically execute an attack.",
-  "MYTHRASF.Action.Description.struggle": "Spends one AP and records an attempt to struggle against a restraint. Resolution of this action requires manual confirmation.",
+  "MYTHRASF.Action.Description.struggle": "Spend one AP to perform the described struggle. The Game Master must approve using this action. Resolution and validation are always manual.",
   "MYTHRASF.Action.Description.mount": "Spends one AP and records the mounting action and entered note. Its resolution requires manual confirmation.",
   "MYTHRASF.Action.Description.retainMagic": "Spends one AP and records the maintain-magic action and entered note. Its resolution requires manual confirmation.",
   "MYTHRASF.Action.Description.useMagic": "Spends one AP and records the use of magic and entered note. Its resolution requires manual confirmation.",
@@ -2260,5 +2260,8 @@
   "MYTHRASF.Status.Poisoned": "Poisoned",
   "MYTHRASF.Status.Diseased": "Diseased",
   "MYTHRASF.Status.Description.poison": "Marks an actor affected by poison. Activated by application or losing resistance; the GM manages its effects, duration and removal.",
-  "MYTHRASF.Status.Description.disease": "Marks an actor affected by disease. Activated by application or losing resistance; the GM manages its effects, duration and removal."
+  "MYTHRASF.Status.Description.disease": "Marks an actor affected by disease. Activated by application or losing resistance; the GM manages its effects, duration and removal.",
+  "MYTHRASF.Action.Struggle.Pending": "Awaiting manual resolution and validation",
+  "MYTHRASF.Action.Struggle.Validate": "Validate",
+  "MYTHRASF.Action.Struggle.Approved": "The Game Master has approved using this action"
 }

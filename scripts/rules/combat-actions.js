@@ -15,7 +15,7 @@ export const COMBAT_ACTIONS = Object.freeze({
   seekCover: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   brace: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   readyWeapon: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
-  struggle: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
+  struggle: { type: "proactive", cost: 1, observable: true, guided: true, requiresCombat: true },
   maneuver: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   move: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   stand: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
@@ -71,7 +71,6 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     if (key === "attack") allowed &&= canAttack && (hasPreparedWeapon || hasUnarmedAttack);
     if (["aim", "reload"].includes(key)) allowed &&= hasRangedWeapon;
     if (["brace", "readyWeapon", "passiveBlock"].includes(key)) allowed &&= hasPreparedWeapon;
-    if (key === "struggle") allowed &&= hasRestraint;
     if (key === "releaseGrab") allowed &&= grabbed;
     if (key === "changeReach") allowed &&= !grabbed;
     if (key === "releaseWeapon") allowed &&= hasPinnedWeapon;
@@ -106,7 +105,6 @@ export function combatActionPresentation(context = {}) {
       else if (key === "attack" && !context.hasPreparedWeapon && !context.hasUnarmedAttack) reason = "preparedWeapon";
       else if (["aim", "reload"].includes(key) && !context.hasRangedWeapon) reason = "rangedWeapon";
       else if (["brace", "readyWeapon", "passiveBlock"].includes(key) && !context.hasPreparedWeapon) reason = "preparedWeapon";
-      else if (key === "struggle" && !context.hasRestraint) reason = "restraint";
       else if (key === "move" && context.engaged) reason = "engaged";
       else if (key === "stand" && !context.prone) reason = "notProne";
       else if (key === "charge" && !context.canCharge) reason = "chargeMovement";

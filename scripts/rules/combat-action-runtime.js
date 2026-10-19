@@ -276,7 +276,21 @@ function actionDescription(key) {
       : `MYTHRASF.Action.Description.${key}`);
 }
 
+export function bindStruggleApproval(root) {
+        const note = root.querySelector('[name="note"]');
+        const approved = root.querySelector('[name="gmApproved"]');
+        const validate = root.querySelector('button[data-action="ok"]');
+        const refresh = () => { validate.disabled = !approved.checked || !note.value.trim(); };
+        approved.addEventListener("change", refresh);
+        note.addEventListener("input", refresh);
+        refresh();
+}
+
 export function actionCard(action) {
+  if (action.key === "struggle") {
+    const pending = action.status === "awaitingConfirmation";
+    return `<section class="mythras-chat-card" data-combat-action-card><h3 class="mythras-chat-title">${escape(localize("MYTHRASF.Action.struggle"))}</h3><p class="combat-action-description">${escape(action.note ?? "")}</p><div class="mythras-chat-row">${escape(localize(pending ? "MYTHRASF.Action.Struggle.Pending" : `MYTHRASF.Action.Status.${action.status}`))}</div>${pending ? `<div class="mythras-chat-actions"><button type="button" data-action-transaction="confirm">${escape(localize("MYTHRASF.Action.Struggle.Validate"))}</button></div>` : ""}</section>`;
+  }
   const responses = action.interruptCandidates?.map((candidate) => {
     const response = action.interruptResponses?.[candidate.combatantId];
     const controls = !response && action.status === "awaitingInterrupts"
@@ -316,7 +330,7 @@ async function createTransaction(context, key, parameters = {}) {
       ui.notifications.warn(localize("MYTHRASF.Maneuver.InvalidParticipants")); return null;
     }
   }
-  if (key === "generic" && !String(parameters.note ?? "").trim()) return null;
+  if (["generic", "struggle"].includes(key) && !String(parameters.note ?? "").trim()) return null;
   const definition = COMBAT_ACTIONS[key];
   if (!definition || !(definition.cost === 0 || (definition.type === "reactive"
     ? await spendActorActionPoint(context.combatant.actor, { reactive: true })
@@ -525,11 +539,17 @@ export async function requestCombatAction(actor, key) {
   }
   if (key === "move") { parameters = await chooseMovement(context); if (!parameters) return; }
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }
-  if (["generic", "mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {
+  if (["generic", "struggle", "mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {
     const note = await foundry.applications.api.DialogV2.prompt({ window: { title: localize(`MYTHRASF.Action.${key}`) },
-      content: `<div class="mythras-foundry mythras-dialog"><label><span>${escape(localize("MYTHRASF.Action.Note"))}</span><textarea name="note" ${key === "generic" ? "required" : ""}></textarea></label></div>`,
-      ok: { callback: (event, button) => button.form.elements.note.value.trim() } });
-    if (note == null || (key === "generic" && !note.trim())) return; parameters.note = note;
+      content: `<div class="mythras-foundry mythras-dialog">${key === "struggle" ? `<p>${escape(localize("MYTHRASF.Action.Description.struggle"))}</p>` : ""}<label><span>${escape(localize("MYTHRASF.Action.Note"))}</span><textarea name="note" ${["generic", "struggle"].includes(key) ? "required" : ""}></textarea></label>${key === "struggle" ? `<label><input type="checkbox" class="sheet-state-box" name="gmApproved" required><span>${escape(localize("MYTHRASF.Action.Struggle.Approved"))}</span></label>` : ""}</div>`,
+      render: (_event, dialog) => {
+        if (key !== "struggle") return;
+        bindStruggleApproval(dialog.element);
+      },
+      ok: { ...(key === "struggle" ? { label: localize("MYTHRASF.Action.Struggle.Validate") } : {}), callback: (event, button) => key === "struggle" && !button.form.elements.gmApproved.checked
+        ? null : button.form.elements.note.value.trim() },
+      cancel: { label: localize("MYTHRASF.Cancel") } });
+    if (note == null || (["generic", "struggle"].includes(key) && !note.trim())) return; parameters.note = note;
   }
   if (key === "brace") {
     const weapon = actor.items.find((item) => item.type === "weapon" && item.system.equipped

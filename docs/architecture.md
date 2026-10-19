@@ -526,6 +526,14 @@ socket que el resto del combate. Las acciones guiadas conservan su coste,
 parámetros, usuario y confirmación sin crear reglas de magia o monturas que el
 sistema todavía no representa.
 
+Forcejear es una acción genérica definitiva, sujeta a aprobación del DJ. No exige
+una restricción activa: conserva los requisitos generales de turno y PA. Exige
+descripción antes de gastar 1 PA; el diálogo permite validar o cancelar. Validar
+solo se habilita al completar la descripción y marcar la aprobación del DJ. Su
+tarjeta publica la descripción y queda pendiente de resolución manual, con un
+único botón de validación que cierra la acción y avanza el turno. No realiza
+tiradas ni elimina restricciones; las liberaciones específicas son independientes.
+
 `actionAvailability` continúa siendo la API booleana compatible. Las hojas usan
 `actionPresentation`, que añade coste y causa estable de indisponibilidad sin
 eliminar acciones del DOM. Los controladores especializados de alcance,

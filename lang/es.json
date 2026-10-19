@@ -39,7 +39,7 @@
   "MYTHRASF.Stand.Failure": "Permanece tumbado",
   "MYTHRASF.Action.Description.stand": "Gasta un PA. Confirma si estás trabado y elige oponentes. Sin traba retira Tumbado; con traba debes vencer una enfrentada de Músculo o Atletismo y confirmar el resultado.",
   "MYTHRASF.Action.Description.charge": "Gasta un PA y registra la carga y sus modificadores según la locomoción elegida. La resolución de esta declaración se confirma manualmente; no ejecuta un ataque automáticamente.",
-  "MYTHRASF.Action.Description.struggle": "Gasta un PA y registra el intento de forcejear contra una restricción. La resolución de esta acción se confirma manualmente.",
+  "MYTHRASF.Action.Description.struggle": "Gasta un PA para realizar el forcejeo descrito. El director de juego debe aprobar el uso de esta acción. Su resolución y validación son siempre manuales.",
   "MYTHRASF.Action.Description.mount": "Gasta un PA y registra la acción de montar junto con la nota introducida. Su resolución se confirma manualmente.",
   "MYTHRASF.Action.Description.retainMagic": "Gasta un PA y registra la acción de retener magia junto con la nota introducida. Su resolución se confirma manualmente.",
   "MYTHRASF.Action.Description.useMagic": "Gasta un PA y registra el uso de magia junto con la nota introducida. Su resolución se confirma manualmente.",
@@ -2260,5 +2260,8 @@
   "MYTHRASF.Status.Poisoned": "Envenenado",
   "MYTHRASF.Status.Diseased": "Enfermo",
   "MYTHRASF.Status.Description.poison": "Marca que el personaje sufre un veneno. Se activa al aplicarlo o al perder la resistencia; el DJ retira el estado al resolverse y gestiona sus efectos y duración.",
-  "MYTHRASF.Status.Description.disease": "Marca que el personaje sufre una enfermedad. Se activa al aplicarla o al perder la resistencia; el DJ retira el estado al resolverse y gestiona sus efectos y duración."
+  "MYTHRASF.Status.Description.disease": "Marca que el personaje sufre una enfermedad. Se activa al aplicarla o al perder la resistencia; el DJ retira el estado al resolverse y gestiona sus efectos y duración.",
+  "MYTHRASF.Action.Struggle.Pending": "Pendiente de resolución manual y validación",
+  "MYTHRASF.Action.Struggle.Validate": "Validar",
+  "MYTHRASF.Action.Struggle.Approved": "El director de juego ha aprobado el uso de esta acción"
 }
