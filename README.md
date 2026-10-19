@@ -573,3 +573,11 @@ El catálogo de estados usa 57 iconos cuadrados propios, extraídos de la lámin
 aportada para el proyecto. Se comparten entre el selector del token, el gestor
 y los efectos automáticos; al cargar el mundo se actualizan los iconos antiguos
 predeterminados de los estados ya aplicados.
+
+Aturdido, Silenciado y Cegado tienen una sola entrada por estado. Los IDs
+antiguos de Foundry se migran a los de Mythras conservando los datos del efecto;
+Cegado mantiene la referencia de ceguera especial de Foundry.
+
+Los iconos activos tienen fondo negro opaco y contornos adaptados para verse
+a tamaño pequeño. Las imágenes anteriores se conservan como obsoletas en
+`assets/icons/statuses/obsolete/colored-background/`.

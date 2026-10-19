@@ -1,3 +1,4 @@
+import { canonicalStatusId, statusAliasUpdate } from "./status-aliases.js";
 // Shared by the token catalog, assignment tools and ActiveEffect creation.
 const STATUS_ICON_FILES = Object.freeze({
   "braced": "braced",
@@ -57,6 +58,11 @@ const STATUS_ICON_FILES = Object.freeze({
   "stunnedTorso": "stunnedTorso",
   "deaf": "deaf",
   "fly": "fly",
+  "sleep": "asleep",
+  "frozen": "cold",
+  "upgrade": "empower",
+  "downgrade": "weaken",
+  "invisibility": "invisible",
   "stun": "stunned",
   "silence": "silenced",
   "fireShield": "shieldFire",
@@ -67,7 +73,7 @@ const STATUS_ICON_FILES = Object.freeze({
 });
 
 export function statusIcon(statusId, fallback = null) {
-  const id = String(statusId ?? "").toLowerCase();
+  const id = String(canonicalStatusId(statusId) ?? "").toLowerCase();
   const key = Object.keys(STATUS_ICON_FILES).find((entry) => entry.toLowerCase() === id);
   return key ? `systems/mythras-foundry/assets/icons/statuses/${STATUS_ICON_FILES[key]}.png` : fallback;
 }
@@ -85,6 +91,8 @@ export function statusIconUpdates(effects = []) {
     const img = effectStatusIcon(effect);
     const legacy = !effect.img || effect.img.startsWith("icons/svg/")
       || effect.img === "systems/mythras-foundry/assets/icons/suffocation.svg";
-    return img && legacy && effect.img !== img ? [{ _id: effect.id, img }] : [];
+    const update = statusAliasUpdate(effect);
+    if (img && legacy && effect.img !== img) update.img = img;
+    return Object.keys(update).length ? [{ _id: effect.id, ...update }] : [];
   });
 }

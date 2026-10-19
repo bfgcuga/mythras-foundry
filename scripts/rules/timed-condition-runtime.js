@@ -1,3 +1,4 @@
+import { canonicalStatusId } from "../data/status-aliases.js";
 import { statusIcon } from "../data/status-icons.js";
 import { advanceActorTurnDuration, advanceRoundDuration, expiresAtRoundEnd, timedConditionSource,
   TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
@@ -12,6 +13,7 @@ export function timedEffects(actor) {
 
 export async function applyTimedCondition(actor, { name, img, statusId, ...configuration }) {
   if (!actor) return null;
+  statusId = canonicalStatusId(statusId);
   const condition = timedConditionSource({ statusId, ...configuration });
   return actor.createEmbeddedDocuments("ActiveEffect", [{ name, img: statusIcon(statusId, img), statuses: [statusId],
     flags: { [TIMED_CONDITION_SCOPE]: { [TIMED_CONDITION_FLAG]: condition } } }]);

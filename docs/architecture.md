@@ -1318,3 +1318,13 @@ compartido por el catálogo, la asignación y el hook `preCreateActiveEffect`.
 Los PNG propios y la referencia de recortes viven en `assets/icons/statuses/`.
 El coordinador de migraciones actualiza únicamente los iconos predeterminados
 de efectos existentes, incluyendo actores de tokens no vinculados.
+
+`status-aliases.js` unifica `stun`, `silence` y `blind` en `stunned`, `silenced`
+y `blinded`. El catálogo oculta los alias; los hooks de ActiveEffect normalizan
+sus identificadores y las migraciones los actualizan sin eliminar documentos.
+Las referencias de `CONFIG.specialStatusEffects` también usan IDs canónicos,
+incluida la ceguera de Foundry.
+
+El catálogo aplica PNG opacos con fondo negro para que la presentación sea
+coherente tanto en el HUD como en el canvas, sin depender de CSS. Las imágenes
+con fondo de color anteriores se archivan en `assets/icons/statuses/obsolete/`.

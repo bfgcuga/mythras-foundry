@@ -38,3 +38,23 @@ test("traduce los identificadores de escudo en minúsculas de Foundry", () => {
   const [status] = prepareStatusCatalog([{ id: "shieldfire", name: "Fire Shield" }], i18n);
   assert.equal(i18n.localize(status.name), "Escudo de fuego");
 });
+
+test("traduce y asigna iconos a variantes de identificador y etiquetas básicas de Foundry", () => {
+  const input = [
+    { id: "sleep", name: "EFFECT.StatusAsleep" },
+    { id: "frozen", name: "EFFECT.StatusFrozen" },
+    { id: "upgrade", name: "EFFECT.StatusEmpowered" },
+    { id: "downgrade", name: "EFFECT.StatusWeakened" },
+    { id: "legacy-mark", name: "EFFECT.StatusMarked" }
+  ];
+  const output = prepareStatusCatalog(input, i18n);
+  for (const [id, label, icon] of [
+    ["sleep", "Dormido", "asleep"], ["frozen", "Congelado", "cold"],
+    ["upgrade", "Potenciado", "empower"], ["downgrade", "Debilitado", "weaken"],
+    ["legacy-mark", "Marcado", "mark"]
+  ]) {
+    const status = output.find((entry) => entry.id === id);
+    assert.equal(i18n.localize(status.name), label);
+    assert.equal(status.img, `systems/mythras-foundry/assets/icons/statuses/${icon}.png`);
+  }
+});

@@ -1,3 +1,4 @@
+import { canonicalStatusIds, canonicalSpecialStatuses, statusAliasUpdate } from "../data/status-aliases.js";
 import { effectStatusIcon, statusIcon } from "../data/status-icons.js";
 import { prepareStatusCatalog } from "../ui/status-catalog.js";
 import { CharacterData } from "../data/character-data.js";
@@ -62,11 +63,18 @@ const PARTIALS = [
 
 export function registerSystemInitialization() {
   Hooks.on("preCreateActiveEffect", (effect) => {
-    const img = effectStatusIcon(effect);
-    if (img) effect.updateSource({ img });
+    const update = statusAliasUpdate(effect);
+    const img = effectStatusIcon({ statuses: update.statuses ?? effect.statuses });
+    if (img) update.img = img;
+    if (Object.keys(update).length) effect.updateSource(update);
+  });
+  Hooks.on("preUpdateActiveEffect", (effect, changed) => {
+    if (!changed.statuses) return;
+    changed.statuses = canonicalStatusIds(changed.statuses);
   });
   Hooks.once("ready", () => {
     CONFIG.statusEffects = prepareStatusCatalog(CONFIG.statusEffects, game.i18n);
+    Object.assign(CONFIG.specialStatusEffects, canonicalSpecialStatuses(CONFIG.specialStatusEffects));
   });
   Hooks.once("init", async () => {
     console.log("Mythras Foundry | Inicializando sistema");

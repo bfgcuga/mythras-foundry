@@ -40,7 +40,7 @@ fases de Sorprendido comparten nombre en el selector, pero tienen distinto ID.
 | Suprimido | `suppressed` |
 | Torso aturdido | `stunnedTorso` |
 
-## Básicos de Foundry conservados (30 entradas de referencia)
+## Básicos de Foundry conservados (27 entradas de referencia)
 
 Corresponden a los estados básicos indicados en la revisión del selector de
 Foundry 13. No incluyen los sustituidos por Mythras ni estados de otros módulos.
@@ -51,9 +51,7 @@ depende de la configuración de Foundry y los módulos instalados.
 | Estado | ID de referencia |
 | --- | --- |
 | Asustado | `fear` |
-| Aturdido | `stun` |
 | Bendecido | `bless` |
-| Ciego | `blind` |
 | Congelado | `cold` |
 | Corroyéndose | `corrode` |
 | Debilitado | `weaken` |
@@ -77,25 +75,40 @@ depende de la configuración de Foundry y los módulos instalados.
 | Regenerándose | `regen` |
 | Restringido | `restrain` |
 | Seleccionado como objetivo | `target` |
-| Silenciado | `silence` |
 | Sordo | `deaf` |
 | Volando | `fly` |
 
 Traducir estos marcadores no añade aplicación automática por venenos o
 enfermedades. Muerto sí es utilizado por el flujo de muerte de Mythras.
-Aturdido (`stun` / `stunned`), Ciego/Cegado (`blind` / `blinded`) y Silenciado
-(`silence` / `silenced`) son entradas distintas: esta mejora no las fusiona.
+Aturdido, Cegado y Silenciado tienen una sola entrada: `stunned`, `blinded` y
+`silenced`. Los alias antiguos `stun`, `blind` y `silence` se retiran del selector
+y se normalizan al crear o actualizar estados. La migración de actores y tokens
+no vinculados sustituye esos identificadores sin borrar efectos ni modificar
+sus duraciones, fuentes o imágenes personalizadas. La referencia especial
+`CONFIG.specialStatusEffects.BLIND` apunta a `blinded` para conservar la ceguera
+de Foundry. No se fusionan documentos ActiveEffect independientes, que pueden
+representar fuentes o duraciones diferentes.
 
 ## Iconos propios
 
 Los 57 dibujos de las láminas aportadas por el usuario se guardan como PNG de
 144 × 144 en `assets/icons/statuses/`, con nombres correspondientes a sus IDs.
 `catalog.json` registra la correspondencia con las filas de la lámina, los
-centros de recorte y los alias. Se conserva el fondo de color original.
+centros de recorte y los alias. Los PNG activos usan fondo negro opaco. La variante anterior con fondo de color
+se conserva en `assets/icons/statuses/obsolete/colored-background/`.
 Aturdido (`stun` / `stunned`) y Silenciado (`silence` / `silenced`) comparten dibujo.
 
 `scripts/data/status-icons.js` centraliza las rutas para el selector del token,
 el catálogo de Mythras, el gestor de estados y la creación de ActiveEffects.
 Al cargar el mundo, el DJ principal actualiza los iconos predeterminados de los
 efectos existentes en actores y tokens no vinculados, conservando imágenes
-personalizadas. No modifica las reglas ni los identificadores de los estados.
+personalizadas. La migración de alias descrita arriba normaliza los identificadores antiguos.
+
+La variante negra procede de una edición de la lámina con la herramienta
+integrada `image_gen`: conservar los 57 símbolos y su posición, sustituir los
+fondos de color por negro puro y aclarar los contornos oscuros para tamaños
+pequeños. La lámina resultante se conserva en
+`docs/artwork/status-icons-black-sheet.png`; se divide en 12 columnas y 5 filas
+iguales y cada celda se guarda a 144 × 144. La última fila tiene nueve dibujos.
+El selector reconoce también variantes de ID y etiquetas básicas de Foundry
+(por ejemplo `sleep`, `frozen`, `upgrade`, `downgrade`) al traducir y asignar iconos.

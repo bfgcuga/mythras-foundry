@@ -1,5 +1,5 @@
 {
-  "source": "User-provided unlabelled sheet, 1536x1024; labelled companion used as reference",
+  "source": "Black-background sprite sheet edited with built-in image_gen from the original cropped icons",
   "size": 144,
   "rows": [
     [
@@ -163,5 +163,11 @@
     "fly": 144,
     "empower": 140,
     "regen": 140
+  },
+  "background": "opaque black",
+  "previousVersion": "obsolete/colored-background/",
+  "grid": {
+    "columns": 12,
+    "rows": 5
   }
 }

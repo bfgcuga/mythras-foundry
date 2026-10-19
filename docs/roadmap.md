@@ -69,7 +69,9 @@ tiempo aplicable, resolución, persistencia y presentación en la hoja.
 
 ## 7. Revisar y poner en orden los estados
 
-Revisar conjuntamente el catálogo del sistema y los estados nativos de Foundry:
+Aturdido, Silenciado y Cegado ya están unificados con migración de los alias
+antiguos de Foundry. Los iconos tienen fondo negro y las imágenes anteriores
+se conservan como obsoletas. Queda revisar el resto del catálogo:
 
 - Los iconos de estados ya se han sustituido por los 57 dibujos de la lámina
   aportada, con asignación compartida para Foundry y Mythras.
