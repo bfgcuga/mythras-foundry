@@ -114,7 +114,7 @@ test("la reparación de criaturas restaura su anatomía y religa armas naturales
     async updateEmbeddedDocuments(type, updates) { this.updates = updates; } };
   await ensureCreatureHitLocations(actor);
   assert.equal(actor.updates.find((update) => update._id === "sting")["system.linkedLocationId"],
-    "location-8");
+    "location-4");
   assert.equal(actor.migrationVersion, 1);
 });
 

@@ -4,6 +4,12 @@ Este documento reúne trabajo confirmado que todavía no tiene una posición en 
 roadmap. No expresa orden de ejecución. Cuando una tarea adquiera prioridad y
 alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
+## Bestiario
+
+- Ampliar el modelo para elementales amorfos (PG globales, sin CON/TAM y sin
+  heridas por zona) y enjambres (solo TAM y ataques colectivos). Son las
+  exclusiones del básico revisado; ver [cobertura](bestiary-coverage.md).
+
 ## Combate y automatización
 
 - Diseñar y revisar una matriz general de compatibilidad entre efectos de

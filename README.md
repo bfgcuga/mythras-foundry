@@ -405,11 +405,21 @@ preservar los contratos actuales se recogen en
 
 ## Compendios
 
-El manifiesto declara quince compendios generados a partir de fuentes canónicas:
+El manifiesto declara dieciocho compendios generados a partir de fuentes canónicas:
 
+- trampas, venenos y enfermedades;
 - habilidades, culturas y profesiones;
 - armas, equipo y piezas de armadura;
 - rasgos, efectos de combate, estilos de combate y criaturas;
+  El compendio de rasgos incluye los 44 rasgos de criaturas de Mythras básico
+  revisado, con su página de referencia y descripciones para uso manual al crear
+  criaturas, sin automatizaciones.
+  El bestiario contiene 60 perfiles de Mythras básico revisado (incluidos Ofidio,
+  Wyrm y Wyvern por separado), más el Xenomorfo anterior. Conserva los atributos,
+  PA/PG por zona y reglas particulares de la fuente. Las coincidencias exactas
+  usan las morfologías existentes y el resto mantiene anatomía personalizada.
+  Los poderes, venenos y magia se consultan y aplican manualmente. Véase
+  [cobertura del bestiario](docs/bestiary-coverage.md) para las exclusiones.
 - macros, tablas de clase social, acontecimientos de trasfondo y tablas de
   familia y conexiones;
 - un diario «Referencia de Mythras», cuya portada admite nuevas categorías y

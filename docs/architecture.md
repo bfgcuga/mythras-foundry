@@ -171,7 +171,11 @@ marca el resto como `custom` y nunca reconstruye ni elimina Items. La migración
 versionada anterior de Actor se ejecuta
 una vez por versión y es la fuente única para
 completar sus siete zonas, consolidar duplicados y reasignar referencias antes de
-eliminarlos. Las criaturas mantienen su tabla anatómica en `scripts/data/creatures.js`:
+eliminarlos. Las criaturas se reúnen en `scripts/data/creatures.js`; los perfiles del básico
+revisado viven en `scripts/data/revised-creature-profiles.js` y se adaptan en
+`revised-creatures.js` usando los constructores de `creature-helpers.js`. La
+[matriz de cobertura](bestiary-coverage.md) documenta las exclusiones y la
+conservación de valores impresos. Cada criatura mantiene su tabla anatómica:
 las zonas equivalentes pueden reutilizar las mismas claves de presentación, pero
 la recuperación de zonas ausentes se realiza contra la criatura canónica y nunca
 inyecta una anatomía humana en un PNJ.
