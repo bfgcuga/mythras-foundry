@@ -1,3 +1,4 @@
+import { statusIconUpdates } from "../data/status-icons.js";
 import { ensureBasicSkills } from "../data/basic-skills.js";
 import { managedMacroUpdate } from "../data/macros.js";
 import { syncIncapacitatedStatus } from "../documents/mythras-actor.js";
@@ -77,6 +78,8 @@ export async function runWorldMigrations() {
       await ensureBasicSkills(actor);
       await deduplicateBackgroundAbilities(actor);
     }
+    const statusUpdates = statusIconUpdates(actor.effects);
+    if (statusUpdates.length) await actor.updateEmbeddedDocuments("ActiveEffect", statusUpdates);
     await migrateEmbeddedItemIcons(actor);
     for (const item of actor.items.filter((candidate) =>
       ["trait", "combatStyle", "weapon"].includes(candidate.type))) {
@@ -97,6 +100,11 @@ export async function runWorldMigrations() {
   }
 
   for (const scene of game.scenes) {
+    for (const token of scene.tokens) {
+      if (token.actorLink || !token.actor) continue;
+      const updates = statusIconUpdates(token.actor.effects);
+      if (updates.length) await token.actor.updateEmbeddedDocuments("ActiveEffect", updates);
+    }
     const updates = characterTokenLinkUpdates(scene.tokens, game.actors);
     if (updates.length) await scene.updateEmbeddedDocuments("Token", updates);
   }

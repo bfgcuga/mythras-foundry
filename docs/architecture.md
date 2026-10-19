@@ -1307,8 +1307,14 @@ ActiveEffects; los tiempos, efectos y secuelas siguen a cargo del DJ.
 
 En `ready`, `scripts/ui/status-catalog.js` traduce los estados básicos de Foundry
 y ordena conjuntamente todo `CONFIG.statusEffects` por el nombre localizado,
-con las reglas alfabéticas del idioma activo. Conserva identificadores, iconos y
-metadatos, así como el formato array u objeto. Los estados básicos conservados
+con las reglas alfabéticas del idioma activo. Conserva identificadores y metadatos, así como el formato array u objeto,
+y asigna los iconos propios del catálogo. Los estados básicos conservados
 son marcadores: traducirlos no añade automatismos de venenos o enfermedades.
 Los estados añadidos por otros módulos después de `ready` quedan fuera de esta
 ordenación inicial.
+
+Los iconos de estados se resuelven mediante `scripts/data/status-icons.js`,
+compartido por el catálogo, la asignación y el hook `preCreateActiveEffect`.
+Los PNG propios y la referencia de recortes viven en `assets/icons/statuses/`.
+El coordinador de migraciones actualiza únicamente los iconos predeterminados
+de efectos existentes, incluyendo actores de tokens no vinculados.

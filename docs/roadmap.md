@@ -71,7 +71,8 @@ tiempo aplicable, resolución, persistencia y presentación en la hoja.
 
 Revisar conjuntamente el catálogo del sistema y los estados nativos de Foundry:
 
-- Revisar los iconos de los estados.
+- Los iconos de estados ya se han sustituido por los 57 dibujos de la lámina
+  aportada, con asignación compartida para Foundry y Mythras.
 - La ordenación alfabética conjunta por nombre localizado y la traducción de los
   estados básicos ya están implementadas; quedan pendientes las revisiones siguientes.
 - Decidir qué estados del sistema y de Foundry conservar, identificando

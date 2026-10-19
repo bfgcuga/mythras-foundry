@@ -568,3 +568,8 @@ El selector de estados del token mezcla los estados básicos de Foundry y los de
 Mythras en orden alfabético según el idioma activo. Los nombres básicos disponen
 de traducción española e inglesa; sus reglas y automatismos no cambian. Véase
 el [listado de estados](docs/status-catalog.md).
+
+El catálogo de estados usa 57 iconos cuadrados propios, extraídos de la lámina
+aportada para el proyecto. Se comparten entre el selector del token, el gestor
+y los efectos automáticos; al cargar el mundo se actualizan los iconos antiguos
+predeterminados de los estados ya aplicados.

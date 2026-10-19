@@ -14,7 +14,7 @@ test("mezcla estados básicos, Mythras y módulos por su nombre castellano sin p
   ];
   const result = prepareStatusCatalog(input, i18n);
   assert.deepEqual(result.map((s) => s.id), ["custom", "prone", "disease", "poison"]);
-  assert.equal(result[3].img, "poison.svg");
+  assert.equal(result[3].img, "systems/mythras-foundry/assets/icons/statuses/poison.png");
   assert.deepEqual(result[3].changes, input[0].changes);
   assert.equal(input[0].name, "Poisoned");
 });

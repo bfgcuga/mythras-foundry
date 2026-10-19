@@ -1,3 +1,4 @@
+import { statusIcon } from "../data/status-icons.js";
 import { resolveConditions, statusDescriptors } from "./condition-resolver.js";
 
 export const BLINDED_STATUS_ID = "blinded";
@@ -81,7 +82,7 @@ export const MYTHRAS_STATUS_EFFECTS = Object.freeze([
     img: "systems/mythras-foundry/assets/icons/suffocation.svg", assignment: "suffocation" },
   { id: DYING_STATUS_ID, name: "MYTHRASF.Status.Dying", img: "icons/svg/skull.svg",
     canAttack: false, canTakeProactiveTurn: false, assignment: "dying" }
-].map((status) => Object.freeze({ assignment: "timed", ...status,
+].map((status) => Object.freeze({ assignment: "timed", ...status, img: statusIcon(status.id, status.img),
   description: `MYTHRASF.Status.Description.${status.id}` })));
 
 export function activeStatusRules(statuses = new Set()) {

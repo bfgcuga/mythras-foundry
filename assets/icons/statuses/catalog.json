@@ -1,0 +1,167 @@
+{
+  "source": "User-provided unlabelled sheet, 1536x1024; labelled companion used as reference",
+  "size": 144,
+  "rows": [
+    [
+      "braced",
+      "fear",
+      "crouchedBehindShield",
+      "stunned",
+      "grabbed",
+      "bless",
+      "dying",
+      "blind",
+      "drowning",
+      "cold",
+      "burning",
+      "corrode"
+    ],
+    [
+      "weaponPinned",
+      "weaken",
+      "suffocating",
+      "degen",
+      "asleep",
+      "blinded",
+      "shock",
+      "prone",
+      "disease",
+      "exsanguinating",
+      "poison",
+      "offBalance"
+    ],
+    [
+      "shieldFire",
+      "impaled",
+      "shieldIce",
+      "entangled",
+      "shieldMagic",
+      "waiting",
+      "shieldHoly",
+      "incapacitated",
+      "burrow",
+      "unconscious",
+      "invisible",
+      "acidImmersion"
+    ],
+    [
+      "hover",
+      "stunnedLocation",
+      "curse",
+      "pressed",
+      "mark",
+      "maneuverProtected",
+      "dead",
+      "acidSplash",
+      "paralysis",
+      "bleeding",
+      "empower",
+      "regen"
+    ],
+    [
+      "restrain",
+      "surprised",
+      "surprisedOffensive",
+      "target",
+      "suppressed",
+      "silenced",
+      "stunnedTorso",
+      "deaf",
+      "fly"
+    ]
+  ],
+  "aliases": {
+    "stun": "stunned",
+    "silence": "silenced",
+    "fireShield": "shieldFire",
+    "coldShield": "shieldIce",
+    "magicShield": "shieldMagic",
+    "holyShield": "shieldHoly",
+    "shieldFaith": "shieldHoly"
+  },
+  "cropCentersX": [
+    [
+      68,
+      194,
+      324,
+      452,
+      576,
+      706,
+      832,
+      940,
+      1064,
+      1196,
+      1326,
+      1452
+    ],
+    [
+      64,
+      196,
+      322,
+      452,
+      578,
+      710,
+      840,
+      966,
+      1094,
+      1220,
+      1348,
+      1470
+    ],
+    [
+      64,
+      192,
+      318,
+      452,
+      584,
+      706,
+      834,
+      960,
+      1088,
+      1216,
+      1348,
+      1470
+    ],
+    [
+      68,
+      194,
+      320,
+      440,
+      570,
+      704,
+      832,
+      960,
+      1086,
+      1214,
+      1342,
+      1470
+    ],
+    [
+      76,
+      208,
+      340,
+      486,
+      616,
+      740,
+      868,
+      997,
+      1138
+    ]
+  ],
+  "cropCentersY": [
+    90,
+    274,
+    456,
+    640,
+    832
+  ],
+  "crop": "128x144 by default; per-icon cropWidths overrides; horizontal padding uses edge colours to reach 144x144 without rescaling artwork",
+  "cropWidths": {
+    "blind": 112,
+    "target": 144,
+    "surprisedOffensive": 144,
+    "fly": 144,
+    "empower": 140,
+    "regen": 140
+  }
+}

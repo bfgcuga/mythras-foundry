@@ -1,3 +1,4 @@
+import { statusIcon } from "../data/status-icons.js";
 // Presentation only: preserve status identifiers and all mechanical metadata.
 export const CORE_STATUS_IDS = Object.freeze([
   "dead", "asleep", "stun", "restrain", "paralysis", "fly", "blind", "deaf",
@@ -19,7 +20,8 @@ export function prepareStatusCatalog(statuses, i18n) {
     const translated = coreId && !name.startsWith("MYTHRASF.")
       ? { ...status, name: key, ...(Object.hasOwn(status, "label") ? { label: key } : {}) }
       : status;
-    return [id, translated];
+    return [id, { ...translated, img: statusIcon(id, translated.img),
+      ...(Object.hasOwn(translated, "icon") ? { icon: statusIcon(id, translated.icon) } : {}) }];
   });
   prepared.sort(([idA, a], [idB, b]) =>
     collator.compare(i18n.localize(a.name ?? a.label ?? idA),

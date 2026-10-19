@@ -1,3 +1,4 @@
+import { statusIcon } from "../data/status-icons.js";
 import { actorDisplayName } from "./document-names.js";
 import { INCAPACITATED_STATUS_ID } from "./incapacitated.js";
 import { applyTimedCondition } from "./timed-condition-runtime.js";
@@ -12,7 +13,7 @@ const locationStatuses = new Set(["stunnedLocation", "stunnedTorso"]);
 export function statusAssignmentCatalog() {
   return Object.freeze([
     Object.freeze({ id: INCAPACITATED_STATUS_ID, name: "MYTHRASF.Status.Incapacitated",
-      img: "icons/svg/unconscious.svg", assignment: "incapacitated",
+      img: statusIcon(INCAPACITATED_STATUS_ID), assignment: "incapacitated",
       description: `MYTHRASF.Status.Description.${INCAPACITATED_STATUS_ID}` }),
     ...MYTHRAS_STATUS_EFFECTS
   ]);

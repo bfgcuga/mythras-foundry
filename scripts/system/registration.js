@@ -1,3 +1,4 @@
+import { effectStatusIcon, statusIcon } from "../data/status-icons.js";
 import { prepareStatusCatalog } from "../ui/status-catalog.js";
 import { CharacterData } from "../data/character-data.js";
 import { NpcData } from "../data/npc-data.js";
@@ -60,6 +61,10 @@ const PARTIALS = [
 ];
 
 export function registerSystemInitialization() {
+  Hooks.on("preCreateActiveEffect", (effect) => {
+    const img = effectStatusIcon(effect);
+    if (img) effect.updateSource({ img });
+  });
   Hooks.once("ready", () => {
     CONFIG.statusEffects = prepareStatusCatalog(CONFIG.statusEffects, game.i18n);
   });
@@ -71,7 +76,7 @@ export function registerSystemInitialization() {
     CONFIG.Combat.documentClass = MythrasCombat;
     const systemStatuses = [
       { id: INCAPACITATED_STATUS_ID, name: "MYTHRASF.Status.Incapacitated",
-        img: "icons/svg/unconscious.svg" },
+        img: statusIcon(INCAPACITATED_STATUS_ID) },
       ...MYTHRAS_STATUS_EFFECTS.map(({ id, name, img }) => ({ id, name, img }))
     ];
     for (const statusEffect of systemStatuses) {

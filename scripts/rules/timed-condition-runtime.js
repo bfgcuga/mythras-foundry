@@ -1,3 +1,4 @@
+import { statusIcon } from "../data/status-icons.js";
 import { advanceActorTurnDuration, advanceRoundDuration, expiresAtRoundEnd, timedConditionSource,
   TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { composedInitiative, splitComposedInitiative } from "./combat-turns.js";
@@ -12,7 +13,7 @@ export function timedEffects(actor) {
 export async function applyTimedCondition(actor, { name, img, statusId, ...configuration }) {
   if (!actor) return null;
   const condition = timedConditionSource({ statusId, ...configuration });
-  return actor.createEmbeddedDocuments("ActiveEffect", [{ name, img, statuses: [statusId],
+  return actor.createEmbeddedDocuments("ActiveEffect", [{ name, img: statusIcon(statusId, img), statuses: [statusId],
     flags: { [TIMED_CONDITION_SCOPE]: { [TIMED_CONDITION_FLAG]: condition } } }]);
 }
 
@@ -108,7 +109,7 @@ export async function revealSurprisedTurn(actor) {
   const updates = timedEffects(actor).flatMap((effect) => {
     const condition = flag(effect);
     if (condition.key !== "surprised" || condition.defenseReleased) return [];
-    return [{ _id: effect.id, statuses: ["surprisedOffensive"],
+    return [{ _id: effect.id, statuses: ["surprisedOffensive"], img: statusIcon("surprisedOffensive"),
       [`flags.${TIMED_CONDITION_SCOPE}.${TIMED_CONDITION_FLAG}`]: {
         ...condition, defenseReleased: true } }];
   });

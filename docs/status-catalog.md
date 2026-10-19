@@ -85,3 +85,17 @@ Traducir estos marcadores no añade aplicación automática por venenos o
 enfermedades. Muerto sí es utilizado por el flujo de muerte de Mythras.
 Aturdido (`stun` / `stunned`), Ciego/Cegado (`blind` / `blinded`) y Silenciado
 (`silence` / `silenced`) son entradas distintas: esta mejora no las fusiona.
+
+## Iconos propios
+
+Los 57 dibujos de las láminas aportadas por el usuario se guardan como PNG de
+144 × 144 en `assets/icons/statuses/`, con nombres correspondientes a sus IDs.
+`catalog.json` registra la correspondencia con las filas de la lámina, los
+centros de recorte y los alias. Se conserva el fondo de color original.
+Aturdido (`stun` / `stunned`) y Silenciado (`silence` / `silenced`) comparten dibujo.
+
+`scripts/data/status-icons.js` centraliza las rutas para el selector del token,
+el catálogo de Mythras, el gestor de estados y la creación de ActiveEffects.
+Al cargar el mundo, el DJ principal actualiza los iconos predeterminados de los
+efectos existentes en actores y tokens no vinculados, conservando imágenes
+personalizadas. No modifica las reglas ni los identificadores de los estados.
