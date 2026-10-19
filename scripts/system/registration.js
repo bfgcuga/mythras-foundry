@@ -1,3 +1,4 @@
+import { prepareStatusCatalog } from "../ui/status-catalog.js";
 import { CharacterData } from "../data/character-data.js";
 import { NpcData } from "../data/npc-data.js";
 import { BackgroundData, ArmorData, CombatEffectData, CombatStyleData, EquipmentData, HitLocationData,
@@ -59,6 +60,9 @@ const PARTIALS = [
 ];
 
 export function registerSystemInitialization() {
+  Hooks.once("ready", () => {
+    CONFIG.statusEffects = prepareStatusCatalog(CONFIG.statusEffects, game.i18n);
+  });
   Hooks.once("init", async () => {
     console.log("Mythras Foundry | Inicializando sistema");
     CONFIG.Actor.dataModels.character = CharacterData;

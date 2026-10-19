@@ -563,3 +563,8 @@ de daño directo, que gestiona PG y heridas. Cancelar la confirmación conserva
 la tirada sin aplicar daño. El techo y el foso ignoran armadura; el venablo
 permite armadura y parada. Las referencias desplegables incluyen construcción,
 la tabla de daño de trampas y las dieciocho condiciones de las aflicciones.
+
+El selector de estados del token mezcla los estados básicos de Foundry y los de
+Mythras en orden alfabético según el idioma activo. Los nombres básicos disponen
+de traducción española e inglesa; sus reglas y automatismos no cambian. Véase
+el [listado de estados](docs/status-catalog.md).

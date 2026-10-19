@@ -1302,3 +1302,13 @@ antes la armadura aplicable y delega esa cantidad fija a `applyDirectDamage`,
 sin volver a tirar ni absorber protección dos veces. No crea estados ni colas
 temporales: las condiciones de referencia no son un catálogo paralelo de
 ActiveEffects; los tiempos, efectos y secuelas siguen a cargo del DJ.
+
+### Presentación del catálogo de estados del token
+
+En `ready`, `scripts/ui/status-catalog.js` traduce los estados básicos de Foundry
+y ordena conjuntamente todo `CONFIG.statusEffects` por el nombre localizado,
+con las reglas alfabéticas del idioma activo. Conserva identificadores, iconos y
+metadatos, así como el formato array u objeto. Los estados básicos conservados
+son marcadores: traducirlos no añade automatismos de venenos o enfermedades.
+Los estados añadidos por otros módulos después de `ready` quedan fuera de esta
+ordenación inicial.
