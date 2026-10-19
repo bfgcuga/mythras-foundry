@@ -1,3 +1,4 @@
+import { npcNoteText, npcNoteChanges } from "../ui/npc-notes.js";
 import { characteristicAbsent, globalHealthState, npcAttributeRequiresManual, usesGlobalHitPoints } from "../rules/health.js";
 import { canViewActor, canManageActor, actorVisibility, bindObserverSheet, visibleSheetTab } from "../ui/actor-visibility.js";
 import { GallerySheetController } from "../ui/gallery-sheet.js";
@@ -70,7 +71,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   static async _onSubmitForm(event, form, formData) {
     if (!canManageActor(this.actor) || !this.isEditable) return;
-    await updateActorFromSheet(this.actor, formData.object);
+    await updateActorFromSheet(this.actor, npcNoteChanges(this.actor.system, formData.object));
   }
 
   async _prepareContext(options) {
@@ -151,6 +152,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     return foundry.utils.mergeObject(context, {
       actor: this.actor,
+      noteText: { magicNotes: npcNoteText(this.actor.system.magicNotes),
+        description: npcNoteText(this.actor.system.description) },
       visibility: actorVisibility(this.actor),
       editable: this.isEditable && canManageActor(this.actor),
       isTemplate: !this.actor.isToken,

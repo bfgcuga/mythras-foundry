@@ -13,6 +13,11 @@ Grifo/Hipogrifo y Orco/Trasgo mantienen los nombres conjuntos del libro.
 
 ## Representación
 
+Las notas mágicas y la descripción del PNJ muestran como texto legible el HTML
+heredado del compendio, conservando párrafos y entidades. Editar otros campos no
+sobrescribe ese HTML; las ediciones explícitas de estas notas se guardan como
+texto simple. También funciona con actores ya importados, sin reimportación.
+
 - Fuente de los perfiles y sus Items: `mythras-basic-revised`, con página en
   `flags.mythras-foundry.sourcePage`; los rasgos muestran también la referencia
   legible «Mythras básico revisado».

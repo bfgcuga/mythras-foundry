@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
+import { installHost } from "./helpers/ui.js";
 import { actorDisplayName, actorSpeaker, tokenDisplayName,
   updateActorFromSheet } from "../scripts/rules/document-names.js";
 
@@ -62,8 +62,17 @@ test("sheet updates do not rename linked tokens or templates", async () => {
   }
 });
 
-test("the NPC sheet persists name changes through the shared token-aware updater", () => {
-  const sheet = fs.readFileSync(new URL("../scripts/sheets/npc-sheet.js", import.meta.url), "utf8");
-  assert.match(sheet, /submitOnChange: true/);
-  assert.match(sheet, /updateActorFromSheet\(this\.actor, formData\.object\)/);
+test("the NPC sheet persists name changes without overwriting unchanged HTML notes", async t => {
+  installHost(t);
+  const { NpcSheet } = await import("../scripts/sheets/npc-sheet.js");
+  const token = { isLinked: false, name: "Anterior", update: async changes => { token.name = changes.name; } };
+  const updates = [];
+  const actor = { isOwner: true, isToken: true, token,
+    system: { magicNotes: "<p>Ninguna</p>", description: "<p>Descripción</p>" },
+    update: async changes => { updates.push(changes); } };
+  await NpcSheet._onSubmitForm.call({ actor, isEditable: true }, null, null, {
+    object: { name: "Nuevo nombre", "system.magicNotes": "Ninguna", "system.description": "Descripción" }
+  });
+  assert.deepEqual(updates, [{ name: "Nuevo nombre" }]);
+  assert.equal(token.name, "Nuevo nombre");
 });

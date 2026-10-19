@@ -124,8 +124,8 @@
           <div class="npc-compact-grid">{{#each passions as |item|}}<div class="npc-compact-row" data-item-id="{{item.id}}"><button type="button" class="sheet-icon-button" data-action="roll-passion" aria-label="{{localize "MYTHRASF.Roll"}}" title="{{localize "MYTHRASF.Roll"}}"><i class="fas fa-dice-d20" aria-hidden="true"></i></button><button type="button" class="npc-item-name" data-action="edit-item">{{item.name}}</button><output class="sheet-field-readonly">{{item.system.total}}%</output>{{#if ../editable}}<button type="button" class="sheet-icon-button" data-action="delete-item" aria-label="{{localize "MYTHRASF.Delete"}}" title="{{localize "MYTHRASF.Delete"}}"><i class="fas fa-trash" aria-hidden="true"></i></button>{{/if}}</div>{{else}}<p class="empty">{{localize "MYTHRASF.Empty.Passions"}}</p>{{/each}}</div>
         </fieldset>
       </div>
-      <fieldset class="npc-magic-panel"><legend>{{localize "MYTHRASF.Npc.Magic"}}</legend><textarea class="sheet-field-editable" name="system.magicNotes">{{actor.system.magicNotes}}</textarea></fieldset>
-      <fieldset class="npc-description-panel"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable" name="system.description">{{actor.system.description}}</textarea></fieldset>
+      <fieldset class="npc-magic-panel"><legend>{{localize "MYTHRASF.Npc.Magic"}}</legend><textarea class="sheet-field-editable" name="system.magicNotes">{{noteText.magicNotes}}</textarea></fieldset>
+      <fieldset class="npc-description-panel"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable" name="system.description">{{noteText.description}}</textarea></fieldset>
       {{#unless globalHitPoints}}{{> "systems/mythras-foundry/templates/actor/parts/permanent-wounds.hbs"}}{{/unless}}
       <fieldset><legend>{{localize "MYTHRASF.Npc.ArmorNotes"}}</legend><input class="sheet-field-editable" type="text" name="system.armorNotes" value="{{actor.system.armorNotes}}"></fieldset>
     </section>
