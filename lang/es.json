@@ -2263,5 +2263,8 @@
   "MYTHRASF.Status.Description.disease": "Marca que el personaje sufre una enfermedad. Se activa al aplicarla o al perder la resistencia; el DJ retira el estado al resolverse y gestiona sus efectos y duración.",
   "MYTHRASF.Action.Struggle.Pending": "Pendiente de resolución manual y validación",
   "MYTHRASF.Action.Struggle.Validate": "Validar",
-  "MYTHRASF.Action.Struggle.Approved": "El director de juego ha aprobado el uso de esta acción"
+  "MYTHRASF.Action.Struggle.Approved": "El director de juego ha aprobado el uso de esta acción",
+  "MYTHRASF.Action.ReviewTacticalSituation": "Revisar situación táctica",
+  "MYTHRASF.Action.ActiveActionsHint": "Son acciones que consumen un punto de acción y se realizan normalmente en tu turno.",
+  "MYTHRASF.Action.FreeActionsHint": "Son acciones que no consumen puntos de acción y se pueden realizar en cualquier momento."
 }

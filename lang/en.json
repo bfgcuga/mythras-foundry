@@ -2263,5 +2263,8 @@
   "MYTHRASF.Status.Description.disease": "Marks an actor affected by disease. Activated by application or losing resistance; the GM manages its effects, duration and removal.",
   "MYTHRASF.Action.Struggle.Pending": "Awaiting manual resolution and validation",
   "MYTHRASF.Action.Struggle.Validate": "Validate",
-  "MYTHRASF.Action.Struggle.Approved": "The Game Master has approved using this action"
+  "MYTHRASF.Action.Struggle.Approved": "The Game Master has approved using this action",
+  "MYTHRASF.Action.ReviewTacticalSituation": "Review tactical situation",
+  "MYTHRASF.Action.ActiveActionsHint": "These actions consume one action point and are normally performed on your turn.",
+  "MYTHRASF.Action.FreeActionsHint": "These actions consume no action points and can be performed at any time."
 }

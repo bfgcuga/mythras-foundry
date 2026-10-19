@@ -148,6 +148,9 @@ El sistema incluye actualmente:
   individualmente. Permite Suerte antes de confirmar las consecuencias;
 - el cuadro de acciones de Combate permanece siempre visible y muestra el coste
   y la causa localizada cuando una acción no puede utilizarse;
+- Personajes y PNJ muestran «Revisar situación táctica» entre las acciones
+  gratuitas de Combate. Ambos recuadros explican el coste en PA y el momento
+  habitual de uso de sus acciones;
 - el cuadro de acciones encabeza la pestaña Combate tanto en personajes como en PNJ;
   todas las hojas usan pestañas elevadas con una superficie activa de papel;
 - los encabezados de Actor usan texto, separadores y controles claros propios

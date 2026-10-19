@@ -1,7 +1,7 @@
 <div class="combat-paper-layout">
 {{#unless visibility.restricted}}
   <div class="combat-action-panel">
-  <fieldset class="combat-paper-panel"><legend>{{localize "MYTHRASF.Action.ActiveActions"}}</legend><div class="combat-tactical-actions">
+  <fieldset class="combat-paper-panel"><legend>{{localize "MYTHRASF.Action.ActiveActions"}}</legend><p>{{localize "MYTHRASF.Action.ActiveActionsHint"}}</p><div class="combat-tactical-actions">
     <button type="button" class="sheet-action-attention" data-combat-action-key="interrupt" title="{{localize 'MYTHRASF.Action.interrupt'}}" hidden><i class="fas fa-hand" aria-hidden="true"></i> {{localize "MYTHRASF.Action.interrupt"}}</button>
     <span data-interruption-hint hidden></span><button type="button" data-interruption-cancel hidden>{{localize "MYTHRASF.Interruption.CancelChoice"}}</button>
     <button type="button" class="sheet-action-attention" data-combat-action-key="recoverImpaledWeapon" title="{{localize 'MYTHRASF.Action.recoverImpaledWeapon'}}" hidden><i class="fas fa-hand-fist" aria-hidden="true"></i> {{localize "MYTHRASF.Action.recoverImpaledWeapon"}}</button>
@@ -16,10 +16,10 @@
     <span data-action-presentation><button type="button" data-action="aim-ranged" data-combat-action-key="aim"><i class="fas fa-crosshairs" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Aim"}}</button></span>
     <span data-action-presentation><button type="button" data-action="declare-cover" data-combat-action-key="seekCover"><i class="fas fa-person-shelter" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.DeclareCover"}}</button></span>
     <span data-action-presentation><button type="button" data-action="reload-ranged" data-combat-action-key="reload"><i class="fas fa-rotate" aria-hidden="true"></i> {{localize "MYTHRASF.Ranged.Reload"}}</button></span>
-    <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Reach.Overview"}}</button>
     <button type="button" data-combat-action-key="generic" title="{{localize 'MYTHRASF.Action.generic'}}"><i class="fas fa-pen" aria-hidden="true"></i> {{localize "MYTHRASF.Action.generic"}}</button>
   </div></fieldset>
-  <fieldset class="combat-paper-panel"><legend>{{localize "MYTHRASF.Action.FreeActions"}}</legend><div class="combat-tactical-actions">
+  <fieldset class="combat-paper-panel"><legend>{{localize "MYTHRASF.Action.FreeActions"}}</legend><p>{{localize "MYTHRASF.Action.FreeActionsHint"}}</p><div class="combat-tactical-actions">
+    <button type="button" data-action="tactical-overview"><i class="fas fa-people-arrows-left-right" aria-hidden="true"></i> {{localize "MYTHRASF.Action.ReviewTacticalSituation"}}</button>
     <button type="button" data-free-combat-action="speak" title="{{localize 'MYTHRASF.Action.speak'}}"><i class="fas fa-comment" aria-hidden="true"></i> {{localize "MYTHRASF.Action.speak"}}</button>
     <button type="button" data-free-combat-action="gesture" title="{{localize 'MYTHRASF.Action.gesture'}}"><i class="fas fa-hand" aria-hidden="true"></i> {{localize "MYTHRASF.Action.gesture"}}</button>
     <button type="button" data-free-combat-action="dropWeapon" title="{{localize 'MYTHRASF.Action.dropWeapon'}}"><i class="fas fa-hand-holding" aria-hidden="true"></i> {{localize "MYTHRASF.Action.dropWeapon"}}</button>
