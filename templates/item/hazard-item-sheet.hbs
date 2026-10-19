@@ -25,6 +25,7 @@
     <div class="hazard-actions">
       {{#if isTrap}}<button type="button" data-hazard-action="detect">{{localize "MYTHRASF.Hazard.detect"}}</button>
       <button type="button" data-hazard-action="disarm">{{localize "MYTHRASF.Hazard.disarm"}}</button>{{/if}}
+      {{#unless isTrap}}<button type="button" data-hazard-action="apply" title="{{localize "MYTHRASF.Hazard.StatusAutomation"}}">{{localize "MYTHRASF.Hazard.Apply"}}</button>{{/unless}}
       <button type="button" data-hazard-action="resist">{{localize "MYTHRASF.Hazard.resist"}}</button>
       {{#if canRollDamage}}<button type="button" data-hazard-action="damage">{{localize "MYTHRASF.Hazard.Damage"}}</button>{{/if}}
     </div>

@@ -552,8 +552,12 @@ compartidas de grados, desempates y valores superiores a 100%. Para las
 alternativas Difíciles de Atletismo o parada con escudo, elegir esa habilidad y
 la dificultad correspondiente. Las reglas especiales de Músculo colectivo del
 techo y los Efectos de Combate del venablo se resuelven según sus indicaciones.
-El chat muestra ambas tiradas y los efectos; no aplica condiciones ni avanza el
-tiempo. Empates y fallos mutuos indican repetir.
+El chat muestra ambas tiradas y los efectos. Si un veneno o enfermedad gana
+la resistencia, activa Envenenado o Enfermo. Empates, fallos mutuos y resistencias
+superadas no activan estados. El botón Aplicar de sus hojas permite activarlos
+sin tirada sobre un personaje o PNJ controlable, sin duplicar un estado ya activo.
+Los tiempos, curaciones y demás efectos continúan a cargo del DJ; este retira el
+marcador al resolverse la aflicción. Poseer el Item en inventario no lo activa.
 
 Tirar daño permite publicar solo los dados o, para el DJ, elegir un objetivo.
 En este caso se tira una localización aleatoria, se calcula la protección de

@@ -1,5 +1,5 @@
 import { MythrasItemSheet } from "./item-sheet.js";
-import { rollHazardCheck, rollHazardDamage } from "../rules/hazard-item-runtime.js";
+import { openHazardApplication, rollHazardCheck, rollHazardDamage } from "../rules/hazard-item-runtime.js";
 import { TRAP_DAMAGE_TABLE } from "../rules/hazard-items.js";
 import { runSystemRollAction } from "../rules/system-roll.js";
 
@@ -74,7 +74,8 @@ export class HazardItemSheet extends MythrasItemSheet {
         button.disabled = true;
         try {
           const manual = game.mythrasFoundry?.dice?.isManualGesture?.(event) ?? false;
-          if (action === "damage") await runSystemRollAction(() => rollHazardDamage(this.item, { manual }));
+          if (action === "apply") await openHazardApplication(this.item);
+          else if (action === "damage") await runSystemRollAction(() => rollHazardDamage(this.item, { manual }));
           else if (["detect", "disarm", "resist"].includes(action)) await runSystemRollAction(() => rollHazardCheck(this.item, action, { manual }));
           else if (this.item.isOwner) {
             const key = button.dataset.collection;

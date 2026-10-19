@@ -1299,9 +1299,13 @@ adaptación pura al motor de enfrentadas existente. `hazard-item-runtime.js`
 coordina selección del actor propietario, configuración de habilidad, tiradas y
 chat. El daño aplicado requiere GM y confirmación de la cantidad final; resta
 antes la armadura aplicable y delega esa cantidad fija a `applyDirectDamage`,
-sin volver a tirar ni absorber protección dos veces. No crea estados ni colas
-temporales: las condiciones de referencia no son un catálogo paralelo de
-ActiveEffects; los tiempos, efectos y secuelas siguen a cargo del DJ.
+sin volver a tirar ni absorber protección dos veces. `applyHazardStatus` activa
+los estados canónicos `poison` y `disease` al aplicar el Item, al perder una
+resistencia o al confirmar daño de esa aflicción. Respeta permisos y no duplica
+marcadores activos. La aplicación directa se ofrece en la hoja con selección
+de objetivo. El mero inventario, las cancelaciones y las tiradas resistidas o
+repetibles no los activan. Los tiempos, curación, retirada del marcador y efectos
+específicos siguen a cargo del DJ; no se crea una cola temporal de aflicciones.
 
 ### Presentación del catálogo de estados del token
 
@@ -1309,7 +1313,8 @@ En `ready`, `scripts/ui/status-catalog.js` traduce los estados básicos de Found
 y ordena conjuntamente todo `CONFIG.statusEffects` por el nombre localizado,
 con las reglas alfabéticas del idioma activo. Conserva identificadores y metadatos, así como el formato array u objeto,
 y asigna los iconos propios del catálogo. Los estados básicos conservados
-son marcadores: traducirlos no añade automatismos de venenos o enfermedades.
+son marcadores; `poison` y `disease` ya pertenecen al catálogo canónico de Mythras
+y se activan desde el flujo de aplicación de aflicciones.
 Los estados añadidos por otros módulos después de `ready` quedan fuera de esta
 ordenación inicial.
 

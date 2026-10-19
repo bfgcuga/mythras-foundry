@@ -66,17 +66,3 @@ de consecuencias.
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.
-
-## 7. Revisar y poner en orden los estados
-
-Aturdido, Silenciado y Cegado ya están unificados con migración de los alias
-antiguos de Foundry. Los iconos tienen fondo negro y las imágenes anteriores
-se conservan como obsoletas. Queda revisar el resto del catálogo:
-
-- Los iconos de estados ya se han sustituido por los 57 dibujos de la lámina
-  aportada, con asignación compartida para Foundry y Mythras.
-- La ordenación alfabética conjunta por nombre localizado y la traducción de los
-  estados básicos ya están implementadas; quedan pendientes las revisiones siguientes.
-- Decidir qué estados del sistema y de Foundry conservar, identificando
-  equivalencias, estados nativos útiles y estados prescindibles.
-- Revisar la integración de visión —por ejemplo, Cegado— al unificar el catálogo.

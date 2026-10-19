@@ -3,7 +3,7 @@
 El selector del token ordena conjuntamente todos los estados por su nombre
 localizado. Aquí se separan por origen para facilitar su revisión.
 
-## Mythras (29 entradas)
+## Mythras (31 entradas)
 
 Incluye los estados de Foundry sustituidos por definiciones propias. Las dos
 fases de Sorprendido comparten nombre en el selector, pero tienen distinto ID.
@@ -24,7 +24,9 @@ fases de Sorprendido comparten nombre en el selector, pero tienen distinto ID.
 | Desangrándose | `exsanguinating` |
 | Desequilibrado | `offBalance` |
 | Empalado | `impaled` |
+| Enfermo | `disease` |
 | Enredado | `entangled` |
+| Envenenado | `poison` |
 | Esperando | `waiting` |
 | Incapacitado | `incapacitated` |
 | Inconsciente | `unconscious` |
@@ -40,7 +42,7 @@ fases de Sorprendido comparten nombre en el selector, pero tienen distinto ID.
 | Suprimido | `suppressed` |
 | Torso aturdido | `stunnedTorso` |
 
-## Básicos de Foundry conservados (27 entradas de referencia)
+## Básicos de Foundry conservados (25 entradas de referencia)
 
 Corresponden a los estados básicos indicados en la revisión del selector de
 Foundry 13. No incluyen los sustituidos por Mythras ni estados de otros módulos.
@@ -58,8 +60,6 @@ depende de la configuración de Foundry y los módulos instalados.
 | Degenerándose | `degen` |
 | Dormido | `asleep` |
 | Electrocutado | `shock` |
-| Enfermo | `disease` |
-| Envenenado | `poison` |
 | Escudo de fuego | `shieldFire` |
 | Escudo de hielo | `shieldIce` |
 | Escudo mágico | `shieldMagic` |
@@ -78,8 +78,10 @@ depende de la configuración de Foundry y los módulos instalados.
 | Sordo | `deaf` |
 | Volando | `fly` |
 
-Traducir estos marcadores no añade aplicación automática por venenos o
-enfermedades. Muerto sí es utilizado por el flujo de muerte de Mythras.
+Envenenado (`poison`) y Enfermo (`disease`) pertenecen al catálogo de Mythras:
+se activan al aplicar el Item, al perder su resistencia o al confirmar daño de
+esa aflicción. El DJ retira el marcador cuando corresponda; no se automatizan
+sus tiempos ni efectos específicos. Muerto es utilizado por el flujo de muerte.
 Aturdido, Cegado y Silenciado tienen una sola entrada: `stunned`, `blinded` y
 `silenced`. Los alias antiguos `stun`, `blind` y `silence` se retiran del selector
 y se normalizan al crear o actualizar estados. La migración de actores y tokens
@@ -112,3 +114,7 @@ pequeños. La lámina resultante se conserva en
 iguales y cada celda se guarda a 144 × 144. La última fila tiene nueve dibujos.
 El selector reconoce también variantes de ID y etiquetas básicas de Foundry
 (por ejemplo `sleep`, `frozen`, `upgrade`, `downgrade`) al traducir y asignar iconos.
+
+La legibilidad de los iconos está validada por el usuario en Foundry. Se da por
+completada la puesta en orden del catálogo. Cegado no requiere automatismos
+adicionales de visión; no quedan comprobaciones de ese tipo pendientes.

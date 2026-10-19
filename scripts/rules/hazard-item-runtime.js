@@ -15,6 +15,34 @@ const row = (label, value, css = "") => `<div class="mythras-chat-row"><span>${e
 const actors = () => hazardActors(Array.from(game.actors ?? []), globalThis.canvas?.tokens?.placeables ?? []);
 const allowed = (item) => item?.visible !== false && ["trap", "poison", "disease"].includes(item?.type);
 
+export async function applyHazardStatus(item, actor) {
+  if (!allowed(item) || !actor?.isOwner || !["character", "npc"].includes(actor.type)) return null;
+  const statusId = item.type === "poison" ? "poison" : item.type === "disease" ? "disease" : null;
+  if (!statusId) return null;
+  if (!actor.statuses?.has(statusId)) await actor.toggleStatusEffect(statusId, { active: true });
+  return statusId;
+}
+
+export async function openHazardApplication(item) {
+  if (!allowed(item) || !["poison", "disease"].includes(item.type)) return null;
+  const available = actors();
+  if (!available.length) { ui.notifications.warn(localize("NoActor")); return null; }
+  const selected = await foundry.applications.api.DialogV2.wait({
+    window: { title: `${item.name}: ${localize("Apply")}` },
+    content: `<div class="mythras-foundry mythras-dialog"><label>${escape(localize("Target"))}<select name="actor">${available.map((actor, index) => `<option value="${index}">${escape(actorDisplayName(actor))}</option>`).join("")}</select></label><p>${escape(localize("StatusAutomation"))}</p></div>`,
+    buttons: [{ action: "apply", label: localize("Apply"), default: true,
+      callback: (event, button) => Number(button.form.elements.actor.value) },
+    { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), callback: () => null }], rejectClose: false
+  });
+  if (selected == null) return null;
+  const actor = available[selected];
+  const statusId = await applyHazardStatus(item, actor);
+  if (!statusId) return null;
+  await ChatMessage.create({ speaker: actorSpeaker(actor),
+    content: `<section class="mythras-chat-card"><div class="mythras-chat-title">${escape(item.name)}</div>${row(localize("Target"), actorDisplayName(actor))}${row(localize("StatusApplied"), game.i18n.localize(`MYTHRASF.Status.${statusId === "poison" ? "Poisoned" : "Diseased"}`))}<p>${escape(localize("ManualConsequences"))}</p></section>` });
+  return statusId;
+}
+
 function profileOptions(item) {
   return [{ value: -1, name: localize("Base") }, ...(item.system.variants ?? [])
     .map((variant, index) => ({ value: index, name: variant.name }))]
@@ -75,6 +103,8 @@ export async function rollHazardCheck(item, action = "resist", { manual = false 
   const comparison = resolution.comparisons[0];
   await recordAbilityFumble(ability, participant.result);
   const outcome = comparison.repeatable ? "Repeat" : comparison.winnerId === "actor" ? "Success" : "Failure";
+  const statusId = action === "resist" && !comparison.repeatable && comparison.winnerId === "hazard"
+    ? await applyHazardStatus(item, actor) : null;
   await ChatMessage.create({ speaker: actorSpeaker(actor), rolls: [actorRoll, hazardRoll],
     content: `<section class="mythras-chat-card"><div class="mythras-chat-title">${escape(item.name)}: ${escape(localize(action))}</div>
       ${selection.variant >= 0 ? row(localize("Variant"), profile.name) : ""}
@@ -86,7 +116,7 @@ export async function rollHazardCheck(item, action = "resist", { manual = false 
       ${row(localize(item.type === "trap" ? "difficulty" : "potency"), `${hazard.targetBeforeContest}% → ${hazard.target}%`)}
       ${row(`${item.name} (1d100)`, hazardRoll.total, "mythras-chat-roll-value")}
       ${renderRollResult(hazard.result, rollThresholdRanges(hazard.target, hazard.criticalTarget))}
-      <div class="mythras-chat-total">${escape(localize(outcome))}</div>${profileRows(profile)}
+      <div class="mythras-chat-total">${escape(localize(outcome))}</div>${statusId ? row(localize("StatusApplied"), game.i18n.localize(`MYTHRASF.Status.${statusId === "poison" ? "Poisoned" : "Diseased"}`)) : ""}${profileRows(profile)}
       <p>${escape(localize("ManualConsequences"))}</p></section>` });
   return resolution;
 }
@@ -139,5 +169,7 @@ export async function rollHazardDamage(item, { manual = false } = {}) {
     { action: "cancel", label: game.i18n.localize("MYTHRASF.Cancel"), callback: () => null }], rejectClose: false
   });
   if (amount == null || !Number.isFinite(amount) || amount < 0 || !game.user.isGM || !actor.isOwner) return null;
-  return applyDirectDamage(actor, { mode: "fixed", amount, locationIds: [location.id] }, { manual });
+  const result = await applyDirectDamage(actor, { mode: "fixed", amount, locationIds: [location.id] }, { manual });
+  if (result != null) await applyHazardStatus(item, actor);
+  return result;
 }

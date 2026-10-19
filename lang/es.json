@@ -2160,7 +2160,7 @@
   "MYTHRASF.Hazard.FinalDamage": "Daño final tras protecciones",
   "MYTHRASF.Hazard.ProtectionHelp": "Revisa la parada con escudo, el tamaño del proyectil y otras protecciones antes de aplicar. El daño final es la cantidad que se restará a los PG.",
   "MYTHRASF.Hazard.DamageHelp": "Solo el DJ puede aplicar daño. Si eliges un objetivo, se tira una localización aleatoria y después se confirma el daño final. Cancelar esa confirmación conserva la tirada sin modificar PG.",
-  "MYTHRASF.Hazard.ManualConsequences": "El DJ gestiona tiempos, efectos, curaciones y secuelas. Las tiradas no aplican condiciones automáticamente.",
+  "MYTHRASF.Hazard.ManualConsequences": "El DJ gestiona tiempos, curaciones, secuelas y condiciones específicas. Envenenado y Enfermo se activan al aplicar el peligro o cuando este vence la resistencia.",
   "MYTHRASF.Hazard.ConfigurationHelp": "Al elegir una alternativa como Atletismo o parada Difícil, selecciona esa habilidad y dificultad en los diálogos. Las variantes tienen sus propios datos; el perfil general resume todas las vías.",
   "MYTHRASF.Hazard.Construction": "Construcción de trampas",
   "MYTHRASF.Hazard.CreatorSkill": "Habilidad del creador",
@@ -2253,5 +2253,12 @@
   "MYTHRASF.CoreStatus.shieldIce": "Escudo de hielo",
   "MYTHRASF.CoreStatus.shieldMagic": "Escudo mágico",
   "MYTHRASF.CoreStatus.shieldFaith": "Escudo sagrado",
-  "MYTHRASF.CoreStatus.shieldHoly": "Escudo sagrado"
+  "MYTHRASF.CoreStatus.shieldHoly": "Escudo sagrado",
+  "MYTHRASF.Hazard.Apply": "Aplicar",
+  "MYTHRASF.Hazard.StatusApplied": "Estado activado",
+  "MYTHRASF.Hazard.StatusAutomation": "Activa Envenenado o Enfermo en el personaje elegido. Los tiempos y efectos específicos los gestiona el DJ.",
+  "MYTHRASF.Status.Poisoned": "Envenenado",
+  "MYTHRASF.Status.Diseased": "Enfermo",
+  "MYTHRASF.Status.Description.poison": "Marca que el personaje sufre un veneno. Se activa al aplicarlo o al perder la resistencia; el DJ retira el estado al resolverse y gestiona sus efectos y duración.",
+  "MYTHRASF.Status.Description.disease": "Marca que el personaje sufre una enfermedad. Se activa al aplicarla o al perder la resistencia; el DJ retira el estado al resolverse y gestiona sus efectos y duración."
 }

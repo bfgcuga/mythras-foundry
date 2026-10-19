@@ -2160,7 +2160,7 @@
   "MYTHRASF.Hazard.FinalDamage": "Final damage after protection",
   "MYTHRASF.Hazard.ProtectionHelp": "Review shield parries, projectile size and other protection before applying. Final damage is the amount subtracted from HP.",
   "MYTHRASF.Hazard.DamageHelp": "Only the GM can apply damage. Selecting a target rolls a random location, then asks for final damage confirmation. Canceling confirmation keeps the roll without changing HP.",
-  "MYTHRASF.Hazard.ManualConsequences": "The GM manages timing, effects, cures and lasting consequences. Rolls do not apply conditions automatically.",
+  "MYTHRASF.Hazard.ManualConsequences": "The GM manages timing, cures, lasting consequences and specific conditions. Poisoned and Diseased activate when the hazard is applied or wins the resistance contest.",
   "MYTHRASF.Hazard.ConfigurationHelp": "For alternatives such as Hard Athletics or shield parries, select that ability and difficulty in the dialogs. Variants have their own data; the general profile summarizes all routes.",
   "MYTHRASF.Hazard.Construction": "Trap construction",
   "MYTHRASF.Hazard.CreatorSkill": "Creator skill",
@@ -2253,5 +2253,12 @@
   "MYTHRASF.CoreStatus.shieldIce": "Ice Shield",
   "MYTHRASF.CoreStatus.shieldMagic": "Magic Shield",
   "MYTHRASF.CoreStatus.shieldFaith": "Holy Shield",
-  "MYTHRASF.CoreStatus.shieldHoly": "Holy Shield"
+  "MYTHRASF.CoreStatus.shieldHoly": "Holy Shield",
+  "MYTHRASF.Hazard.Apply": "Apply",
+  "MYTHRASF.Hazard.StatusApplied": "Status activated",
+  "MYTHRASF.Hazard.StatusAutomation": "Activates Poisoned or Diseased on the selected actor. The GM manages timing and specific effects.",
+  "MYTHRASF.Status.Poisoned": "Poisoned",
+  "MYTHRASF.Status.Diseased": "Diseased",
+  "MYTHRASF.Status.Description.poison": "Marks an actor affected by poison. Activated by application or losing resistance; the GM manages its effects, duration and removal.",
+  "MYTHRASF.Status.Description.disease": "Marks an actor affected by disease. Activated by application or losing resistance; the GM manages its effects, duration and removal."
 }

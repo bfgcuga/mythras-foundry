@@ -68,8 +68,9 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 
 Los Items de trampas, venenos y enfermedades, sus nueve ejemplos y tiradas
 guiadas ya están implementados. Su alcance actual deja al DJ el seguimiento
-de aparición, duración, condiciones, curación y secuelas; no hay una ampliación
-temporal automática acordada.
+de aparición, duración, condiciones específicas, curación y secuelas; Envenenado
+y Enfermo ya se activan automáticamente al aplicar la aflicción o perder la
+resistencia. No hay una ampliación temporal automática acordada.
 
 - Definir el alcance de las inclemencias del tiempo —frío, calor, exposición u
   otros peligros— antes de crear sus macros.

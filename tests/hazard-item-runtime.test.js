@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { installHost, documentDouble, collection } from "./helpers/ui.js";
-import { TRAP_SOURCES, POISON_SOURCES } from "../scripts/data/hazard-items.js";
+import { TRAP_SOURCES, POISON_SOURCES, DISEASE_SOURCES } from "../scripts/data/hazard-items.js";
 
 test("las acciones de peligros respetan diálogos, permisos, protecciones y cancelación", async (t) => {
   const { foundry } = installHost(t);
@@ -25,11 +25,47 @@ test("las acciones de peligros respetan diálogos, permisos, protecciones y canc
     system: { rangeStart: 1, rangeEnd: 20, armorPoints: 3, currentHitPoints: 5, maxHitPoints: 5 } });
   const actor = documentDouble({ name: "Víctima", system: { strength: 12, fatigueLevel: "fresh" },
     items: collection([ability, location]) });
+  const statuses = [];
+  actor.toggleStatusEffect = async (id, options) => { statuses.push({ id, options }); actor.statuses.add(id); };
   ability.actor = actor;
   game.actors = collection([actor]);
   foundry.applications.api.DialogV2.wait = async (configuration) => { dialogs.push(configuration); return answers.shift() ?? null; };
-  const { rollHazardCheck, rollHazardDamage } = await import("../scripts/rules/hazard-item-runtime.js");
-  const reset = () => { answers = []; totals = []; messages.length = formulas.length = applied.length = dialogs.length = 0; actor.isOwner = true; game.user.isGM = true; };
+  const { applyHazardStatus, openHazardApplication, rollHazardCheck, rollHazardDamage } = await import("../scripts/rules/hazard-item-runtime.js");
+  const reset = () => { answers = []; totals = []; messages.length = formulas.length = applied.length = dialogs.length = 0; actor.isOwner = true; game.user.isGM = true; statuses.length = 0; actor.statuses.clear(); };
+
+  await t.test("aplicar veneno o enfermedad activa un único marcador y respeta permisos", async () => {
+    reset();
+    assert.equal(await applyHazardStatus(POISON_SOURCES[0], actor), "poison");
+    await applyHazardStatus(POISON_SOURCES[0], actor);
+    assert.equal(await applyHazardStatus(DISEASE_SOURCES[0], actor), "disease");
+    assert.deepEqual(statuses.map((entry) => entry.id), ["poison", "disease"]);
+    assert.ok(statuses.every((entry) => entry.options.active === true));
+    assert.equal(await applyHazardStatus(TRAP_SOURCES[0], actor), null);
+    actor.isOwner = false;
+    assert.equal(await applyHazardStatus(POISON_SOURCES[0], actor), null);
+    assert.equal(statuses.length, 2);
+  });
+
+  await t.test("Aplicar permite elegir el primer personaje y cancelar no activa estados", async () => {
+    reset(); answers = [null];
+    assert.equal(await openHazardApplication(POISON_SOURCES[0]), null);
+    assert.equal(statuses.length, 0);
+    answers = [0];
+    assert.equal(await openHazardApplication(DISEASE_SOURCES[0]), "disease");
+    assert.match(messages[0].content, /Enfermo/);
+    assert.equal(formulas.length, 0);
+  });
+
+  await t.test("la resistencia activa el marcador solo si gana el veneno o enfermedad", async () => {
+    for (const source of [POISON_SOURCES[0], DISEASE_SOURCES[0]]) {
+      for (const [actorRoll, hazardRoll, applies] of [[90, 10, true], [10, 90, false], [95, 95, false]]) {
+        reset(); answers = [{ ability: 0, variant: -1 }, { difficulty: "standard" }]; totals = [actorRoll, hazardRoll];
+        await rollHazardCheck(source);
+        assert.equal(statuses.length, applies ? 1 : 0, `${source.type}: ${actorRoll}/${hazardRoll}`);
+        if (applies) assert.equal(statuses[0].id, source.type);
+      }
+    }
+  });
 
   await t.test("cancelar la selección o la configuración no tira ni publica", async () => {
     reset(); answers = [null];
@@ -91,6 +127,20 @@ test("las acciones de peligros respetan diálogos, permisos, protecciones y canc
     reset(); answers = [{ actor: "0", variant: -1 }, 10]; totals = [10, 5];
     await rollHazardDamage(TRAP_SOURCES[0]);
     assert.match(dialogs[1].content, /value="10"/);
+  });
+
+  await t.test("el daño de una aflicción activa su estado únicamente al confirmarlo", async () => {
+    const poison = structuredClone(POISON_SOURCES[0]); poison.system.damage = "1d6";
+    reset(); answers = [{ actor: "0", variant: -1 }, null]; totals = [4, 5];
+    await rollHazardDamage(poison);
+    assert.equal(statuses.length, 0);
+    reset(); answers = [{ actor: "", variant: -1 }]; totals = [4];
+    await rollHazardDamage(poison);
+    assert.equal(statuses.length, 0);
+    reset(); answers = [{ actor: "0", variant: -1 }, 1]; totals = [4, 5];
+    await rollHazardDamage(poison);
+    assert.equal(statuses[0].id, "poison");
+    assert.equal(applied.length, 1);
   });
 
   await t.test("solo el DJ puede aplicar daño y una fórmula inválida no tira", async () => {
