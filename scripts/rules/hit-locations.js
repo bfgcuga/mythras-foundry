@@ -1,3 +1,5 @@
+import { woundLevel, healthWoundLevel, usesGlobalHitPoints } from "./health.js";
+export { woundLevel } from "./health.js";
 export const HUMAN_HIT_LOCATIONS = Object.freeze([
   { nameKey: "rightLeg", name: "Pierna derecha", rangeStart: 1, rangeEnd: 3, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
   { nameKey: "leftLeg", name: "Pierna izquierda", rangeStart: 4, rangeEnd: 6, category: "limb", hpClass: "standard", armorEncumbranceMultiplier: 1.5, armorCostPercentage: 15 },
@@ -137,28 +139,19 @@ export function calculateLocationHitPoints(constitution, size, hpClass = "standa
   return Math.max(1, band + (offsets[hpClass] ?? 0));
 }
 
-export function woundLevel(current, maximum) {
-  const value = Number(current ?? 0);
-  const max = Math.max(1, Number(maximum ?? 1));
-  if (value >= max) return "healthy";
-  if (value > 0) return "minor";
-  if (value > -max) return "serious";
-  return "major";
-}
-
 export function isLocationDisabled(location) {
   const system = location?.system ?? location ?? {};
-  return Boolean(system.disabled);
+  return !usesGlobalHitPoints(location) && Boolean(system.disabled);
 }
 
 export function isLocationCrippled(location) {
   const system = location?.system ?? location ?? {};
-  return Number(system.permanentWound?.severity ?? 0) > 0;
+  return !usesGlobalHitPoints(location) && Number(system.permanentWound?.severity ?? 0) > 0;
 }
 
 export function locationWoundState(location) {
   const system = location?.system ?? location ?? {};
-  return woundLevel(system.currentHitPoints, system.maxHitPoints);
+  return healthWoundLevel(location, location);
 }
 
 export function recoversDisabledLocation(location, nextHitPoints) {
@@ -168,7 +161,8 @@ export function recoversDisabledLocation(location, nextHitPoints) {
     && woundLevel(nextHitPoints, system.maxHitPoints) === "minor";
 }
 
-export function worstWoundLevel(locations) {
+export function worstWoundLevel(locations, actor = null) {
+  if (usesGlobalHitPoints(actor)) return "healthy";
   const severity = { healthy: 0, minor: 1, serious: 2, major: 3 };
   return (locations ?? []).reduce((worst, location) => {
     const level = locationWoundState(location);

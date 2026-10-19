@@ -1,3 +1,10 @@
+import { characteristicAbsent } from "./health.js";
+
+export function skillRequiresManualValue(system, characteristics = {}) {
+  return system.valueMode !== "manual" && [system.characteristic1, system.characteristic2]
+    .some((key) => characteristicAbsent(characteristics, key));
+}
+
 export function calculateSkillValues(system, characteristics = {}) {
   if (system.valueMode === "manual") {
     const total = Math.max(0, Number(system.manualValue ?? 0));
@@ -9,6 +16,9 @@ export function calculateSkillValues(system, characteristics = {}) {
     };
   }
 
+  if (skillRequiresManualValue(system, characteristics)) return {
+    base: 0, bonus: 0, total: 0, experienceImprovementBonus: system.fumbled ? 1 : 0
+  };
   const first = Number(characteristics[system.characteristic1] ?? 0);
   const second = Number(characteristics[system.characteristic2] ?? 0);
   const base = first + second + Number(system.baseBonus ?? 0);

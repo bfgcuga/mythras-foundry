@@ -1,6 +1,8 @@
+import { characteristicValue, characteristicAbsent } from "./health.js";
+import { healthWoundLevel, healthHitPoints, usesGlobalHitPoints } from "./health.js";
 import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
-import { findHitLocation, hitLocationDisplayName, woundLevel } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 import { evaluateSystemRoll } from "./system-roll.js";
 
@@ -37,7 +39,7 @@ export function combinedFallDamage(fallDamage, dangerousSurfaceDamage = 0) {
 export function calculateFall(configuration = {}) {
   const kind = ["fall", "vehicle", "object"].includes(configuration.kind)
     ? configuration.kind : "fall";
-  const actorSize = Math.max(1, Math.floor(Number(configuration.actorSize) || 1));
+  const actorSize = configuration.actorSize === null ? null : Math.max(1, Math.floor(Number(configuration.actorSize) || 1));
   const objectSize = Math.max(1, Math.floor(Number(configuration.objectSize) || 1));
   const speedPerRound = Math.max(0, Number(configuration.speedPerRound) || 0);
   const speedPerSecond = speedPerRound / COMBAT_ROUND_SECONDS;
@@ -47,7 +49,7 @@ export function calculateFall(configuration = {}) {
   const relevantSize = kind === "object" ? objectSize : actorSize;
   const acrobaticsReduction = kind !== "object" && configuration.acrobaticsSuccess ? 2 : 0;
   const effectiveDistance = Math.max(0, referenceDistance
-    - fallSizeDistanceReduction(relevantSize) - acrobaticsReduction);
+    - (relevantSize === null ? 0 : fallSizeDistanceReduction(relevantSize)) - acrobaticsReduction);
   const distanceProfile = fallDistanceProfile(effectiveDistance);
   const dice = kind === "object"
     ? Math.max(1, Math.ceil(objectSize / 6)) + distanceProfile.dice
@@ -92,7 +94,7 @@ async function createFallChat(actor, token, configuration, results, locationRoll
       ${dangerousRoll ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurfaceDamageRoll"))} (${escape(configuration.dangerousSurfaceFormula)})</span><strong class="mythras-chat-roll-value">${dangerousDamage}</strong></div>` : ""}
       ${dangerousRoll ? `<div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fall.TotalDamage"))}</span><strong>${damage}</strong></div>` : ""}
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fall.HitPoints"))}</span><strong>${before} → ${after}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
+      ${!usesGlobalHitPoints(actor) && woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
       ${hazardWoundConsequenceRows(woundConsequence)}</fieldset>`).join("");
   const safeLanding = configuration.acrobaticsSuccess
     && !results.some((entry) => ["serious", "major"].includes(entry.woundAfter));
@@ -112,7 +114,11 @@ async function createFallChat(actor, token, configuration, results, locationRoll
 
 export async function applyFallDamage(actor, configuration, { token = null, manual = false } = {}) {
   if (!actor || !["character", "npc"].includes(actor.type)) return null;
-  const calculated = calculateFall({ ...configuration, actorSize: actor.system.size });
+  if (characteristicAbsent(actor.system, "size") && configuration.kind !== "object"
+    && (!String(configuration.formula ?? "").trim() || configuration.locationCount === undefined)) {
+    ui.notifications.warn(game.i18n.localize("MYTHRASF.Health.ManualCalculation")); return null;
+  }
+  const calculated = calculateFall({ ...configuration, actorSize: characteristicValue(actor.system, "size") });
   const formula = String(configuration.formula ?? calculated.formula).trim() || calculated.formula;
   const dangerousSurfaceFormula = String(configuration.dangerousSurfaceFormula ?? "1d6").trim()
     || "1d6";
@@ -138,10 +144,10 @@ export async function applyFallDamage(actor, configuration, { token = null, manu
     const dangerousDamage = Math.max(0, Math.floor(Number(dangerousRoll?.total) || 0));
     const damage = combinedFallDamage(fallDamage, dangerousDamage);
     const before = Number(location.system.currentHitPoints) || 0;
-    const after = before - damage;
-    const woundBefore = woundLevel(before, location.system.maxHitPoints);
+    const after = healthHitPoints(actor, before - damage);
+    const woundBefore = healthWoundLevel(actor, location, before);
     await location.update({ "system.currentHitPoints": after });
-    const woundAfter = woundLevel(after, location.system.maxHitPoints);
+    const woundAfter = healthWoundLevel(actor, location, after);
     const woundConsequence = await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
       { sourceStatus: "MYTHRASF.Fall.ChatTitle", manual });
     results.push({ location, roll, damage, fallDamage, dangerousRoll, dangerousDamage,
@@ -169,13 +175,13 @@ export async function openFallDialog({ actor = null, token = null,
     }
     token = controlled[0]; actor = token.actor;
   }
-  const initial = calculateFall({ kind: "fall", actorSize: actor.system.size, distance: 2 });
+  const initial = calculateFall({ kind: "fall", actorSize: characteristicValue(actor.system, "size"), distance: 2 });
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: game.i18n.localize("MYTHRASF.Fall.Title") },
-    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Target"))}</legend><div class="sheet-field-readonly">${escape(actorDisplayName(actor))} — TAM ${initial.actorSize}</div></fieldset>
+    content: `<div class="mythras-foundry mythras-dialog"><fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Target"))}</legend><div class="sheet-field-readonly">${escape(actorDisplayName(actor))} — TAM ${initial.actorSize ?? escape(game.i18n.localize("MYTHRASF.Health.NotApplicable"))}</div></fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.TypeLabel"))}</legend>${["fall", "vehicle", "object"].map((kind) => `<label><input type="radio" class="sheet-state-box" name="kind" value="${kind}" ${kind === "fall" ? "checked" : ""}><span>${escape(game.i18n.localize(`MYTHRASF.Fall.Type.${kind}`))}</span></label>`).join("")}</fieldset>
       <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Parameters"))}</legend><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.Distance"))}</span><input type="number" class="sheet-field-editable" name="distance" min="0" step="0.5" value="2"></label><label data-fall-vehicle hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.VehicleSpeed"))}</span><input type="number" class="sheet-field-editable" name="speedPerRound" min="0" step="1" value="0"></label><label data-fall-object hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.ObjectSize"))}</span><input type="number" class="sheet-field-editable" name="objectSize" min="1" step="1" value="6"></label><label><input type="checkbox" class="sheet-state-box" name="acrobaticsSuccess"><span>${escape(game.i18n.localize("MYTHRASF.Fall.AcrobaticsSuccess"))}</span></label><label><input type="checkbox" class="sheet-state-box" name="softSurface"><span>${escape(game.i18n.localize("MYTHRASF.Fall.SoftSurface"))}</span></label><label><input type="checkbox" class="sheet-state-box" name="dangerousSurface"><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurface"))}</span></label><label data-fall-dangerous hidden><span>${escape(game.i18n.localize("MYTHRASF.Fall.DangerousSurfaceFormula"))}</span><input class="sheet-field-editable" name="dangerousSurfaceFormula" value="1d6"></label></fieldset>
-      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Damage"))}</legend><div data-fall-summary class="sheet-field-readonly"></div><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageFormula"))}</span><input class="sheet-field-editable" name="formula" value="${initial.formula}"></label><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.LocationCount"))}</span><input type="number" class="sheet-field-editable" name="locationCount" min="0" step="1" value="${initial.locations}"></label></fieldset></div>`,
+      <fieldset><legend>${escape(game.i18n.localize("MYTHRASF.Fall.Damage"))}</legend><div data-fall-summary class="sheet-field-readonly"></div><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.DamageFormula"))}</span><input class="sheet-field-editable" name="formula" value="${characteristicAbsent(actor.system, "size") ? "" : initial.formula}"></label><label><span>${escape(game.i18n.localize("MYTHRASF.Fall.LocationCount"))}</span><input type="number" class="sheet-field-editable" name="locationCount" min="0" step="1" value="${initial.locations}"></label></fieldset></div>`,
     buttons: [{ action: "apply", label: game.i18n.localize("MYTHRASF.Fall.Apply"),
       icon: "fas fa-person-falling", default: true, callback: (event, button) => ({
         kind: button.form.elements.kind.value,
@@ -193,7 +199,7 @@ export async function openFallDialog({ actor = null, token = null,
     render: (event, dialog) => {
       const form = dialog.element.querySelector("form"); let previous = initial;
       const refresh = () => {
-        const current = calculateFall({ actorSize: actor.system.size,
+        const current = calculateFall({ actorSize: characteristicValue(actor.system, "size"),
           kind: form.elements.kind.value, distance: form.elements.distance.value,
           speedPerRound: form.elements.speedPerRound.value,
           objectSize: form.elements.objectSize.value,
@@ -206,7 +212,7 @@ export async function openFallDialog({ actor = null, token = null,
         form.elements.acrobaticsSuccess.closest("label").hidden = current.kind === "object";
         if (form.elements.formula.value.trim() === previous.formula) form.elements.formula.value = current.formula;
         if (Number(form.elements.locationCount.value) === previous.locations) form.elements.locationCount.value = current.locations;
-        form.querySelector("[data-fall-summary]").textContent = game.i18n.format("MYTHRASF.Fall.Summary", { distance: current.effectiveDistance, formula: current.formula, locations: current.locations });
+        form.querySelector("[data-fall-summary]").textContent = (characteristicAbsent(actor.system, "size") && current.kind !== "object") ? game.i18n.localize("MYTHRASF.Health.ManualCalculation") : game.i18n.format("MYTHRASF.Fall.Summary", { distance: current.effectiveDistance, formula: current.formula, locations: current.locations });
         previous = current;
       };
       form?.addEventListener("change", refresh); form?.addEventListener("input", refresh); refresh();

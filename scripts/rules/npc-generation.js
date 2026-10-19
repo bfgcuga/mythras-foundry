@@ -1,3 +1,4 @@
+import { characteristicAbsent, globalHealthConfigurationValid, normalizeAbsentCharacteristics } from "./health.js";
 import { CHARACTERISTIC_KEYS } from "./derived-attributes.js";
 import { calculateNpcAttributes, NPC_OVERRIDE_KEYS } from "./npc.js";
 
@@ -16,8 +17,12 @@ export function shouldGenerateNpcToken({ actorType, actorLink = false } = {}) {
 export async function materializeNpc(source, evaluateFormula) {
   const actor = clone(source);
   const failures = [];
+  normalizeAbsentCharacteristics(actor.system);
+  if (!globalHealthConfigurationValid(actor.system, actor.items))
+    throw new NpcGenerationError([{ label: "globalHitPoints", message: "invalid-global-health-configuration" }]);
 
   for (const key of CHARACTERISTIC_KEYS) {
+    if (characteristicAbsent(actor.system, key)) continue;
     await applyFormula({
       formula: actor.system?.characteristicFormulas?.[key],
       label: `system.${key}`,

@@ -1,3 +1,4 @@
+import { usesGlobalHitPoints } from "./health.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { applyDeath } from "./death.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
@@ -80,7 +81,7 @@ export function hazardWoundConsequenceRows(consequence) {
 
 export async function applyHazardWoundConsequences(actor, location, before, after,
   { sourceStatus = "MYTHRASF.Status.Acid", manual = false } = {}) {
-  if (before === after || !["serious", "major"].includes(after)) return null;
+  if (usesGlobalHitPoints(actor) || before === after || !["serious", "major"].includes(after)) return null;
   const sourceName = game.i18n.localize(sourceStatus);
   const endurance = await rollSimpleWoundEndurance(actor, { manual });
   const plan = woundConsequencePlan({ wound: after, locationKind: woundLocationKind(location),

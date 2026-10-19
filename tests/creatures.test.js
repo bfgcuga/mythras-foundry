@@ -9,7 +9,7 @@ import { deterministicPackId } from "../scripts/dev/pack-ids.mjs";
 import { readFileSync } from "node:fs";
 
 test("el bestiario conserva las criaturas originales e incluye los perfiles del revisado", () => {
-  assert.equal(CREATURE_SOURCES.length, 61);
+  assert.equal(CREATURE_SOURCES.length, 116);
   const names = new Set(CREATURE_SOURCES.map((source) => source.name));
   for (const name of ["Hombre lagarto", "Hormiga gigante", "Mantícora", "Oso", "Xenomorfo",
     ...REVISED_CREATURE_PROFILES.map((profile) => profile.name), "Ofidio"]) assert.ok(names.has(name), name);

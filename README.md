@@ -414,12 +414,16 @@ El manifiesto declara dieciocho compendios generados a partir de fuentes canóni
   El compendio de rasgos incluye los 44 rasgos de criaturas de Mythras básico
   revisado, con su página de referencia y descripciones para uso manual al crear
   criaturas, sin automatizaciones.
-  El bestiario contiene 60 perfiles de Mythras básico revisado (incluidos Ofidio,
-  Wyrm y Wyvern por separado), más el Xenomorfo anterior. Conserva los atributos,
+  El bestiario contiene 115 perfiles de Mythras básico revisado (incluidos Ofidio,
+  Wyrm y Wyvern por separado, 50 elementales de 1–10 m³ y cinco enjambres
+  representativos), más el Xenomorfo anterior. Conserva los atributos,
   PA/PG por zona y reglas particulares de la fuente. Las coincidencias exactas
   usan las morfologías existentes y el resto mantiene anatomía personalizada.
+  Los PNJ pueden usar una única localización 1–20 con PG globales manuales,
+  sin consecuencias anatómicas automáticas y con aviso al agotar sus PG. Las
+  características ausentes se muestran como «No aplica».
   Los poderes, venenos y magia se consultan y aplican manualmente. Véase
-  [cobertura del bestiario](docs/bestiary-coverage.md) para las exclusiones.
+  [cobertura del bestiario](docs/bestiary-coverage.md) para las reglas de integración y las variantes.
 - macros, tablas de clase social, acontecimientos de trasfondo y tablas de
   familia y conexiones;
 - un diario «Referencia de Mythras», cuya portada admite nuevas categorías y

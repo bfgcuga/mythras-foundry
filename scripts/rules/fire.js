@@ -1,6 +1,7 @@
+import { healthWoundLevel, healthHitPoints, usesGlobalHitPoints } from "./health.js";
 import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
-import { hitLocationDisplayName, woundLevel } from "./hit-locations.js";
+import { hitLocationDisplayName } from "./hit-locations.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
 import { evaluateSystemRoll } from "./system-roll.js";
 
@@ -85,7 +86,7 @@ async function createFireChat(actor, token, configuration, results) {
     woundBefore, woundAfter, woundConsequence }) => `<fieldset><legend>${escape(hitLocationDisplayName(location))}</legend>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Fire.DamageRoll"))} (${escape(configuration.formula)})</span><strong class="mythras-chat-roll-value">${damage}</strong></div>
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Fire.HitPoints"))}</span><strong>${hitPointsBefore} → ${hitPointsAfter}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
+      ${!usesGlobalHitPoints(actor) && woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
       ${hazardWoundConsequenceRows(woundConsequence)}</fieldset>`).join("");
   return ChatMessage.create({ speaker: actorSpeaker(actor, token), rolls: results.flatMap(
     (entry) => [entry.roll, entry.woundConsequence?.enduranceRoll].filter(Boolean)),
@@ -110,10 +111,11 @@ export async function applyFireDamage(actor, configuration, { token = null, manu
   const results = [];
   for (const location of locations) {
     const roll = await evaluateSystemRoll(normalized.formula, { manual });
-    const woundBefore = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
-    const damage = fireDamageResult(roll.total, location.system.currentHitPoints);
+    const woundBefore = healthWoundLevel(actor, location, location.system.currentHitPoints);
+    const damage = { ...fireDamageResult(roll.total, location.system.currentHitPoints) };
+    damage.hitPointsAfter = healthHitPoints(actor, damage.hitPointsAfter);
     await location.update({ "system.currentHitPoints": damage.hitPointsAfter });
-    const woundAfter = woundLevel(damage.hitPointsAfter, location.system.maxHitPoints);
+    const woundAfter = healthWoundLevel(actor, location, damage.hitPointsAfter);
     const woundConsequence = await applyHazardWoundConsequences(actor, location, woundBefore, woundAfter,
       { sourceStatus: "MYTHRASF.Status.Burning", manual });
     results.push({ location, roll, ...damage, woundBefore, woundAfter, woundConsequence });

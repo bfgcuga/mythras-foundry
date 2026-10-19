@@ -1,3 +1,4 @@
+import { globalHealthState, usesGlobalHitPoints } from "../rules/health.js";
 import { totalArmorPoints, wornArmorPoints } from "../rules/armor.js";
 import { combatantForActor, tacticalState } from "../rules/engagement-runtime.js";
 import { isLocationCrippled, isLocationDisabled,
@@ -14,6 +15,8 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
   const blockedIds = new Set(block?.status === "active"
     && Number(block.round) === Number(combat?.round) ? block.locationIds : []);
   return {
+    globalHitPoints: usesGlobalHitPoints(actor),
+    exhausted: globalHealthState(actor)?.exhausted ?? false,
     hasNaturalArmor: locations.some((item) => armorMaximumPoints(item) > 0),
     rows: locations.map((item) => ({
       item,
@@ -29,7 +32,7 @@ export function prepareHitLocationTable({ actor, armor = [], combat = null,
           label: `${piece.name} (${Number(piece.system.armorPoints ?? 0)} ${armorPointLabel})` })),
       equippedArmorId: equippedArmor.find((piece) =>
         (piece.system.coveredLocationIds ?? []).includes(item.id))?.id ?? "",
-      showDisabledControl: locationWoundState(item) === "serious",
+      showDisabledControl: !usesGlobalHitPoints(actor) && locationWoundState(item) === "serious",
       disabled: isLocationDisabled(item),
       crippled: isLocationCrippled(item),
       overMaximum: Number(item.system.currentHitPoints) > Number(item.system.maxHitPoints),

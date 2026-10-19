@@ -1,3 +1,4 @@
+import { characteristicAbsent } from "./health.js";
 import { armorInitiativePenalty } from "./armor.js";
 import { conditionDescriptors, resolveConditions } from "./condition-resolver.js";
 import { encumbranceState, totalCarriedEncumbrance } from "./encumbrance.js";
@@ -14,7 +15,9 @@ const actorItems = (actor) => Array.from(actor?.items ?? []);
 export function actorLoadState(actor) {
   const inventory = actorItems(actor).filter((item) =>
     ["equipment", "weapon", "armor"].includes(item.type));
-  return encumbranceState(totalCarriedEncumbrance(inventory), actor?.system?.strength);
+  return characteristicAbsent(actor?.system, "strength")
+    ? { ...encumbranceState(0, 0), notApplicable: true }
+    : encumbranceState(totalCarriedEncumbrance(inventory), actor?.system?.strength);
 }
 
 export function actorConditionState(actor, { fatigueKey = actor?.system?.fatigueLevel ?? "fresh",
@@ -23,7 +26,7 @@ export function actorConditionState(actor, { fatigueKey = actor?.system?.fatigue
   const armors = items.filter((item) => item.type === "armor" && item.system?.equipped);
   return Object.freeze({
     fatigueKey,
-    woundLevel: worstWoundLevel(items.filter((item) => item.type === "hitLocation")),
+    woundLevel: worstWoundLevel(items.filter((item) => item.type === "hitLocation"), actor),
     manuallyIncapacitated: Boolean(actor?.getFlag?.(
       INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
       || actor?.statuses?.has?.(INCAPACITATED_STATUS_ID)),

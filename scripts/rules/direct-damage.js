@@ -1,8 +1,9 @@
+import { healthWoundLevel, healthHitPoints, usesGlobalHitPoints } from "./health.js";
 import { applyHazardWoundConsequences, hazardWoundConsequenceRows
 } from "./wound-consequences.js";
 import { evaluateAnimatedRoll } from "./dice-animation.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
-import { findHitLocation, hitLocationDisplayName, woundLevel } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName } from "./hit-locations.js";
 
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
@@ -43,7 +44,7 @@ async function createDirectDamageChat(actor, token, configuration, results) {
               ? " class=\"mythras-chat-roll-value\"" : ""}>${damage}</strong></div>
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize(
         "MYTHRASF.DirectDamage.HitPoints"))}</span><strong>${hitPointsBefore} → ${hitPointsAfter}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(
+      ${!usesGlobalHitPoints(actor) && woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(
         game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(
           `MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
       ${hazardWoundConsequenceRows(woundConsequence)}</fieldset>`).join("");
@@ -84,12 +85,12 @@ export async function applyDirectDamage(actor, configuration, { token = null, ma
   for (const location of locations) {
     const damageRoll = normalized.mode === "formula"
       ? await evaluateAnimatedRoll(normalized.formula, { manual }) : null;
-    const woundBefore = woundLevel(location.system.currentHitPoints,
-      location.system.maxHitPoints);
-    const result = directDamageResult(damageRoll?.total ?? normalized.amount,
-      location.system.currentHitPoints);
+    const woundBefore = healthWoundLevel(actor, location, location.system.currentHitPoints);
+    const result = { ...directDamageResult(damageRoll?.total ?? normalized.amount,
+      location.system.currentHitPoints) };
+    result.hitPointsAfter = healthHitPoints(actor, result.hitPointsAfter);
     await location.update({ "system.currentHitPoints": result.hitPointsAfter });
-    const woundAfter = woundLevel(result.hitPointsAfter, location.system.maxHitPoints);
+    const woundAfter = healthWoundLevel(actor, location, result.hitPointsAfter);
     const woundConsequence = await applyHazardWoundConsequences(actor, location,
       woundBefore, woundAfter, { sourceStatus: "MYTHRASF.DirectDamage.Source", manual });
     results.push({ location, locationRoll, damageRoll, ...result, woundBefore, woundAfter,

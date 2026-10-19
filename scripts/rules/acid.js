@@ -1,5 +1,6 @@
+import { healthWoundLevel, healthHitPoints, usesGlobalHitPoints } from "./health.js";
 import { armorCoversLocation } from "./armor.js";
-import { findHitLocation, hitLocationDisplayName, woundLevel } from "./hit-locations.js";
+import { findHitLocation, hitLocationDisplayName } from "./hit-locations.js";
 import { applyTimedCondition, timedEffects } from "./timed-condition-runtime.js";
 import { TIMED_CONDITION_FLAG, TIMED_CONDITION_SCOPE } from "./timed-conditions.js";
 import { actorDisplayName, actorSpeaker } from "./document-names.js";
@@ -87,7 +88,7 @@ async function createAcidChat(actor, token, condition, results) {
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Armor"))}</span><strong>${escape(armorName ?? "—")} — ${result.armorBefore} → ${result.armorAfter}</strong></div>
       <div class="mythras-chat-total"><span>${escape(game.i18n.localize("MYTHRASF.Chat.PenetratingDamage"))}</span><strong>${result.penetrating}</strong></div>
       <div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Acid.HitPoints"))}</span><strong>${result.hitPointsBefore} → ${result.hitPointsAfter}</strong></div>
-      ${woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
+      ${!usesGlobalHitPoints(actor) && woundBefore !== woundAfter ? `<div class="mythras-chat-row"><span>${escape(game.i18n.localize("MYTHRASF.Chat.Wound"))}</span><strong>${escape(game.i18n.localize(`MYTHRASF.Wound.${woundAfter}`))}</strong></div>` : ""}
       ${hazardWoundConsequenceRows(woundConsequence)}</fieldset>`).join("");
   return ChatMessage.create({
     speaker: actorSpeaker(actor, token),
@@ -123,16 +124,17 @@ export async function applyAcidDamage(actor, condition, { token = null, manual =
   for (const location of locations) {
     const layer = acidArmorLayer(location, actor.items.filter((item) => item.type === "armor"));
     const damage = await rollFormula(normalized.damageFormula, manual);
-    const woundBefore = woundLevel(location.system.currentHitPoints, location.system.maxHitPoints);
-    const result = acidDamageResult({ damage: damage.total, armorPoints: layer?.armorPoints,
-      hitPoints: location.system.currentHitPoints });
+    const woundBefore = healthWoundLevel(actor, location, location.system.currentHitPoints);
+    const result = { ...acidDamageResult({ damage: damage.total, armorPoints: layer?.armorPoints,
+      hitPoints: location.system.currentHitPoints }) };
+    result.hitPointsAfter = healthHitPoints(actor, result.hitPointsAfter);
     if (layer?.kind === "worn") await layer.item.update({
       "system.armorPoints": result.armorAfter,
       ...(result.armorAfter === 0 ? { "system.equipped": false } : {})
     });
     else if (layer?.kind === "natural") await location.update({ "system.armorPoints": result.armorAfter });
     if (result.penetrating > 0) await location.update({ "system.currentHitPoints": result.hitPointsAfter });
-    const woundAfter = woundLevel(result.hitPointsAfter, location.system.maxHitPoints);
+    const woundAfter = healthWoundLevel(actor, location, result.hitPointsAfter);
     const woundConsequence = await applyHazardWoundConsequences(actor, location,
       woundBefore, woundAfter, { manual });
     const armorName = layer?.kind === "natural"

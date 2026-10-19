@@ -1,3 +1,5 @@
+import { skillRequiresManualValue } from "./skills.js";
+import { characteristicValue, characteristicAbsent } from "./health.js";
 import { canStartProactiveAction, choosingInterruption, combatInterruption, bindInterruptionAction,
   interruptionBlocksMessage } from "./combat-interruption.js";
 import { actorManeuverRestriction, maneuverAttackRestriction, maneuverTokenUuid, releaseManeuverRival } from "./maneuver-protection.js";
@@ -446,6 +448,11 @@ function collectAttackSetup(form) {
 
 export async function createAttackMessage({ actor, weapon, mode, resolution, target = null,
   manual = false }) {
+  const ability = resolution.ability ?? resolution.style;
+  if ((resolution.usesBase && ["strength", "dexterity"].some((key) => characteristicAbsent(actor.system, key)))
+    || (ability && skillRequiresManualValue(ability.system, actor.system))) {
+    ui.notifications.warn(localize("MYTHRASF.Health.ManualSkillRequired")); return null;
+  }
   if (weapon?.intrinsicKey) {
     weapon = intrinsicUnarmedWeapon(actor, localize("MYTHRASF.Combat.Unarmed"));
     if (!weapon) return null;
@@ -530,8 +537,9 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     const aiming = readyAim(actor, { weaponId: weapon.id, modeKey: mode.key,
       targetTokenUuid: setup.targetTokenUuid, combat: activeCombatForActor(actor)?.combat });
     ranged = rangedAttackProfile({ distance: setup.ranged.distance, ranges,
-      targetSize: defender.system.size, baseDifficulty: resolution.difficulty,
+      targetSize: characteristicValue(defender.system, "size"), baseDifficulty: resolution.difficulty,
       modifiers: situational, aim: Boolean(aiming) });
+    if (ranged.manualTargetSize) ui.notifications.warn(localize("MYTHRASF.Health.ManualCalculation"));
     if (!ranged.valid) return ui.notifications.warn(localize(
       ranged.band === "beyond" ? "MYTHRASF.Ranged.BeyondRange" : "MYTHRASF.Ranged.InvalidRange"));
     Object.assign(ranged, setup.ranged, { modifiers: situational, aim: Boolean(aiming),
@@ -632,7 +640,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
         impalingSize: mode.impalingSize, handsRequired: mode.handsRequired, effects: mode.effects },
       rawRoll: roll.total, serializedRoll: roll.toJSON(), luckHistory: [] },
     defender: { actorUuid: defender.uuid, actorId: actorIdentity(defender), actorName: tokenDisplayName(target),
-      tokenUuid: setup.targetTokenUuid, defense: null, luckHistory: [], size: defender.system.size,
+      tokenUuid: setup.targetTokenUuid, defense: null, luckHistory: [], size: characteristicValue(defender.system, "size"),
       targetType: setup.targetWeaponId ? "weapon" : "actor", targetWeaponId: setup.targetWeaponId ?? "",
       locations: (setup.targetWeaponId ? defender.items.filter((item) => item.id === setup.targetWeaponId)
         : defender.items.filter((item) => item.type === "hitLocation")).map(locationSnapshot) },
@@ -684,7 +692,7 @@ export async function createResolvedReactionAttack({ tracker, attackerCombatantI
         reach: mode.reach, impalingSize: mode.impalingSize, handsRequired: mode.handsRequired,
         effects: mode.effects }, rawRoll: attackRoll, serializedRoll: null, luckHistory: [] },
     defender: { actorUuid: defender.uuid, actorId: actorIdentity(defender), actorName: tokenDisplayName(defenderEntry.token),
-      tokenUuid: defenderEntry.token?.uuid ?? "", defense, luckHistory: [], size: defender.system.size,
+      tokenUuid: defenderEntry.token?.uuid ?? "", defense, luckHistory: [], size: characteristicValue(defender.system, "size"),
       locations: defender.items.filter((item) => item.type === "hitLocation").map(locationSnapshot) }, resolution,
     effects: { winner: resolution.winner, slots: totalSlots, sideSlots, surpriseSlots: 0,
       pendingSide: sideSlots.attacker ? "attacker" : sideSlots.defender ? "defender" : null,

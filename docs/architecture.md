@@ -175,7 +175,25 @@ eliminarlos. Las criaturas se reúnen en `scripts/data/creatures.js`; los perfil
 revisado viven en `scripts/data/revised-creature-profiles.js` y se adaptan en
 `revised-creatures.js` usando los constructores de `creature-helpers.js`. La
 [matriz de cobertura](bestiary-coverage.md) documenta las exclusiones y la
-conservación de valores impresos. Cada criatura mantiene su tabla anatómica:
+conservación de valores impresos. Los 55 perfiles elementales y de enjambre se definen en `global-creatures.js`.
+Los PNJ añaden `hitPointMode` (`localized` por defecto o `global`) y
+`absentCharacteristics` (vacío por defecto), sin migrar anatomías existentes.
+`health.js` centraliza clasificación, límites de PG, validación y dependencias
+de características. El modo global requiere un único Item de localización 1–20,
+con PG máximos manuales positivos y sin lesión permanente. Cambiar el selector
+no crea, elimina ni fusiona zonas; hay que preparar primero la anatomía.
+
+`npc-health-runtime.js` valida configuración y actualizaciones, limita los PG a
+0 y emite el aviso de agotamiento solo en el cliente que originó la transición
+positivo→0. Los daños de combate, directo, fuego, ácido y caída comparten esta
+interpretación. Las condiciones del Actor ignoran la gravedad anatómica de la
+reserva y no incapacitan a 0 PG. Estados impuestos expresamente se conservan.
+Los valores internos de características ausentes son solo compatibilidad del
+modelo: sin fórmulas ni tiradas propias; los atributos dependientes pasan a
+manual, sin curación ni fatiga automática por CON ausente y sin carga por FUE
+ausente. La generación de tokens conserva estas reglas y las fórmulas de PG.
+
+Cada criatura mantiene su tabla anatómica:
 las zonas equivalentes pueden reutilizar las mismas claves de presentación, pero
 la recuperación de zonas ausentes se realiza contra la criatura canónica y nunca
 inyecta una anatomía humana en un PNJ.

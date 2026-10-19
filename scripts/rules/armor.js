@@ -1,3 +1,4 @@
+import { characteristicAbsent } from "./health.js";
 import { armorDescriptors, resolveConditions } from "./condition-resolver.js";
 
 export const ARMOR_REFERENCE_LOCATIONS = Object.freeze([
@@ -135,6 +136,7 @@ export function applyArmorInitiativePenalty(attributes, armors = []) {
 }
 
 export function armorFitsWearer(armor, wearer) {
+  if (characteristicAbsent(wearer?.system ?? wearer, "size")) return true;
   const system = armor?.system ?? armor ?? {};
   const designedSize = Math.max(0, Number(system.designedSize ?? 0));
   if (!designedSize) return true;

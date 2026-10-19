@@ -1,9 +1,11 @@
 # Cobertura del bestiario de Mythras básico revisado
 
-El compendio `creatures` contiene 60 perfiles del básico revisado, extraídos de
+El compendio `creatures` contiene 115 perfiles del básico revisado, extraídos de
 las páginas 237–289, además del Xenomorfo anterior del SRD. Los 58 bloques de
 estadísticas del documento dan lugar a 59 fichas al separar Wyrm y Wyvern; la
-variante ofidia descrita en la página 262 completa los 60 perfiles.
+variante ofidia descrita en la página 262 completa los 60 perfiles corporales.
+Se añaden 50 elementales (cinco tipos en volúmenes 1–10 m³) y cinco enjambres
+representativos de TAM 3, 9, 15, 22 y 30.
 
 Se actualizan Hombre lagarto, Hormiga gigante, Mantícora y Oso conservando sus
 claves de Actor. Las entradas compartidas Basilisco/Cocatriz, Cocodrilo/Caimán,
@@ -16,7 +18,9 @@ Grifo/Hipogrifo y Orco/Trasgo mantienen los nombres conjuntos del libro.
   legible «Mythras básico revisado».
 - Se conservan los valores medios, fórmulas, INT/INS, atributos publicados,
   habilidades, pasiones, magia y PA/PG individuales. Una característica ausente
-  (normalmente CAR en animales) usa el mínimo técnico del modelo, 1, sin fórmula.
+  en los perfiles globales se marca en `absentCharacteristics`, aparece como
+  «No aplica» y no aporta su mínimo técnico interno a los cálculos. Los perfiles
+  corporales anteriores conservan su representación de CAR no publicado.
 - Los atributos impresos son overrides manuales: esto conserva los PA adicionales
   del pulpo y la quimera, las penalizaciones de iniciativa incluidas por el libro
   y los 0 PM del zombi. No se recalculan desde los promedios redondeados.
@@ -42,12 +46,33 @@ Grifo/Hipogrifo y Orco/Trasgo mantienen los nombres conjuntos del libro.
   prepararse manualmente desde estos perfiles; no se generan combinaciones
   arbitrarias de esas opciones como nuevos Actors.
 
-## Excluidos por incompatibilidad del modelo actual
+## Integración de elementales y enjambres
 
-| Criatura o grupo | Páginas | Motivo |
-| --- | --- | --- |
-| Elementales: gnomo, ondina, salamandra, silfo y sombra | 249–251 | Carecen de CON/TAM y de localizaciones; usan volumen, PG globales y protección contra daño mágico. El modelo actual exige características físicas y resuelve heridas por localización. Una zona ficticia no reproduciría su inmunidad a heridas graves/críticas ni su disipación a 0 PG. |
-| Enjambres | 254–255 | Solo tienen TAM, daño colectivo sobre varias zonas, PG globales y desgaste progresivo de protección. No encajan en el Actor individual con anatomía y siete características. |
+Los 55 perfiles usan `hitPointMode: "global"`: una única localización «Cuerpo»,
+rango 1–20 y PG manuales. Los elementales conservan los PG medios publicados y
+su fórmula de generación `1d6 + 6 × volumen`. Los enjambres tienen PG iguales a
+su TAM. Ninguno genera consecuencias anatómicas por perder PG; al pasar de un
+valor positivo a 0 se emite una sola advertencia para resolución manual. No se
+aplican automáticamente muerte, incapacitación ni disipación. Curar por encima
+de 0 permite que un nuevo agotamiento vuelva a producir el aviso.
+
+La protección elemental figura como PA de la reserva global. El director valida
+primero la inmunidad mundana, el tipo de daño mágico y el elemento opuesto; el
+sistema no clasifica hechizos ni duplica daño elemental automáticamente. Engullir
+y los ataques colectivos de enjambres se describen para aplicación manual.
+
+Los elementales carecen de CON, TAM y CAR; los enjambres solo tienen TAM.
+Los atributos necesarios tienen overrides manuales y los porcentajes son los
+publicados. Sin CON no se calcula curación ni se programan comprobaciones de
+fatiga de combate. Sin FUE no se calcula carga. Sin TAM se omite el ajuste
+automático de tiro por tamaño y se avisa al director; Golpetazo y la penalización
+de empalamiento requieren resolución manual. Las caídas sin TAM requieren una
+fórmula y número de localizaciones elegidos manualmente. Una habilidad que
+dependa de una característica ausente necesita porcentaje manual para tirarse.
+
+Ya no quedan familias principales del documento excluidas del compendio.
+Las variantes narrativas de talla, reinas y especies siguen siendo adaptaciones
+manuales de las plantillas, no entradas independientes de cada combinación.
 
 El vampiro corporal sí está incluido. Sus formas opcionales de niebla y horda de
 ratas se describen como cambios manuales: no se crean Actors incorpóreos o
@@ -55,7 +80,9 @@ colectivos con características ficticias.
 
 ## Comprobaciones
 
-`tests/creatures.test.js` verifica cobertura de perfiles, fuente, atributos,
+`tests/global-health.test.js` cubre los nuevos perfiles, generación, daños de
+combate y peligros, edición e importación de la reserva, ausencia de consecuencias
+anatómicas y aviso de agotamiento. `tests/creatures.test.js` verifica cobertura de perfiles, fuente, atributos,
 porcentajes, PA/PG, anatomías excepcionales, vínculos de armas y daños con o sin
 modificador. `tests/morphologies.test.js` contrasta las tablas tipadas con el
 catálogo canónico. La compilación usa `build-packs.mjs` y produce el compendio de

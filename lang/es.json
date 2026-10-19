@@ -1,4 +1,12 @@
 {
+  "MYTHRASF.Health.ManualCalculation": "Falta una característica necesaria: resuelve este cálculo manualmente y asigna los valores apropiados.",
+  "MYTHRASF.Health.ManualSkillRequired": "Esta habilidad depende de características que no se aplican. Asigna un porcentaje manual antes de usarla.",
+  "MYTHRASF.Health.Mode": "Modelo de puntos de golpe",
+  "MYTHRASF.Health.Global": "PG globales",
+  "MYTHRASF.Health.Localized": "Por localizaciones",
+  "MYTHRASF.Health.NotApplicable": "No aplica",
+  "MYTHRASF.Health.Exhausted": "PG agotados: resolver consecuencia manualmente",
+  "MYTHRASF.Health.InvalidBody": "Los PG globales requieren una única localización 1–20, con PG máximos manuales mayores que 0 y sin heridas permanentes. Configura la anatomía antes de activar este modo.",
   "MYTHRASF.Sheet.AccessDenied": "No tienes acceso a esta hoja.",
   "MYTHRASF.Settings.showOtherActorWeapons.Name": "Mostrar armas a otros jugadores",
   "MYTHRASF.Settings.showOtherActorLocations.Name": "Mostrar localizaciones a otros jugadores",

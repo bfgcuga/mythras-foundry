@@ -1,3 +1,4 @@
+import { characteristicValue } from "./health.js";
 import { combatAttackHits, resolveCombatExchange } from "./combat.js";
 import { canonicalCombatEffectStage, combatEffectSlotsBySide,
   combatEffectSelectionsCompatible, combatRuseTargetEffects, initialCombatEffectStatus,
@@ -18,7 +19,7 @@ export async function applyAccidentalTargetTransition(message, current, { token,
   combat.ranged.accidentalTarget = { tokenUuid: tokenIdentity(token), actorUuid: actor.uuid,
     actorName: tokenName(token), selectedBy: userId, selectedAt: Date.now() };
   combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenName(token),
-    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: actor.system.size,
+    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: characteristicValue(actor.system, "size"),
     targetType: "actor", targetWeaponId: "", locations: actor.items
       .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
   if (combat.turnEconomy) combat.turnEconomy.defenderCombatantId = entry.id;
@@ -44,7 +45,7 @@ export async function applyChosenTargetTransition(message, current, { token, ent
     target: { tokenUuid: tokenIdentity(token), actorUuid: actor.uuid,
       actorName: tokenName(token), selectedBy: userId, selectedAt: Date.now() } };
   combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenName(token),
-    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: actor.system.size,
+    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: characteristicValue(actor.system, "size"),
     targetType: "actor", targetWeaponId: "", locations: actor.items
       .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
   if (combat.turnEconomy && entry) combat.turnEconomy.defenderCombatantId = entry.id;
@@ -260,7 +261,7 @@ export async function applyCombatEffectsTransition(message, request, { clone, fl
           || !combat.attacker.weaponId };
       combat.defender = { actorUuid: attacker.uuid, actorId: actorIdentity(attacker),
         actorName: combat.attacker.actorName, tokenUuid: combat.attacker.tokenUuid,
-        defense: null, luckHistory: [], size: attacker.system.size,
+        defense: null, luckHistory: [], size: characteristicValue(attacker.system, "size"),
         targetType: "actor", targetWeaponId: "", locations: attacker.items
           .filter((item) => item.type === "hitLocation").map(locationSnapshot) };
       if (combat.turnEconomy) {

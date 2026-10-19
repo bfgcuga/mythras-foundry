@@ -3,6 +3,7 @@ import { timedEffects } from "./timed-condition-runtime.js";
 const SIZE_INDEX = Object.freeze({ P: 0, M: 1, G: 2, E: 3, D: 4 });
 
 export function impalementPenalty(targetSize, weaponSize) {
+  if (targetSize === null) return { key: "none", difficultySteps: 0, incapacitated: false, manual: true };
   const creatureBand = Math.max(0, Math.floor((Math.max(1, Number(targetSize) || 1) - 1) / 10));
   const difference = (SIZE_INDEX[weaponSize] ?? -Infinity) - creatureBand;
   if (difference <= -2) return { key: "none", difficultySteps: 0, incapacitated: false };

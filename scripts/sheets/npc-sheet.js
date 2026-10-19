@@ -1,3 +1,4 @@
+import { characteristicAbsent, globalHealthState, npcAttributeRequiresManual, usesGlobalHitPoints } from "../rules/health.js";
 import { canViewActor, canManageActor, actorVisibility, bindObserverSheet, visibleSheetTab } from "../ui/actor-visibility.js";
 import { GallerySheetController } from "../ui/gallery-sheet.js";
 import { removeManeuverProtection } from "../rules/maneuver-protection.js";
@@ -20,7 +21,7 @@ import { activeSkillStatusPenalties, activeStatusRules,
   UNCONSCIOUS_STATUS_ID } from "../rules/statuses.js";
 import { penalizedResource, penalizedValue } from "../rules/penalties.js";
 import { INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG } from "../rules/incapacitated.js";
-import { encumbranceState, skillUsesStrengthOrDexterity, totalCarriedEncumbrance
+import { skillUsesStrengthOrDexterity, totalCarriedEncumbrance
 } from "../rules/encumbrance.js";
 import { penaltySummary } from "../rules/penalty-summary.js";
 import { prepareActiveStatusControls, preparePenaltySummary } from "../ui/penalties.js";
@@ -87,11 +88,11 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       armorPointLabel: game.i18n.localize("MYTHRASF.HitLocation.Armor") });
     const inventory = items.filter((item) => ["equipment", "weapon", "armor"].includes(item.type));
     const carriedEncumbrance = totalCarriedEncumbrance(inventory);
-    const loadState = encumbranceState(carriedEncumbrance, this.actor.system.strength);
+    const loadState = actorLoadState(this.actor);
     const intelligenceKind = this.actor.system.intelligenceKind === "instinct"
       ? "instinct" : "intelligence";
     const currentFatigue = fatigueLevel(this.actor.system.fatigueLevel);
-    const currentWound = worstWoundLevel(hitLocations);
+    const currentWound = worstWoundLevel(hitLocations, this.actor);
     const baseAttributes = this.actor.system.baseAttributes ?? this.actor.system.attributes;
     const activeStatuses = activeStatusRules(this.actor.statuses);
     const manuallyIncapacitated = Boolean(this.actor.getFlag(
@@ -116,6 +117,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const characteristicRows = CHARACTERISTIC_KEYS.map((key) => ({
       key,
+      absent: characteristicAbsent(this.actor.system, key),
       label: game.i18n.localize(key === "intelligence"
         ? `MYTHRASF.Npc.${intelligenceKind === "instinct" ? "Instinct" : "Intelligence"}`
         : `MYTHRASF.Characteristic.${key}`),
@@ -132,6 +134,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return {
         key,
         label: game.i18n.localize(`MYTHRASF.Npc.Attribute.${key}`),
+        requiresManual: npcAttributeRequiresManual(this.actor.system, key),
         mode: override.mode,
         manual: override.mode === "manual",
         value: override.value,
@@ -153,8 +156,11 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       isTemplate: !this.actor.isToken,
       canRegenerate: Boolean(this.actor.isToken && !this.actor.token?.isLinked && game.user.isGM),
       isInstinct: intelligenceKind === "instinct",
+      globalHitPoints: usesGlobalHitPoints(this.actor),
+      globalHealth: globalHealthState(this.actor),
       characteristicRows,
       attributeRows,
+      damageModifierRequiresManual: npcAttributeRequiresManual(this.actor.system, "damageModifier"),
       damageModifierManual: this.actor.system.attributeOverrides.damageModifier.mode === "manual",
       damageModifierLabel: typeof this.actor.system.attributes.damageModifier === "string"
         ? this.actor.system.attributes.damageModifier
@@ -169,7 +175,8 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         fatigueKey: currentFatigue.key,
         wound: game.i18n.localize(`MYTHRASF.Wound.${currentWound}`),
         woundKey: currentWound,
-        encumbrance: `${carriedEncumbrance}/${this.actor.system.strength}`,
+        encumbrance: loadState.notApplicable ? game.i18n.localize("MYTHRASF.Health.NotApplicable")
+          : `${carriedEncumbrance}/${this.actor.system.strength}`,
         encumbranceTitle: game.i18n.localize(`MYTHRASF.Encumbrance.Detail.${loadState.key}`),
         woundPenalty: game.i18n.localize(
           `MYTHRASF.Header.WoundPenalty.${woundPenaltyKey(currentWound)}`),
@@ -201,7 +208,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       canToggleEditMode: !this.actor.isToken && this.isEditable,
       canDeleteHitLocations: !this.actor.isToken && this.isEditable && Boolean(this._editMode),
       canManageMorphology: !this.actor.isToken && this.isEditable && Boolean(this._editMode),
-      canApplyMorphology: Boolean(MORPHOLOGIES[this.actor.system.morphologyKey]),
+      canApplyMorphology: !usesGlobalHitPoints(this.actor) && Boolean(MORPHOLOGIES[this.actor.system.morphologyKey]),
       morphologyChoices: MORPHOLOGY_KEYS.map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Morphology.${value}`) })),
       hitLocationTemplateMode: !this.actor.isToken && Boolean(this._editMode),
@@ -252,6 +259,14 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       button.addEventListener("click", (event) => this.#editItem(event)));
     this.element.querySelectorAll("[data-action='delete-item']").forEach((button) =>
       button.addEventListener("click", (event) => this.#deleteItem(event)));
+    this.element.querySelectorAll("[data-absent-characteristic]").forEach((field) =>
+      field.addEventListener("change", async (event) => {
+        if (!canManageActor(this.actor) || !this.isEditable || this.actor.isToken) return;
+        const absent = new Set(this.actor.system.absentCharacteristics ?? []);
+        if (event.currentTarget.checked) absent.add(field.dataset.absentCharacteristic);
+        else absent.delete(field.dataset.absentCharacteristic);
+        await this.actor.update({ "system.absentCharacteristics": [...absent] });
+      }));
     this.element.querySelector("[data-action='apply-morphology']")
       ?.addEventListener("click", () => this.#applyMorphology());
     this.element.querySelectorAll("[data-action='roll-skill']").forEach((button) =>

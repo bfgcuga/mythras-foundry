@@ -1,3 +1,4 @@
+import { GLOBAL_CREATURE_SOURCES } from "./global-creatures.js";
 import { creature, npcSystem, traitItem, style, weapon, location, skill } from "./creature-helpers.js";
 import { REVISED_CREATURE_SOURCES } from "./revised-creatures.js";
 
@@ -14,6 +15,7 @@ const commonAnimalSkills = (values) => Object.entries(values)
 
 export const CREATURE_SOURCES = Object.freeze([
   ...REVISED_CREATURE_SOURCES,
+  ...GLOBAL_CREATURE_SOURCES,
   creature("xenomorph", "Xenomorfo", npcSystem({
     species: "Xenomorfo", morphologyKey: "tailedBiped", instinct: true, values: { strength: 22, constitution: 13,
       size: 16, dexterity: 25, intelligence: 11, power: 11, charisma: 1 },

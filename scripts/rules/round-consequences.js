@@ -1,3 +1,4 @@
+import { characteristicAbsent } from "./health.js";
 import { classifyContestRoll } from "./contest-rolls.js";
 import { appendSerializedRolls, evaluateAnimatedRoll } from "./dice-animation.js";
 import { recordAbilityFumble } from "./skills.js";
@@ -171,6 +172,7 @@ async function prepareCombatFatigueEntries(combat, previous, completedRound) {
   for (const combatant of uniqueActorEntries(combat?.combatants)) {
     const actor = combatant.actor;
     if (!actor || combatant.isDefeated || !["character", "npc"].includes(actor.type)) continue;
+    if (characteristicAbsent(actor.system, "constitution")) continue;
     const interval = combatFatigueInterval(actor.system.constitution);
     const currentState = combatant.getFlag?.(COMBAT_FATIGUE_SCOPE, COMBAT_FATIGUE_FLAG);
     const advanced = advanceCombatFatigue(currentState,

@@ -1,3 +1,4 @@
+import { characteristicAbsent } from "./health.js";
 import { classifyContestRoll, differentialAdvantage } from "./contest-rolls.js";
 
 export const FAMILIARITY_LEVELS = Object.freeze([
@@ -101,8 +102,8 @@ export function styleIncludesWeapon(style, weapon) {
 
 export function resolveWeaponStyle({ weapon, styles, selectedStyleId, familiarity }) {
   const matching = styles.filter((style) => styleIncludesWeapon(style, weapon));
-  const base = Number(weapon?.actor?.system?.strength ?? 0)
-    + Number(weapon?.actor?.system?.dexterity ?? 0);
+  const base = ["strength", "dexterity"].some((key) => characteristicAbsent(weapon?.actor?.system, key))
+    ? 0 : Number(weapon?.actor?.system?.strength ?? 0) + Number(weapon?.actor?.system?.dexterity ?? 0);
   if (matching.length === 0 && selectedStyleId === UNTRAINED_COMBAT_STYLE_ID) {
     return {
       style: null,

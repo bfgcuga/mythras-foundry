@@ -29,7 +29,7 @@
     <section class="header-status npc-header-status" aria-label="{{localize "MYTHRASF.Header.Status"}}">
       <label class="npc-header-resource"><span>{{localize "MYTHRASF.Attribute.ActionPoints"}}</span><div class="npc-header-resource-control"><button type="button" data-resource="actionPoints" data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}" title="{{localize "MYTHRASF.Resource.Decrease"}}"><i class="fas fa-minus" aria-hidden="true"></i></button><output class="sheet-field-readonly penalized-value">{{headerStatus.actionPoints.base}}{{#if headerStatus.actionPoints.penalized}} <span class="penalized-value-modifier">({{headerStatus.actionPoints.effective}})</span>{{/if}}</output><button type="button" data-resource="actionPoints" data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}" title="{{localize "MYTHRASF.Resource.Increase"}}"><i class="fas fa-plus" aria-hidden="true"></i></button><button type="button" data-resource="actionPoints" data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}" title="{{localize "MYTHRASF.Resource.Restore"}}"><i class="fas fa-arrow-up" aria-hidden="true"></i></button></div></label>
       <label class="npc-header-resource"><span>{{localize "MYTHRASF.Attribute.LuckPoints"}}</span><div class="npc-header-resource-control"><button type="button" data-resource="luckPoints" data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}" title="{{localize "MYTHRASF.Resource.Decrease"}}"><i class="fas fa-minus" aria-hidden="true"></i></button><output class="sheet-field-readonly">{{headerStatus.luckPoints}}</output><button type="button" data-resource="luckPoints" data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}" title="{{localize "MYTHRASF.Resource.Increase"}}"><i class="fas fa-plus" aria-hidden="true"></i></button><button type="button" data-resource="luckPoints" data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}" title="{{localize "MYTHRASF.Resource.Restore"}}"><i class="fas fa-arrow-up" aria-hidden="true"></i></button></div></label>
-      <label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>
+      {{#if globalHitPoints}}<label><span>{{localize "MYTHRASF.Health.Global"}}</span><output class="sheet-field-readonly">{{globalHealth.current}} / {{globalHealth.maximum}}</output></label>{{else}}<label><span>{{localize "MYTHRASF.HitLocation.Wound"}}</span><output class="sheet-field-readonly wound-{{headerStatus.woundKey}}">{{headerStatus.wound}}</output></label>{{/if}}
       <label><span>{{localize "MYTHRASF.Fatigue.Label"}}</span><output class="sheet-field-readonly fatigue-{{headerStatus.fatigueKey}}">{{headerStatus.fatigue}}</output></label>
       <label title="{{headerStatus.encumbranceTitle}}"><span>{{localize "MYTHRASF.Header.Encumbrance"}}</span><output class="sheet-field-readonly">{{headerStatus.encumbrance}}</output></label>
       <label class="npc-header-resource"><span>{{localize "MYTHRASF.Attribute.MagicPoints"}}</span><div class="npc-header-resource-control"><button type="button" data-resource="magicPoints" data-resource-action="decrease" aria-label="{{localize "MYTHRASF.Resource.Decrease"}}" title="{{localize "MYTHRASF.Resource.Decrease"}}"><i class="fas fa-minus" aria-hidden="true"></i></button><output class="sheet-field-readonly">{{headerStatus.magicPoints}}</output><button type="button" data-resource="magicPoints" data-resource-action="increase" aria-label="{{localize "MYTHRASF.Resource.Increase"}}" title="{{localize "MYTHRASF.Resource.Increase"}}"><i class="fas fa-plus" aria-hidden="true"></i></button><button type="button" data-resource="magicPoints" data-resource-action="restore" aria-label="{{localize "MYTHRASF.Resource.Restore"}}" title="{{localize "MYTHRASF.Resource.Restore"}}"><i class="fas fa-arrow-up" aria-hidden="true"></i></button></div></label>
@@ -54,15 +54,20 @@
 
   <main class="sheet-body">
     <section class="tab-panel active" data-tab-content="general">
+      {{#if globalHealth.exhausted}}<p role="status">{{localize "MYTHRASF.Health.Exhausted"}}</p>{{/if}}
+      {{#if isTemplate}}<label><span>{{localize "MYTHRASF.Health.Mode"}}</span><select class="sheet-field-editable" name="system.hitPointMode">
+        <option value="localized" {{#unless globalHitPoints}}selected{{/unless}}>{{localize "MYTHRASF.Health.Localized"}}</option>
+        <option value="global" {{#if globalHitPoints}}selected{{/if}}>{{localize "MYTHRASF.Health.Global"}}</option>
+      </select></label>{{/if}}
       <div class="npc-general-grid">
         <fieldset class="npc-characteristics-panel">
           <legend>{{localize "MYTHRASF.Characteristics"}}</legend>
           {{#if isTemplate}}<div class="npc-characteristic-header" aria-hidden="true"><span>{{localize "MYTHRASF.Npc.Field"}}</span><span>{{localize "MYTHRASF.Npc.Reference"}}</span><span>{{localize "MYTHRASF.Npc.Formula"}}</span></div>{{/if}}
           {{#each characteristicRows as |row|}}<div class="npc-characteristic-row {{#unless ../isTemplate}}resolved{{/unless}}">
-            <label for="npc-characteristic-{{row.key}}">{{row.label}}</label>
-            {{#if ../isTemplate}}<input id="npc-characteristic-{{row.key}}" class="sheet-field-editable" type="number" min="1" name="system.{{row.key}}" value="{{row.value}}">
+            <label for="npc-characteristic-{{row.key}}">{{row.label}}{{#if ../editMode}} <input class="sheet-state-box" type="checkbox" data-absent-characteristic="{{row.key}}" {{checked row.absent}} aria-label="{{row.label}}: {{localize 'MYTHRASF.Health.NotApplicable'}}" title="{{localize 'MYTHRASF.Health.NotApplicable'}}">{{/if}}</label>
+            {{#if row.absent}}<output id="npc-characteristic-{{row.key}}" class="sheet-field-readonly">{{localize "MYTHRASF.Health.NotApplicable"}}</output>{{#if ../isTemplate}}<span></span>{{/if}}{{else}}{{#if ../isTemplate}}<input id="npc-characteristic-{{row.key}}" class="sheet-field-editable" type="number" min="1" name="system.{{row.key}}" value="{{row.value}}">
             <input class="sheet-field-editable" type="text" name="system.characteristicFormulas.{{row.key}}" value="{{row.formula}}" placeholder="2d6+6">
-            {{else}}<output id="npc-characteristic-{{row.key}}" class="sheet-field-readonly">{{row.value}}</output>{{/if}}
+            {{else}}<output id="npc-characteristic-{{row.key}}" class="sheet-field-readonly">{{row.value}}</output>{{/if}}{{/if}}
           </div>{{/each}}
         </fieldset>
 
@@ -71,7 +76,7 @@
           {{#each attributeRows as |row|}}<div class="npc-attribute-row {{#unless ../isTemplate}}resolved{{/unless}}">
             <label>{{row.label}}</label>
             {{#if ../isTemplate}}<select class="sheet-field-editable" name="system.attributeOverrides.{{row.key}}.mode">
-              <option value="auto" {{#unless row.manual}}selected{{/unless}}>{{localize "MYTHRASF.Npc.Auto"}}</option>
+              <option value="auto" {{#unless row.manual}}selected{{/unless}} {{#if row.requiresManual}}disabled{{/if}}>{{localize "MYTHRASF.Npc.Auto"}}</option>
               <option value="manual" {{#if row.manual}}selected{{/if}}>{{localize "MYTHRASF.Npc.Manual"}}</option>
             </select>
             {{#if row.manual}}<input class="sheet-field-editable" type="number" min="0" name="system.attributeOverrides.{{row.key}}.value" value="{{row.value}}">{{else}}<output class="sheet-field-readonly">{{row.resolved}}</output>{{/if}}
@@ -81,7 +86,7 @@
           <div class="npc-attribute-row npc-damage-modifier {{#unless isTemplate}}resolved{{/unless}}">
             <label>{{localize "MYTHRASF.Attribute.DamageModifier"}}</label>
             {{#if isTemplate}}<select class="sheet-field-editable" name="system.attributeOverrides.damageModifier.mode">
-              <option value="auto" {{#unless damageModifierManual}}selected{{/unless}}>{{localize "MYTHRASF.Npc.Auto"}}</option>
+              <option value="auto" {{#unless damageModifierManual}}selected{{/unless}} {{#if damageModifierRequiresManual}}disabled{{/if}}>{{localize "MYTHRASF.Npc.Auto"}}</option>
               <option value="manual" {{#if damageModifierManual}}selected{{/if}}>{{localize "MYTHRASF.Npc.Manual"}}</option>
             </select>{{/if}}
             {{#if isTemplate}}{{#if damageModifierManual}}<input class="sheet-field-editable" type="text" name="system.attributeOverrides.damageModifier.formula" value="{{actor.system.attributeOverrides.damageModifier.formula}}">{{else}}<output class="sheet-field-readonly">{{damageModifierLabel}}</output>{{/if}}{{else}}<output class="sheet-field-readonly">{{damageModifierLabel}}</output>{{/if}}
@@ -121,7 +126,7 @@
       </div>
       <fieldset class="npc-magic-panel"><legend>{{localize "MYTHRASF.Npc.Magic"}}</legend><textarea class="sheet-field-editable" name="system.magicNotes">{{actor.system.magicNotes}}</textarea></fieldset>
       <fieldset class="npc-description-panel"><legend>{{localize "MYTHRASF.Item.Description"}}</legend><textarea class="sheet-field-editable" name="system.description">{{actor.system.description}}</textarea></fieldset>
-      {{> "systems/mythras-foundry/templates/actor/parts/permanent-wounds.hbs"}}
+      {{#unless globalHitPoints}}{{> "systems/mythras-foundry/templates/actor/parts/permanent-wounds.hbs"}}{{/unless}}
       <fieldset><legend>{{localize "MYTHRASF.Npc.ArmorNotes"}}</legend><input class="sheet-field-editable" type="text" name="system.armorNotes" value="{{actor.system.armorNotes}}"></fieldset>
     </section>
 

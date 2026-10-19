@@ -1,4 +1,12 @@
 {
+  "MYTHRASF.Health.ManualCalculation": "A required characteristic does not apply: resolve this calculation manually and set the appropriate values.",
+  "MYTHRASF.Health.ManualSkillRequired": "This ability depends on characteristics that do not apply. Set a manual percentage before using it.",
+  "MYTHRASF.Health.Mode": "Hit point model",
+  "MYTHRASF.Health.Global": "Global hit points",
+  "MYTHRASF.Health.Localized": "By hit location",
+  "MYTHRASF.Health.NotApplicable": "Not applicable",
+  "MYTHRASF.Health.Exhausted": "HP depleted: resolve the consequence manually",
+  "MYTHRASF.Health.InvalidBody": "Global HP require one 1–20 location with manual maximum HP above 0 and no permanent injuries. Configure the anatomy before enabling this mode.",
   "MYTHRASF.Sheet.AccessDenied": "You do not have access to this sheet.",
   "MYTHRASF.Settings.showOtherActorWeapons.Name": "Show weapons to other players",
   "MYTHRASF.Settings.showOtherActorLocations.Name": "Show hit locations to other players",

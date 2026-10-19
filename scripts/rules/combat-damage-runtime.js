@@ -1,3 +1,5 @@
+import { characteristicValue } from "./health.js";
+import { healthWoundLevel, healthHitPoints, usesGlobalHitPoints } from "./health.js";
 import { findHitLocation, hitLocationDisplayName, permanentWoundHitCheck, permanentWoundState, woundLevel,
   woundLocationKind } from "./hit-locations.js";
 import { damageLocationChoices, independentCombatEffectChecks, majorWoundLuckAdjustment,
@@ -24,8 +26,11 @@ export async function applyCombatDamageDocument({ location, armorTarget = null, 
     || typeof format !== "function") throw new TypeError("invalid-combat-damage-runtime");
   const appliedDamage = { ...damage };
   const finalHitPoints = targetType === "weapon"
-    ? Math.max(0, Number(appliedDamage.afterHitPoints) || 0) : appliedDamage.afterHitPoints;
+    ? Math.max(0, Number(appliedDamage.afterHitPoints) || 0) : healthHitPoints(location, appliedDamage.afterHitPoints);
   appliedDamage.afterHitPoints = finalHitPoints;
+  if (targetType !== "weapon" && usesGlobalHitPoints(location)) {
+    appliedDamage.resultingWound = healthWoundLevel(location, location, finalHitPoints);
+  }
   const locationUpdate = { "system.currentHitPoints": finalHitPoints };
   if (targetType === "weapon" && finalHitPoints <= 0) locationUpdate["system.equipped"] = false;
   let serializedPermanentWoundRoll = null;
@@ -189,7 +194,7 @@ export async function applyPenetrationTargetTransition(message, request, { clone
   combat.penetration.secondaryCombatantId = combatantFor?.(combat.turnEconomy?.combatId,
     tokenIdentity(token), actor.uuid)?.id ?? "";
   combat.defender = { actorUuid: actor.uuid, actorId: actorIdentity(actor), actorName: tokenName(token),
-    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: actor.system.size,
+    tokenUuid: tokenIdentity(token), defense: null, luckHistory: [], size: characteristicValue(actor.system, "size"),
     targetType: "actor", targetWeaponId: "", locations: locations.map(locationSnapshot) };
   combat.effects = { selections: [], checks: [], confirmed: true };
   const primary = combat.penetration.primaryDamage;
@@ -266,7 +271,7 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
       ? false : combat.declarations?.containedBlow,
     parry, passiveBlock: passiveParry,
     coverPoints: coverProtection,
-    armorPoints: effectiveArmor, targetSize: defender.system.size });
+    armorPoints: effectiveArmor, targetSize: characteristicValue(defender.system, "size") });
   const sundering = !weaponTarget && (combat.effects?.selections ?? []).some((effect) =>
     !effect.waived && effect.key === "hender-armadura");
   const sunderLayer = sundering ? armorSunderLayer(location,
@@ -297,11 +302,12 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
     ? weaponDamageResult({ currentHitPoints: before, armorPoints: effectiveArmor,
       damage: rangeAdjustedDamage }).afterHitPoints
     : before - calculation.penetratingDamage;
+  if (!weaponTarget) after = healthHitPoints(defender, after);
   calculation.push = { triggered: false, excess: 0, distance: 0 };
   let resulting = combat.damage?.targetType === "weapon"
     ? (after <= 0 ? "broken" : after < before ? "damaged" : "unharmed")
     : weaponTarget ? "healthy"
-    : woundLevel(after, location.system.maxHitPoints);
+    : healthWoundLevel(defender, location, after);
   if (!weaponTarget && combat.damage.woundLuck?.locationId === location.id
     && resulting === "major") {
     const adjustment = majorWoundLuckAdjustment({ beforeHitPoints: before,
@@ -318,7 +324,8 @@ export async function refreshCombatDamageProposal(combat, requestedLocationId = 
   Object.assign(combat.damage, calculation, { status: "proposed", locationId: location.id,
     locationName: hitLocationDisplayName(location), armorSnapshot: armor, beforeHitPoints: before,
     maxHitPoints: Number(location.system.maxHitPoints ?? 1), afterHitPoints: after,
-    previousWound: weaponTarget ? "healthy" : woundLevel(before, location.system.maxHitPoints),
+    previousWound: weaponTarget ? "healthy" : healthWoundLevel(defender, location, before),
+    globalHitPoints: !weaponTarget && usesGlobalHitPoints(defender),
     resultingWound: resulting });
   return true;
 }

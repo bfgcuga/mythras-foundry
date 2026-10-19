@@ -1,3 +1,4 @@
+import { globalHealthConfigurationValid, usesGlobalHitPoints } from "../rules/health.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
   INCAPACITATED_MANUAL_FLAG, INCAPACITATED_STATUS_ID,
@@ -5,7 +6,7 @@ import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
 
 function state(actor) {
   const woundLevel = worstWoundLevel(
-    actor.items.filter((item) => item.type === "hitLocation")
+    actor.items.filter((item) => item.type === "hitLocation"), actor
   );
   const manual = Boolean(actor.getFlag(INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG));
   return {
@@ -33,6 +34,14 @@ export async function syncIncapacitatedStatus(actor) {
 }
 
 export class MythrasActor extends Actor {
+  async createEmbeddedDocuments(type, data, options = {}) {
+    if (type === "Item" && usesGlobalHitPoints(this)
+      && !globalHealthConfigurationValid(this.system, [...this.items, ...data])) {
+      throw new Error(game.i18n.localize("MYTHRASF.Health.InvalidBody"));
+    }
+    return super.createEmbeddedDocuments(type, data, options);
+  }
+
   async toggleStatusEffect(statusId, options = {}) {
     if (statusId !== INCAPACITATED_STATUS_ID || options.mythrasAutomaticSync) {
       const forwarded = { ...options };

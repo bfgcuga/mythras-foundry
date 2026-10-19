@@ -1,3 +1,4 @@
+import { registerNpcHealthHooks } from "./rules/npc-health-runtime.js";
 import { defaultItemIcon } from "./data/item-icons.js";
 import { actorIncapacitatedState, syncIncapacitatedStatus
 } from "./documents/mythras-actor.js";
@@ -30,6 +31,7 @@ import { synchronizeFatigueDeath } from "./rules/death.js";
 import { initializeCreatedActor, isPrimaryActiveGM,
   runWorldMigrations } from "./migrations/index.js";
 
+registerNpcHealthHooks();
 registerSystemInitialization();
 registerUiHooks();
 
@@ -106,7 +108,7 @@ Hooks.on("preUpdateActor", (actor, changed) => {
   );
   const attributes = resolveConditions({ baseAttributes, descriptors: conditionDescriptors({
     fatigueKey: candidate.fatigueLevel,
-    woundLevel: worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation")),
+    woundLevel: worstWoundLevel(actor.items.filter((item) => item.type === "hitLocation"), actor),
     manuallyIncapacitated: Boolean(manuallyIncapacitated
       || actor.statuses?.has(INCAPACITATED_STATUS_ID))
   }) }).attributes;
@@ -161,7 +163,7 @@ Hooks.on("updateItem", async (item, changed, options, userId) => {
     : calculateDerivedAttributes(actor.system, getActionPointRules());
   const maximum = resolveConditions({ baseAttributes, descriptors: conditionDescriptors({
     fatigueKey: actor.system.fatigueLevel,
-    woundLevel: worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation")),
+    woundLevel: worstWoundLevel(actor.items.filter((candidate) => candidate.type === "hitLocation"), actor),
     manuallyIncapacitated: Boolean(actor.getFlag(
       INCAPACITATED_FLAG_SCOPE, INCAPACITATED_MANUAL_FLAG)
       || actor.statuses?.has(INCAPACITATED_STATUS_ID))

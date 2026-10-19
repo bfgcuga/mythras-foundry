@@ -1,3 +1,4 @@
+import { characteristicValue, characteristicAbsent } from "./health.js";
 import { engagementId } from "./engagements.js";
 import { isGrabbed } from "./grappling.js";
 import { setRelationPosition } from "./engagement-runtime.js";
@@ -250,10 +251,10 @@ export async function applyPostDamageCombatEffects(combat, dependencies = {}) {
     const result = bashKnockback({ damage: combat.damage?.beforeRange ?? combat.damage?.rawRoll,
       weaponType: sourceEntry.modeSnapshot?.weaponType
         ?? sourceEntry.defense?.weaponType ?? "",
-      attackerSize: sourceEntry.size, targetSize: targetEntry.size });
+      attackerSize: sourceEntry.size, targetSize: characteristicAbsent(victim?.system, "size") ? null : targetEntry.size });
     if (!victim || !result.allowed) {
       bash.status = "notActivated";
-      bash.resolution = { ...result, reason: victim ? "targetTooLarge" : "targetMissing" };
+      bash.resolution = { ...result, reason: result.requiresManual ? "manual" : victim ? "targetTooLarge" : "targetMissing" };
     } else {
       const obstacle = result.distance > 0
         ? await dependencies.resolveBashObstacle?.(victim, result) ?? { obstacle: false }
@@ -289,7 +290,8 @@ export async function applyPostDamageCombatEffects(combat, dependencies = {}) {
   const modeKey = sourceEntry.modeSnapshot?.key ?? sourceEntry.defense?.modeKey ?? "";
   const impalingSize = sourceEntry.modeSnapshot?.impalingSize
     ?? sourceEntry.defense?.impalingSize ?? sourceEntry.weaponSize;
-  const penalty = impalementPenalty(victim.system.size, impalingSize);
+  const penalty = impalementPenalty(characteristicValue(victim.system, "size"), impalingSize);
+  if (penalty.manual) ui.notifications.warn(game.i18n.localize("MYTHRASF.Health.ManualCalculation"));
   const created = await applyTimedCondition(victim, { key: "impaled", statusId: "impaled",
     name: dependencies.localize?.("MYTHRASF.Status.Impaled") ?? "Impaled",
     img: "icons/svg/blood.svg", source: { actorUuid: owner.uuid,

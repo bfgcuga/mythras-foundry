@@ -1,6 +1,6 @@
-import { calculateSkillValues } from "../rules/skills.js";
+import { healthWoundLevel } from "../rules/health.js";
+import { calculateSkillValues, skillRequiresManualValue } from "../rules/skills.js";
 import { calculatePassionValues } from "../rules/passions.js";
-import { woundLevel } from "../rules/hit-locations.js";
 import { openSkillRollDialog } from "../apps/skill-roll-dialog.js";
 import { createContestMessage } from "../rules/contest-chat.js";
 import { recordAbilityFumble } from "../rules/skills.js";
@@ -21,10 +21,7 @@ export class MythrasItem extends Item {
     }
 
     if (this.type === "hitLocation") {
-      this.system.woundLevel = woundLevel(
-        this.system.currentHitPoints,
-        this.system.maxHitPoints
-      );
+      this.system.woundLevel = healthWoundLevel(this.actor, this);
       return;
     }
 
@@ -43,6 +40,10 @@ export class MythrasItem extends Item {
   async rollSkill({ difficulty = "standard", defaultDifficulty = "standard",
     modifiers = [], manual = false } = {}) {
     if (!["skill", "combatStyle"].includes(this.type)) return;
+    if (skillRequiresManualValue(this.system, this.actor?.system)) {
+      ui.notifications.warn(game.i18n.localize("MYTHRASF.Health.ManualSkillRequired"));
+      return;
+    }
     const configured = await openSkillRollDialog(this, {
       imposedDifficulty: difficulty,
       defaultDifficulty,

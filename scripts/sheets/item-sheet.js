@@ -1,3 +1,4 @@
+import { usesGlobalHitPoints } from "../rules/health.js";
 const { ItemSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { ImagePopout } = foundry.applications.apps;
@@ -263,6 +264,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       armorPieceTypeLabel: this.item.type === "armor"
         ? game.i18n.localize(`MYTHRASF.Armor.Piece.Type.${this.item.system.pieceType}`) : "",
       armorTotals,
+      globalHitPoints: this.item.type === "hitLocation" && usesGlobalHitPoints(this.item),
       isHitLocation: this.item.type === "hitLocation",
       isTrait: this.item.type === "trait",
       isCombatEffect: this.item.type === "combatEffect",

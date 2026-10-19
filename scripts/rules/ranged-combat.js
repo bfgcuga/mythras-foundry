@@ -60,11 +60,12 @@ export function rangedAttackProfile({ distance, ranges, targetSize, baseDifficul
   modifiers = [], aim = false } = {}) {
   const band = rangedBand(distance, ranges);
   if (["invalid", "beyond"].includes(band)) return { valid: false, band };
-  const distanceSteps = distanceSizeSteps(distance, targetSize);
+  const distanceSteps = targetSize === null ? 0 : distanceSizeSteps(distance, targetSize);
   const combined = combineRangedDifficulty(baseDifficulty,
     [{ source: "distanceSize", steps: distanceSteps }, ...modifiers], aim);
   return { valid: true, band, distance: Number(distance), ranges: parseRangeProfile(ranges),
-    targetSize: Number(targetSize) || 0, distanceSteps, ...combined };
+    targetSize: targetSize === null ? null : Number(targetSize) || 0, distanceSteps,
+    manualTargetSize: targetSize === null, ...combined };
 }
 
 export function applyLongRangeDamage(value, band) {

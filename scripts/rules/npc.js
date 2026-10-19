@@ -1,3 +1,4 @@
+import { characteristicAbsent, normalizeAbsentCharacteristics } from "./health.js";
 import { calculateDerivedAttributes } from "./derived-attributes.js";
 
 export const NPC_OVERRIDE_KEYS = Object.freeze([
@@ -21,8 +22,14 @@ export function npcIntelligenceKey(value) {
 }
 
 export function calculateNpcAttributes(system = {}) {
-  const attributes = calculateDerivedAttributes(system);
-  const overrides = system.attributeOverrides ?? {};
+  const candidate = normalizeAbsentCharacteristics({ ...system,
+    characteristicFormulas: { ...system.characteristicFormulas },
+    attributeOverrides: Object.fromEntries(Object.entries(system.attributeOverrides ?? {})
+      .map(([key, value]) => [key, { ...value }])) });
+  const attributes = calculateDerivedAttributes(candidate);
+  if (characteristicAbsent(system, "constitution")) attributes.healingRate = 0;
+  if (characteristicAbsent(system, "charisma")) attributes.experienceModifier = 0;
+  const overrides = candidate.attributeOverrides ?? {};
 
   for (const key of NPC_OVERRIDE_KEYS) {
     const override = overrides[key] ?? {};

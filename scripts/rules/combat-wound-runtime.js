@@ -1,3 +1,4 @@
+import { usesGlobalHitPoints } from "./health.js";
 import { findWeaponMode } from "./weapon-modes.js";
 import { hitLocationDisplayName, woundLocationKind } from "./hit-locations.js";
 import { executeWoundConsequencePlan, woundConsequencePlan } from "./wound-consequences.js";
@@ -13,6 +14,7 @@ export function heldCombatItemChoices(actor) {
 export async function applyCombatWoundConsequences(combat, defender, location,
   { afterEndurance = false, manual = false, evaluateRoll, addStatus, applyDying,
     applyDeath } = {}) {
+  if (usesGlobalHitPoints(defender)) return false;
   const wound = combat.damage.resultingWound;
   if (!["serious", "major"].includes(wound)) return false;
   const pseudoEffect = { side: "attacker", target: "opponent", slot: -1,
