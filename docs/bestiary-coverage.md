@@ -87,3 +87,10 @@ porcentajes, PA/PG, anatomías excepcionales, vínculos de armas y daños con o 
 modificador. `tests/morphologies.test.js` contrasta las tablas tipadas con el
 catálogo canónico. La compilación usa `build-packs.mjs` y produce el compendio de
 Actors con sus Items embebidos y referencias deterministas.
+
+## Ilustraciones
+
+Las cuatro láminas del usuario cubren los 67 diseños del JSON y los 116 Actors,
+con imágenes compartidas entre tamaños de elementales y enjambres. No queda
+ningún diseño pendiente. La cobertura visual y los comandos de extracción se
+mantienen en [bestiary-art.md](bestiary-art.md).

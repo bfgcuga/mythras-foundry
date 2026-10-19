@@ -1,0 +1,310 @@
+[
+  {
+    "nombre": "Pantera",
+    "archivo": "output/bestiario-sin-asignar/pantera.webp",
+    "rectangulo": [
+      0,
+      0,
+      218,
+      224
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Tigre",
+    "archivo": "assets/creatures/tigre.webp",
+    "rectangulo": [
+      202,
+      0,
+      388,
+      230
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Serpiente gigante",
+    "archivo": "assets/creatures/serpiente-gigante.webp",
+    "rectangulo": [
+      370,
+      7,
+      564,
+      226
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Oso",
+    "archivo": "assets/creatures/oso.webp",
+    "rectangulo": [
+      559,
+      0,
+      801,
+      227
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Uro",
+    "archivo": "assets/creatures/uro.webp",
+    "rectangulo": [
+      797,
+      0,
+      1056,
+      226
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Rinoceronte",
+    "archivo": "output/bestiario-sin-asignar/rinoceronte.webp",
+    "rectangulo": [
+      1051,
+      0,
+      1308,
+      222
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Trasgo (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/trasgo-alternativa.webp",
+    "rectangulo": [
+      1298,
+      0,
+      1536,
+      224
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Wyvern",
+    "archivo": "assets/creatures/wyvern.webp",
+    "rectangulo": [
+      0,
+      224,
+      287,
+      446
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Rata gigante",
+    "archivo": "output/bestiario-sin-asignar/rata-gigante.webp",
+    "rectangulo": [
+      213,
+      241,
+      469,
+      442
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Araña gigante (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/arana-gigante-alternativa.webp",
+    "rectangulo": [
+      452,
+      233,
+      705,
+      459
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Espectro",
+    "archivo": "output/bestiario-sin-asignar/espectro.webp",
+    "rectangulo": [
+      685,
+      211,
+      948,
+      481
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Elemental de tierra (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/elemental-tierra-alternativa.webp",
+    "rectangulo": [
+      915,
+      226,
+      1153,
+      484
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Árbol viviente (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/arbol-viviente-alternativa.webp",
+    "rectangulo": [
+      1129,
+      215,
+      1338,
+      484
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Ondina",
+    "archivo": "assets/creatures/ondina.webp",
+    "rectangulo": [
+      1334,
+      219,
+      1536,
+      482
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Salamandra",
+    "archivo": "assets/creatures/salamandra.webp",
+    "rectangulo": [
+      0,
+      441,
+      215,
+      704
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Gnomo",
+    "archivo": "assets/creatures/gnomo.webp",
+    "rectangulo": [
+      205,
+      439,
+      435,
+      711
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Silfo",
+    "archivo": "assets/creatures/silfo.webp",
+    "rectangulo": [
+      432,
+      441,
+      633,
+      714
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Mujer serpiente (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/mujer-serpiente.webp",
+    "rectangulo": [
+      624,
+      444,
+      858,
+      714
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Sirena",
+    "archivo": "output/bestiario-sin-asignar/sirena.webp",
+    "rectangulo": [
+      840,
+      462,
+      1084,
+      715
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Reptil con vela dorsal",
+    "archivo": "output/bestiario-sin-asignar/reptil-vela-dorsal.webp",
+    "rectangulo": [
+      1080,
+      465,
+      1340,
+      716
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Jabalí monstruoso",
+    "archivo": "output/bestiario-sin-asignar/jabali-monstruoso.webp",
+    "rectangulo": [
+      1320,
+      478,
+      1536,
+      707
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Minotauro (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/minotauro-alternativa.webp",
+    "rectangulo": [
+      0,
+      702,
+      232,
+      1003
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Sátiro",
+    "archivo": "output/bestiario-sin-asignar/satiro.webp",
+    "rectangulo": [
+      222,
+      715,
+      382,
+      1003
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Necrófago",
+    "archivo": "assets/creatures/necrofago.webp",
+    "rectangulo": [
+      377,
+      715,
+      607,
+      1003
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Caracol monstruoso",
+    "archivo": "output/bestiario-sin-asignar/caracol-monstruoso.webp",
+    "rectangulo": [
+      580,
+      739,
+      858,
+      1007
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Gusano gigante (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/gusano-gigante-alternativa.webp",
+    "rectangulo": [
+      850,
+      715,
+      1100,
+      1003
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Monstruo ocular",
+    "archivo": "output/bestiario-sin-asignar/monstruo-ocular.webp",
+    "rectangulo": [
+      1080,
+      714,
+      1310,
+      977
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Planta carnívora",
+    "archivo": "output/bestiario-sin-asignar/planta-carnivora.webp",
+    "rectangulo": [
+      1277,
+      705,
+      1536,
+      1007
+    ],
+    "asignada": false
+  }
+]

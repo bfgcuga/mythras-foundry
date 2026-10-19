@@ -1,0 +1,718 @@
+[
+  {
+    "nombre": "Acéfalo",
+    "archivo": "assets/creatures/acefalo.webp",
+    "region": [
+      [
+        12,
+        4
+      ],
+      [
+        209,
+        4
+      ],
+      [
+        209,
+        231
+      ],
+      [
+        12,
+        231
+      ]
+    ],
+    "size": [
+      194,
+      230
+    ]
+  },
+  {
+    "nombre": "Araña gigante",
+    "archivo": "assets/creatures/arana-gigante.webp",
+    "region": [
+      [
+        211,
+        5
+      ],
+      [
+        498,
+        5
+      ],
+      [
+        498,
+        235
+      ],
+      [
+        211,
+        235
+      ]
+    ],
+    "size": [
+      292,
+      228
+    ]
+  },
+  {
+    "nombre": "Arpía",
+    "archivo": "assets/creatures/arpia.webp",
+    "region": [
+      [
+        500,
+        3
+      ],
+      [
+        793,
+        3
+      ],
+      [
+        793,
+        224
+      ],
+      [
+        500,
+        224
+      ]
+    ],
+    "size": [
+      310,
+      219
+    ]
+  },
+  {
+    "nombre": "Asipatra",
+    "archivo": "assets/creatures/asipatra.webp",
+    "region": [
+      [
+        794,
+        0
+      ],
+      [
+        1083,
+        0
+      ],
+      [
+        1083,
+        213
+      ],
+      [
+        794,
+        223
+      ]
+    ],
+    "size": [
+      306,
+      222
+    ]
+  },
+  {
+    "nombre": "Babuino",
+    "archivo": "assets/creatures/babuino.webp",
+    "region": [
+      [
+        1047,
+        223
+      ],
+      [
+        1085,
+        127
+      ],
+      [
+        1091,
+        5
+      ],
+      [
+        1298,
+        5
+      ],
+      [
+        1298,
+        232
+      ],
+      [
+        1047,
+        232
+      ]
+    ],
+    "size": [
+      256,
+      232
+    ]
+  },
+  {
+    "nombre": "Bagini",
+    "archivo": "assets/creatures/bagini.webp",
+    "region": [
+      [
+        1299,
+        4
+      ],
+      [
+        1536,
+        4
+      ],
+      [
+        1536,
+        230
+      ],
+      [
+        1299,
+        230
+      ]
+    ],
+    "size": [
+      241,
+      228
+    ]
+  },
+  {
+    "nombre": "Bakru",
+    "archivo": "assets/creatures/bakru.webp",
+    "region": [
+      [
+        14,
+        244
+      ],
+      [
+        160,
+        244
+      ],
+      [
+        160,
+        464
+      ],
+      [
+        14,
+        464
+      ]
+    ],
+    "size": [
+      142,
+      222
+    ]
+  },
+  {
+    "nombre": "Basilisco/Cocatriz",
+    "archivo": "assets/creatures/basilisco-cocatriz.webp",
+    "region": [
+      [
+        160,
+        238
+      ],
+      [
+        408,
+        238
+      ],
+      [
+        418,
+        300
+      ],
+      [
+        451,
+        316
+      ],
+      [
+        451,
+        462
+      ],
+      [
+        160,
+        468
+      ]
+    ],
+    "size": [
+      299,
+      234
+    ]
+  },
+  {
+    "nombre": "Bonnacon",
+    "archivo": "assets/creatures/bonnacon.webp",
+    "region": [
+      [
+        420,
+        237
+      ],
+      [
+        758,
+        237
+      ],
+      [
+        758,
+        467
+      ],
+      [
+        464,
+        484
+      ],
+      [
+        452,
+        434
+      ],
+      [
+        452,
+        307
+      ]
+    ],
+    "size": [
+      349,
+      256
+    ]
+  },
+  {
+    "nombre": "Caballo",
+    "archivo": "assets/creatures/caballo.webp",
+    "region": [
+      [
+        769,
+        239
+      ],
+      [
+        1001,
+        239
+      ],
+      [
+        1001,
+        482
+      ],
+      [
+        769,
+        482
+      ]
+    ],
+    "size": [
+      232,
+      243
+    ]
+  },
+  {
+    "nombre": "Cangrejo gigante",
+    "archivo": "assets/creatures/cangrejo-gigante.webp",
+    "region": [
+      [
+        1002,
+        259
+      ],
+      [
+        1322,
+        259
+      ],
+      [
+        1322,
+        473
+      ],
+      [
+        1002,
+        473
+      ]
+    ],
+    "size": [
+      332,
+      210
+    ]
+  },
+  {
+    "nombre": "Centauro",
+    "archivo": "assets/creatures/centauro.webp",
+    "region": [
+      [
+        1323,
+        230
+      ],
+      [
+        1530,
+        230
+      ],
+      [
+        1530,
+        506
+      ],
+      [
+        1323,
+        506
+      ]
+    ],
+    "size": [
+      207,
+      279
+    ]
+  },
+  {
+    "nombre": "Cocodrilo/Caimán",
+    "archivo": "assets/creatures/cocodrilo-caiman.webp",
+    "region": [
+      [
+        0,
+        506
+      ],
+      [
+        320,
+        506
+      ],
+      [
+        306,
+        612
+      ],
+      [
+        303,
+        715
+      ],
+      [
+        0,
+        715
+      ]
+    ],
+    "size": [
+      322,
+      207
+    ]
+  },
+  {
+    "nombre": "Cíclope",
+    "archivo": "assets/creatures/ciclope.webp",
+    "region": [
+      [
+        303,
+        612
+      ],
+      [
+        320,
+        506
+      ],
+      [
+        345,
+        484
+      ],
+      [
+        465,
+        463
+      ],
+      [
+        472,
+        570
+      ],
+      [
+        554,
+        733
+      ],
+      [
+        495,
+        750
+      ],
+      [
+        309,
+        750
+      ]
+    ],
+    "size": [
+      257,
+      292
+    ]
+  },
+  {
+    "nombre": "Dragón",
+    "archivo": "assets/creatures/dragon.webp",
+    "region": [
+      [
+        503,
+        493
+      ],
+      [
+        674,
+        493
+      ],
+      [
+        697,
+        472
+      ],
+      [
+        762,
+        474
+      ],
+      [
+        877,
+        547
+      ],
+      [
+        877,
+        733
+      ],
+      [
+        566,
+        733
+      ],
+      [
+        552,
+        692
+      ],
+      [
+        514,
+        650
+      ]
+    ],
+    "size": [
+      380,
+      259
+    ]
+  },
+  {
+    "nombre": "Elfo",
+    "archivo": "assets/creatures/elfo.webp",
+    "region": [
+      [
+        878,
+        498
+      ],
+      [
+        1055,
+        498
+      ],
+      [
+        1055,
+        759
+      ],
+      [
+        878,
+        759
+      ]
+    ],
+    "size": [
+      181,
+      266
+    ]
+  },
+  {
+    "nombre": "Enano",
+    "archivo": "assets/creatures/enano.webp",
+    "region": [
+      [
+        1056,
+        533
+      ],
+      [
+        1243,
+        533
+      ],
+      [
+        1243,
+        660
+      ],
+      [
+        1210,
+        700
+      ],
+      [
+        1210,
+        737
+      ],
+      [
+        1056,
+        737
+      ]
+    ],
+    "size": [
+      193,
+      199
+    ]
+  },
+  {
+    "nombre": "Escarabajo gigante",
+    "archivo": "assets/creatures/escarabajo-gigante.webp",
+    "region": [
+      [
+        1244,
+        529
+      ],
+      [
+        1536,
+        529
+      ],
+      [
+        1536,
+        740
+      ],
+      [
+        1244,
+        740
+      ]
+    ],
+    "size": [
+      302,
+      207
+    ]
+  },
+  {
+    "nombre": "Escorpión gigante",
+    "archivo": "assets/creatures/escorpion-gigante.webp",
+    "region": [
+      [
+        0,
+        744
+      ],
+      [
+        287,
+        744
+      ],
+      [
+        287,
+        1012
+      ],
+      [
+        0,
+        1012
+      ]
+    ],
+    "size": [
+      295,
+      249
+    ]
+  },
+  {
+    "nombre": "Esqueleto",
+    "archivo": "assets/creatures/esqueleto.webp",
+    "region": [
+      [
+        284,
+        750
+      ],
+      [
+        466,
+        750
+      ],
+      [
+        466,
+        1012
+      ],
+      [
+        284,
+        1012
+      ]
+    ],
+    "size": [
+      199,
+      258
+    ]
+  },
+  {
+    "nombre": "Gigante",
+    "archivo": "assets/creatures/gigante.webp",
+    "region": [
+      [
+        467,
+        771
+      ],
+      [
+        551,
+        771
+      ],
+      [
+        576,
+        735
+      ],
+      [
+        670,
+        735
+      ],
+      [
+        729,
+        795
+      ],
+      [
+        729,
+        1017
+      ],
+      [
+        467,
+        1017
+      ]
+    ],
+    "size": [
+      275,
+      285
+    ]
+  },
+  {
+    "nombre": "Gorgona",
+    "archivo": "assets/creatures/gorgona.webp",
+    "region": [
+      [
+        730,
+        734
+      ],
+      [
+        948,
+        734
+      ],
+      [
+        987,
+        877
+      ],
+      [
+        987,
+        999
+      ],
+      [
+        730,
+        999
+      ]
+    ],
+    "size": [
+      254,
+      270
+    ]
+  },
+  {
+    "nombre": "Grifo/Hipogrifo",
+    "archivo": "assets/creatures/grifo-hipogrifo.webp",
+    "region": [
+      [
+        949,
+        765
+      ],
+      [
+        1330,
+        750
+      ],
+      [
+        1330,
+        1008
+      ],
+      [
+        992,
+        1008
+      ],
+      [
+        992,
+        870
+      ]
+    ],
+    "size": [
+      368,
+      257
+    ]
+  },
+  {
+    "nombre": "Híbrido del Caos",
+    "archivo": "assets/creatures/hibrido-del-caos.webp",
+    "region": [
+      [
+        1331,
+        751
+      ],
+      [
+        1530,
+        751
+      ],
+      [
+        1530,
+        1008
+      ],
+      [
+        1331,
+        1008
+      ]
+    ],
+    "size": [
+      199,
+      245
+    ]
+  }
+]

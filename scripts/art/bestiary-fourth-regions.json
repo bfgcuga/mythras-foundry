@@ -1,0 +1,178 @@
+[
+  {
+    "nombre": "Mantis gigante",
+    "archivo": "assets/creatures/mantis-gigante.webp",
+    "rectangulo": [
+      5,
+      6,
+      300,
+      317
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Mediano",
+    "archivo": "assets/creatures/mediano.webp",
+    "rectangulo": [
+      305,
+      6,
+      585,
+      317
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Momia",
+    "archivo": "assets/creatures/momia.webp",
+    "rectangulo": [
+      590,
+      6,
+      855,
+      317
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Pantotauro",
+    "archivo": "assets/creatures/pantotauro.webp",
+    "rectangulo": [
+      860,
+      6,
+      1174,
+      317
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Quimera",
+    "archivo": "assets/creatures/quimera.webp",
+    "rectangulo": [
+      1180,
+      6,
+      1532,
+      317
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Serpiente marina",
+    "archivo": "assets/creatures/serpiente-marina.webp",
+    "rectangulo": [
+      5,
+      322,
+      300,
+      634
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Simio alado",
+    "archivo": "assets/creatures/simio-alado.webp",
+    "rectangulo": [
+      305,
+      322,
+      585,
+      634
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Slargr",
+    "archivo": "assets/creatures/slargr.webp",
+    "rectangulo": [
+      590,
+      322,
+      855,
+      634
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Smilodon",
+    "archivo": "assets/creatures/smilodon.webp",
+    "rectangulo": [
+      860,
+      322,
+      1174,
+      634
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Tiburón",
+    "archivo": "assets/creatures/tiburon.webp",
+    "rectangulo": [
+      1180,
+      322,
+      1532,
+      634
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Troll",
+    "archivo": "assets/creatures/troll.webp",
+    "rectangulo": [
+      5,
+      640,
+      249,
+      1012
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Wyrm",
+    "archivo": "assets/creatures/wyrm.webp",
+    "rectangulo": [
+      254,
+      640,
+      569,
+      1012
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Ofidio",
+    "archivo": "assets/creatures/ofidio.webp",
+    "rectangulo": [
+      574,
+      640,
+      771,
+      1012
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Sombra",
+    "archivo": "assets/creatures/sombra.webp",
+    "rectangulo": [
+      776,
+      640,
+      1024,
+      1012
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Enjambre",
+    "archivo": "assets/creatures/enjambre.webp",
+    "rectangulo": [
+      1029,
+      640,
+      1274,
+      1012
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Xenomorfo",
+    "archivo": "assets/creatures/xenomorfo.webp",
+    "rectangulo": [
+      1279,
+      640,
+      1532,
+      1012
+    ],
+    "asignada": true
+  }
+]

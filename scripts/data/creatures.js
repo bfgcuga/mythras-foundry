@@ -1,3 +1,4 @@
+import { withCreatureArt } from "./creature-art.js";
 import { GLOBAL_CREATURE_SOURCES } from "./global-creatures.js";
 import { creature, npcSystem, traitItem, style, weapon, location, skill } from "./creature-helpers.js";
 import { REVISED_CREATURE_SOURCES } from "./revised-creatures.js";
@@ -37,4 +38,4 @@ export const CREATURE_SOURCES = Object.freeze([
     location("chest", "Pecho", 11, 14, 6, 8, "chest", "chest"), location("right-arm", "Brazo derecho", 15, 16, 6, 5, "limb", "arm"),
     location("left-arm", "Brazo izquierdo", 17, 18, 6, 5, "limb", "arm"), location("head", "Cabeza", 19, 20, 6, 7, "head")
   ])
-]);
+].map(withCreatureArt));

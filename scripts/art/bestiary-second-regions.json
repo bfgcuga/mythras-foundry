@@ -1,0 +1,266 @@
+[
+  {
+    "nombre": "Hombre jabalí",
+    "archivo": "assets/creatures/hombre-jabali.webp",
+    "rectangulo": [
+      0,
+      0,
+      193,
+      243
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Hombre lagarto",
+    "archivo": "assets/creatures/hombre-lagarto.webp",
+    "rectangulo": [
+      194,
+      0,
+      407,
+      245
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Hormiga gigante",
+    "archivo": "assets/creatures/hormiga-gigante.webp",
+    "rectangulo": [
+      386,
+      25,
+      673,
+      241
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Iqari",
+    "archivo": "assets/creatures/iqari.webp",
+    "rectangulo": [
+      671,
+      0,
+      968,
+      254
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Jabalí",
+    "archivo": "assets/creatures/jabali.webp",
+    "rectangulo": [
+      969,
+      21,
+      1210,
+      233
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Lagarto gigante",
+    "archivo": "assets/creatures/lagarto-gigante.webp",
+    "rectangulo": [
+      1211,
+      16,
+      1536,
+      219
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "León",
+    "archivo": "assets/creatures/leon.webp",
+    "rectangulo": [
+      0,
+      246,
+      237,
+      464
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Lobo",
+    "archivo": "assets/creatures/lobo.webp",
+    "rectangulo": [
+      221,
+      260,
+      432,
+      466
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Mamut",
+    "archivo": "assets/creatures/mamut.webp",
+    "rectangulo": [
+      434,
+      222,
+      728,
+      473
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Mantícora",
+    "archivo": "assets/creatures/manticora.webp",
+    "rectangulo": [
+      729,
+      233,
+      1077,
+      483
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Minotauro",
+    "archivo": "assets/creatures/minotauro.webp",
+    "rectangulo": [
+      1077,
+      233,
+      1296,
+      491
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Hombre lagarto (alternativa)",
+    "archivo": "output/bestiario-sin-asignar/hombre-lagarto-alternativa.webp",
+    "rectangulo": [
+      1298,
+      219,
+      1518,
+      485
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Ogro",
+    "archivo": "assets/creatures/ogro.webp",
+    "rectangulo": [
+      0,
+      464,
+      213,
+      727
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Orco/Trasgo",
+    "archivo": "assets/creatures/orco-trasgo.webp",
+    "rectangulo": [
+      216,
+      473,
+      461,
+      725
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Caballo alado (por identificar)",
+    "archivo": "output/bestiario-sin-asignar/caballo-alado.webp",
+    "rectangulo": [
+      409,
+      461,
+      701,
+      723
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Búho gigante (por identificar)",
+    "archivo": "output/bestiario-sin-asignar/buho-gigante.webp",
+    "rectangulo": [
+      701,
+      482,
+      1060,
+      718
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Masa gelatinosa (por identificar)",
+    "archivo": "output/bestiario-sin-asignar/masa-gelatinosa.webp",
+    "rectangulo": [
+      961,
+      495,
+      1310,
+      735
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Árbol viviente (por identificar)",
+    "archivo": "output/bestiario-sin-asignar/arbol-viviente.webp",
+    "rectangulo": [
+      1308,
+      473,
+      1536,
+      723
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Unicornio",
+    "archivo": "assets/creatures/unicornio.webp",
+    "rectangulo": [
+      0,
+      725,
+      237,
+      991
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Vampiro",
+    "archivo": "assets/creatures/vampiro.webp",
+    "rectangulo": [
+      232,
+      723,
+      508,
+      1002
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Hombre lobo (por identificar)",
+    "archivo": "output/bestiario-sin-asignar/hombre-lobo.webp",
+    "rectangulo": [
+      505,
+      718,
+      730,
+      990
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Zombi",
+    "archivo": "assets/creatures/zombi.webp",
+    "rectangulo": [
+      726,
+      721,
+      925,
+      994
+    ],
+    "asignada": true
+  },
+  {
+    "nombre": "Gusano gigante (por identificar)",
+    "archivo": "output/bestiario-sin-asignar/gusano-gigante.webp",
+    "rectangulo": [
+      927,
+      733,
+      1222,
+      995
+    ],
+    "asignada": false
+  },
+  {
+    "nombre": "Pulpo gigante",
+    "archivo": "assets/creatures/pulpo-gigante.webp",
+    "rectangulo": [
+      1210,
+      720,
+      1536,
+      993
+    ],
+    "asignada": true
+  }
+]
