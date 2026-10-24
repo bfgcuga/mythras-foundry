@@ -569,8 +569,10 @@ tiradas ni elimina restricciones; las liberaciones específicas son independient
 `actionPresentation`, que añade coste y causa estable de indisponibilidad sin
 eliminar acciones del DOM. Los controladores especializados de alcance,
 bloqueo, cobertura, apuntado y recarga siguen siendo sus fuentes de verdad.
-La acción genérica exige descripción antes de gastar un PA, publica esa descripción
-y se resuelve automáticamente con el avance habitual del turno. Bloqueo Pasivo
+La acción genérica admite una descripción opcional: confirmar con el campo vacío
+o solo espacios también gasta un PA y publica la acción. Cancelar no gasta PA.
+La descripción se publica cuando existe y la acción se resuelve automáticamente
+con el avance habitual del turno. Bloqueo Pasivo
 es gratuito y no exige turno propio ni PA: la hoja abre la declaración pendiente
 o el mismo editor de corrección de situación táctica cuando ya no hay una
 declaración pendiente, incluso si todavía no existe un bloqueo guardado.

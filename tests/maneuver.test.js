@@ -437,3 +437,26 @@ test('Ponerse en pie keeps Prone on a tie, a loss or mutual failure; invalid riv
   }
   assert.equal(f.combat.advanced,3);
 });
+
+
+for (const note of ['', '   ', 'Abrir la puerta', null]) {
+  test(`la acción genérica acepta descripción ${JSON.stringify(note)} y distingue cancelar`, async t => {
+    const f = setup(t);
+    foundry.applications.api.DialogV2.prompt = async options => {
+      assert.match(options.content, /<textarea name="note"\s*>/);
+      return note === null ? null : options.ok.callback(null, {
+        form: { elements: { note: { value: note } } }
+      });
+    };
+    await requestCombatAction(f.actors[0], 'generic');
+    const actions = Object.values(f.combat.flags[scope].combatActions.actions);
+    assert.equal(actions.length, note === null ? 0 : 1);
+    assert.equal(f.actors[0].system.resources.actionPoints.value, note === null ? 3 : 2);
+    assert.equal(f.combat.advanced, note === null ? 0 : 1);
+    if (note !== null) {
+      assert.equal(actions[0].status, 'resolved');
+      assert.equal(actions[0].note, note.trim());
+      assert.ok(f.docs.get(actions[0].messageUuid)?.content);
+    }
+  });
+}

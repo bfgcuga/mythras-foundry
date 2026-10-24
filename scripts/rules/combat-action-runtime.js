@@ -330,7 +330,7 @@ async function createTransaction(context, key, parameters = {}) {
       ui.notifications.warn(localize("MYTHRASF.Maneuver.InvalidParticipants")); return null;
     }
   }
-  if (["generic", "struggle"].includes(key) && !String(parameters.note ?? "").trim()) return null;
+  if (key === "struggle" && !String(parameters.note ?? "").trim()) return null;
   const definition = COMBAT_ACTIONS[key];
   if (!definition || !(definition.cost === 0 || (definition.type === "reactive"
     ? await spendActorActionPoint(context.combatant.actor, { reactive: true })
@@ -541,7 +541,7 @@ export async function requestCombatAction(actor, key) {
   if (key === "readyWeapon") { parameters = await chooseReadyWeapon(actor); if (!parameters) return; }
   if (["generic", "struggle", "mount", "retainMagic", "useMagic", "counterspell"].includes(key)) {
     const note = await foundry.applications.api.DialogV2.prompt({ window: { title: localize(`MYTHRASF.Action.${key}`) },
-      content: `<div class="mythras-foundry mythras-dialog">${key === "struggle" ? `<p>${escape(localize("MYTHRASF.Action.Description.struggle"))}</p>` : ""}<label><span>${escape(localize("MYTHRASF.Action.Note"))}</span><textarea name="note" ${["generic", "struggle"].includes(key) ? "required" : ""}></textarea></label>${key === "struggle" ? `<label><input type="checkbox" class="sheet-state-box" name="gmApproved" required><span>${escape(localize("MYTHRASF.Action.Struggle.Approved"))}</span></label>` : ""}</div>`,
+      content: `<div class="mythras-foundry mythras-dialog">${key === "struggle" ? `<p>${escape(localize("MYTHRASF.Action.Description.struggle"))}</p>` : ""}<label><span>${escape(localize("MYTHRASF.Action.Note"))}</span><textarea name="note" ${key === "struggle" ? "required" : ""}></textarea></label>${key === "struggle" ? `<label><input type="checkbox" class="sheet-state-box" name="gmApproved" required><span>${escape(localize("MYTHRASF.Action.Struggle.Approved"))}</span></label>` : ""}</div>`,
       render: (_event, dialog) => {
         if (key !== "struggle") return;
         bindStruggleApproval(dialog.element);
@@ -549,7 +549,7 @@ export async function requestCombatAction(actor, key) {
       ok: { ...(key === "struggle" ? { label: localize("MYTHRASF.Action.Struggle.Validate") } : {}), callback: (event, button) => key === "struggle" && !button.form.elements.gmApproved.checked
         ? null : button.form.elements.note.value.trim() },
       cancel: { label: localize("MYTHRASF.Cancel") } });
-    if (note == null || (["generic", "struggle"].includes(key) && !note.trim())) return; parameters.note = note;
+    if (note == null || (key === "struggle" && !note.trim())) return; parameters.note = note;
   }
   if (key === "brace") {
     const weapon = actor.items.find((item) => item.type === "weapon" && item.system.equipped

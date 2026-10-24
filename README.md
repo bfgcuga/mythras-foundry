@@ -39,7 +39,7 @@ El sistema incluye actualmente:
   debe estar trabado, y abre la tirada habitual de Percepción sin bloqueo
   automático por traba. Ninguna gasta PA ni avanza el turno;
 - acciones activas y gratuitas de combate en recuadros separados en personajes
-  y PNJ; acción genérica con descripción obligatoria, coste de un PA y mensaje
+  y PNJ; acción genérica con descripción opcional, coste de un PA y mensaje
   en el chat; botón Cambiar bloqueo pasivo para su declaración o modificación gratuita en cualquier
   momento del combate desde la hoja, con el mismo menú de situación táctica;
 
