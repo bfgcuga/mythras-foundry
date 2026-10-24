@@ -543,7 +543,13 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     if (!ranged.valid) return ui.notifications.warn(localize(
       ranged.band === "beyond" ? "MYTHRASF.Ranged.BeyondRange" : "MYTHRASF.Ranged.InvalidRange"));
     Object.assign(ranged, setup.ranged, { modifiers: situational, aim: Boolean(aiming),
-      completeCover: Boolean(declaredCover?.complete),
+      completeCover: declaredCover?.status === "active" && Boolean(declaredCover.complete),
+      cover: declaredCover?.status === "active" ? { source: declaredCover.source,
+        protection: declaredCover.protection, complete: Boolean(declaredCover.complete),
+        locations: (declaredCover.locationIds ?? []).map((id) => {
+          const location = defender.items.find((item) => item.type === "hitLocation" && item.id === id);
+          return location ? hitLocationDisplayName(location) : id;
+        }) } : null,
       normalTarget: Number(resolution.target), power: mode.size,
       effectivePower: ranged.band === "long" ? reducePowerCategory(mode.size) : mode.size });
     resolution.difficulty = ranged.difficulty;
@@ -584,6 +590,8 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     ui.notifications.warn(localize("MYTHRASF.RollResult.impossible")); return null;
   }
   resolution.rollConfiguration = {
+    initialDifficulty: configured.difficulty,
+    modifiers: initialModifiers,
     baseTarget: configured.targets.baseTarget,
     adjustedTarget: configured.targets.adjustedTarget,
     limited: configured.limitedSkill ? { actorName: actorDisplayName(configured.limitedSkill.actor),

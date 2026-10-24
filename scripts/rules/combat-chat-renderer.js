@@ -234,6 +234,31 @@ export async function openCombatCheckHelp(check, combat) {
   });
 }
 
+export function rangedAttackDetailsHtml(ranged) {
+  const row = (label, value) => `<div class="mythras-chat-row"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`;
+  const label = (key) => localize(`MYTHRASF.Ranged.${key}`);
+  const degrees = (steps) => `${Number(steps) > 0 ? "+" : ""}${Number(steps)} ${label("Degrees")}`;
+  let html = row(label("TargetSize"), ranged.manualTargetSize ? label("ManualSize") : ranged.targetSize ?? "—");
+  html += row(label("DistanceModifier"), ranged.distanceSteps == null ? "—" : degrees(ranged.distanceSteps));
+  if (ranged.baseDifficulty) html += row(label("BeforeRanged"), localize(`MYTHRASF.Difficulty.${ranged.baseDifficulty}`));
+  const keys = { wind: "Wind", concealment: "Concealment", targetMovement: "TargetMovement",
+    melee: "MeleePosition", unstable: "Unstable", attackerProne: "AttackerProne",
+    targetProne: "TargetProne", completeCover: "CompleteCover" };
+  for (const modifier of ranged.modifiers ?? []) {
+    const detail = modifier.source === "wind" ? ["", "LightGale", "ModerateGale", "StrongGale", "Storm"][modifier.steps]
+      : modifier.source === "concealment" ? ["", "Partial", "Mostly", "Complete"][modifier.steps] : null;
+    html += row(`${label(keys[modifier.source] ?? modifier.source)}${detail ? `: ${label(detail)}` : ""}`, degrees(modifier.steps));
+  }
+  if (!(ranged.modifiers ?? []).some((entry) => entry.source === "concealment")) html += row(label("Concealment"), label("None"));
+  if (ranged.aimApplied) html += row(label("Aim"), degrees(-1));
+  if (Object.hasOwn(ranged, "cover")) {
+    const cover = ranged.cover;
+    html += row(label("Cover"), cover ? `${cover.source} (${label("CoverProtection")}: ${cover.protection})` : label("None"));
+    if (cover) html += row(label("CoveredLocations"), cover.locations.join(", ") || "—");
+  }
+  return html;
+}
+
 export function renderCombatExchange(combat) {
   const resolved = ["resolved", "awaitingEffects", "awaitingRuse"].includes(combat.status)
     ? combat.resolution : null;
@@ -377,9 +402,11 @@ export function renderCombatExchange(combat) {
   const tracker = combat.turnEconomy ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Tracker.Position"))}</span><strong>${escape(game.i18n.format("MYTHRASF.Tracker.RoundCycle", { round: combat.turnEconomy.round, cycle: combat.turnEconomy.cycle }))}</strong></div>${retainedTurn}` : "";
   const close = combat.turnEconomy && !combat.turnEconomy.turnAdvanced
     ? `<button type="button" data-combat-action="close-exchange" data-gm-only title="${escape(localize("MYTHRASF.Tracker.CloseExchange"))}">${escape(localize("MYTHRASF.Tracker.CloseExchange"))}</button>` : "";
-  const rangedHtml = combat.ranged ? `<fieldset><legend>${escape(localize("MYTHRASF.Ranged.Attack"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Distance"))}</span><strong>${combat.ranged.distance} m</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.BandLabel"))}</span><strong>${escape(localize(`MYTHRASF.Ranged.Band.${combat.ranged.band}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Difficulty"))}</span><strong>${escape(localize(`MYTHRASF.Difficulty.${combat.ranged.difficulty}`))}</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Power"))}</span><strong>${escape(combat.ranged.power)} → ${escape(combat.ranged.effectivePower)}</strong></div>${combat.ranged.ammunition?.tracking ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Ammunition"))}</span><strong>${combat.ranged.ammunition.loaded}/${combat.ranged.ammunition.reserve}</strong></div>` : ""}${combat.ranged.accidentalEligible ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Ranged.AccidentalPending"))}</p>` : ""}</fieldset>` : "";
+  const rangedHtml = combat.ranged ? `<fieldset><legend>${escape(localize("MYTHRASF.Ranged.Attack"))}</legend><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Distance"))}</span><strong>${combat.ranged.distance} m</strong></div><div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.BandLabel"))}</span><strong>${escape(localize(`MYTHRASF.Ranged.Band.${combat.ranged.band}`))}</strong></div>${rangedAttackDetailsHtml(combat.ranged)}<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Power"))}</span><strong>${escape(combat.ranged.power)} → ${escape(combat.ranged.effectivePower)}</strong></div>${combat.ranged.ammunition?.tracking ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.Ammunition"))}</span><strong>${combat.ranged.ammunition.loaded}/${combat.ranged.ammunition.reserve}</strong></div>` : ""}${combat.ranged.accidentalEligible ? `<p class="combat-card-warning">${escape(localize("MYTHRASF.Ranged.AccidentalPending"))}</p>` : ""}</fieldset>` : "";
   const rollConfiguration = combat.attacker.rollConfiguration;
   const adjustmentHtml = rollConfiguration ? `<fieldset><legend>${escape(localize("MYTHRASF.SkillRoll.Modifiers"))}</legend>
+    ${rollConfiguration.initialDifficulty ? `<div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Ranged.InitialDifficulty"))}</span><strong>${escape(localize(`MYTHRASF.Difficulty.${rollConfiguration.initialDifficulty}`))}</strong></div>` : ""}
+    ${(rollConfiguration.modifiers ?? []).map((entry) => `<div class="mythras-chat-row"><span>${escape(entry.source)}</span><strong>${escape(entry.effect)}</strong></div>`).join("")}
     <div class="mythras-chat-row"><span>${escape(localize("MYTHRASF.Chat.Difficulty"))}</span><strong class="skill-roll-modifier-effect--${difficultyTone(combat.attacker.difficulty)}">${escape(localize(`MYTHRASF.Difficulty.${combat.attacker.difficulty}`))}</strong></div>
     ${["limited", "reinforced"].filter((key) => rollConfiguration[key]).map((key) => {
       const value = rollConfiguration[key];

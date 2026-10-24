@@ -127,6 +127,10 @@ El sistema incluye actualmente:
 - combate a distancia con distancia manual, bandas y penalización por TAM y
   circunstancias; Apuntar, Recargar, munición numérica opcional, cobertura
   localizada y desvíos al disparar a una melé comparten la transacción de chat;
+  la tarjeta desglosa TAM, grados por distancia, intensidad del viento,
+  circunstancias, dificultad inicial y cobertura declarada (también su ausencia).
+  La ocultación modifica la dificultad; la protección física requiere responder
+  con «Cobertura» y que el impacto alcance una localización cubierta;
 - catálogo contextual de acciones proactivas compartido por personajes y PNJ:
   Afianzarse, Aprestar Arma, Forcejear, Maniobrar, Mover, Ponerse en Pie,
   Retrasar, Titubear y Cargar se registran en el combate. Retrasar pasa el turno

@@ -65,7 +65,7 @@ export function rangedAttackProfile({ distance, ranges, targetSize, baseDifficul
     [{ source: "distanceSize", steps: distanceSteps }, ...modifiers], aim);
   return { valid: true, band, distance: Number(distance), ranges: parseRangeProfile(ranges),
     targetSize: targetSize === null ? null : Number(targetSize) || 0, distanceSteps,
-    manualTargetSize: targetSize === null, ...combined };
+    manualTargetSize: targetSize === null, baseDifficulty, ...combined };
 }
 
 export function applyLongRangeDamage(value, band) {

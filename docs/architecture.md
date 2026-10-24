@@ -409,6 +409,15 @@ fuente, protección y localizaciones cubiertas. Se aplica entre parada y
 armadura; no tiene PG automáticos y su deterioro queda en manos del DJ. La
 corrección del DJ del menú táctico crea, modifica, desactiva o elimina estos
 perfiles y, por tanto, altera directamente su aplicación a personajes y PNJ.
+La protección exige que la respuesta elegida sea «Cobertura» y que la localización
+impactada figure en el perfil activo. La ocultación del diálogo es un ajuste
+independiente de dificultad; no asigna protección. La cobertura completa penetrable
+añade un grado al disparo. La instantánea del ataque guarda fuente, protección y
+nombres de localizaciones para mostrar la cobertura declarada al atacar; el daño
+consulta el perfil táctico activo al resolverse. El chat desglosa distancia/TAM y
+circunstancias en grados, la intensidad del viento y las dificultades seleccionada,
+previa al disparo y final, sin atribuir el total únicamente a la distancia.
+
 
 El estado equipado determina efectos y cálculos, mientras que la estructura de
 inventario determina qué objetos se transportan y dónde se guardan.

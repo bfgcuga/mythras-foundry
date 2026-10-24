@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { preferredCombatCoordinator, validateCombatResponse,
   preferredParryChoice, selectedParryChoice,
   woundCheckOutcomeKey } from "../scripts/rules/combat-chat.js";
-import { difficultyTone, targetTone } from "../scripts/rules/combat-chat-renderer.js";
+import { difficultyTone, targetTone, rangedAttackDetailsHtml } from "../scripts/rules/combat-chat-renderer.js";
 
 test("el primer DJ activo coordina y el autor es el respaldo", () => {
   const users = [{ id: "z", active: true, isGM: true }, { id: "a", active: true, isGM: true },
@@ -240,4 +240,29 @@ test("el fallo de Aguante en un brazo resuelve en la tarjeta qué objeto se suel
   assert.match(renderer, /data-combat-action="drop-held-item"/);
   assert.match(renderer, /data-drop-held-item/);
   assert.match(renderer, /MYTHRASF\.Combat\.Consequence\.droppedItem/);
+});
+
+
+test("el desglose del disparo identifica grados, vendaval y ausencia de cobertura", () => {
+  const previousGame = globalThis.game;
+  const previousFoundry = globalThis.foundry;
+  globalThis.game = { i18n: { localize: (key) => key } };
+  globalThis.foundry = { utils: { escapeHTML: (text) => text.replaceAll("<", "&lt;") } };
+  try {
+    const html = rangedAttackDetailsHtml({ targetSize: 15, distanceSteps: 1,
+      baseDifficulty: "standard", modifiers: [{ source: "wind", steps: 2 }], cover: null });
+    assert.match(html, /DistanceModifier[^]*?\+1/);
+    assert.match(html, /ModerateGale[^]*?\+2/);
+    assert.match(html, /BeforeRanged[^]*?Difficulty.standard/);
+    assert.match(html, /Concealment[^]*?Ranged.None/);
+    assert.match(html, /Ranged.Cover[^]*?Ranged.None/);
+    const covered = rangedAttackDetailsHtml({ distanceSteps: -1, aimApplied: true,
+      cover: { source: "<Muro>", protection: 4, locations: ["Brazo", "Pecho"] } });
+    assert.match(covered, /&lt;Muro>/);
+    assert.match(covered, /Brazo, Pecho/);
+    assert.match(covered, /Ranged.Aim[^]*?-1/);
+  } finally {
+    globalThis.game = previousGame;
+    globalThis.foundry = previousFoundry;
+  }
 });
