@@ -2339,6 +2339,12 @@
   white-space: nowrap;
 }
 
+.mythras-foundry .combat-reload-status {
+  display: grid;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .mythras-foundry .combat-weapon-line > .combat-effects {
   max-height: 3.45em;
   align-self: center;

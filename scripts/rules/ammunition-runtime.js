@@ -3,7 +3,7 @@ import { weaponModes } from "./weapon-modes.js";
 import { spendActorActionPoint } from "./combat-resource-runtime.js";
 import { weaponCanEquip } from "./weapon-durability.js";
 import { weaponIsPinned } from "./weapon-pinning.js";
-import { canStartProactiveAction } from "./combat-interruption.js";
+import { canStartProactiveAction, finishInterruptionAction } from "./combat-interruption.js";
 
 const locks = new Map();
 const pending = new Map();
@@ -104,6 +104,9 @@ async function applyOperation(actor, request) {
       });
       throw failure;
     }
+    if (request.kind === "reload"
+      && !await finishInterruptionAction(combat, entry.id)
+      && combat.combatant?.id === entry.id) await combat.nextTurn();
     return result;
   });
 }

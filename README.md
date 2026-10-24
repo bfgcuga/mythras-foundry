@@ -131,9 +131,10 @@ El sistema incluye actualmente:
 - [munición vinculada al inventario](docs/ammunition.md): la tienda conserva los fajos y su precio,
   pero comprar o arrastrar un fajo incorpora proyectiles individuales con su
   cantidad, precio unitario y carga proporcional. Recargar permite elegir una
-  existencia compatible y recuerda la anterior. Cada acción cuesta 1 PA y el
-  descuento del inventario ocurre solo al disparar, también si falla. La cantidad
-  total incluye lo cargado; otras armas no pueden reservar los mismos proyectiles;
+  existencia compatible y recuerda la anterior. Cada acción cuesta 1 PA y pasa
+  el turno (durante una interrupción devuelve la decisión al DJ). El descuento
+  del inventario ocurre solo al disparar, también si falla. La cantidad total
+  incluye lo cargado; otras armas no pueden reservar los mismos proyectiles;
 - armas arrojadizas por ejemplar: lanzarlas conserva el Item, lo marca en rojo
   como Lanzada y bloquea sus modos y bloqueo pasivo. Recuperar desde Inventario
   no cuesta PA ni equipa el arma; no repara daños ni permite omitir la extracción
@@ -142,8 +143,9 @@ El sistema incluye actualmente:
   crea munición adicional y vincula el arma, sin restarla de las existencias previas.
   La migración no duplica cantidades al repetirse. Los perfiles propios sin tipo
   identificable conservan sus datos y deben configurar la compatibilidad;
-- la ocultación modifica la dificultad; la protección física requiere responder
-  con «Cobertura» y que el impacto alcance una localización cubierta;
+- Buscar cobertura es el nombre de la acción de la hoja y su diálogo; su revisión
+  está cerrada. La ocultación modifica la dificultad; la protección física
+  requiere responder con «Cobertura» y que el impacto alcance una localización cubierta;
 - catálogo contextual de acciones proactivas compartido por personajes y PNJ:
   Afianzarse, Aprestar Arma, Forcejear, Maniobrar, Mover, Ponerse en Pie,
   Retrasar, Titubear y Cargar se registran en el combate. Retrasar pasa el turno

@@ -1052,7 +1052,9 @@ proyectiles cargados. Los modos guardan `ammoUse` (`none`, `projectile`,
 `reloadProgress`. `ammoReserve` queda únicamente como dato legado de conversión.
 Los ayudantes puros de `ammunition.js` calculan cargas compartidas y disponibilidad
 con `inventoryCarried`; no ofrecen existencias almacenadas en propiedades o
-vehículos. Cada acción de recarga cuesta 1 PA. Cambiar de selección libera la
+vehículos. Cada acción de recarga cuesta 1 PA y, una vez persistida, el coordinador avanza
+el turno propio o finaliza la acción de interrupción para que decida el DJ. Las
+peticiones repetidas no vuelven a cobrar ni a avanzar. Cambiar de selección libera la
 carga anterior y reinicia el progreso; cancelar el diálogo no cambia el estado.
 
 `ammunition-runtime.js` serializa recargas y disparos por actor en el primer DJ
@@ -1064,7 +1066,10 @@ y evita repetir el gasto al recibir la misma petición. Las repeticiones con
 Suerte y cancelaciones posteriores no reponen proyectiles. Los hooks de
 actualización y eliminación invalidan cargas si cambia el tipo, se agota el
 recuento o se mueve la munición o su contenedor fuera del equipo transportado.
-La tabla de Combate etiqueta acciones, total, cargada y disponible por separado.
+La celda de recarga de Combate muestra acciones realizadas/requeridas con «Acc.»
+y el número de proyectiles disponibles con «Munic», en dos líneas con etiquetas
+accesibles y tooltips. El
+ayudante puro muestra el progreso completo mientras el arma permanece cargada.
 
 `normalizeInventorySources` es la entrada común desde
 `MythrasActor.createEmbeddedDocuments`: transforma paquetes comerciales en

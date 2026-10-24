@@ -28,7 +28,7 @@ export function prepareInventoryView(items = []) {
     brokenLocationReference: hasBrokenHitLocationReference(row.item, hitLocations),
     handsRequired: row.isWeapon ? weaponHandsRequired(row.item) : 0,
     encumbrance: itemEncumbrance(row.item),
-    priceLabel: `${Number(row.system.value ?? 0)} ${game.i18n.localize(
+    priceLabel: `${Number(Number(row.system.value ?? 0).toFixed(1))} ${game.i18n.localize(
       `MYTHRASF.Currency.${row.system.currency ?? "silver"}`)}`,
     locationLabel: inventoryLocation(row.item, inventoryItems) === "person"
       ? game.i18n.localize("MYTHRASF.Item.Carried")

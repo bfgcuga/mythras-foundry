@@ -62,5 +62,7 @@ export function ammunitionView(actor, weapon, mode) {
   return { use, tracking: true, itemId: mode.ammoItemId, name: stock.item?.name ?? "",
     total: stock.total, loaded: count(mode.ammoLoaded), allocated: stock.loaded, available: stock.available,
     capacity: Math.max(1, count(mode.ammoCapacity)), progress: count(mode.reloadProgress),
-    actions: Math.max(1, count(mode.reloadActions)), problem: ammunitionProblem(actor, weapon, mode) };
+    actions: Math.max(1, count(mode.reloadActions)),
+    completedActions: count(mode.reloadProgress) || (count(mode.ammoLoaded) > 0 ? Math.max(1, count(mode.reloadActions)) : 0),
+    problem: ammunitionProblem(actor, weapon, mode) };
 }

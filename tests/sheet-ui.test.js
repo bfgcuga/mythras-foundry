@@ -10,6 +10,7 @@ test("las hojas comparten una sola vista de Combate, Inventario y Estado",t=>{
     for(const tab of ["combat","inventory","penalties"]) assert.equal(doc.querySelectorAll(`[data-tab-content='${tab}']`).length,1);
     for(const action of ["buy-item","transfer-money"])assert.ok(doc.querySelector(`[data-tab-content='inventory'] [data-action='${action}']`),`${type}: ${action}`);
     for(const action of ["attack","changeReach","aim","reload","seekCover"])assert.equal(doc.querySelectorAll(`[data-combat-action-key='${action}']`).length,1);
+    assert.match(doc.querySelector('[data-combat-action-key="seekCover"]').textContent, /Buscar cobertura/);
     assert.equal(doc.querySelectorAll('.combat-paper-locations').length,1);
     assert.ok(doc.querySelector("[data-tab-content='penalties'] .combat-paper-fatigue"));
     assert.equal(doc.querySelector("[data-tab-content='combat'] [data-fatigue-level]"),null);
@@ -88,15 +89,14 @@ test("la hoja de efecto mantiene descripción antes de resumen y tabla accesible
 });
 
 
-test('la fila de disparo etiqueta acciones y munición usando el coste real de recarga', t => {
+test('la celda de recarga muestra progreso y munición con abreviaturas y etiquetas accesibles', t => {
   const doc = rendered(t, 'templates/actor/parts/combat-tab.hbs', { rangedCombatWeapons: [{
-    item: { id: 'bow' }, mode: { key: 'ranged', reload: '99', reloadActions: 2,
-      ammoTracking: true, ammoLoaded: 0, ammoReserve: 20 }, ammunition: { tracking: true, name: 'Flechas', total: 20, loaded: 0, available: 20 }, styleOptions: []
+    item: { id: 'bow' }, mode: { key: 'ranged', reload: '99', reloadActions: 2 },
+    ammunition: { tracking: true, name: 'Flechas', total: 20, loaded: 0, available: 20, completedActions: 1, actions: 2 },
+    styleOptions: []
   }] });
-  const text = doc.querySelector('[data-item-id="bow"]').textContent;
-  assert.match(text, /Acciones de recarga: 2/);
-  assert.match(text, /Total: 20/);
-  assert.match(text, /Cargada: 0/);
-  assert.match(text, /Disponible: 20/);
-  assert.doesNotMatch(text, /Â|99/);
+  const cell = doc.querySelector('[data-item-id="bow"] .combat-reload-status');
+  assert.deepEqual([...cell.children].map(element => element.textContent), ['1/2 Acc.', '20 Munic']);
+  assert.ok([...cell.children].every(element => element.title && element.getAttribute('aria-label')));
+  assert.doesNotMatch(cell.textContent, /Flechas|Total|Cargada|Disponible|99|Â/);
 });

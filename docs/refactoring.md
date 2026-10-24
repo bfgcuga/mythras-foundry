@@ -21,8 +21,8 @@ en fronteras equivalentes a las ya empleadas por el combate:
 
 La extracción debe conservar el esquema persistido, la reanudación de entradas
 pendientes y las transiciones actuales, sin cambiar las reglas ni el
-comportamiento actual. Este trabajo queda al final del roadmap como mejora de
-mantenimiento: no bloquea los bloques funcionales anteriores. Los Items de
+comportamiento actual. Este trabajo tiene una posición explícita en el roadmap
+como mejora de mantenimiento: no bloquea los bloques funcionales anteriores. Los Items de
 venenos, enfermedades y trampas y sus tiradas guiadas no usan esta cola; su
 seguimiento temporal sigue a cargo del DJ. Reconsiderar la prioridad si se
 acuerda ampliar significativamente las consecuencias automáticas de asalto.

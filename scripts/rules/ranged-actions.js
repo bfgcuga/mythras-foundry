@@ -101,7 +101,6 @@ export async function reloadRangedWeapon(actor) {
       const next = await requestAmmunitionOperation(actor, { kind: "reload", weaponId: choice.weapon.id,
         modeKey: choice.mode.key, itemId });
       ui.notifications.info(game.i18n.localize(next.completed ? "MYTHRASF.Ranged.ReloadComplete" : "MYTHRASF.Ranged.ReloadProgress"));
-      await finishInterruptionAction(active.combat, active.entry.id);
     } catch (failure) { ui.notifications.warn(failure.message); }
     return;
   }

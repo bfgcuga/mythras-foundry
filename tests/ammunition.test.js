@@ -4,7 +4,7 @@ import { installHost, collection, documentDouble, setPath, render, dom } from ".
 import { AMMUNITION_SOURCES } from "../scripts/data/equipment.js";
 import { WEAPON_SOURCES } from "../scripts/data/weapons.js";
 import { normalizeInventorySources } from "../scripts/rules/inventory-ammunition.js";
-import { ammunitionChoices, ammunitionStock, ammunitionProblem } from "../scripts/rules/ammunition.js";
+import { ammunitionChoices, ammunitionStock, ammunitionProblem, ammunitionView } from "../scripts/rules/ammunition.js";
 import { requestAmmunitionOperation, reconcileAmmunition, registerAmmunitionRuntime } from "../scripts/rules/ammunition-runtime.js";
 import { migrateActorAmmunition } from "../scripts/migrations/ammunition-migrations.js";
 import { totalCarriedEncumbrance } from "../scripts/rules/encumbrance.js";
@@ -32,6 +32,7 @@ function setup(t) {
   const combat = { started: true, round: 1, turn: 0, combatants: collection([{ id: 'c', actor }]),
     getFlag: () => null };
   combat.combatant = combat.combatants[0]; combat.turns = combat.combatants;
+  combat.advanced = 0; combat.nextTurn = async () => { combat.advanced++; };
   game.combat = combat; game.combats = collection([combat]);
   const bow = () => add({ name: 'Arco', type: 'weapon', system: { equipped: true, activeModeKey: 'ranged',
     modes: [{ key: 'ranged', weaponType: 'ranged', ammoUse: 'projectile', ammoType: 'arrow',
@@ -235,6 +236,7 @@ test('el fallo de escritura no consume munición ni conserva el PA cobrado', asy
   await assert.rejects(f.op(weapon, 'reload', { itemId: stock.id }), /write rejected/);
   assert.equal(f.actor.system.resources.actionPoints.value, 10);
   assert.equal(stock.system.quantity, 1); assert.equal(weapon.system.modes[0].ammoLoaded, 0);
+  assert.equal(f.combat.advanced, 0);
 });
 
 test('el hook de traslado de un contenedor invalida sus cargas y no entra en recursión', async t => {
@@ -249,4 +251,37 @@ test('el hook de traslado de un contenedor invalida sus cargas y no entra en rec
   await hooks.updateItem(bag, {}, {}, 'gm');
   assert.equal(weapon.system.modes[0].ammoLoaded, 0);
   assert.equal(stock.system.quantity, 1);
+});
+
+
+test('el progreso visible distingue vacío, recarga parcial y arma cargada', t => {
+  const f = setup(t), weapon = f.bow(), stock = f.arrows(12);
+  const mode = weapon.system.modes[0]; mode.ammoItemId = stock.id;
+  assert.equal(ammunitionView(f.actor, weapon, mode).completedActions, 0);
+  mode.reloadProgress = 1;
+  assert.equal(ammunitionView(f.actor, weapon, mode).completedActions, 1);
+  mode.reloadProgress = 0; mode.ammoLoaded = 1;
+  const ready = ammunitionView(f.actor, weapon, mode);
+  assert.equal(ready.completedActions, 2); assert.equal(ready.actions, 2); assert.equal(ready.available, 11);
+  mode.ammoLoaded = 0;
+  assert.equal(ammunitionView(f.actor, weapon, mode).completedActions, 0);
+});
+
+
+test('cada recarga cobra un PA y pasa turno después de persistir, incluso si falta progreso', async t => {
+  const f = setup(t), weapon = f.bow(), stock = f.arrows(12);
+  const observations = [];
+  f.combat.nextTurn = async () => {
+    observations.push({ points: f.actor.system.resources.actionPoints.value,
+      loaded: weapon.system.modes[0].ammoLoaded, progress: weapon.system.modes[0].reloadProgress });
+  };
+  await f.op(weapon, 'reload', { id: 'partial', itemId: stock.id });
+  assert.deepEqual(observations, [{ points: 9, loaded: 0, progress: 1 }]);
+  await f.op(weapon, 'reload', { id: 'partial', itemId: stock.id });
+  assert.equal(observations.length, 1);
+  await f.op(weapon, 'reload', { id: 'complete', itemId: stock.id });
+  assert.deepEqual(observations[1], { points: 8, loaded: 1, progress: 0 });
+  await assert.rejects(f.op(weapon, 'reload', { itemId: stock.id }));
+  assert.equal(observations.length, 2);
+  assert.equal(f.actor.system.resources.actionPoints.value, 8);
 });

@@ -14,10 +14,10 @@ El estado definitivo se describe en [`status-catalog.md`](status-catalog.md).
 
 Revisar prioritariamente estas acciones:
 
-- Buscar cobertura.
 - Cambiar alcance.
 - Retener Magia.
 - Usar Magia.
+- Apuntar.
 
 Revisar las acciones del sistema una por una, contrastando su comportamiento
 actual con las reglas aplicables. Identificar las que tienen lógica incorrecta,
@@ -27,8 +27,8 @@ tiradas, consecuencias y cierre o avance del turno, con pruebas de los
 comportamientos corregidos. La revisión determinará el alcance concreto de las
 acciones diferenciales pendientes del punto 4.
 
-Montar, Mover y Titubear ya están revisadas y aprobadas. La acción genérica
-ya permite describir una acción, gastar un PA y publicarla en el chat.
+Montar, Mover, Titubear y Buscar cobertura ya están revisadas y aprobadas.
+La acción genérica ya permite describir una acción, gastar un PA y publicarla en el chat.
 
 ## 2. Revisar las resoluciones manuales de flujos interactivos
 

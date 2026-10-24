@@ -3,17 +3,23 @@
 La tienda vende paquetes: comprar «Flechas (fajo de doce)» crea «Flechas» con
 cantidad 12 en Inventario. Dos compras conservan dos existencias independientes;
 la cantidad total es 24. El precio y la carga se reparten por unidad. Las
-existencias agotadas permanecen con cantidad cero.
+existencias agotadas permanecen con cantidad cero. Inventario muestra los costes
+con un máximo de un decimal; los cálculos conservan el valor unitario exacto.
 
 ## Recargar y disparar
 
 1. Equipa el modo de disparo del arma.
 2. En tu turno, pulsa Recargar y elige el arma y una existencia compatible.
    La última utilizada aparece seleccionada si aún está disponible.
-3. Cada uso cuesta 1 PA. Al completar las acciones requeridas, el arma queda
-   cargada. La cantidad del inventario todavía no cambia.
+3. Cada uso cuesta 1 PA y pasa el turno, aunque falten acciones para cargar.
+   Durante una interrupción, cierra la acción y devuelve la decisión al DJ.
+   Al completar las acciones requeridas, el arma queda cargada. La cantidad del inventario todavía no cambia.
 4. Al disparar, se descuenta una unidad del inventario y de la carga aunque
    el ataque falle. Suerte no consume otro proyectil.
+
+La columna Recarga de Combate muestra el progreso con «Acc.» (por ejemplo,
+`1/2 Acc.`) y debajo los proyectiles disponibles con «Munic» (`20 Munic`). Un arma cargada muestra `2/2`
+si requiere dos acciones, y vuelve a `0/2` al disparar.
 
 Total incluye las unidades cargadas. Disponible excluye las cargas de todas
 las armas que usan la misma existencia. La munición transportada en un carcaj
