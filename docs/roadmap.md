@@ -27,6 +27,13 @@ tiradas, consecuencias y cierre o avance del turno, con pruebas de los
 comportamientos corregidos. La revisión determinará el alcance concreto de las
 acciones diferenciales pendientes del punto 4.
 
+Revisar también cómo se registra que un arma queda fuera de las manos del
+personaje por efectos de combate —Desarmar, Empalar y similares— o por
+lanzarla. El ejemplar debe conservarse en la hoja, indicar el motivo de su
+indisponibilidad y permitir una recuperación coherente, bloqueando su uso
+mientras no esté disponible. Esta revisión no incluye «Inutilizada» ni los
+estados de daño o rotura del arma.
+
 Montar, Mover, Titubear y Buscar cobertura ya están revisadas y aprobadas.
 La acción genérica ya permite describir una acción, gastar un PA y publicarla en el chat.
 
