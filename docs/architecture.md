@@ -1043,8 +1043,60 @@ persistido del intercambio ni las exportaciones públicas de `combat-chat.js`:
 
 Los modos `ranged` y `siege` añaden a la transacción una instantánea `ranged`
 con metros declarados, banda, TAM, fuentes de dificultad, potencia efectiva,
-movimiento, preparación y munición consumida. Apuntar vive temporalmente en un
-flag del Actor vinculado a combate, arma y blanco. Los desvíos al disparar a una
+movimiento, preparación y munición consumida.
+
+La munición física reside en los Items de categoría `ammunition`: `ammoType`
+es el identificador de compatibilidad y `quantity` el total, incluidos los
+proyectiles cargados. Los modos guardan `ammoUse` (`none`, `projectile`,
+`thrown`), `ammoType`, `ammoItemId`, `ammoLoaded`, `ammoCapacity` y
+`reloadProgress`. `ammoReserve` queda únicamente como dato legado de conversión.
+Los ayudantes puros de `ammunition.js` calculan cargas compartidas y disponibilidad
+con `inventoryCarried`; no ofrecen existencias almacenadas en propiedades o
+vehículos. Cada acción de recarga cuesta 1 PA. Cambiar de selección libera la
+carga anterior y reinicia el progreso; cancelar el diálogo no cambia el estado.
+
+`ammunition-runtime.js` serializa recargas y disparos por actor en el primer DJ
+activo; los clientes solicitan la operación por socket y reciben confirmación.
+El coordinador comprueba propiedad, modo activo, equipación, compatibilidad,
+existencias, cargas y PA. Cada disparo modifica munición y modo en una petición
+de actualización de Items, registra el resultado por identificador de operación
+y evita repetir el gasto al recibir la misma petición. Las repeticiones con
+Suerte y cancelaciones posteriores no reponen proyectiles. Los hooks de
+actualización y eliminación invalidan cargas si cambia el tipo, se agota el
+recuento o se mueve la munición o su contenedor fuera del equipo transportado.
+La tabla de Combate etiqueta acciones, total, cargada y disponible por separado.
+
+`normalizeInventorySources` es la entrada común desde
+`MythrasActor.createEmbeddedDocuments`: transforma paquetes comerciales en
+unidades al comprar o arrastrar, preservando valor y carga agregados mediante
+precio/peso unitarios y `zeroEncumbranceUnits` para la regla de objetos de ENC 0.
+No fusiona existencias automáticamente y conserva los Items con cantidad cero;
+su venta no produce ingresos. Los fajos arrojadizos generan ejemplares de arma.
+La metadata comercial (`packageSize`, `unitName`, `ammunitionProfile` y
+`thrownProfile`) conserva las claves y presentación de los compendios.
+
+`ammunition-migrations.js` convierte los fajos ya embebidos y las reservas
+antiguas, también en actores sintéticos. Cada reserva más carga se incorpora
+como una existencia adicional marcada por su origen y se vincula al modo;
+no se deduplica con la munición previa. `ammunitionUnitVersion`,
+`ammunitionVersion` y los marcadores de origen permiten repetir o reanudar
+la conversión sin multiplicar cantidades. Conserva lo cargado y reinicia el
+progreso incompleto. Los perfiles sin compatibilidad identificable mantienen
+sus contadores hasta configurar un tipo. Las pilas arrojadizas se separan en
+Items de cantidad 1; el asistente de combinación de modos no propone fusionar
+copias con el mismo conjunto de modos.
+
+Lanzar un ejemplar marca `system.thrown`, lo desequipa y bloquea todos sus modos
+mediante `weaponCanEquip`, incluido el bloqueo pasivo. La resolución de daño del
+lanzamiento ya registrado puede usar su instantánea aunque esté lanzado.
+La recuperación manual desde Inventario solo elimina ese estado y mantiene el
+arma desequipada y sus demás restricciones. Si Empalar la deja clavada,
+`system.lodged` bloquea Recuperar; el efecto conserva la referencia al Item
+original y su propietario. La extracción recupera ese ejemplar sin duplicarlo
+(o lo transfiere si lo extrae otro actor). Quitar el efecto libera la retención,
+sin reparar ni equipar el arma.
+
+Apuntar vive temporalmente en un flag del Actor vinculado a combate, arma y blanco. Los desvíos al disparar a una
 melé usan `awaitingAccidentalTarget` y `awaitingAccidentalDefense`, conservando
 el dado, PA y proyectil originales. La elegibilidad de efectos distingue el
 modo efectivo de la transacción (`melee` o `ranged`) de las capacidades de la

@@ -95,9 +95,17 @@ export function consumeAmmunition(mode) {
   return state.tracking ? { ...state, loaded: Math.max(0, state.loaded - 1), reloadProgress: 0 } : state;
 }
 
+export function reloadBlockReason(mode) {
+  const state = ammunitionState(mode);
+  if (!state.tracking) return "TrackingDisabled";
+  if (state.loaded >= state.capacity) return "AlreadyLoaded";
+  if (state.reserve < 1) return "NoReserve";
+  return null;
+}
+
 export function advanceReload(mode) {
   const state = ammunitionState(mode);
-  if (!state.tracking || state.reserve < 1 || state.loaded >= state.capacity) return { ...state, changed: false };
+  if (reloadBlockReason(mode)) return { ...state, changed: false };
   const needed = Math.max(1, state.reloadActions);
   const progress = state.reloadProgress + 1;
   if (progress < needed) return { ...state, reloadProgress: progress, changed: true, completed: false };

@@ -498,7 +498,7 @@ export class NpcSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     if (!item.system.equipped && !weaponCanEquip(item)) return ui.notifications.warn(
-      game.i18n.localize(item.system.inoperable
+      game.i18n.localize(item.system.thrown ? "MYTHRASF.Ranged.Inventory.Thrown" : item.system.inoperable
         ? "MYTHRASF.Weapon.InoperableCannotUse" : "MYTHRASF.Weapon.BrokenCannotEquip"));
     const modeKey = event.currentTarget.closest("[data-mode-key]")?.dataset.modeKey
       || item.system.activeModeKey || findWeaponMode(item)?.key;

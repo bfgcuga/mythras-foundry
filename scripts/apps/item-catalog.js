@@ -182,7 +182,7 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
       delete itemData._id;
       delete itemData.folder;
       itemData.system.parentContainerId = destinationId;
-      const [created] = await actor.createEmbeddedDocuments("Item", [itemData]);
+      const created = await actor.createEmbeddedDocuments("Item", [itemData]);
       try {
         const balanceUpdates = Object.fromEntries(
           Object.entries(assessment.balances).map(([currency, value]) => [
@@ -191,7 +191,7 @@ export class ItemCatalog extends HandlebarsApplicationMixin(ApplicationV2) {
         if (property) await property.update(balanceUpdates);
         else await actor.update(balanceUpdates);
       } catch (error) {
-        if (created) await actor.deleteEmbeddedDocuments("Item", [created.id]);
+        if (created.length) await actor.deleteEmbeddedDocuments("Item", created.map(item => item.id));
         throw error;
       }
       ui.notifications.info(game.i18n.format("MYTHRASF.Catalog.Purchase.Success", {

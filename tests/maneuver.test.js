@@ -460,3 +460,31 @@ for (const note of ['', '   ', 'Abrir la puerta', null]) {
     }
   });
 }
+
+
+for (const rawRoll of [5, 95]) test(`el ataque real consume un proyectil de inventario con d100=${rawRoll}`, async t => {
+  const f = setup(t); const { createAttackMessage } = await import('../scripts/rules/combat-chat.js');
+  const actor = f.actors[0]; actor.system.dexterity = 12; actor.system.intelligence = 12;
+  const mode = { key: 'ranged', weaponType: 'ranged', ammoUse: 'projectile', ammoType: 'arrow',
+    ammoItemId: 'arrows', ammoLoaded: 1, ammoCapacity: 1, range: '15/100/200', size: 'G', damage: '1d6' };
+  const weapon = documentDouble({ id: 'bow', name: 'Arco', type: 'weapon', system: { equipped: true, activeModeKey: 'ranged', modes: [mode] } });
+  weapon.actor = actor;
+  const arrows = documentDouble({ id: 'arrows', name: 'Flechas', type: 'equipment', system: { category: 'ammunition', ammoType: 'arrow', quantity: 12 } });
+  actor.items.push(weapon, arrows);
+  actor.updateEmbeddedDocuments = async (type, updates) => {
+    for (const { _id, ...update } of updates) await actor.items.get(_id).update(update);
+  };
+  globalThis.Roll = class { constructor() { this.total = rawRoll; } async evaluate() { return this; } toJSON() { return { total: this.total }; } };
+  foundry.applications.api.DialogV2.wait = async () => ({ difficulty: 'standard', additional: {
+    targetTokenUuid: f.tokens[1].uuid, predeclared: false,
+    ranged: { distance: 10, wind: 0, concealment: 0, targetMovement: 0, meleePosition: 'none' }
+  } });
+  const message = await createAttackMessage({ actor, weapon, mode, resolution: { target: 70, difficulty: 'standard' } });
+  assert.ok(message);
+  assert.equal(arrows.system.quantity, 11); assert.equal(weapon.system.modes[0].ammoLoaded, 0);
+  assert.equal(actor.system.resources.actionPoints.value, 2);
+  const state = message.getFlag(scope, 'combat');
+  assert.equal(state.attacker.rawRoll, rawRoll);
+  assert.equal(state.ranged.ammunition.name, 'Flechas');
+  assert.equal(state.ranged.ammunition.total, 11);
+});

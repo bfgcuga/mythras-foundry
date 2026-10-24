@@ -1,3 +1,4 @@
+import { modeAmmunition } from "./ammunition.js";
 import { interruptionActionPayment, combatInterruption, submitInterruption } from "./combat-interruption.js";
 import { withActionPointLock, consumeActorWaiting } from "./combat-waiting.js";
 import { currentActionPoints } from "./action-points.js";
@@ -32,7 +33,13 @@ export async function spendActorLuckPoint(actor) {
   return true;
 }
 
-export async function consumeWeaponModeAmmunition(weapon, mode) {
+export async function consumeWeaponModeAmmunition(weapon, mode, options = {}) {
+  if (modeAmmunition(weapon, mode).use !== "none") {
+    const { requestAmmunitionOperation } = await import("./ammunition-runtime.js");
+    return requestAmmunitionOperation(weapon.actor ?? weapon.parent, {
+      kind: "shoot", weaponId: weapon.id, modeKey: mode.key, ...options
+    });
+  }
   const ammunition = consumeAmmunition(mode);
   const modes = weaponModes(weapon).map((entry) => entry.key === mode.key ? { ...entry,
     ammoLoaded: ammunition.loaded, ammoReserve: ammunition.reserve,

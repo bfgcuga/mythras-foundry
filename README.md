@@ -125,11 +125,24 @@ El sistema incluye actualmente:
   las tablas de localizaciones de personaje y PNJ muestran
   además qué zonas conserva protegidas;
 - combate a distancia con distancia manual, bandas y penalización por TAM y
-  circunstancias; Apuntar, Recargar, munición numérica opcional, cobertura
-  localizada y desvíos al disparar a una melé comparten la transacción de chat;
-  la tarjeta desglosa TAM, grados por distancia, intensidad del viento,
-  circunstancias, dificultad inicial y cobertura declarada (también su ausencia).
-  La ocultación modifica la dificultad; la protección física requiere responder
+  circunstancias; Apuntar, Recargar, cobertura localizada y desvíos al disparar
+  a una melé comparten la transacción de chat. Las tarjetas desglosan TAM,
+  grados por distancia, intensidad del viento, circunstancias y dificultad inicial;
+- [munición vinculada al inventario](docs/ammunition.md): la tienda conserva los fajos y su precio,
+  pero comprar o arrastrar un fajo incorpora proyectiles individuales con su
+  cantidad, precio unitario y carga proporcional. Recargar permite elegir una
+  existencia compatible y recuerda la anterior. Cada acción cuesta 1 PA y el
+  descuento del inventario ocurre solo al disparar, también si falla. La cantidad
+  total incluye lo cargado; otras armas no pueden reservar los mismos proyectiles;
+- armas arrojadizas por ejemplar: lanzarlas conserva el Item, lo marca en rojo
+  como Lanzada y bloquea sus modos y bloqueo pasivo. Recuperar desde Inventario
+  no cuesta PA ni equipa el arma; no repara daños ni permite omitir la extracción
+  si sigue empalada. Los fajos de dardos arrojadizos crean ejemplares independientes;
+- conversión automática de fajos existentes y reservas antiguas: reserva más carga
+  crea munición adicional y vincula el arma, sin restarla de las existencias previas.
+  La migración no duplica cantidades al repetirse. Los perfiles propios sin tipo
+  identificable conservan sus datos y deben configurar la compatibilidad;
+- la ocultación modifica la dificultad; la protección física requiere responder
   con «Cobertura» y que el impacto alcance una localización cubierta;
 - catálogo contextual de acciones proactivas compartido por personajes y PNJ:
   Afianzarse, Aprestar Arma, Forcejear, Maniobrar, Mover, Ponerse en Pie,

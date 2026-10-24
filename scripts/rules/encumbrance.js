@@ -24,7 +24,8 @@ export function totalCarriedEncumbrance(items = []) {
   const carried = items.filter((item) => inventoryCarried(item, items));
   const positive = carried.reduce((total, item) => total + itemEncumbrance(item), 0);
   const zeroItems = carried.reduce((total, item) => itemEncumbrance(item) === 0
-    ? total + Math.max(0, Number(item.system?.quantity ?? 1)) : total, 0);
+    ? total + Math.max(0, Number(item.system?.quantity ?? 1))
+      / Math.max(1, Number(item.system?.zeroEncumbranceUnits ?? 1)) : total, 0);
   return positive + Math.floor(zeroItems / 20);
 }
 

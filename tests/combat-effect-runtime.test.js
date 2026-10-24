@@ -333,3 +333,43 @@ test("Empalar custodia el arma en la víctima solo cuando causa una herida", asy
   assert.equal(data.difficultyKey, "formidable");
   assert.equal(effect.status, "resolved");
 });
+
+test("Empalar conserva el ejemplar lanzado y bloquea su recuperación hasta extraerlo", async () => {
+  const activeEffects = [];
+  const weapon = { id: "trident", name: "Tridente", type: "weapon", system: {
+    thrown: true, equipped: false, traitRefs: [{ key: "barbada" }], modes: [] },
+  async update(change) { this.system.lodged = change["system.lodged"]; },
+  toObject: () => ({ _id: "trident", name: "Tridente", type: "weapon",
+    system: { equipped: true, traitRefs: [{ key: "barbada" }] } }) };
+  const head = { id: "head", type: "hitLocation", system: {} };
+  const victimItems = new Map([[head.id, head]]);
+  const ownerItems = new Map([[weapon.id, weapon]]);
+  const victim = { uuid: "Actor.defender", name: "Víctima", system: { size: 12 },
+    items: victimItems, effects: activeEffects,
+    async createEmbeddedDocuments(type, sources) {
+      const created = sources.map((source, index) => ({ id: `impale-${index}`, ...source }));
+      activeEffects.push(...created); return created;
+    } };
+  const owner = { uuid: "Actor.attacker", name: "Atacante", items: ownerItems,
+    async deleteEmbeddedDocuments(type, ids) { ids.forEach((id) => ownerItems.delete(id)); } };
+  const effect = { key: "empalar", side: "attacker", slot: 0, status: "resolved" };
+  const state = combat([effect]);
+  state.attacker.weaponId = weapon.id;
+  state.attacker.weaponSize = "G";
+  state.attacker.modeSnapshot = { key: "thrust", damage: "1d8", impalingSize: "M" };
+  state.damage.resultingWound = "minor";
+  await applyPostDamageCombatEffects(state, { resolveActor: async (token, uuid) =>
+    uuid === victim.uuid ? victim : owner, localize: (key) => key, combatById: () => null });
+  assert.equal(ownerItems.has(weapon.id), true);
+  assert.equal(weapon.system.lodged, true);
+  assert.equal(activeEffects.length, 1);
+  const data = activeEffects[0].flags["mythras-foundry"].timedCondition;
+  assert.equal(data.retainedWeapon, true);
+  assert.equal(data.ownerActorUuid, owner.uuid);
+  assert.equal(data.key, "impaled");
+  assert.equal(data.weaponName, "Tridente");
+  assert.equal(data.damageFormula, "1d8");
+  assert.equal(data.barbed, true);
+  assert.equal(data.difficultyKey, "formidable");
+  assert.equal(effect.status, "resolved");
+});

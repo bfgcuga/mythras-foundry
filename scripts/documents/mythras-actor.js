@@ -1,3 +1,4 @@
+import { normalizeInventorySources } from "../rules/inventory-ammunition.js";
 import { globalHealthConfigurationValid, usesGlobalHitPoints } from "../rules/health.js";
 import { worstWoundLevel } from "../rules/hit-locations.js";
 import { automaticIncapacitatedCauses, INCAPACITATED_FLAG_SCOPE,
@@ -35,6 +36,7 @@ export async function syncIncapacitatedStatus(actor) {
 
 export class MythrasActor extends Actor {
   async createEmbeddedDocuments(type, data, options = {}) {
+    if (type === "Item") data = normalizeInventorySources(data);
     if (type === "Item" && usesGlobalHitPoints(this)
       && !globalHealthConfigurationValid(this.system, [...this.items, ...data])) {
       throw new Error(game.i18n.localize("MYTHRASF.Health.InvalidBody"));

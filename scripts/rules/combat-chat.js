@@ -1,3 +1,4 @@
+import { modeAmmunition, ammunitionProblem } from "./ammunition.js";
 import { skillRequiresManualValue } from "./skills.js";
 import { characteristicValue, characteristicAbsent } from "./health.js";
 import { canStartProactiveAction, choosingInterruption, combatInterruption, bindInterruptionAction,
@@ -35,8 +36,7 @@ import { consumeMatchingCombatRuses, consumePassiveBlock, coverFor, ensureEngage
   passiveBlockFor, registerCombatRuse, relationFor, tacticalState, detailedReachEnabled,
   validateReachAttack } from "./engagement-runtime.js";
 import { engagementRestriction } from "./engagements.js";
-import { ammunitionState, canFireAmmunition,
-  isAccidentalMeleeHit, parseRangeProfile, rangedAttackProfile, reducePowerCategory
+import { isAccidentalMeleeHit, parseRangeProfile, rangedAttackProfile, reducePowerCategory
 } from "./ranged-combat.js";
 import { clearAim, readyAim } from "./ranged-actions.js";
 import { appendSerializedRolls, evaluateAnimatedRoll } from "./dice-animation.js";
@@ -463,7 +463,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   }
   if (weaponIsPinned(weapon, actor)) return ui.notifications.warn(localize("MYTHRASF.Pin.Blocked"));
   if (!weaponCanEquip(weapon)) return ui.notifications.warn(
-    localize(weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
+    localize(weapon?.system?.thrown ? "MYTHRASF.Ranged.Inventory.Thrown" : weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
       : "MYTHRASF.Weapon.BrokenCannotEquip"));
   if (pendingAttackActors.has(actor.uuid)) return null;
   pendingAttackActors.add(actor.uuid);
@@ -503,7 +503,10 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
   if (["ranged", "siege"].includes(mode.weaponType)) {
     const ranges = modeRangeProfile(mode);
     if (!ranges) return ui.notifications.warn(localize("MYTHRASF.Ranged.InvalidRange"));
-    if (!canFireAmmunition(mode)) return ui.notifications.warn(localize("MYTHRASF.Ranged.NotLoaded"));
+    const ammoUse = modeAmmunition(weapon, mode).use;
+    const ammoIssue = ammoUse !== "none" ? ammunitionProblem(actor, weapon, mode) : null;
+    if (ammoIssue) return ui.notifications.warn(localize(`MYTHRASF.Ranged.Inventory.${ammoIssue}`));
+    if (ammoUse === "none" && mode.ammoTracking && !mode.ammoUse) return ui.notifications.warn(localize("MYTHRASF.Ranged.Inventory.SelectAmmunition"));
     const skirmisher = (resolution.style?.system?.traitRefs ?? []).some((trait) =>
       trait.key === "hostigador");
     if (setup.ranged?.attackerMovement === "sprint"
@@ -601,15 +604,17 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
       abilityId: configured.reinforcedSkill.id, abilityName: configured.reinforcedSkill.name,
       target: Number(configured.reinforcedSkill.system.total ?? 0) } : null
   };
-  if (turnEconomy && !await spendActionPoint(actor, { actionKind: "attack" })) {
+  const managedAmmunition = ranged && modeAmmunition(weapon, mode).use !== "none";
+  if (turnEconomy && !managedAmmunition && !await spendActionPoint(actor, { actionKind: "attack" })) {
     return ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints"));
+  }
+  let ammunition = null;
+  if (managedAmmunition) {
+    try { ammunition = await consumeWeaponModeAmmunition(weapon, mode, { spendAction: Boolean(turnEconomy) }); }
+    catch (failure) { ui.notifications.warn(failure.message); return null; }
   }
   await releaseManeuverRival(maneuverTracker, actor, setup.targetTokenUuid, maneuverTokenUuid(maneuverTracker, actor));
   await clearAim(actor);
-  let ammunition = null;
-  if (ranged && mode.ammoTracking) {
-    ammunition = await consumeWeaponModeAmmunition(weapon, mode);
-  }
   if (turnEconomy) {
     turnEconomy.attackSpent = true;
     await consumePassiveBlock(game.combats.get(turnEconomy.combatId), turnEconomy.combatantId,
@@ -625,7 +630,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     ranged.accidentalEligible = isAccidentalMeleeHit({ rawRoll: roll.total,
       modifiedTarget: targetValue, normalTarget: ranged.normalTarget,
       meleePosition: ranged.meleePosition });
-    ranged.ammunition = ammunition ?? ammunitionState(mode);
+    ranged.ammunition = ammunition ?? { tracking: false };
   }
   const combat = { schemaVersion: SCHEMA_VERSION, revision: 0,
     status: ranged?.accidentalEligible ? "awaitingAccidentalTarget" : "awaitingDefense",
@@ -1362,8 +1367,9 @@ async function requestCombatDamage(message, combat, manual = false) {
     ? intrinsicUnarmedWeapon(actor, localize("MYTHRASF.Combat.Unarmed")) : actor.items.get(weaponId);
   const mode = weapon ? findWeaponMode(weapon, modeKey) : null;
   if (!weapon || !mode) return ui.notifications.warn(localize("MYTHRASF.Combat.SourceMissing"));
-  if (!weaponCanEquip(weapon)) return ui.notifications.warn(
-    localize(weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
+  if (!weaponCanEquip(weapon, { allowThrown: sourceProfile === combat.attacker
+    && Boolean(combat.ranged?.ammunition?.thrown) })) return ui.notifications.warn(
+    localize(weapon?.system?.thrown ? "MYTHRASF.Ranged.Inventory.Thrown" : weapon?.system?.inoperable ? "MYTHRASF.Weapon.InoperableCannotUse"
       : "MYTHRASF.Weapon.BrokenCannotEquip"));
   const modifier = damageModifierFormula(actor.system.attributes?.damageModifier, mode.damageModifierMode) || "0";
   const extraordinary = weaponPlan?.sourceSide === "defender"

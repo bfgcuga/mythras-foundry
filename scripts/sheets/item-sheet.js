@@ -1,3 +1,4 @@
+import { modeAmmunition, ammunitionView } from "../rules/ammunition.js";
 import { usesGlobalHitPoints } from "../rules/health.js";
 const { ItemSheetV2 } = foundry.applications.sheets;
 const { DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -211,6 +212,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const preparedWeaponModes = this.item.type === "weapon"
       ? await Promise.all(weaponModes(this.item).map(async (weaponMode, modeIndex) => ({
         ...weaponMode, modeIndex,
+        ammoUse: modeAmmunition(this.item, weaponMode).use,
+        ammoType: modeAmmunition(this.item, weaponMode).type,
+        inventoryAmmo: this.item.actor ? ammunitionView(this.item.actor, this.item, weaponMode) : null,
         displayName: game.i18n.localize(`MYTHRASF.Weapon.Type.${weaponMode.weaponType}`),
         isRanged: weaponMode.weaponType === "ranged",
         isSiege: weaponMode.weaponType === "siege",
@@ -233,6 +237,9 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       isPassion: this.item.type === "passion",
       isCustomPassionVerb: this.item.type === "passion" && this.item.system.verb === "other",
       isPersonPassion: this.item.type === "passion" && this.item.system.objectType === "person",
+      isAmmunition: this.item.type === "equipment" && this.item.system.category === "ammunition",
+      ammunitionUseChoices: ["none", "projectile", "thrown"].map(value => ({ value,
+        label: game.i18n.localize(`MYTHRASF.Ranged.Inventory.Use.${value}`) })),
       isEquipment: ["equipment", "weapon", "armor"].includes(this.item.type),
       currencyChoices: ["copper", "silver", "gold"].map((value) => ({ value,
         label: game.i18n.localize(`MYTHRASF.Currency.${value}`) })),

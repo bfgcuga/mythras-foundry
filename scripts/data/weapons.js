@@ -1,3 +1,4 @@
+import { PROJECTILE_PROFILES, THROWN_PROFILES } from "../rules/ammunition.js";
 import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
 import { WEAPON_TRAIT_SOURCES } from "./traits.js";
 import { parseLegacyTraitText } from "../rules/traits.js";
@@ -46,6 +47,12 @@ const mode = ({ key, name = "", type = "melee", damage = "", damageModifier = "f
 const source = ({ key, name, ap, hp, enc = 0, cost = 0, era = "", traits = "",
   modes, img = "icons/svg/sword.svg", description = "",
   sourceName = MYTHRAS_REVISED_SOURCE, sourceFlag = "mythras-basic-revised" }) => {
+  for (const entry of modes) {
+    if (["ranged", "siege"].includes(entry.weaponType)) Object.assign(entry, {
+      ammoUse: THROWN_PROFILES.includes(key) ? "thrown" : PROJECTILE_PROFILES[key] ? "projectile" : "none",
+      ammoType: PROJECTILE_PROFILES[key] || "", ammoItemId: "", ammunitionVersion: 1
+    });
+  }
   const active = modes[0];
   return {
     buildKey: key, name, type: "weapon", img,
@@ -169,6 +176,7 @@ const modeFor = (entry, overrides) => mode({
 
 const addMode = (sources, key, rangedMode) => {
   const entry = sources.find((candidate) => candidate.buildKey === key);
+  Object.assign(rangedMode, { ammoUse: "thrown", ammoType: "", ammoItemId: "", ammunitionVersion: 1 });
   entry.system.modes.push(rangedMode);
 };
 

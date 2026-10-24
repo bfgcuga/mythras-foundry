@@ -1,3 +1,4 @@
+import { registerAmmunitionRuntime } from "./rules/ammunition-runtime.js";
 import { registerNpcHealthHooks } from "./rules/npc-health-runtime.js";
 import { defaultItemIcon } from "./data/item-icons.js";
 import { actorIncapacitatedState, syncIncapacitatedStatus
@@ -263,6 +264,7 @@ Hooks.on("createActor", async (actor, options, userId) => {
 });
 
 Hooks.once("ready", async () => {
+  registerAmmunitionRuntime();
   if (!isPrimaryActiveGM()) return;
   await runWorldMigrations();
 });

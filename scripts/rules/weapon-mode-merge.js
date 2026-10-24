@@ -9,7 +9,8 @@ export function weaponMergeCandidates(actors) {
       if (!key) continue;
       profiles.set(key, [...(profiles.get(key) ?? []), weapon]);
     }
-    for (const [profileKey, weapons] of profiles) if (weapons.length > 1) groups.push({ actor, profileKey, weapons,
+    for (const [profileKey, weapons] of profiles) if (weapons.length > 1 && new Set(weapons.map(weapon =>
+      JSON.stringify(weaponModes(weapon).map(mode => [mode.key, mode.weaponType])))).size > 1) groups.push({ actor, profileKey, weapons,
       conflicts: PHYSICAL_FIELDS.filter((field) => new Set(weapons.map((weapon) => String(weapon.system[field] ?? ""))).size > 1) });
   }
   return groups;

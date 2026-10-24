@@ -341,7 +341,9 @@ export async function applyRolledCombatDamage(message, request, { clone, flagSco
   const actor = await resolveActor(sourceEntry.tokenUuid, sourceEntry.actorUuid);
   const user = userById(request.userId);
   if (!actor || !user || (!user.isGM && !actor.testUserPermission(user, "OWNER"))) return false;
-  if (weaponPlan && !weaponCanEquip(actor.items.get(weaponPlan.sourceWeaponId))) return false;
+  if (weaponPlan && !weaponCanEquip(actor.items.get(weaponPlan.sourceWeaponId), {
+    allowThrown: weaponPlan.sourceSide === "attacker" && Boolean(combat.ranged?.ammunition?.thrown)
+  })) return false;
   const checkEveryMutilatedHit = permanentWoundRule !== "reduceD20Range";
   let selectedLocation = request.locationId ? (combat.defender.locations ?? []).find((entry) =>
     entry.id === request.locationId) : findHitLocation((combat.defender.locations ?? []).map((entry) => ({

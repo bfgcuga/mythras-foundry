@@ -256,12 +256,18 @@ test("Recargar usa la oportunidad fuera de turno y finaliza tras actualizar el a
   const f = setup(t);
   const weapon = documentDouble({ id: "bow", name: "Arco", type: "weapon", system: {
     equipped: true, activeModeKey: "ranged", modes: [{ key: "ranged", weaponType: "ranged",
-      ammoTracking: true, ammoCapacity: 1, ammoLoaded: 0, ammoReserve: 3, reloadActions: 1, reloadProgress: 0 }] } });
-  f.actor.items.push(weapon);
-  foundry.applications = { api: { DialogV2: { wait: async () => "bow:ranged" } } };
+      ammoUse: 'projectile', ammoType: 'arrow', ammoItemId: 'arrows', ammoCapacity: 1, ammoLoaded: 0, reloadActions: 1, reloadProgress: 0 }] } });
+  const arrows = documentDouble({ id: 'arrows', name: 'Flechas', type: 'equipment', system: { category: 'ammunition', ammoType: 'arrow', quantity: 3 } });
+  weapon.actor = f.actor;
+  f.actor.items.push(weapon, arrows);
+  f.actor.updateEmbeddedDocuments = async (type, updates) => {
+    for (const { _id, ...update } of updates) await f.actor.items.get(_id).update(update);
+  };
+  let dialog = 0;
+  foundry.applications = { api: { DialogV2: { wait: async () => dialog++ ? 'arrows' : 'bow:ranged' } } };
   await f.begin(); await reloadRangedWeapon(f.actor);
   assert.equal(weapon.system.modes[0].ammoLoaded, 1);
-  assert.equal(weapon.system.modes[0].ammoReserve, 2);
+  assert.equal(arrows.system.quantity, 3);
   assert.equal(f.actor.system.resources.actionPoints.value, 1);
   assert.equal(combatInterruption(f.combat).phase, "awaitingDecision");
   assert.equal(f.combat.advanced, 0);
@@ -372,4 +378,47 @@ test("el botón circunstancial y la elección se representan igual para personaj
     assert.equal(root.querySelector("[data-combat-action-key='move']").disabled, false);
     assert.equal(root.querySelector("[data-combat-action-key='delay']").disabled, true);
   }
+});
+
+
+test('Recargar pide configurar compatibilidad para un modo antiguo sin tipo', async t => {
+  const f = setup(t);
+  const weapon = documentDouble({ id: 'bow', type: 'weapon', system: { equipped: true,
+    activeModeKey: 'ranged', modes: [{ key: 'ranged', weaponType: 'ranged', ammoTracking: true,
+      ammoLoaded: 0, ammoReserve: 10 }] } });
+  f.actor.items.push(weapon);
+  let warning; ui.notifications.warn = text => { warning = text; };
+  foundry.applications = { api: { DialogV2: { wait: async () => 'bow:ranged' } } };
+  await f.begin(); await reloadRangedWeapon(f.actor);
+  assert.equal(warning, 'MYTHRASF.Ranged.Inventory.SelectAmmunition');
+  assert.equal(weapon.system.modes[0].ammoReserve, 10);
+  assert.equal(f.actor.system.resources.actionPoints.value, 2);
+});
+
+test('Recargar preselecciona munición compatible y cancelar conserva estado y PA', async t => {
+  const f = setup(t);
+  const weapon = documentDouble({ id: 'bow', name: '<Arco>', type: 'weapon', system: {
+    equipped: true, activeModeKey: 'ranged', modes: [{ key: 'ranged', weaponType: 'ranged',
+      ammoUse: 'projectile', ammoType: 'arrow', ammoItemId: 'arrows', ammoCapacity: 1,
+      ammoLoaded: 0, reloadProgress: 1, reloadActions: 2 }] } });
+  const arrows = documentDouble({ id: 'arrows', type: 'equipment', name: 'Flechas',
+    system: { category: 'ammunition', ammoType: 'arrow', quantity: 20 } });
+  const bolts = documentDouble({ id: 'bolts', type: 'equipment', name: 'Virotes',
+    system: { category: 'ammunition', ammoType: 'bolt', quantity: 12 } });
+  f.actor.items.push(weapon, arrows, bolts);
+  let calls = 0;
+  foundry.applications = { api: { DialogV2: { wait: async options => {
+    if (!calls++) return 'bow:ranged';
+    const page = dom(options.content); t.after(() => page.window.close());
+    const select = page.window.document.querySelector('[name="ammunition"]');
+    assert.equal(select.value, 'arrows');
+    assert.equal(select.options.length, 1);
+    assert.match(options.content, /Inventory.ReloadHint/);
+    return null;
+  } } } };
+  await f.begin(); await reloadRangedWeapon(f.actor);
+  assert.equal(f.actor.system.resources.actionPoints.value, 2);
+  assert.equal(weapon.system.modes[0].reloadProgress, 1);
+  assert.equal(arrows.system.quantity, 20);
+  assert.equal(combatInterruption(f.combat).phase, 'choosing');
 });

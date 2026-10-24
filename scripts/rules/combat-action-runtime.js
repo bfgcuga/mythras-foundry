@@ -203,12 +203,20 @@ export async function applyImpaledWeaponRecoveryRequest(request) {
   if (recovered) {
     const weaponData = foundry.utils.deepClone(chosen.data.weaponData);
     weaponData.system = { ...weaponData.system, equipped: false };
-    const created = await actor.createEmbeddedDocuments("Item", [weaponData]);
+    const owner = chosen.data.retainedWeapon ? await fromUuid(chosen.data.ownerActorUuid) : null;
+    const retained = owner?.items?.get(chosen.data.weaponId);
+    weaponData.system.thrown = false; weaponData.system.lodged = false;
+    const created = retained && owner.uuid === actor.uuid ? []
+      : await actor.createEmbeddedDocuments("Item", [weaponData]);
     try {
       await chosen.victim.deleteEmbeddedDocuments("ActiveEffect", [chosen.effect.id]);
     } catch (error) {
-      await actor.deleteEmbeddedDocuments("Item", created.map((item) => item.id));
+      if (created.length) await actor.deleteEmbeddedDocuments("Item", created.map(item => item.id));
       throw error;
+    }
+    if (retained) {
+      if (owner.uuid === actor.uuid) await retained.update({ "system.thrown": false, "system.lodged": false, "system.equipped": false });
+      else await owner.deleteEmbeddedDocuments("Item", [retained.id]);
     }
     damageRoll = await evaluateSystemRoll(chosen.data.damageFormula || "0");
     dealt = extractionDamage(damageRoll.total, chosen.data.barbed);

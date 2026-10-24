@@ -1,3 +1,4 @@
+import { migrateActorAmmunition } from "./ammunition-migrations.js";
 import { statusIconUpdates } from "../data/status-icons.js";
 import { ensureBasicSkills } from "../data/basic-skills.js";
 import { managedMacroUpdate } from "../data/macros.js";
@@ -43,6 +44,7 @@ export async function initializeCreatedActor(actor) {
     await actor.update({ "system.backgroundCreationEnabled": true });
   }
   if (actor.type === "npc") await ensureCreatureHitLocations(actor);
+  await migrateActorAmmunition(actor);
   await syncIncapacitatedStatus(actor);
 }
 
@@ -86,6 +88,7 @@ export async function runWorldMigrations() {
       await migrateTraitData(item, traitCatalog);
     }
     await migrateCombatItems(actor);
+    await migrateActorAmmunition(actor);
     await migrateActorPermanentWounds(actor);
     if (actor.type === "character") {
       await ensureCharacterPrototypeTokenLink(actor);
@@ -102,6 +105,7 @@ export async function runWorldMigrations() {
   for (const scene of game.scenes) {
     for (const token of scene.tokens) {
       if (token.actorLink || !token.actor) continue;
+      await migrateActorAmmunition(token.actor);
       const updates = statusIconUpdates(token.actor.effects);
       if (updates.length) await token.actor.updateEmbeddedDocuments("ActiveEffect", updates);
     }

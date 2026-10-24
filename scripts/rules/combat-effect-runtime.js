@@ -298,13 +298,14 @@ export async function applyPostDamageCombatEffects(combat, dependencies = {}) {
       tokenUuid: sourceEntry.tokenUuid, name: owner.name },
     combat: combat.turnEconomy ? dependencies.combatById?.(combat.turnEconomy.combatId) : null,
     duration: { unit: "manual", phase: "manual" }, locationId: location.id,
-    metadata: { weaponData, weaponName: weapon.name, weaponId: weapon.id, modeKey,
+    metadata: { weaponData, retainedWeapon: Boolean(weapon.system.thrown), ownerActorUuid: owner.uuid, weaponName: weapon.name, weaponId: weapon.id, modeKey,
       damageFormula: sourceEntry.modeSnapshot?.damage ?? sourceEntry.defense?.damage ?? "0",
       impalingSize, barbed: hasTrait(weapon, "barbada", { modeKey }),
       difficultyKey: penalty.key, difficultySteps: penalty.difficultySteps,
       incapacitated: penalty.incapacitated } });
   try {
-    await owner.deleteEmbeddedDocuments("Item", [weapon.id]);
+    if (weapon.system.thrown) await weapon.update({ "system.lodged": true, "system.equipped": false });
+    else await owner.deleteEmbeddedDocuments("Item", [weapon.id]);
   } catch (error) {
     const ids = Array.from(created ?? []).map((entry) => entry.id);
     if (ids.length) await victim.deleteEmbeddedDocuments("ActiveEffect", ids);

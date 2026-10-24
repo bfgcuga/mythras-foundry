@@ -562,7 +562,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     if (!item.system.equipped && !weaponCanEquip(item)) {
-      ui.notifications.warn(game.i18n.localize(item.system.inoperable
+      ui.notifications.warn(game.i18n.localize(item.system.thrown ? "MYTHRASF.Ranged.Inventory.Thrown" : item.system.inoperable
         ? "MYTHRASF.Weapon.InoperableCannotUse" : "MYTHRASF.Weapon.BrokenCannotEquip"));
       return;
     }
@@ -2563,7 +2563,7 @@ export class CharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item) return;
     const value = Math.max(0, Number(item.system.value ?? 0))
-      * Math.max(1, Number(item.system.quantity ?? 1));
+      * Math.max(0, Number(item.system.quantity ?? 1));
     const denomination = item.system.currency ?? "silver";
     const confirmed = await DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.Item.Sell") },

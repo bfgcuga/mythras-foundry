@@ -12,9 +12,9 @@ export function weaponHasDurability(weapon) {
   return Math.max(0, Number((weapon?.system ?? weapon)?.maxHitPoints) || 0) > 0;
 }
 
-export function weaponCanEquip(weapon) {
+export function weaponCanEquip(weapon, { allowThrown = false } = {}) {
   const system = weapon?.system ?? weapon ?? {};
-  return Boolean(weapon) && !system.inoperable && weaponDurabilityState(system) !== "broken";
+  return Boolean(weapon) && !system.inoperable && (!system.thrown || allowThrown) && weaponDurabilityState(system) !== "broken";
 }
 
 export function weaponDamageResult({ currentHitPoints = 0, armorPoints = 0, damage = 0 } = {}) {

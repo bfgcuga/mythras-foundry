@@ -1,3 +1,4 @@
+import { ammunitionView } from "../rules/ammunition.js";
 import { canManageActor } from "./actor-visibility.js";
 import { FREE_COMBAT_ACTIONS, requestFreeCombatAction } from "../rules/free-combat-actions.js";
 import { resolveActorConditions, actorLoadState } from "../rules/actor-conditions.js";
@@ -40,9 +41,9 @@ export function prepareCombatWeaponView({ actor, weapon, mode, styles,
   const effectiveTarget = difficultyTarget(resolution.target, resolution.difficulty);
   const durability = npcWeaponDurability(weapon, hitLocations);
   const durabilityState = weaponDurabilityState(durability);
-  const inoperable = Boolean(weapon.system.inoperable);
+  const inoperable = Boolean(weapon.system.inoperable || weapon.system.thrown);
   return {
-    item: weapon, mode, displayName: weaponModeDisplayName(weapon, mode),
+    item: weapon, mode, ammunition: ammunitionView(actor, weapon, mode), thrown: Boolean(weapon.system.thrown), displayName: weaponModeDisplayName(weapon, mode),
     pinned: weaponIsPinned(weapon, actor),
     handsRequired: weaponHandsRequired(weapon, mode),
     prepared: Boolean(!inoperable && weaponCanEquip(durability) && weapon.system.equipped

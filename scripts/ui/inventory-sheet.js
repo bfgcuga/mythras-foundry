@@ -1,3 +1,4 @@
+import { requestAmmunitionOperation } from "../rules/ammunition-runtime.js";
 import { weaponHandsRequired } from "../rules/equipment.js";
 import { weaponIsPinned } from "../rules/weapon-pinning.js";
 import { itemEncumbrance } from "../rules/encumbrance.js";
@@ -40,7 +41,9 @@ export function prepareInventoryView(items = []) {
     broken: row.isWeapon ? weaponDurabilityState(row.item) === "broken"
       : row.isArmor && armorDurabilityState(row.item) === "broken",
     damaged: row.isWeapon && weaponDurabilityState(row.item) === "damaged",
-    inoperable: row.isWeapon && Boolean(row.item.system.inoperable),
+    inoperable: row.isWeapon && Boolean(row.item.system.inoperable || row.item.system.thrown),
+    damagedForRepair: row.isWeapon && Boolean(row.item.system.inoperable),
+    thrown: row.isWeapon && Boolean(row.item.system.thrown),
     categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
       : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
         : game.i18n.localize(`MYTHRASF.ItemClass.${row.system.category}`)
@@ -66,6 +69,13 @@ export class InventorySheetController {
   get editable() { return this.sheet.isEditable; }
 
   bind() {
+    this.element.querySelectorAll("[data-action='recover-thrown-weapon']").forEach(button =>
+      button.addEventListener("click", async event => {
+        event.preventDefault(); if (!this.editable) return;
+        const weaponId = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
+        try { await requestAmmunitionOperation(this.actor, { kind: "recover", weaponId }); }
+        catch (failure) { ui.notifications.warn(failure.message); }
+      }));
     this.element.querySelectorAll("[data-action='toggle-container']").forEach((button) =>
       button.addEventListener("click", (event) => this.toggleContainer(event)));
     this.element.querySelectorAll("[data-action='sell-item']").forEach((button) =>
@@ -187,7 +197,7 @@ export class InventorySheetController {
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
     if (!item) return;
     const value = Math.max(0, Number(item.system.value ?? 0))
-      * Math.max(1, Number(item.system.quantity ?? 1));
+      * Math.max(0, Number(item.system.quantity ?? 1));
     const denomination = item.system.currency ?? "silver";
     const confirmed = await foundry.applications.api.DialogV2.confirm({
       window: { title: game.i18n.localize("MYTHRASF.Item.Sell") },

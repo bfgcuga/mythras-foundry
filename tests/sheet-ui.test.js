@@ -86,3 +86,17 @@ test("la hoja de efecto mantiene descripción antes de resumen y tabla accesible
   const description=doc.querySelector('.combat-effect-sheet-description'),summary=doc.querySelector('.combat-effect-sheet-summary');assert.ok(description.compareDocumentPosition(summary)&4);
   assert.equal(doc.querySelectorAll('thead th[scope=col]').length,2);assert.equal(doc.querySelector('tbody th[scope=row]').textContent.trim(),'Brazo');
 });
+
+
+test('la fila de disparo etiqueta acciones y munición usando el coste real de recarga', t => {
+  const doc = rendered(t, 'templates/actor/parts/combat-tab.hbs', { rangedCombatWeapons: [{
+    item: { id: 'bow' }, mode: { key: 'ranged', reload: '99', reloadActions: 2,
+      ammoTracking: true, ammoLoaded: 0, ammoReserve: 20 }, ammunition: { tracking: true, name: 'Flechas', total: 20, loaded: 0, available: 20 }, styleOptions: []
+  }] });
+  const text = doc.querySelector('[data-item-id="bow"]').textContent;
+  assert.match(text, /Acciones de recarga: 2/);
+  assert.match(text, /Total: 20/);
+  assert.match(text, /Cargada: 0/);
+  assert.match(text, /Disponible: 20/);
+  assert.doesNotMatch(text, /Â|99/);
+});

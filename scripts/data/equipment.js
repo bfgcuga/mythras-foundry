@@ -1,3 +1,4 @@
+import { AMMUNITION_PACKS } from "../rules/ammunition.js";
 import { MYTHRAS_REVISED_SOURCE } from "./sources.js";
 
 const flags = { "mythras-foundry": { source: "mythras-basic-revised" } };
@@ -237,7 +238,11 @@ export const AMMUNITION_SOURCES = [
   ["Flechas (fajo de doce)",4],["Virotes (fajo de doce)",3],
   ["Balas de plomo para honda (bolsa de veinte)",1],
   ["Dardos de cerbatana (media docena)",2],["Dardos arrojadizos (fajo de doce)",2]
-].map(([name, value]) => equipment(name, { category: "ammunition", value }));
+].map(([name, value]) => {
+  const item = equipment(name, { category: "ammunition", value });
+  Object.assign(item.system, AMMUNITION_PACKS[item.buildKey], { ammunitionProfile: item.buildKey });
+  return item;
+});
 
 export const EQUIPMENT_SOURCES = Object.freeze([
   ...ACCOMMODATION_SOURCES, ...CLOTHING_SOURCES, ...FOOD_SOURCES,

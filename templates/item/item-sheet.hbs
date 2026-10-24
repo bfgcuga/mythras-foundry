@@ -159,6 +159,12 @@
     <label>{{localize "MYTHRASF.Background.Source"}}</label><input class="sheet-field-editable" name="system.source" value="{{item.system.source}}">
     <label>{{localize "MYTHRASF.ItemClass.Label"}}</label><select class="sheet-field-editable" name="system.category">{{selectOptions equipmentCategoryChoices selected=item.system.category labelAttr="label" valueAttr="value"}}</select>
     <label>{{localize "MYTHRASF.Weapon.Era"}}</label><input class="sheet-field-editable" name="system.era" value="{{item.system.era}}">
+    {{#if isAmmunition}}
+    <label>{{localize "MYTHRASF.Ranged.Inventory.Type"}}</label><input name="system.ammoType" value="{{item.system.ammoType}}" title="{{localize 'MYTHRASF.Ranged.Inventory.TypeHint'}}">
+    <label>{{localize "MYTHRASF.Ranged.Inventory.PackageSize"}}</label><input type="number" min="1" name="system.packageSize" value="{{item.system.packageSize}}">
+    <label>{{localize "MYTHRASF.Ranged.Inventory.UnitName"}}</label><input name="system.unitName" value="{{item.system.unitName}}">
+    <label>{{localize "MYTHRASF.Ranged.Inventory.ThrownProfile"}}</label><input name="system.thrownProfile" value="{{item.system.thrownProfile}}">
+    {{/if}}
     <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
     <label>{{localize "MYTHRASF.Weapon.Encumbrance"}}</label><input type="number" min="0" step="any" name="system.weight" value="{{item.system.weight}}">
     <label>{{localize "MYTHRASF.Item.Value"}}</label><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}">
@@ -213,10 +219,11 @@
           <label><span>{{localize "MYTHRASF.Ranged.EffectiveRange"}}</span><input type="number" min="0" name="system.modes.{{@index}}.rangeEffective" value="{{mode.rangeEffective}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.LongRange"}}</span><input type="number" min="0" name="system.modes.{{@index}}.rangeLong" value="{{mode.rangeLong}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.ReloadActions"}}</span><input type="number" min="0" name="system.modes.{{@index}}.reloadActions" value="{{mode.reloadActions}}"></label>
-          <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.modes.{{@index}}.ammoTracking" {{checked mode.ammoTracking}}>{{localize "MYTHRASF.Ranged.TrackAmmo"}}</label>
+          <label><span>{{localize "MYTHRASF.Ranged.Inventory.UseLabel"}}</span><select name="system.modes.{{@index}}.ammoUse">{{selectOptions ../ammunitionUseChoices selected=mode.ammoUse labelAttr="label" valueAttr="value"}}</select></label>
+          <label><span>{{localize "MYTHRASF.Ranged.Inventory.Type"}}</span><input name="system.modes.{{@index}}.ammoType" value="{{mode.ammoType}}" title="{{localize 'MYTHRASF.Ranged.Inventory.TypeHint'}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.Capacity"}}</span><input type="number" min="1" name="system.modes.{{@index}}.ammoCapacity" value="{{mode.ammoCapacity}}"></label>
-          <label><span>{{localize "MYTHRASF.Ranged.Loaded"}}</span><input type="number" min="0" name="system.modes.{{@index}}.ammoLoaded" value="{{mode.ammoLoaded}}"></label>
-          <label><span>{{localize "MYTHRASF.Ranged.Reserve"}}</span><input type="number" min="0" name="system.modes.{{@index}}.ammoReserve" value="{{mode.ammoReserve}}"></label>
+          <span>{{localize "MYTHRASF.Ranged.Loaded"}}: {{mode.ammoLoaded}}</span>
+          {{#if mode.inventoryAmmo.tracking}}<span>{{mode.inventoryAmmo.name}} — {{localize "MYTHRASF.Ranged.Inventory.Total"}}: {{mode.inventoryAmmo.total}}, {{localize "MYTHRASF.Ranged.Inventory.Available"}}: {{mode.inventoryAmmo.available}}</span>{{/if}}
           <label class="weapon-short-field"><span>{{localize "MYTHRASF.Weapon.CrewMinimum"}}</span><input type="number" min="0" name="system.modes.{{@index}}.crewMinimum" value="{{mode.crewMinimum}}"></label>
           <label class="weapon-short-field"><span>{{localize "MYTHRASF.Weapon.CrewMaximum"}}</span><input type="number" min="0" name="system.modes.{{@index}}.crewMaximum" value="{{mode.crewMaximum}}"></label>
         </div>{{else}}{{#if mode.isRanged}}<div class="weapon-mode-fields weapon-mode-fields-ranged">
@@ -231,10 +238,11 @@
           <label><span>{{localize "MYTHRASF.Ranged.EffectiveRange"}}</span><input type="number" min="0" name="system.modes.{{@index}}.rangeEffective" value="{{mode.rangeEffective}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.LongRange"}}</span><input type="number" min="0" name="system.modes.{{@index}}.rangeLong" value="{{mode.rangeLong}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.ReloadActions"}}</span><input type="number" min="0" name="system.modes.{{@index}}.reloadActions" value="{{mode.reloadActions}}"></label>
-          <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.modes.{{@index}}.ammoTracking" {{checked mode.ammoTracking}}>{{localize "MYTHRASF.Ranged.TrackAmmo"}}</label>
+          <label><span>{{localize "MYTHRASF.Ranged.Inventory.UseLabel"}}</span><select name="system.modes.{{@index}}.ammoUse">{{selectOptions ../ammunitionUseChoices selected=mode.ammoUse labelAttr="label" valueAttr="value"}}</select></label>
+          <label><span>{{localize "MYTHRASF.Ranged.Inventory.Type"}}</span><input name="system.modes.{{@index}}.ammoType" value="{{mode.ammoType}}" title="{{localize 'MYTHRASF.Ranged.Inventory.TypeHint'}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.Capacity"}}</span><input type="number" min="1" name="system.modes.{{@index}}.ammoCapacity" value="{{mode.ammoCapacity}}"></label>
-          <label><span>{{localize "MYTHRASF.Ranged.Loaded"}}</span><input type="number" min="0" name="system.modes.{{@index}}.ammoLoaded" value="{{mode.ammoLoaded}}"></label>
-          <label><span>{{localize "MYTHRASF.Ranged.Reserve"}}</span><input type="number" min="0" name="system.modes.{{@index}}.ammoReserve" value="{{mode.ammoReserve}}"></label>
+          <span>{{localize "MYTHRASF.Ranged.Loaded"}}: {{mode.ammoLoaded}}</span>
+          {{#if mode.inventoryAmmo.tracking}}<span>{{mode.inventoryAmmo.name}} — {{localize "MYTHRASF.Ranged.Inventory.Total"}}: {{mode.inventoryAmmo.total}}, {{localize "MYTHRASF.Ranged.Inventory.Available"}}: {{mode.inventoryAmmo.available}}</span>{{/if}}
         </div>{{else}}<div class="weapon-mode-fields weapon-mode-fields-melee">
           <label><span>{{localize "MYTHRASF.Weapon.TypeLabel"}}</span><select data-weapon-mode-type name="system.modes.{{@index}}.weaponType">{{selectOptions ../weaponTypeChoices selected=mode.weaponType labelAttr="label" valueAttr="value"}}</select></label>
           <label class="weapon-short-field"><span>{{localize "MYTHRASF.Weapon.HandsRequired"}}</span><input type="number" min="0" max="2" name="system.modes.{{@index}}.handsRequired" value="{{mode.handsRequired}}"></label>

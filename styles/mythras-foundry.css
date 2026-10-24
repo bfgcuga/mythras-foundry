@@ -2786,7 +2786,9 @@
 .mythras-foundry .equipment-state-toggle.equipped { color: var(--mythras-accent); background: transparent !important; opacity: 1; }
 .mythras-foundry .equipment-state-toggle.equipped i { font-weight: 900; filter: drop-shadow(0 0 1px rgb(0 0 0 / 35%)); }
 .mythras-foundry .weapon-durability-damaged .item-name,
-.mythras-foundry .weapon-durability-damaged [data-action="edit-item"] { color: #9f1d20; }
+.mythras-foundry .weapon-durability-damaged [data-action="edit-item"],
+.mythras-foundry .weapon-thrown .item-name,
+.mythras-foundry .weapon-thrown [data-action="edit-item"] { color: #9f1d20; }
 .mythras-foundry .weapon-durability-broken .item-name,
 .mythras-foundry .weapon-durability-broken [data-action="edit-item"],
 .mythras-foundry .armor-durability-broken .item-name,
@@ -2805,10 +2807,11 @@
   color: #7a3f87;
   text-decoration: line-through;
 }
-.mythras-foundry [data-item-id]:has(> [data-action="repair-inoperable-weapon"]) {
+.mythras-foundry [data-item-id]:has(> :is([data-action="repair-inoperable-weapon"], [data-action="recover-thrown-weapon"])) {
   position: relative;
 }
-.mythras-foundry [data-action="repair-inoperable-weapon"] {
+.mythras-foundry [data-action="repair-inoperable-weapon"],
+.mythras-foundry [data-action="recover-thrown-weapon"] {
   position: absolute;
   right: 2rem;
 }

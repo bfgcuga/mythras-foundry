@@ -208,7 +208,8 @@ export async function consumePassiveBlock(combat, combatantId, weaponId, reason)
 export function passiveBlockFor(combat, combatantId, locationId) {
   const block = tacticalState(combat).passiveBlocks?.[combatantId];
   const actor = combat?.combatants?.get?.(combatantId)?.actor;
-  if (weaponIsPinned(actor?.items?.get?.(block?.weaponId), actor)) return null;
+  const weapon = actor?.items?.get?.(block?.weaponId);
+  if (weapon?.system?.thrown || weaponIsPinned(weapon, actor)) return null;
   return block?.status === "active" && Number(block.round) === Number(combat.round)
     && block.locationIds?.includes(locationId) ? block : null;
 }
