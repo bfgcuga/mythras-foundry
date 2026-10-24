@@ -11,8 +11,8 @@ en [`pending.md`](pending.md).
 
 `scripts/rules/round-consequences.js` reúne actualmente el modelo y la
 persistencia de la cola, los ejecutores de consecuencias, el renderizado HTML y
-el transporte mediante mensajes y eventos. Antes de ampliar los peligros debe
-separarse en fronteras equivalentes a las ya empleadas por el combate:
+el transporte mediante mensajes y eventos. La refactorización debe separarlo
+en fronteras equivalentes a las ya empleadas por el combate:
 
 - un modelo puro para construir y validar la cola;
 - ejecutores que reciban explícitamente sus dependencias de Foundry;
@@ -20,8 +20,12 @@ separarse en fronteras equivalentes a las ya empleadas por el combate:
 - un adaptador de mensajes, sockets y eventos.
 
 La extracción debe conservar el esquema persistido, la reanudación de entradas
-pendientes y las transiciones actuales. Este trabajo ocupa una posición explícita
-en el roadmap.
+pendientes y las transiciones actuales, sin cambiar las reglas ni el
+comportamiento actual. Este trabajo queda al final del roadmap como mejora de
+mantenimiento: no bloquea los bloques funcionales anteriores. Los Items de
+venenos, enfermedades y trampas y sus tiradas guiadas no usan esta cola; su
+seguimiento temporal sigue a cargo del DJ. Reconsiderar la prioridad si se
+acuerda ampliar significativamente las consecuencias automáticas de asalto.
 
 ## Candidatos sin prioridad
 

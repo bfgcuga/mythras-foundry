@@ -6,6 +6,10 @@ El trabajo confirmado que todavía no tiene prioridad ni posición se mantiene e
 [`README.md`](../README.md) y las decisiones técnicas vigentes en
 [`architecture.md`](architecture.md).
 
+La revisión de estados está cerrada: catálogo traducido y ordenado, duplicados
+unificados, iconos validados y activación automática de Envenenado y Enfermo.
+El estado definitivo se describe en [`status-catalog.md`](status-catalog.md).
+
 ## 1. Revisar las acciones activas
 
 Revisar prioritariamente estas acciones:
@@ -21,7 +25,7 @@ implementación incompleta o resolución únicamente guiada, y corregir o comple
 su flujo según corresponda. Comprobar requisitos, disponibilidad, coste en PA,
 tiradas, consecuencias y cierre o avance del turno, con pruebas de los
 comportamientos corregidos. La revisión determinará el alcance concreto de las
-acciones diferenciales pendientes del punto 5.
+acciones diferenciales pendientes del punto 4.
 
 Montar, Mover y Titubear ya están revisadas y aprobadas. La acción genérica
 ya permite describir una acción, gastar un PA y publicarla en el chat.
@@ -45,15 +49,7 @@ campos editables, acciones permitidas y pestañas administrativas, con pruebas d
 los límites relevantes. No ampliar automáticamente a Items la vista pública de
 los actores.
 
-## 4. Separar las responsabilidades de las consecuencias de asalto
-
-Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
-renderizado y el transporte antes de ampliar significativamente los peligros.
-Conservar las transiciones y validaciones actuales mediante pruebas durante la
-extracción. Las fronteras y restricciones del refactor están detalladas en
-[`refactoring.md`](refactoring.md).
-
-## 5. Integrar las acciones diferenciales pendientes
+## 4. Integrar las acciones diferenciales pendientes
 
 Conectar Cargar con la transacción
 diferencial completa. El catálogo ya conserva coste, participantes y parámetros,
@@ -61,10 +57,24 @@ pero la resolución de esta acción sigue siendo guiada. Maniobrar ya utiliza
 una enfrentada de Evadir con una respuesta individual por rival y confirmación
 de consecuencias.
 
-## 6. Implementar Entrenar Habilidad
+## 5. Implementar Entrenar Habilidad
 
 Desarrollar el flujo completo de entrenamiento, incluyendo requisitos, coste o
 tiempo aplicable, resolución, persistencia y presentación en la hoja.
+
+## 6. Refactorizar el motor de consecuencias de asalto
+
+Separar en `round-consequences.js` el modelo de cola, los ejecutores, el
+renderizado y el transporte, sin cambiar las reglas ni el comportamiento actual.
+Conservar el esquema persistido, la reanudación de entradas pendientes y las
+transiciones y validaciones actuales mediante pruebas durante la extracción.
+
+Es una mejora de mantenimiento y no un requisito previo para los bloques
+funcionales anteriores. Los Items de venenos, enfermedades y trampas y sus
+tiradas guiadas no dependen de esta cola; su seguimiento temporal sigue a cargo
+del DJ. Reconsiderar esta prioridad si se acuerda ampliar significativamente
+las consecuencias automáticas de asalto. Las fronteras y restricciones están
+detalladas en [`refactoring.md`](refactoring.md).
 
 ## 7. Reparar armas y armaduras dañadas o destruidas
 

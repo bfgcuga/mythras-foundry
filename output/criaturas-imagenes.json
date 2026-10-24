@@ -1,0 +1,270 @@
+[
+  {
+    "nombre": "Acéfalo",
+    "descripcion": "Humanoide sin cabeza ni cuello, con ojos y boca en el torso. Cuerpo robusto y atuendo sencillo de pieles."
+  },
+  {
+    "nombre": "Araña gigante",
+    "descripcion": "Araña descomunal de ocho patas largas, abdomen voluminoso, cuerpo cubierto de cerdas y grandes quelíceros."
+  },
+  {
+    "nombre": "Arpía",
+    "descripcion": "Criatura con cabeza y torso de anciana de aspecto feroz, alas y parte inferior de buitre, y largas garras."
+  },
+  {
+    "nombre": "Asipatra",
+    "descripcion": "Gran ave de metal, con plumas cortantes, alas afiladas como espadas y garras semejantes a dagas."
+  },
+  {
+    "nombre": "Babuino",
+    "descripcion": "Primate terrestre de hocico alargado, pelaje espeso, fuertes extremidades y grandes colmillos."
+  },
+  {
+    "nombre": "Bagini",
+    "descripcion": "Criatura con cabeza y torso de mujer y parte inferior canina, semejante a un dingo o una hiena, de expresión depredadora."
+  },
+  {
+    "nombre": "Bakru",
+    "descripcion": "Pequeño espíritu de apariencia infantil, cabeza desproporcionadamente grande y cuerpo formado por madera y fibras vegetales."
+  },
+  {
+    "nombre": "Basilisco/Cocatriz",
+    "descripcion": "Monstruo híbrido de gallo y serpiente, con cresta, pico, patas de ave, cuerpo escamoso y larga cola serpentina."
+  },
+  {
+    "nombre": "Bonnacon",
+    "descripcion": "Bestia cuadrúpeda con cuerpo de toro, cabeza de caballo y enormes cuernos afilados en espiral."
+  },
+  {
+    "nombre": "Caballo",
+    "descripcion": "Caballo de constitución fuerte, crin abundante, patas musculosas y expresión alerta."
+  },
+  {
+    "nombre": "Cangrejo gigante",
+    "descripcion": "Cangrejo descomunal con caparazón ancho y duro, patas articuladas y dos enormes pinzas."
+  },
+  {
+    "nombre": "Centauro",
+    "descripcion": "Criatura con torso, brazos y cabeza humanos unidos al cuerpo completo de un caballo de cuatro patas."
+  },
+  {
+    "nombre": "Cocodrilo/Caimán",
+    "descripcion": "Gran reptil acuático de cuerpo bajo, piel acorazada, poderosa cola y mandíbulas alargadas llenas de dientes."
+  },
+  {
+    "nombre": "Cíclope",
+    "descripcion": "Gigante del triple de altura de un humano, con un ojo central, cuerno sobre la frente, nariz ganchuda y piernas caprinas lanudas con pezuñas hendidas."
+  },
+  {
+    "nombre": "Dragón",
+    "descripcion": "Enorme reptil de cuatro patas, grandes alas membranosas, cuello largo, cola poderosa, garras y escamas resistentes."
+  },
+  {
+    "nombre": "Elfo",
+    "descripcion": "Humanoide esbelto de apariencia feérica, facciones delicadas y porte ajeno al mundo mortal, vestido con prendas de elegante sencillez."
+  },
+  {
+    "nombre": "Enano",
+    "descripcion": "Humanoide bajo y fornido, de extremidades fuertes y aspecto resistente, con ropa de artesano y herramientas de metalurgia."
+  },
+  {
+    "nombre": "Escarabajo gigante",
+    "descripcion": "Escarabajo descomunal de seis patas, élitros endurecidos, antenas y fuertes mandíbulas."
+  },
+  {
+    "nombre": "Escorpión gigante",
+    "descripcion": "Escorpión enorme con dos grandes pinzas, ocho patas y cola segmentada arqueada sobre el cuerpo, rematada por un aguijón."
+  },
+  {
+    "nombre": "Esqueleto",
+    "descripcion": "Esqueleto humano animado, con huesos expuestos, cuencas vacías y restos de equipo antiguo."
+  },
+  {
+    "nombre": "Gigante",
+    "descripcion": "Humanoide colosal de proporciones humanas, músculos poderosos y vestimenta tosca, que empequeñece a las personas de su entorno."
+  },
+  {
+    "nombre": "Gorgona",
+    "descripcion": "Criatura con torso de mujer, rostro aterrador, cabellera de serpientes vivas y larga parte inferior serpentina."
+  },
+  {
+    "nombre": "Grifo/Hipogrifo",
+    "descripcion": "Grifo de cabeza, alas y patas delanteras de águila, con cuartos traseros de león; la variante hipogrifo sustituye estos últimos por los de un caballo."
+  },
+  {
+    "nombre": "Híbrido del Caos",
+    "descripcion": "Humanoide corrompido de aspecto caprino, con cuernos, pelaje irregular, rasgos deformes y equipo tosco."
+  },
+  {
+    "nombre": "Hombre jabalí",
+    "descripcion": "Humanoide corpulento con cabeza de jabalí, hocico ancho, grandes colmillos y pelaje de cerdas ásperas."
+  },
+  {
+    "nombre": "Hombre lagarto",
+    "descripcion": "Reptil humanoide musculoso y bípedo, con escamas coloridas, hocico alargado, dientes afilados, manos y pies con garras y gran cola."
+  },
+  {
+    "nombre": "Hormiga gigante",
+    "descripcion": "Hormiga descomunal de seis patas, cintura estrecha, antenas acodadas, abdomen abultado y mandíbulas prominentes."
+  },
+  {
+    "nombre": "Iqari",
+    "descripcion": "Humanoide aviar con cabeza de rapaz, grandes alas, dos brazos con manos y extremidades inferiores de ave rematadas en garras."
+  },
+  {
+    "nombre": "Jabalí",
+    "descripcion": "Cerdo salvaje robusto, de pelaje oscuro y erizado, cabeza grande, hocico fuerte y colmillos curvos."
+  },
+  {
+    "nombre": "Lagarto gigante",
+    "descripcion": "Lagarto descomunal de cuatro patas, cuerpo escamoso, larga cola, garras y anchas mandíbulas."
+  },
+  {
+    "nombre": "León",
+    "descripcion": "Gran felino de pelaje leonado, musculatura poderosa, largas garras y abundante melena en el macho."
+  },
+  {
+    "nombre": "Lobo",
+    "descripcion": "Cánido salvaje de pelaje espeso, hocico largo, orejas erguidas y mirada atenta."
+  },
+  {
+    "nombre": "Mamut",
+    "descripcion": "Enorme proboscídeo de pelaje largo y lanudo, espalda elevada, trompa y grandes colmillos curvados."
+  },
+  {
+    "nombre": "Mantícora",
+    "descripcion": "Monstruo de cuerpo de león, cabeza de rasgos humanos y larga cola de escorpión provista de púas venenosas."
+  },
+  {
+    "nombre": "Mantis gigante",
+    "descripcion": "Mantis descomunal de cuerpo alargado, cabeza triangular, grandes ojos y patas delanteras plegadas con espinas prensiles."
+  },
+  {
+    "nombre": "Mediano",
+    "descripcion": "Humanoide pequeño, de complexión ligera y rostro afable, con grandes pies descalzos de suela resistente."
+  },
+  {
+    "nombre": "Minotauro",
+    "descripcion": "Humanoide enorme y musculoso con cabeza de toro, grandes cuernos y cuello poderoso."
+  },
+  {
+    "nombre": "Momia",
+    "descripcion": "Cadáver humano desecado y animado, envuelto en vendas envejecidas, con piel reseca visible entre las telas."
+  },
+  {
+    "nombre": "Necrófago",
+    "descripcion": "Humanoide cadavérico y demacrado, de piel endurecida, ojos apagados, dientes afilados y uñas largas para desgarrar."
+  },
+  {
+    "nombre": "Ogro",
+    "descripcion": "Humanoide enorme y corpulento, de rasgos humanos brutales, mandíbula poderosa y vestimenta rudimentaria."
+  },
+  {
+    "nombre": "Orco/Trasgo",
+    "descripcion": "Humanoide de aspecto feroz y tosco, mandíbula marcada, dentadura prominente y equipo de guerra desgastado."
+  },
+  {
+    "nombre": "Oso",
+    "descripcion": "Gran mamífero de cuerpo pesado, pelaje denso, hocico ancho y patas poderosas con largas garras."
+  },
+  {
+    "nombre": "Pantotauro",
+    "descripcion": "Humanoide felino esbelto con cabeza de gran felino, abdomen cubierto de pelo, cola larga y garras retráctiles."
+  },
+  {
+    "nombre": "Pulpo gigante",
+    "descripcion": "Pulpo descomunal de cuerpo blando, grandes ojos y ocho largos brazos cubiertos de ventosas."
+  },
+  {
+    "nombre": "Quimera",
+    "descripcion": "Monstruo con cuerpo y cabeza de león, una cabeza de cabra que emerge del lomo y una cola serpentina rematada por otra cabeza."
+  },
+  {
+    "nombre": "Serpiente gigante",
+    "descripcion": "Serpiente descomunal de cuerpo largo, grueso y musculoso, cubierto de escamas, con poderosas mandíbulas."
+  },
+  {
+    "nombre": "Serpiente marina",
+    "descripcion": "Reptil marino gigantesco de cuerpo alargado, gran cabeza dentada, larga cola y dos pares de aletas."
+  },
+  {
+    "nombre": "Simio alado",
+    "descripcion": "Gorila de espalda plateada con un par adicional de enormes alas de murciélago que nacen de los hombros."
+  },
+  {
+    "nombre": "Slargr",
+    "descripcion": "Enorme lagarto bípedo de escamas moteadas grises y verdes, larga cola, brazos con garras y mandíbulas poderosas."
+  },
+  {
+    "nombre": "Smilodon",
+    "descripcion": "Gran felino prehistórico de cuerpo compacto y musculoso, patas delanteras fuertes y dos enormes colmillos superiores en forma de sable."
+  },
+  {
+    "nombre": "Tiburón",
+    "descripcion": "Gran depredador marino de cuerpo fusiforme, piel gris, aleta dorsal prominente y boca con hileras de dientes triangulares."
+  },
+  {
+    "nombre": "Tigre",
+    "descripcion": "Gran felino musculoso de pelaje anaranjado con rayas negras, vientre claro, larga cola y mirada depredadora."
+  },
+  {
+    "nombre": "Troll",
+    "descripcion": "Humanoide de hasta el doble de altura humana, rostro verrugoso, enormes orejas, cabello enmarañado y grandes dientes irregulares."
+  },
+  {
+    "nombre": "Unicornio",
+    "descripcion": "Caballo de aspecto noble, crin fluida y un único cuerno largo en espiral que surge de la frente."
+  },
+  {
+    "nombre": "Uro",
+    "descripcion": "Toro salvaje gigantesco, de hombros altos, cuerpo musculoso, pelaje oscuro y grandes cuernos curvados."
+  },
+  {
+    "nombre": "Vampiro",
+    "descripcion": "Humanoide de apariencia humana y palidez cadavérica, mirada intensa, colmillos alargados y uñas duras y afiladas."
+  },
+  {
+    "nombre": "Wyrm",
+    "descripcion": "Dragón serpentino de gran cabeza, cuerpo largo y dos enormes alas membranosas, sin patas."
+  },
+  {
+    "nombre": "Wyvern",
+    "descripcion": "Dragón de cuerpo reptiliano, dos alas membranosas, un único par de patas traseras y larga cola."
+  },
+  {
+    "nombre": "Zombi",
+    "descripcion": "Cadáver humano animado, de piel deteriorada, mirada vacía, ropa gastada y postura rígida."
+  },
+  {
+    "nombre": "Ofidio",
+    "descripcion": "Humanoide reptiliano esbelto de rasgos serpentinos, escamas, hocico corto, colmillos venenosos y manos capaces de usar herramientas."
+  },
+  {
+    "nombre": "Gnomo",
+    "descripcion": "Elemental de tierra: masa animada de suelo, piedras y arena, de contorno cambiante y aspecto pesado y mineral."
+  },
+  {
+    "nombre": "Ondina",
+    "descripcion": "Elemental de agua: volumen de agua viva y translúcida, de superficie ondulante, con remolinos y apéndices líquidos cambiantes."
+  },
+  {
+    "nombre": "Salamandra",
+    "descripcion": "Elemental de fuego: masa viva de llamas, brasas y resplandores, con silueta inestable que se estira y retuerce."
+  },
+  {
+    "nombre": "Silfo",
+    "descripcion": "Elemental de aire: remolino vivo, sugerido por corrientes de viento, polvo y hojas suspendidas, de contorno apenas visible."
+  },
+  {
+    "nombre": "Sombra",
+    "descripcion": "Elemental de oscuridad: masa móvil de negrura profunda, con bordes difusos y prolongaciones que se deslizan sobre las superficies."
+  },
+  {
+    "nombre": "Enjambre",
+    "descripcion": "Nube compacta de numerosos insectos voladores, como abejas o avispas, que se desplaza y arremolina como una sola criatura."
+  },
+  {
+    "nombre": "Xenomorfo",
+    "descripcion": "Depredador alienígena de exoesqueleto oscuro y biomecánico, cabeza alargada, extremidades con garras y larga cola rematada en una punta afilada."
+  }
+]

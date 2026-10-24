@@ -1,0 +1,1588 @@
+{
+  "recortes": 92,
+  "disenos_asignados": 67,
+  "alternativas_sin_asignar": 25,
+  "criaturas_pendientes": [],
+  "imagenes": [
+    {
+      "nombre": "Acéfalo",
+      "archivo": "assets/creatures/acefalo.webp",
+      "region": [
+        [
+          12,
+          4
+        ],
+        [
+          209,
+          4
+        ],
+        [
+          209,
+          231
+        ],
+        [
+          12,
+          231
+        ]
+      ],
+      "size": [
+        194,
+        230
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Araña gigante",
+      "archivo": "assets/creatures/arana-gigante.webp",
+      "region": [
+        [
+          211,
+          5
+        ],
+        [
+          498,
+          5
+        ],
+        [
+          498,
+          235
+        ],
+        [
+          211,
+          235
+        ]
+      ],
+      "size": [
+        292,
+        228
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Arpía",
+      "archivo": "assets/creatures/arpia.webp",
+      "region": [
+        [
+          500,
+          3
+        ],
+        [
+          793,
+          3
+        ],
+        [
+          793,
+          224
+        ],
+        [
+          500,
+          224
+        ]
+      ],
+      "size": [
+        310,
+        219
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Asipatra",
+      "archivo": "assets/creatures/asipatra.webp",
+      "region": [
+        [
+          794,
+          0
+        ],
+        [
+          1083,
+          0
+        ],
+        [
+          1083,
+          213
+        ],
+        [
+          794,
+          223
+        ]
+      ],
+      "size": [
+        306,
+        222
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Babuino",
+      "archivo": "assets/creatures/babuino.webp",
+      "region": [
+        [
+          1047,
+          223
+        ],
+        [
+          1085,
+          127
+        ],
+        [
+          1091,
+          5
+        ],
+        [
+          1298,
+          5
+        ],
+        [
+          1298,
+          232
+        ],
+        [
+          1047,
+          232
+        ]
+      ],
+      "size": [
+        256,
+        232
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Bagini",
+      "archivo": "assets/creatures/bagini.webp",
+      "region": [
+        [
+          1299,
+          4
+        ],
+        [
+          1536,
+          4
+        ],
+        [
+          1536,
+          230
+        ],
+        [
+          1299,
+          230
+        ]
+      ],
+      "size": [
+        241,
+        228
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Bakru",
+      "archivo": "assets/creatures/bakru.webp",
+      "region": [
+        [
+          14,
+          244
+        ],
+        [
+          160,
+          244
+        ],
+        [
+          160,
+          464
+        ],
+        [
+          14,
+          464
+        ]
+      ],
+      "size": [
+        142,
+        222
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Basilisco/Cocatriz",
+      "archivo": "assets/creatures/basilisco-cocatriz.webp",
+      "region": [
+        [
+          160,
+          238
+        ],
+        [
+          408,
+          238
+        ],
+        [
+          418,
+          300
+        ],
+        [
+          451,
+          316
+        ],
+        [
+          451,
+          462
+        ],
+        [
+          160,
+          468
+        ]
+      ],
+      "size": [
+        299,
+        234
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Bonnacon",
+      "archivo": "assets/creatures/bonnacon.webp",
+      "region": [
+        [
+          420,
+          237
+        ],
+        [
+          758,
+          237
+        ],
+        [
+          758,
+          467
+        ],
+        [
+          464,
+          484
+        ],
+        [
+          452,
+          434
+        ],
+        [
+          452,
+          307
+        ]
+      ],
+      "size": [
+        349,
+        256
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Caballo",
+      "archivo": "assets/creatures/caballo.webp",
+      "region": [
+        [
+          769,
+          239
+        ],
+        [
+          1001,
+          239
+        ],
+        [
+          1001,
+          482
+        ],
+        [
+          769,
+          482
+        ]
+      ],
+      "size": [
+        232,
+        243
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Cangrejo gigante",
+      "archivo": "assets/creatures/cangrejo-gigante.webp",
+      "region": [
+        [
+          1002,
+          259
+        ],
+        [
+          1322,
+          259
+        ],
+        [
+          1322,
+          473
+        ],
+        [
+          1002,
+          473
+        ]
+      ],
+      "size": [
+        332,
+        210
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Centauro",
+      "archivo": "assets/creatures/centauro.webp",
+      "region": [
+        [
+          1323,
+          230
+        ],
+        [
+          1530,
+          230
+        ],
+        [
+          1530,
+          506
+        ],
+        [
+          1323,
+          506
+        ]
+      ],
+      "size": [
+        207,
+        279
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Cocodrilo/Caimán",
+      "archivo": "assets/creatures/cocodrilo-caiman.webp",
+      "region": [
+        [
+          0,
+          506
+        ],
+        [
+          320,
+          506
+        ],
+        [
+          306,
+          612
+        ],
+        [
+          303,
+          715
+        ],
+        [
+          0,
+          715
+        ]
+      ],
+      "size": [
+        322,
+        207
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Cíclope",
+      "archivo": "assets/creatures/ciclope.webp",
+      "region": [
+        [
+          303,
+          612
+        ],
+        [
+          320,
+          506
+        ],
+        [
+          345,
+          484
+        ],
+        [
+          465,
+          463
+        ],
+        [
+          472,
+          570
+        ],
+        [
+          554,
+          733
+        ],
+        [
+          495,
+          750
+        ],
+        [
+          309,
+          750
+        ]
+      ],
+      "size": [
+        257,
+        292
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Dragón",
+      "archivo": "assets/creatures/dragon.webp",
+      "region": [
+        [
+          503,
+          493
+        ],
+        [
+          674,
+          493
+        ],
+        [
+          697,
+          472
+        ],
+        [
+          762,
+          474
+        ],
+        [
+          877,
+          547
+        ],
+        [
+          877,
+          733
+        ],
+        [
+          566,
+          733
+        ],
+        [
+          552,
+          692
+        ],
+        [
+          514,
+          650
+        ]
+      ],
+      "size": [
+        380,
+        259
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Elfo",
+      "archivo": "assets/creatures/elfo.webp",
+      "region": [
+        [
+          878,
+          498
+        ],
+        [
+          1055,
+          498
+        ],
+        [
+          1055,
+          759
+        ],
+        [
+          878,
+          759
+        ]
+      ],
+      "size": [
+        181,
+        266
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Enano",
+      "archivo": "assets/creatures/enano.webp",
+      "region": [
+        [
+          1056,
+          533
+        ],
+        [
+          1243,
+          533
+        ],
+        [
+          1243,
+          660
+        ],
+        [
+          1210,
+          700
+        ],
+        [
+          1210,
+          737
+        ],
+        [
+          1056,
+          737
+        ]
+      ],
+      "size": [
+        193,
+        199
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Escarabajo gigante",
+      "archivo": "assets/creatures/escarabajo-gigante.webp",
+      "region": [
+        [
+          1244,
+          529
+        ],
+        [
+          1536,
+          529
+        ],
+        [
+          1536,
+          740
+        ],
+        [
+          1244,
+          740
+        ]
+      ],
+      "size": [
+        302,
+        207
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Escorpión gigante",
+      "archivo": "assets/creatures/escorpion-gigante.webp",
+      "region": [
+        [
+          0,
+          744
+        ],
+        [
+          287,
+          744
+        ],
+        [
+          287,
+          1012
+        ],
+        [
+          0,
+          1012
+        ]
+      ],
+      "size": [
+        295,
+        249
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Esqueleto",
+      "archivo": "assets/creatures/esqueleto.webp",
+      "region": [
+        [
+          284,
+          750
+        ],
+        [
+          466,
+          750
+        ],
+        [
+          466,
+          1012
+        ],
+        [
+          284,
+          1012
+        ]
+      ],
+      "size": [
+        199,
+        258
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Gigante",
+      "archivo": "assets/creatures/gigante.webp",
+      "region": [
+        [
+          467,
+          771
+        ],
+        [
+          551,
+          771
+        ],
+        [
+          576,
+          735
+        ],
+        [
+          670,
+          735
+        ],
+        [
+          729,
+          795
+        ],
+        [
+          729,
+          1017
+        ],
+        [
+          467,
+          1017
+        ]
+      ],
+      "size": [
+        275,
+        285
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Gorgona",
+      "archivo": "assets/creatures/gorgona.webp",
+      "region": [
+        [
+          730,
+          734
+        ],
+        [
+          948,
+          734
+        ],
+        [
+          987,
+          877
+        ],
+        [
+          987,
+          999
+        ],
+        [
+          730,
+          999
+        ]
+      ],
+      "size": [
+        254,
+        270
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Grifo/Hipogrifo",
+      "archivo": "assets/creatures/grifo-hipogrifo.webp",
+      "region": [
+        [
+          949,
+          765
+        ],
+        [
+          1330,
+          750
+        ],
+        [
+          1330,
+          1008
+        ],
+        [
+          992,
+          1008
+        ],
+        [
+          992,
+          870
+        ]
+      ],
+      "size": [
+        368,
+        257
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Híbrido del Caos",
+      "archivo": "assets/creatures/hibrido-del-caos.webp",
+      "region": [
+        [
+          1331,
+          751
+        ],
+        [
+          1530,
+          751
+        ],
+        [
+          1530,
+          1008
+        ],
+        [
+          1331,
+          1008
+        ]
+      ],
+      "size": [
+        199,
+        245
+      ],
+      "lamina": 1,
+      "asignada": true
+    },
+    {
+      "nombre": "Hombre jabalí",
+      "archivo": "assets/creatures/hombre-jabali.webp",
+      "rectangulo": [
+        0,
+        0,
+        193,
+        243
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Hombre lagarto",
+      "archivo": "assets/creatures/hombre-lagarto.webp",
+      "rectangulo": [
+        194,
+        0,
+        407,
+        245
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Hormiga gigante",
+      "archivo": "assets/creatures/hormiga-gigante.webp",
+      "rectangulo": [
+        386,
+        25,
+        673,
+        241
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Iqari",
+      "archivo": "assets/creatures/iqari.webp",
+      "rectangulo": [
+        671,
+        0,
+        968,
+        254
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Jabalí",
+      "archivo": "assets/creatures/jabali.webp",
+      "rectangulo": [
+        969,
+        21,
+        1210,
+        233
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Lagarto gigante",
+      "archivo": "assets/creatures/lagarto-gigante.webp",
+      "rectangulo": [
+        1211,
+        16,
+        1536,
+        219
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "León",
+      "archivo": "assets/creatures/leon.webp",
+      "rectangulo": [
+        0,
+        246,
+        237,
+        464
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Lobo",
+      "archivo": "assets/creatures/lobo.webp",
+      "rectangulo": [
+        221,
+        260,
+        432,
+        466
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Mamut",
+      "archivo": "assets/creatures/mamut.webp",
+      "rectangulo": [
+        434,
+        222,
+        728,
+        473
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Mantícora",
+      "archivo": "assets/creatures/manticora.webp",
+      "rectangulo": [
+        729,
+        233,
+        1077,
+        483
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Minotauro",
+      "archivo": "assets/creatures/minotauro.webp",
+      "rectangulo": [
+        1077,
+        233,
+        1296,
+        491
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Hombre lagarto (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/hombre-lagarto-alternativa.webp",
+      "rectangulo": [
+        1298,
+        219,
+        1518,
+        485
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Ogro",
+      "archivo": "assets/creatures/ogro.webp",
+      "rectangulo": [
+        0,
+        464,
+        213,
+        727
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Orco/Trasgo",
+      "archivo": "assets/creatures/orco-trasgo.webp",
+      "rectangulo": [
+        216,
+        473,
+        461,
+        725
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Caballo alado (por identificar)",
+      "archivo": "output/bestiario-sin-asignar/caballo-alado.webp",
+      "rectangulo": [
+        409,
+        461,
+        701,
+        723
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Búho gigante (por identificar)",
+      "archivo": "output/bestiario-sin-asignar/buho-gigante.webp",
+      "rectangulo": [
+        701,
+        482,
+        1060,
+        718
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Masa gelatinosa (por identificar)",
+      "archivo": "output/bestiario-sin-asignar/masa-gelatinosa.webp",
+      "rectangulo": [
+        961,
+        495,
+        1310,
+        735
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Árbol viviente (por identificar)",
+      "archivo": "output/bestiario-sin-asignar/arbol-viviente.webp",
+      "rectangulo": [
+        1308,
+        473,
+        1536,
+        723
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Unicornio",
+      "archivo": "assets/creatures/unicornio.webp",
+      "rectangulo": [
+        0,
+        725,
+        237,
+        991
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Vampiro",
+      "archivo": "assets/creatures/vampiro.webp",
+      "rectangulo": [
+        232,
+        723,
+        508,
+        1002
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Hombre lobo (por identificar)",
+      "archivo": "output/bestiario-sin-asignar/hombre-lobo.webp",
+      "rectangulo": [
+        505,
+        718,
+        730,
+        990
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Zombi",
+      "archivo": "assets/creatures/zombi.webp",
+      "rectangulo": [
+        726,
+        721,
+        925,
+        994
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Gusano gigante (por identificar)",
+      "archivo": "output/bestiario-sin-asignar/gusano-gigante.webp",
+      "rectangulo": [
+        927,
+        733,
+        1222,
+        995
+      ],
+      "asignada": false,
+      "lamina": 2
+    },
+    {
+      "nombre": "Pulpo gigante",
+      "archivo": "assets/creatures/pulpo-gigante.webp",
+      "rectangulo": [
+        1210,
+        720,
+        1536,
+        993
+      ],
+      "asignada": true,
+      "lamina": 2
+    },
+    {
+      "nombre": "Pantera",
+      "archivo": "output/bestiario-sin-asignar/pantera.webp",
+      "rectangulo": [
+        0,
+        0,
+        218,
+        224
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Tigre",
+      "archivo": "assets/creatures/tigre.webp",
+      "rectangulo": [
+        202,
+        0,
+        388,
+        230
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Serpiente gigante",
+      "archivo": "assets/creatures/serpiente-gigante.webp",
+      "rectangulo": [
+        370,
+        7,
+        564,
+        226
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Oso",
+      "archivo": "assets/creatures/oso.webp",
+      "rectangulo": [
+        559,
+        0,
+        801,
+        227
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Uro",
+      "archivo": "assets/creatures/uro.webp",
+      "rectangulo": [
+        797,
+        0,
+        1056,
+        226
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Rinoceronte",
+      "archivo": "output/bestiario-sin-asignar/rinoceronte.webp",
+      "rectangulo": [
+        1051,
+        0,
+        1308,
+        222
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Trasgo (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/trasgo-alternativa.webp",
+      "rectangulo": [
+        1298,
+        0,
+        1536,
+        224
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Wyvern",
+      "archivo": "assets/creatures/wyvern.webp",
+      "rectangulo": [
+        0,
+        224,
+        287,
+        446
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Rata gigante",
+      "archivo": "output/bestiario-sin-asignar/rata-gigante.webp",
+      "rectangulo": [
+        213,
+        241,
+        469,
+        442
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Araña gigante (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/arana-gigante-alternativa.webp",
+      "rectangulo": [
+        452,
+        233,
+        705,
+        459
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Espectro",
+      "archivo": "output/bestiario-sin-asignar/espectro.webp",
+      "rectangulo": [
+        685,
+        211,
+        948,
+        481
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Elemental de tierra (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/elemental-tierra-alternativa.webp",
+      "rectangulo": [
+        915,
+        226,
+        1153,
+        484
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Árbol viviente (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/arbol-viviente-alternativa.webp",
+      "rectangulo": [
+        1129,
+        215,
+        1338,
+        484
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Ondina",
+      "archivo": "assets/creatures/ondina.webp",
+      "rectangulo": [
+        1334,
+        219,
+        1536,
+        482
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Salamandra",
+      "archivo": "assets/creatures/salamandra.webp",
+      "rectangulo": [
+        0,
+        441,
+        215,
+        704
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Gnomo",
+      "archivo": "assets/creatures/gnomo.webp",
+      "rectangulo": [
+        205,
+        439,
+        435,
+        711
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Silfo",
+      "archivo": "assets/creatures/silfo.webp",
+      "rectangulo": [
+        432,
+        441,
+        633,
+        714
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Mujer serpiente (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/mujer-serpiente.webp",
+      "rectangulo": [
+        624,
+        444,
+        858,
+        714
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Sirena",
+      "archivo": "output/bestiario-sin-asignar/sirena.webp",
+      "rectangulo": [
+        840,
+        462,
+        1084,
+        715
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Reptil con vela dorsal",
+      "archivo": "output/bestiario-sin-asignar/reptil-vela-dorsal.webp",
+      "rectangulo": [
+        1080,
+        465,
+        1340,
+        716
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Jabalí monstruoso",
+      "archivo": "output/bestiario-sin-asignar/jabali-monstruoso.webp",
+      "rectangulo": [
+        1320,
+        478,
+        1536,
+        707
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Minotauro (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/minotauro-alternativa.webp",
+      "rectangulo": [
+        0,
+        702,
+        232,
+        1003
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Sátiro",
+      "archivo": "output/bestiario-sin-asignar/satiro.webp",
+      "rectangulo": [
+        222,
+        715,
+        382,
+        1003
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Necrófago",
+      "archivo": "assets/creatures/necrofago.webp",
+      "rectangulo": [
+        377,
+        715,
+        607,
+        1003
+      ],
+      "asignada": true,
+      "lamina": 3
+    },
+    {
+      "nombre": "Caracol monstruoso",
+      "archivo": "output/bestiario-sin-asignar/caracol-monstruoso.webp",
+      "rectangulo": [
+        580,
+        739,
+        858,
+        1007
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Gusano gigante (alternativa)",
+      "archivo": "output/bestiario-sin-asignar/gusano-gigante-alternativa.webp",
+      "rectangulo": [
+        850,
+        715,
+        1100,
+        1003
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Monstruo ocular",
+      "archivo": "output/bestiario-sin-asignar/monstruo-ocular.webp",
+      "rectangulo": [
+        1080,
+        714,
+        1310,
+        977
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Planta carnívora",
+      "archivo": "output/bestiario-sin-asignar/planta-carnivora.webp",
+      "rectangulo": [
+        1277,
+        705,
+        1536,
+        1007
+      ],
+      "asignada": false,
+      "lamina": 3
+    },
+    {
+      "nombre": "Mantis gigante",
+      "archivo": "assets/creatures/mantis-gigante.webp",
+      "rectangulo": [
+        5,
+        6,
+        300,
+        317
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Mediano",
+      "archivo": "assets/creatures/mediano.webp",
+      "rectangulo": [
+        305,
+        6,
+        585,
+        317
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Momia",
+      "archivo": "assets/creatures/momia.webp",
+      "rectangulo": [
+        590,
+        6,
+        855,
+        317
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Pantotauro",
+      "archivo": "assets/creatures/pantotauro.webp",
+      "rectangulo": [
+        860,
+        6,
+        1174,
+        317
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Quimera",
+      "archivo": "assets/creatures/quimera.webp",
+      "rectangulo": [
+        1180,
+        6,
+        1532,
+        317
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Serpiente marina",
+      "archivo": "assets/creatures/serpiente-marina.webp",
+      "rectangulo": [
+        5,
+        322,
+        300,
+        634
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Simio alado",
+      "archivo": "assets/creatures/simio-alado.webp",
+      "rectangulo": [
+        305,
+        322,
+        585,
+        634
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Slargr",
+      "archivo": "assets/creatures/slargr.webp",
+      "rectangulo": [
+        590,
+        322,
+        855,
+        634
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Smilodon",
+      "archivo": "assets/creatures/smilodon.webp",
+      "rectangulo": [
+        860,
+        322,
+        1174,
+        634
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Tiburón",
+      "archivo": "assets/creatures/tiburon.webp",
+      "rectangulo": [
+        1180,
+        322,
+        1532,
+        634
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Troll",
+      "archivo": "assets/creatures/troll.webp",
+      "rectangulo": [
+        5,
+        640,
+        249,
+        1012
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Wyrm",
+      "archivo": "assets/creatures/wyrm.webp",
+      "rectangulo": [
+        254,
+        640,
+        569,
+        1012
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Ofidio",
+      "archivo": "assets/creatures/ofidio.webp",
+      "rectangulo": [
+        574,
+        640,
+        771,
+        1012
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Sombra",
+      "archivo": "assets/creatures/sombra.webp",
+      "rectangulo": [
+        776,
+        640,
+        1024,
+        1012
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Enjambre",
+      "archivo": "assets/creatures/enjambre.webp",
+      "rectangulo": [
+        1029,
+        640,
+        1274,
+        1012
+      ],
+      "asignada": true,
+      "lamina": 4
+    },
+    {
+      "nombre": "Xenomorfo",
+      "archivo": "assets/creatures/xenomorfo.webp",
+      "rectangulo": [
+        1279,
+        640,
+        1532,
+        1012
+      ],
+      "asignada": true,
+      "lamina": 4
+    }
+  ]
+}
