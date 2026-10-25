@@ -1101,7 +1101,34 @@ original y su propietario. La extracción recupera ese ejemplar sin duplicarlo
 (o lo transfiere si lo extrae otro actor). Quitar el efecto libera la retención,
 sin reparar ni equipar el arma.
 
-Apuntar vive temporalmente en un flag del Actor vinculado a combate, arma y blanco. Los desvíos al disparar a una
+Apuntar usa `rangedAim` de esquema 2 en el Actor, con combate, combatiente,
+arma, modo, blanco, asalto de declaración y asalto de disponibilidad. `aim.js`
+concentra elegibilidad y caducidad; `aim-runtime.js` valida la petición en el
+coordinador, consume todos los PA, persiste el estado y avanza turno. Las
+peticiones repetidas no vuelven a pagar ni a avanzar. Solo se declara en el
+turno propio y fuera de interrupciones, sin gasto previo de PA y con el máximo
+efectivo disponible. El coste se presenta como «Todos los PA».
+
+El hook `preUpdateActor` registra el gasto efectivo por combate/asalto en
+`actionPointSpending`: ataques, defensas, otras reacciones y deducciones directas.
+Solo reembolsos explícitos reducen ese gasto; reponer PA manualmente no habilita
+Apuntar. Restaurar los PA al inicio del asalto reinicia el registro, y los
+ajustes por cambio del máximo no cuentan como acciones. La declaración y el
+registro se guardan en la misma actualización de Actor bajo el bloqueo de PA.
+
+El apuntado queda «preparando» durante el asalto de declaración y «preparado»
+desde el comienzo del siguiente; cambiar únicamente de ciclo no lo habilita.
+Compensa como máximo un grado adverso del disparo, sin mejorar la dificultad
+inicial. No se puede prolongar ni acumular. Se consume al atacar, incluso con
+otra arma o blanco (en ese caso sin beneficio). Otra acción activa, parar,
+evadir, pasar el turno preparado, perder disponibilidad del arma o capacidad
+de atacar lo cancela. Las acciones gratuitas de hablar o gesticular no lo hacen.
+Los cambios de coordenadas y elevación del token tampoco lo cancelan.
+El siguiente cambio de asalto o el cierre/eliminación del combate elimina el
+beneficio no utilizado. Los apuntados heredados del esquema 1 se descartan sin
+modificar PA durante la migración.
+
+Los desvíos al disparar a una
 melé usan `awaitingAccidentalTarget` y `awaitingAccidentalDefense`, conservando
 el dado, PA y proyectil originales. La elegibilidad de efectos distingue el
 modo efectivo de la transacción (`melee` o `ranged`) de las capacidades de la

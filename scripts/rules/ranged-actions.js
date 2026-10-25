@@ -1,15 +1,13 @@
+import { aimEligibility, aimState, clearAim } from "./aim.js";
+import { requestAim } from "./aim-runtime.js";
+export { clearAim } from "./aim.js";
 import { modeAmmunition, ammunitionChoices, ammunitionView } from "./ammunition.js";
 import { requestAmmunitionOperation } from "./ammunition-runtime.js";
-import { canStartProactiveAction, finishInterruptionAction } from "./combat-interruption.js";
-import { spendActorActionPoint } from "./combat-resource-runtime.js";
-import { effectiveActionPointMaximum } from "./action-points.js";
-import { getActionPointRules } from "../settings.js";
+import { canStartProactiveAction } from "./combat-interruption.js";
 import { weaponModes } from "./weapon-modes.js";
 import { weaponCanEquip } from "./weapon-durability.js";
 import { weaponIsPinned } from "./weapon-pinning.js";
 
-const SCOPE = "mythras-foundry";
-const AIM = "rangedAim";
 const escape = (value) => foundry.utils.escapeHTML(String(value ?? ""));
 
 function activeEntry(actor) {
@@ -18,12 +16,6 @@ function activeEntry(actor) {
   const entry = combat.combatants.find((candidate) => candidate.actor?.uuid === actor.uuid
     || candidate.token?.actor?.uuid === actor.uuid);
   return entry && canStartProactiveAction(combat, entry) ? { combat, entry } : null;
-}
-
-async function spend(actor) {
-  if (!activeEntry(actor)) return false;
-  if (effectiveActionPointMaximum(actor, getActionPointRules()) < 1) return false;
-  return spendActorActionPoint(actor, { actionKind: "immediate" });
 }
 
 function rangedChoices(actor) {
@@ -47,34 +39,25 @@ async function chooseWeapon(actor, title) {
 
 export async function declareAim(actor) {
   const active = activeEntry(actor);
-  if (!active || (!game.user.isGM && !actor.isOwner)) return ui.notifications.warn(
+  if (!active || active.combat.combatant?.id !== active.entry.id || (!game.user.isGM && !actor.isOwner)) return ui.notifications.warn(
     game.i18n.localize("MYTHRASF.Tracker.Rejected.turn"));
+  const reason = aimEligibility(actor, active.combat);
+  if (reason) return ui.notifications.warn(game.i18n.localize(`MYTHRASF.Action.Unavailable.${reason}`));
   const choice = await chooseWeapon(actor, game.i18n.localize("MYTHRASF.Ranged.Aim"));
+  if (!choice) return;
   const targets = Array.from(game.user.targets ?? []);
-  if (!choice || targets.length !== 1) return ui.notifications.warn(
-    game.i18n.localize("MYTHRASF.Ranged.AimOneTarget"));
-  if (!await spend(actor)) return ui.notifications.warn(
-    game.i18n.localize("MYTHRASF.Tracker.Rejected.actionPoints"));
-  const economy = active.combat.mythrasTurnEconomy;
-  await actor.setFlag(SCOPE, AIM, { schemaVersion: 1, combatId: active.combat.id,
-    combatantId: active.entry.id, weaponId: choice.weapon.id, modeKey: choice.mode.key,
-    targetTokenUuid: targets[0].document?.uuid ?? targets[0].uuid, declaredRound: active.combat.round,
-    declaredCycle: economy.cycle ?? 1, userId: game.user.id, declaredAt: Date.now() });
-  ui.notifications.info(game.i18n.localize("MYTHRASF.Ranged.AimDeclared"));
-  await finishInterruptionAction(active.combat, active.entry.id);
+  if (targets.length !== 1) return ui.notifications.warn(game.i18n.localize("MYTHRASF.Ranged.AimOneTarget"));
+  try {
+    const state = await requestAim(active.combat, active.entry, { weaponId: choice.weapon.id,
+      modeKey: choice.mode.key, targetTokenUuid: targets[0].document?.uuid ?? targets[0].uuid });
+    if (state) ui.notifications.info(game.i18n.localize("MYTHRASF.Ranged.AimDeclared"));
+  } catch (failure) { ui.notifications.warn(failure.message); }
 }
 
 export function readyAim(actor, { weaponId, modeKey, targetTokenUuid, combat } = {}) {
-  const aim = actor?.getFlag?.(SCOPE, AIM); if (!aim || aim.combatId !== combat?.id
-    || aim.weaponId !== weaponId || aim.modeKey !== modeKey || aim.targetTokenUuid !== targetTokenUuid) return null;
-  const cycle = combat.mythrasTurnEconomy?.cycle ?? 1;
-  return Number(combat.round) > Number(aim.declaredRound)
-    || (Number(combat.round) === Number(aim.declaredRound) && Number(cycle) > Number(aim.declaredCycle))
-    ? aim : null;
-}
-
-export async function clearAim(actor) {
-  if (actor?.getFlag?.(SCOPE, AIM)) await actor.unsetFlag(SCOPE, AIM);
+  const aim = aimState(actor, combat);
+  return aim?.phase === "ready" && aim.weaponId === weaponId && aim.modeKey === modeKey
+    && aim.targetTokenUuid === targetTokenUuid ? aim : null;
 }
 
 export async function reloadRangedWeapon(actor) {

@@ -128,6 +128,11 @@ El sistema incluye actualmente:
   circunstancias; Apuntar, Recargar, cobertura localizada y desvíos al disparar
   a una melé comparten la transacción de chat. Las tarjetas desglosan TAM,
   grados por distancia, intensidad del viento, circunstancias y dificultad inicial;
+- Apuntar dedica el asalto completo: exige no haber gastado PA, consume todos
+  y pasa turno. En el siguiente asalto permite compensar un grado de penalización
+  al disparar a ese blanco con la misma arma y modo; no se acumula ni se prolonga.
+  Mover el token o cambiar su elevación no lo cancela; otra acción activa,
+  parar, evadir o dejar pasar el turno preparado sí;
 - [munición vinculada al inventario](docs/ammunition.md): la tienda conserva los fajos y su precio,
   pero comprar o arrastrar un fajo incorpora proyectiles individuales con su
   cantidad, precio unitario y carga proporcional. Recargar permite elegir una

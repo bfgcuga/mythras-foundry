@@ -1,3 +1,4 @@
+import { clearAim } from "../rules/aim.js";
 import { migrateActorAmmunition } from "./ammunition-migrations.js";
 import { statusIconUpdates } from "../data/status-icons.js";
 import { ensureBasicSkills } from "../data/basic-skills.js";
@@ -89,6 +90,7 @@ export async function runWorldMigrations() {
     }
     await migrateCombatItems(actor);
     await migrateActorAmmunition(actor);
+    if (actor.getFlag("mythras-foundry", "rangedAim")?.schemaVersion !== 2) await clearAim(actor);
     await migrateActorPermanentWounds(actor);
     if (actor.type === "character") {
       await ensureCharacterPrototypeTokenLink(actor);
@@ -106,6 +108,7 @@ export async function runWorldMigrations() {
     for (const token of scene.tokens) {
       if (token.actorLink || !token.actor) continue;
       await migrateActorAmmunition(token.actor);
+      if (token.actor.getFlag("mythras-foundry", "rangedAim")?.schemaVersion !== 2) await clearAim(token.actor);
       const updates = statusIconUpdates(token.actor.effects);
       if (updates.length) await token.actor.updateEmbeddedDocuments("ActiveEffect", updates);
     }

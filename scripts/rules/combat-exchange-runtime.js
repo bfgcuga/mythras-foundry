@@ -56,7 +56,7 @@ export async function refundCombatExchangeActionPoints(combat, { resolveActor } 
     if (!economy?.[spentKey]) continue;
     const actor = await resolveActor(entry.tokenUuid, entry.actorUuid);
     if (actor) await actor.update({ "system.resources.actionPoints.value":
-      currentActionPoints(actor) + 1 });
+      currentActionPoints(actor) + 1 }, { mythrasActionPointRefund: true });
     economy[spentKey] = false;
     economy[refundedKey] = true;
   }

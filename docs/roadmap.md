@@ -17,7 +17,6 @@ Revisar prioritariamente estas acciones:
 - Cambiar alcance.
 - Retener Magia.
 - Usar Magia.
-- Apuntar.
 
 Revisar las acciones del sistema una por una, contrastando su comportamiento
 actual con las reglas aplicables. Identificar las que tienen lógica incorrecta,
@@ -34,7 +33,8 @@ indisponibilidad y permitir una recuperación coherente, bloqueando su uso
 mientras no esté disponible. Esta revisión no incluye «Inutilizada» ni los
 estados de daño o rotura del arma.
 
-Montar, Mover, Titubear y Buscar cobertura ya están revisadas y aprobadas.
+Montar, Mover, Titubear, Buscar cobertura y Apuntar ya están revisadas.
+Apuntar consume el asalto completo y aplica su beneficio únicamente en el siguiente.
 La acción genérica ya permite describir una acción, gastar un PA y publicarla en el chat.
 
 ## 2. Revisar las resoluciones manuales de flujos interactivos

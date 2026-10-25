@@ -10,7 +10,7 @@ export const COMBAT_ACTIONS = Object.freeze({
   attack: { type: "proactive", cost: 1, observable: true },
   changeReach: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   passiveBlock: { type: "free", cost: 0, observable: false, requiresCombat: true },
-  aim: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
+  aim: { type: "proactive", cost: 1, wholeRound: true, observable: true, requiresCombat: true },
   reload: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   seekCover: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   brace: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
@@ -62,7 +62,7 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
   hasRangedWeapon = false, hasPreparedWeapon = false, hasUnarmedAttack = false, hasRestraint = false,
   hasDelay = false, hasInterruption = false, interrupting = false, isOwnTurn = isActive, canCharge = false, hasPinnedWeapon = false, grabbed = false,
   entangled = false, holdsEntanglement = false, rooted = false,
-  hasReachableImpaledWeapon = false } = {}) {
+  hasReachableImpaledWeapon = false, aimReason = "" } = {}) {
   const available = {};
   for (const [key, definition] of Object.entries(COMBAT_ACTIONS)) {
     let allowed = definition.type !== "proactive" || (inCombat && isActive
@@ -70,6 +70,7 @@ export function availableCombatActions({ inCombat = false, isActive = false, act
     if (definition.requiresCombat && !inCombat) allowed = false;
     if (key === "attack") allowed &&= canAttack && (hasPreparedWeapon || hasUnarmedAttack);
     if (["aim", "reload"].includes(key)) allowed &&= hasRangedWeapon;
+    if (key === "aim") allowed &&= !aimReason && !hasInterruption && isOwnTurn && canAttack;
     if (["brace", "readyWeapon", "passiveBlock"].includes(key)) allowed &&= hasPreparedWeapon;
     if (key === "releaseGrab") allowed &&= grabbed;
     if (key === "changeReach") allowed &&= !grabbed;
@@ -104,6 +105,7 @@ export function combatActionPresentation(context = {}) {
       else if (key === "attack" && !context.canAttack) reason = "attackBlocked";
       else if (key === "attack" && !context.hasPreparedWeapon && !context.hasUnarmedAttack) reason = "preparedWeapon";
       else if (["aim", "reload"].includes(key) && !context.hasRangedWeapon) reason = "rangedWeapon";
+      else if (key === "aim") reason = context.aimReason || (context.hasInterruption || !context.isOwnTurn ? "activeTurnRequired" : "attackBlocked");
       else if (["brace", "readyWeapon", "passiveBlock"].includes(key) && !context.hasPreparedWeapon) reason = "preparedWeapon";
       else if (key === "move" && context.engaged) reason = "engaged";
       else if (key === "stand" && !context.prone) reason = "notProne";

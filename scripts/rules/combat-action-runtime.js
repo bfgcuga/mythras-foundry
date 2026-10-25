@@ -1,3 +1,4 @@
+import { aimEligibility, clearAim } from "./aim.js";
 import { canStartProactiveAction, choosingInterruption, combatInterruption, submitInterruption,
   bindInterruptionAction, finishInterruptionAction, interruptionBlocksAction } from "./combat-interruption.js";
 import { settleWaiting, clearCombatWaiting } from "./combat-waiting.js";
@@ -93,6 +94,7 @@ export function actionPresentation(actor) {
     hasPinnedWeapon: weaponPins(actor).length > 0,
     hasDelay: state.delays[combatant?.id]?.status === "reserved",
     hasReachableImpaledWeapon: impalementsReachableBy(combat, actor).length > 0,
+    aimReason: aimEligibility(actor, combat),
     canCharge: chargeEligibility(state.movements[combatant?.id], combat?.round).eligible });
 }
 
@@ -116,7 +118,7 @@ export function decorateCombatActionButtons(actor, root) {
     button.disabled = !state.available;
     button.setAttribute("aria-disabled", String(!state.available));
     const reason = state.reason ? localize(`MYTHRASF.Action.Unavailable.${state.reason}`) : "";
-    const cost = localize("MYTHRASF.Action.Cost").replace("{cost}", state.cost);
+    const cost = key === "aim" ? localize("MYTHRASF.Ranged.AimCost") : localize("MYTHRASF.Action.Cost").replace("{cost}", state.cost);
     button.title = reason ? `${cost} · ${reason}` : cost;
     const wrapper = button.closest("[data-action-presentation]");
     if (wrapper) wrapper.dataset.mythrasTooltip = button.title;
@@ -325,6 +327,7 @@ async function save(combat, state) {
 }
 
 async function createTransaction(context, key, parameters = {}) {
+  if (COMBAT_ACTIONS[key]?.wholeRound) return null;
   if (key === "stand" && parameters.engaged) {
     const { validateStandSelection } = await import("./stand-runtime.js");
     if (!await validateStandSelection(context.combat, context.combatant.actor, context.combatant.token?.uuid, parameters, game.users.get(context.userId) ?? game.user)) {
@@ -345,6 +348,7 @@ async function createTransaction(context, key, parameters = {}) {
     : await spend(context.combatant.actor, definition.cost)))) {
     ui.notifications.warn(localize("MYTHRASF.Tracker.Rejected.actionPoints")); return null;
   }
+  if (definition.type === "proactive") await clearAim(context.combatant.actor);
   const id = foundry.utils.randomID(); const candidates = [];
   context.state = combatActionState(context.combat);
   const interruptionId = combatInterruption(context.combat)?.phase === "resolving"
@@ -516,6 +520,10 @@ export async function declareCombatAction(request) {
 }
 
 export async function requestCombatAction(actor, key) {
+  if (key === "aim") {
+    const { declareAim } = await import("./ranged-actions.js");
+    return declareAim(actor);
+  }
   if (key === "interrupt") {
     const combat = game.combat ?? game.combats?.active;
     const combatant = combatantForActor(combat, actor, actor?.token?.uuid);

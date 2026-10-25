@@ -101,7 +101,7 @@ async function applyOperation(actor, request) {
       // Embedded updates are one server request. Refund only the AP payment on a failed write.
       if (request.kind === "reload" || request.spendAction) await actor.update({
         "system.resources.actionPoints.value": count(actor.system.resources.actionPoints.value) + 1
-      });
+      }, { mythrasActionPointRefund: true });
       throw failure;
     }
     if (request.kind === "reload"

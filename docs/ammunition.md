@@ -57,3 +57,18 @@ la reserva y carga antiguas de cada modo identificado. Esas cantidades se
 que representen los mismos proyectiles. Se conserva la carga y se reinicia el
 progreso parcial. Los modos propios sin tipo reconocible mantienen sus datos
 hasta configurar la compatibilidad. Repetir la migración no vuelve a sumar.
+
+## Apuntar
+
+Solo puede elegirse en el turno propio, antes de gastar PA en ese asalto,
+incluidas defensas y reacciones. Consume todos los PA y pasa turno. Selecciona
+un arma equipada y un único blanco; cancelar no consume nada.
+
+Desde el comienzo del siguiente asalto, disparar con ese arma, modo y blanco
+compensa hasta un grado de penalización por distancia y circunstancias. No
+mejora por debajo de la dificultad inicial. No se puede prolongar ni acumular
+Apuntar. Un ataque consume la preparación, aunque falle o se dirija a otro
+blanco; otro blanco o arma no recibe el beneficio. Otra acción activa, parar,
+evadir o dejar pasar el turno preparado cancela el apuntado. Mover manualmente
+el token o cambiar su elevación no lo cancela; elegir la acción Mover sí.
+Hablar y gesticular como acciones gratuitas no lo cancelan.

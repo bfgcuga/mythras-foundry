@@ -1,3 +1,4 @@
+import { expireAimAtTurnEnd, expireCombatAims } from "../rules/aim.js";
 import { combatInterruption, clearCombatInterruption } from "../rules/combat-interruption.js";
 import { clearCombatWaiting } from "../rules/combat-waiting.js";
 import { currentActionPoints, effectiveActionPointMaximum, combatantActionPointState } from "../rules/action-points.js";
@@ -57,7 +58,7 @@ export async function synchronizeCombatantActionPoints(combatant) {
   const current = Number(combatant.actor.system.resources?.actionPoints?.value ?? 0);
   const desired = Math.min(current, maximum);
   if (current !== desired) {
-    await combatant.actor.update({ "system.resources.actionPoints.value": desired });
+    await combatant.actor.update({ "system.resources.actionPoints.value": desired }, { mythrasActionPointAdjustment: true });
   }
   const combat = combatant.parent;
   if (combat?.started && combat.combatant?.id === combatant.id && maximum === 0
@@ -111,6 +112,7 @@ export class MythrasCombat extends Combat {
 
   async endCombat() {
     if (coordinator() === game.user.id) {
+      await expireCombatAims(this);
       await prepareCombatEndFatigue(this);
       await clearCombatManeuvers(this);
       await clearCombatInterruption(this);
@@ -128,6 +130,7 @@ export class MythrasCombat extends Combat {
     if (this.combatant) await synchronizeCombatantInitiative(this.combatant);
     const economy = this.mythrasTurnEconomy;
     if (economy.transitioning) return this;
+    await expireAimAtTurnEnd(this);
     const history = [...(economy.conditionHistory ?? [])];
     if (this.combatant?.actor && !skipCurrentActorConditions) {
       await advanceActorTurnConditions(this.combatant.actor, history);
@@ -160,6 +163,7 @@ export class MythrasCombat extends Combat {
     if (coordinator() !== game.user.id || combatInterruption(this)) return this;
     const round = Math.max(1, Number(this.round ?? 0) + 1);
     await clearCombatWaiting(this);
+    await expireCombatAims(this, round);
     Hooks.callAll("mythrasRoundEnd", this, this.round ?? 0);
     const history = [...(this.mythrasTurnEconomy.conditionHistory ?? [])];
     await expireRoundConditions(this, history);
@@ -194,7 +198,7 @@ export class MythrasCombat extends Combat {
       }
       const maximum = combatant.isDefeated ? 0
         : effectiveActionPointMaximum(actor, getActionPointRules());
-      await actor.update({ "system.resources.actionPoints.value": maximum });
+      await actor.update({ "system.resources.actionPoints.value": maximum }, { mythrasRoundRestore: { combatId: this.id, round } });
     }
     await this.setFlag(SCOPE, FLAG, { ...economy, schemaVersion: TURN_ECONOMY_SCHEMA_VERSION,
       cycle: 1, lastRestoredRound: round, revision: Number(economy.revision ?? 0) + 1,

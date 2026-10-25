@@ -1,3 +1,4 @@
+import { registerAimRuntime } from "./rules/aim-runtime.js";
 import { registerAmmunitionRuntime } from "./rules/ammunition-runtime.js";
 import { registerNpcHealthHooks } from "./rules/npc-health-runtime.js";
 import { defaultItemIcon } from "./data/item-icons.js";
@@ -35,11 +36,6 @@ import { initializeCreatedActor, isPrimaryActiveGM,
 registerNpcHealthHooks();
 registerSystemInitialization();
 registerUiHooks();
-
-Hooks.on("updateToken", (token, changed, options, userId) => {
-  if (userId === game.user.id && (Object.hasOwn(changed, "x") || Object.hasOwn(changed, "y") || Object.hasOwn(changed, "elevation"))
-    && token.actor) clearAim(token.actor);
-});
 
 Hooks.on("createActiveEffect", (effect, options, userId) => {
   const actor = effect.parent;
@@ -265,6 +261,7 @@ Hooks.on("createActor", async (actor, options, userId) => {
 
 Hooks.once("ready", async () => {
   registerAmmunitionRuntime();
+  registerAimRuntime();
   if (!isPrimaryActiveGM()) return;
   await runWorldMigrations();
 });

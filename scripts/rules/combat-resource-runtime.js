@@ -13,7 +13,7 @@ export async function spendActorActionPoint(actor, { reactive = false, actionKin
   const result = await withActionPointLock(actor, async () => {
     const points = currentActionPoints(actor);
     if (points < 1) return false;
-    await actor.update({ "system.resources.actionPoints.value": points - 1 });
+    await actor.update({ "system.resources.actionPoints.value": points - 1 }, { mythrasCombatAction: actionKind });
     if (reactive) await consumeActorWaiting(actor);
     return true;
   });

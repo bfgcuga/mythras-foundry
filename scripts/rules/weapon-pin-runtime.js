@@ -151,7 +151,7 @@ async function startRelease(request, user) {
       flags: { [PIN_SCOPE]: { weaponRelease: state } } });
     await bindInterruptionAction(combat, active.id, { kind: "release", messageUuid: message.uuid });
   } catch (error) {
-    await actor.update({ "system.resources.actionPoints.value": currentActionPoints(actor) + 1 });
+    await actor.update({ "system.resources.actionPoints.value": currentActionPoints(actor) + 1 }, { mythrasActionPointRefund: true });
     await finishInterruptionAction(combat, active.id, { cancelled: true });
     throw error;
   }

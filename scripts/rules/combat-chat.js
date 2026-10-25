@@ -614,7 +614,7 @@ export async function createAttackMessage({ actor, weapon, mode, resolution, tar
     catch (failure) { ui.notifications.warn(failure.message); return null; }
   }
   await releaseManeuverRival(maneuverTracker, actor, setup.targetTokenUuid, maneuverTokenUuid(maneuverTracker, actor));
-  await clearAim(actor);
+  await clearAim(actor, { consumed: true });
   if (turnEconomy) {
     turnEconomy.attackSpent = true;
     await consumePassiveBlock(game.combats.get(turnEconomy.combatId), turnEconomy.combatantId,
