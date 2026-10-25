@@ -61,7 +61,11 @@ hasta configurar la compatibilidad. Repetir la migración no vuelve a sumar.
 ## Apuntar
 
 Solo puede elegirse en el turno propio, antes de gastar PA en ese asalto,
-incluidas defensas y reacciones. Consume todos los PA y pasa turno. Selecciona
+incluidas defensas y reacciones. Cada acción consume 1 PA y pasa turno; debe
+volver a elegirse en cada oportunidad hasta gastar los PA del asalto. Los PA
+restantes siguen disponibles para defenderse, lo que cancela el apuntado. Un
+asalto incompleto no concede beneficio. Al continuar se conserva el arma y el
+blanco iniciales. Selecciona
 un arma equipada y un único blanco; cancelar no consume nada.
 
 Desde el comienzo del siguiente asalto, disparar con ese arma, modo y blanco

@@ -90,7 +90,7 @@ export async function runWorldMigrations() {
     }
     await migrateCombatItems(actor);
     await migrateActorAmmunition(actor);
-    if (actor.getFlag("mythras-foundry", "rangedAim")?.schemaVersion !== 2) await clearAim(actor);
+    if (actor.getFlag("mythras-foundry", "rangedAim")?.schemaVersion !== 3) await clearAim(actor);
     await migrateActorPermanentWounds(actor);
     if (actor.type === "character") {
       await ensureCharacterPrototypeTokenLink(actor);
@@ -108,7 +108,7 @@ export async function runWorldMigrations() {
     for (const token of scene.tokens) {
       if (token.actorLink || !token.actor) continue;
       await migrateActorAmmunition(token.actor);
-      if (token.actor.getFlag("mythras-foundry", "rangedAim")?.schemaVersion !== 2) await clearAim(token.actor);
+      if (token.actor.getFlag("mythras-foundry", "rangedAim")?.schemaVersion !== 3) await clearAim(token.actor);
       const updates = statusIconUpdates(token.actor.effects);
       if (updates.length) await token.actor.updateEmbeddedDocuments("ActiveEffect", updates);
     }

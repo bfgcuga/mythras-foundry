@@ -327,7 +327,7 @@ async function save(combat, state) {
 }
 
 async function createTransaction(context, key, parameters = {}) {
-  if (COMBAT_ACTIONS[key]?.wholeRound) return null;
+  if (key === "aim") return null;
   if (key === "stand" && parameters.engaged) {
     const { validateStandSelection } = await import("./stand-runtime.js");
     if (!await validateStandSelection(context.combat, context.combatant.actor, context.combatant.token?.uuid, parameters, game.users.get(context.userId) ?? game.user)) {

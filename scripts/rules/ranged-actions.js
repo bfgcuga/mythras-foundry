@@ -43,6 +43,14 @@ export async function declareAim(actor) {
     game.i18n.localize("MYTHRASF.Tracker.Rejected.turn"));
   const reason = aimEligibility(actor, active.combat);
   if (reason) return ui.notifications.warn(game.i18n.localize(`MYTHRASF.Action.Unavailable.${reason}`));
+  const preparing = aimState(actor, active.combat);
+  if (preparing?.phase === "preparing") {
+    try {
+      await requestAim(active.combat, active.entry, preparing);
+      ui.notifications.info(game.i18n.localize("MYTHRASF.Ranged.AimDeclared"));
+    } catch (failure) { ui.notifications.warn(failure.message); }
+    return;
+  }
   const choice = await chooseWeapon(actor, game.i18n.localize("MYTHRASF.Ranged.Aim"));
   if (!choice) return;
   const targets = Array.from(game.user.targets ?? []);

@@ -1,4 +1,4 @@
-import { aimEligibility, expireCombatAims, actionPointSpendingChange, AIM_SCOPE, AIM_FLAG } from "./aim.js";
+import { aimEligibility, aimState, expireCombatAims, actionPointSpendingChange, AIM_SCOPE, AIM_FLAG } from "./aim.js";
 import { currentActionPoints } from "./action-points.js";
 import { withActionPointLock } from "./combat-waiting.js";
 import { combatInterruption } from "./combat-interruption.js";
@@ -36,12 +36,15 @@ export async function applyAimRequest(request) {
     const target = await fromUuid(request.targetTokenUuid);
     if (!target?.actor || target.actor.uuid === actor.uuid) fail("aimTarget");
     const points = currentActionPoints(actor);
-    const state = { schemaVersion: 2, combatId: combat.id, combatantId: entry.id,
+    const previousAim = aimState(actor, combat);
+    if (previousAim && (previousAim.weaponId !== weapon.id || previousAim.modeKey !== mode.key
+      || previousAim.targetTokenUuid !== request.targetTokenUuid)) fail("aimTarget");
+    const state = { schemaVersion: 3, combatId: combat.id, combatantId: entry.id,
       weaponId: weapon.id, modeKey: mode.key, targetTokenUuid: request.targetTokenUuid,
-      declaredRound: combat.round, readyRound: combat.round + 1, phase: "preparing", spent: points };
-    await actor.update({ "system.resources.actionPoints.value": 0,
+      declaredRound: combat.round, readyRound: combat.round + 1, phase: "preparing", actionPending: true, spent: (previousAim?.spent ?? 0) + 1 };
+    await actor.update({ "system.resources.actionPoints.value": points - 1,
       [`flags.${AIM_SCOPE}.${AIM_FLAG}`]: state,
-      [`flags.${AIM_SCOPE}.actionPointSpending`]: { combatId: combat.id, round: combat.round, spent: points },
+      [`flags.${AIM_SCOPE}.actionPointSpending`]: { combatId: combat.id, round: combat.round, spent: state.spent },
       [`flags.${AIM_SCOPE}.aimOperations`]: [...history.slice(-19), { id: request.id, result: state }]
     }, { mythrasAimDeclaration: { combatId: combat.id } });
     advanced = true;

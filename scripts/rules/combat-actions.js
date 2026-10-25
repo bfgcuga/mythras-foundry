@@ -10,7 +10,7 @@ export const COMBAT_ACTIONS = Object.freeze({
   attack: { type: "proactive", cost: 1, observable: true },
   changeReach: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   passiveBlock: { type: "free", cost: 0, observable: false, requiresCombat: true },
-  aim: { type: "proactive", cost: 1, wholeRound: true, observable: true, requiresCombat: true },
+  aim: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   reload: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   seekCover: { type: "proactive", cost: 1, observable: true, requiresCombat: true },
   brace: { type: "proactive", cost: 1, observable: true, requiresCombat: true },

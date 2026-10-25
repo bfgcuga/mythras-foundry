@@ -53,18 +53,20 @@ function setup(t, type = 'character') {
   return { actor, weapon, combat, target, maximum, hooks, request, ready };
 }
 
-for (const type of ['character','npc']) test(`Apuntar consume todos los PA y pasa turno una sola vez (${type})`, async t => {
+for (const type of ['character','npc']) test(`Apuntar consume un PA por acción y pasa turno una sola vez (${type})`, async t => {
   const f = setup(t,type); assert.ok(f.maximum > 0);
   const request = f.request(); const result = await applyAimRequest(request);
-  assert.equal(result.spent, f.maximum);
-  assert.equal(f.actor.system.resources.actionPoints.value, 0);
+  assert.equal(result.spent, 1);
+  assert.equal(f.actor.system.resources.actionPoints.value, f.maximum-1);
   assert.equal(f.combat.advanced, 1); assert.equal(aimState(f.actor,f.combat).phase,'preparing');
   await applyAimRequest(request);
-  assert.equal(f.combat.advanced, 1); assert.equal(f.actor.system.resources.actionPoints.value,0);
+  assert.equal(f.combat.advanced, 1); assert.equal(f.actor.system.resources.actionPoints.value,f.maximum-1);
 });
 
 test('el cambio de ciclo no concede beneficio; el siguiente asalto lo concede sin acumular', async t => {
   const f = setup(t); await applyAimRequest(f.request());
+  for (let i=1; i<f.maximum; i++) await applyAimRequest(f.request());
+  await expireAimAtTurnEnd(f.combat); // Skipping a spent combatant preserves completed preparation.
   f.combat.mythrasTurnEconomy.cycle = 5; assert.equal(f.ready(),null);
   await expireCombatAims(f.combat,2); f.combat.round = 2;
   assert.equal(f.ready().phase,'ready');
@@ -82,7 +84,7 @@ test('gastar PA, incluso antes del turno propio, impide apuntar aunque se repong
   const f = setup(t);
   await f.actor.update({ 'system.resources.actionPoints.value': f.maximum-1 });
   await f.actor.update({ 'system.resources.actionPoints.value': f.maximum });
-  await assert.rejects(applyAimRequest(f.request()), /ninguno/);
+  await assert.rejects(applyAimRequest(f.request()), /no debes haber gastado PA/);
   assert.equal(f.combat.advanced,0);
   await f.actor.update({ 'system.resources.actionPoints.value': f.maximum+1 }, { mythrasActionPointRefund: true });
   await f.actor.update({ 'system.resources.actionPoints.value': f.maximum }, { mythrasActionPointAdjustment: true });
@@ -112,7 +114,7 @@ test('otra acción de pago cancela el beneficio; terminar el turno sin disparar 
   await f.actor.update({ 'system.resources.actionPoints.value': f.maximum }, { mythrasRoundRestore: { combatId:'combat',round:2 } });
   await f.actor.update({ 'system.resources.actionPoints.value': f.maximum-1 });
   assert.equal(f.ready(),null);
-  f.actor.flags['mythras-foundry'].rangedAim = { schemaVersion:2,combatId:'combat',readyRound:2 };
+  f.actor.flags['mythras-foundry'].rangedAim = { schemaVersion:3,combatId:'combat',readyRound:2 };
   await expireAimAtTurnEnd(f.combat);
   assert.equal(aimState(f.actor,f.combat),null);
 });
@@ -122,7 +124,7 @@ test('las coordenadas y la elevación no registran un cancelador de apuntado', t
   const legacy = { schemaVersion:1,combatId:'combat',weaponId:'bow',modeKey:'ranged',targetTokenUuid:f.target.uuid };
   f.actor.flags['mythras-foundry']={rangedAim:legacy};
   assert.equal(f.ready(),null);
-  f.actor.flags['mythras-foundry'].rangedAim={...legacy,schemaVersion:2,readyRound:2};
+  f.actor.flags['mythras-foundry'].rangedAim={...legacy,schemaVersion:3,readyRound:2};
   f.combat.round=2;
   assert.equal(readyAim(f.actor,{combat:f.combat,weaponId:'other',modeKey:'ranged',targetTokenUuid:f.target.uuid}),null);
   assert.ok(f.ready());
@@ -142,7 +144,7 @@ test('el jugador declara por socket y el DJ consume los PA y avanza su turno', a
   ui.notifications.info=()=>{};
   game.user=owner;
   await declareAim(f.actor);
-  assert.equal(f.actor.system.resources.actionPoints.value,0);
+  assert.equal(f.actor.system.resources.actionPoints.value,f.maximum-1);
   assert.equal(f.combat.advanced,1);
   assert.equal(aimState(f.actor,f.combat).readyRound,2);
 });
@@ -160,13 +162,42 @@ test('cerrar combate elimina el estado preparado y un fallo documental no consum
 });
 
 
-test('la entrada pública de acciones también utiliza Apuntar de asalto completo', async t=>{
+test('la entrada pública de acciones también utiliza Apuntar por acciones', async t=>{
   const f=setup(t);
   const {requestCombatAction}=await import('../scripts/rules/combat-action-runtime.js');
   foundry.applications.api.DialogV2.wait=async()=> 'bow:ranged';
   ui.notifications.info=()=>{};
   await requestCombatAction(f.actor,'aim');
-  assert.equal(f.actor.system.resources.actionPoints.value,0);
+  assert.equal(f.actor.system.resources.actionPoints.value,f.maximum-1);
   assert.equal(f.combat.advanced,1);
-  assert.equal(aimState(f.actor,f.combat).schemaVersion,2);
+  assert.equal(aimState(f.actor,f.combat).schemaVersion,3);
+});
+
+
+test('continuar apuntando conserva PA para defenderse y una defensa cancela sin beneficio', async t => {
+  const f=setup(t);
+  await applyAimRequest(f.request());
+  assert.equal(aimEligibility(f.actor,f.combat),'');
+  assert.equal(f.actor.system.resources.actionPoints.value,f.maximum-1);
+  await f.actor.update({'system.resources.actionPoints.value':f.maximum-2}, {mythrasCombatAction:'parry'});
+  assert.equal(aimState(f.actor,f.combat),null);
+  await expireCombatAims(f.combat,2); f.combat.round=2;
+  assert.equal(f.ready(),null);
+});
+
+test('un asalto incompleto no concede beneficio y continuar mantiene arma y blanco', async t => {
+  const f=setup(t); await applyAimRequest(f.request());
+  const other={uuid:'Scene.s.Token.other',actor:{uuid:'Actor.other2'}};
+  globalThis.fromUuid=async()=>other;
+  await assert.rejects(applyAimRequest({...f.request(),targetTokenUuid:other.uuid}));
+  assert.equal(f.actor.system.resources.actionPoints.value,f.maximum-1);
+  await expireCombatAims(f.combat,2); f.combat.round=2;
+  assert.equal(f.ready(),null);
+});
+
+
+test('pasar una oportunidad sin volver a apuntar cancela la preparacion', async t => {
+  const f=setup(t); await applyAimRequest(f.request());
+  await expireAimAtTurnEnd(f.combat);
+  assert.equal(aimState(f.actor,f.combat),null);
 });

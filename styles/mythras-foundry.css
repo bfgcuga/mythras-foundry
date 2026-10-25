@@ -3483,3 +3483,5 @@
 .mythras-foundry.hazard-item-sheet fieldset { position: relative; min-width: 0; }
 .mythras-foundry.hazard-item-sheet dd { margin: 0.25rem 0 0.75rem; }
 .mythras-foundry.hazard-item-sheet dt { font-weight: bold; }
+
+.mythras-foundry [data-item-id]:has(> [data-action="recover-thrown-weapon"]) > [data-action="repair-inoperable-weapon"] { right: 4rem; }

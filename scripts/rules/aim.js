@@ -5,13 +5,14 @@ export const AIM_SCOPE = "mythras-foundry";
 export const AIM_FLAG = "rangedAim";
 export function aimState(actor, combat) {
   const aim = actor?.getFlag?.(AIM_SCOPE, AIM_FLAG);
-  if (aim?.schemaVersion !== 2 || aim.combatId !== combat?.id || Number(combat.round) > aim.readyRound) return null;
+  if (aim?.schemaVersion !== 3 || aim.combatId !== combat?.id || Number(combat.round) > aim.readyRound) return null;
   return { ...aim, phase: Number(combat.round) === aim.readyRound ? "ready" : "preparing" };
 }
 export function aimEligibility(actor, combat, maximum = effectiveActionPointMaximum(actor, getActionPointRules())) {
   const state = aimState(actor, combat);
   const history = actor?.getFlag?.(AIM_SCOPE, "actionPointSpending");
-  if (state) return "aimAlreadyDeclared";
+  if (state?.phase === "ready") return "aimAlreadyDeclared";
+  if (state) return currentActionPoints(actor) > 0 ? "" : "actionPoints";
   if (maximum < 1 || currentActionPoints(actor) !== maximum || (history?.combatId === combat?.id
     && history.round === combat?.round && history.spent > 0)) return "aimWholeRound";
   return "";
@@ -30,19 +31,21 @@ export async function clearAim(actor, { consumed = false } = {}) {
   const aim = actor?.getFlag?.(AIM_SCOPE, AIM_FLAG);
   if (!aim) return;
   await actor.unsetFlag(AIM_SCOPE, AIM_FLAG);
-  if (aim.schemaVersion === 2) globalThis.ui?.notifications?.info?.(game.i18n.format(
+  if (aim.schemaVersion === 3) globalThis.ui?.notifications?.info?.(game.i18n.format(
     consumed ? "MYTHRASF.Ranged.AimConsumed" : "MYTHRASF.Ranged.AimCancelled", { actor: actor.name }));
 }
 export async function expireAimAtTurnEnd(combat) {
   const actor = combat.combatant?.actor;
   const state = aimState(actor, combat);
-  if (actor && (!state || state.phase === "ready")) await clearAim(actor);
+  if (actor && (!state || state.phase === "ready" || (!state.actionPending && currentActionPoints(actor) > 0))) await clearAim(actor);
+  else if (state?.actionPending) await actor.setFlag(AIM_SCOPE, AIM_FLAG, { ...state, actionPending: false });
 }
 export async function expireCombatAims(combat, nextRound = Infinity) {
   for (const entry of combat.combatants ?? []) {
     const aim = entry.actor?.getFlag?.(AIM_SCOPE, AIM_FLAG);
     if (aim && aim.combatId === combat.id) {
-      if (aim.schemaVersion !== 2 || aim.readyRound < nextRound) await clearAim(entry.actor);
+      if (aim.schemaVersion !== 3 || aim.readyRound < nextRound
+        || (aim.phase === "preparing" && aim.readyRound === nextRound && currentActionPoints(entry.actor) > 0)) await clearAim(entry.actor);
       else if (aim.readyRound === nextRound && aim.phase !== "ready") {
         await entry.actor.setFlag(AIM_SCOPE, AIM_FLAG, { ...aim, phase: "ready" });
         globalThis.ui?.notifications?.info?.(game.i18n.format("MYTHRASF.Ranged.AimReady", { actor: entry.actor.name }));

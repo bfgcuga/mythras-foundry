@@ -34,7 +34,9 @@ mientras no esté disponible. Esta revisión no incluye «Inutilizada» ni los
 estados de daño o rotura del arma.
 
 Montar, Mover, Titubear, Buscar cobertura y Apuntar ya están revisadas.
-Apuntar consume el asalto completo y aplica su beneficio únicamente en el siguiente.
+Apuntar consume 1 PA en cada oportunidad de actuar del asalto y aplica su beneficio
+únicamente en el siguiente si se completó la preparación. Defenderse con los PA
+restantes cancela el apuntado.
 La acción genérica ya permite describir una acción, gastar un PA y publicarla en el chat.
 
 ## 2. Revisar las resoluciones manuales de flujos interactivos
@@ -82,10 +84,3 @@ tiradas guiadas no dependen de esta cola; su seguimiento temporal sigue a cargo
 del DJ. Reconsiderar esta prioridad si se acuerda ampliar significativamente
 las consecuencias automáticas de asalto. Las fronteras y restricciones están
 detalladas en [`refactoring.md`](refactoring.md).
-
-## 7. Reparar armas y armaduras dañadas o destruidas
-
-Diseñar acciones para reparar armas y armaduras dañadas o destruidas. Queda
-por decidir si viven en la hoja del Item o en Inventario y cómo se calcula y
-cobra su coste económico antes de restaurar sus PG o PA. No incluye la marca
-«Inutilizada», cuya reparación gratuita ya se resuelve desde Inventario.

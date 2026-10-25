@@ -128,8 +128,9 @@ El sistema incluye actualmente:
   circunstancias; Apuntar, Recargar, cobertura localizada y desvíos al disparar
   a una melé comparten la transacción de chat. Las tarjetas desglosan TAM,
   grados por distancia, intensidad del viento, circunstancias y dificultad inicial;
-- Apuntar dedica el asalto completo: exige no haber gastado PA, consume todos
-  y pasa turno. En el siguiente asalto permite compensar un grado de penalización
+- Apuntar dedica el asalto completo: exige empezar sin gasto previo de PA, consume 1 PA por acción
+  y pasa turno cada vez. Debe repetirse en cada oportunidad de actuar; los PA
+  restantes permiten defenderse, cancelando el apuntado. En el siguiente asalto permite compensar un grado de penalización
   al disparar a ese blanco con la misma arma y modo; no se acumula ni se prolonga.
   Mover el token o cambiar su elevación no lo cancela; otra acción activa,
   parar, evadir o dejar pasar el turno preparado sí;
@@ -273,7 +274,11 @@ El sistema incluye actualmente:
   y máximos; las piezas destruidas se desequipan y no pueden volver a equiparse.
   «Inutilizar Arma» marca el arma del atacante que obtuvo la pifia sin dañar sus
   PG: no puede atacar ni parar, se distingue en Inventario y Combate y dispone
-  de una reparación gratuita en su fila de inventario.
+  de una reparación en su fila de inventario. El botón de martillo aparece para
+  armas y armaduras dañadas o destruidas y armas inutilizadas: exige confirmar
+  que se han cumplido las condiciones acordadas con el DJ, restaura los PG o PA
+  máximos y elimina «Inutilizada». El coste y el tiempo se resuelven con el DJ;
+  no se cobran automáticamente ni se equipa o recupera el objeto al repararlo.
   «Tiro Apuntado» tira primero la localización y permite sustituirla antes de
   tirar el daño. El diálogo ofrece toda la anatomía y recuerda elegir solo una
   localización contigua; la proximidad no se interpreta ni valida automáticamente.

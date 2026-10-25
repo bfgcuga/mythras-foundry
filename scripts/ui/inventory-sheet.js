@@ -20,6 +20,21 @@ export function inventoryItemsForActor(items = []) {
     && !isNaturalWeapon(item));
 }
 
+export function itemRepairUpdate(item) {
+  if (!inventoryItemsForActor([item]).length) return null;
+  const system = item.system;
+  const update = {};
+  if (["weapon", "equipment"].includes(item.type)
+      && Number(system.maxHitPoints) > Number(system.currentHitPoints)) {
+    update["system.currentHitPoints"] = Number(system.maxHitPoints);
+  }
+  if (item.type === "armor" && Number(system.armorPoints) < armorMaximumPoints(item)) {
+    update["system.armorPoints"] = armorMaximumPoints(item);
+  }
+  if (system.inoperable) update["system.inoperable"] = false;
+  return Object.keys(update).length ? update : null;
+}
+
 export function prepareInventoryView(items = []) {
   const inventoryItems = inventoryItemsForActor(items);
   const hitLocations = Array.from(items).filter((item) => item.type === "hitLocation");
@@ -42,7 +57,7 @@ export function prepareInventoryView(items = []) {
       : row.isArmor && armorDurabilityState(row.item) === "broken",
     damaged: row.isWeapon && weaponDurabilityState(row.item) === "damaged",
     inoperable: row.isWeapon && Boolean(row.item.system.inoperable || row.item.system.thrown),
-    damagedForRepair: row.isWeapon && Boolean(row.item.system.inoperable),
+    damagedForRepair: Boolean(itemRepairUpdate(row.item)),
     thrown: row.isWeapon && Boolean(row.item.system.thrown),
     categoryLabel: row.isWeapon ? game.i18n.localize("TYPES.Item.weapon")
       : row.isArmor ? game.i18n.localize("TYPES.Item.armor")
@@ -98,9 +113,20 @@ export class InventorySheetController {
     event.preventDefault();
     if (!this.editable) return;
     const item = this.actor.items.get(event.currentTarget.closest("[data-item-id]")?.dataset.itemId);
-    if (item?.type === "weapon" && item.system.inoperable) {
-      await item.update({ "system.inoperable": false });
-    }
+    if (!item || !itemRepairUpdate(item)) return;
+    const escape = (text) => foundry.utils.escapeHTML(String(text ?? ""));
+    const confirmed = await foundry.applications.api.DialogV2.input({
+      window: { title: game.i18n.localize("MYTHRASF.Item.Repair") },
+      content: `<div class="mythras-foundry mythras-dialog"><p>${escape(game.i18n.format(
+        "MYTHRASF.Item.RepairPrompt", { item: item.name }))}</p>
+        <label><input type="checkbox" class="sheet-state-box" name="repairConditions" required>
+        <span>${escape(game.i18n.localize("MYTHRASF.Item.RepairConditions"))}</span></label></div>`,
+      ok: { label: game.i18n.localize("MYTHRASF.Confirm"), icon: "fas fa-hammer",
+        callback: (dialogEvent, button) => Boolean(button.form.elements.repairConditions.checked) }
+    });
+    if (!confirmed || !this.editable || this.actor.items.get(item.id) !== item) return;
+    const update = itemRepairUpdate(item);
+    if (update) await item.update(update);
   }
 
   async toggleContainer(event) {

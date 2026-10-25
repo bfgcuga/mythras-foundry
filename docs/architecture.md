@@ -970,7 +970,11 @@ estados visuales sin guardar una etiqueta redundante.
 operativa independiente de los PG: `weaponCanEquip` la excluye de todos los
 selectores compartidos de ataque y parada, pero no la clasifica como destruida.
 Inventario y Combate derivan su presentación de esa marca; la acción de reparar
-en Inventario solo la restablece a `false`, sin coste ni cambios de durabilidad.
+en Inventario exige confirmar las condiciones acordadas con el DJ, restaura
+los PG máximos de armas o los PA máximos de armaduras y restablece la marca a
+`false`. `itemRepairUpdate` centraliza disponibilidad y actualización, también
+para equipo que disponga de PG. No cobra dinero ni cambia equipación,
+lanzamiento o inmovilización. El equipo genérico actual no tiene durabilidad.
 «Tiro Apuntado» resuelve el d20 de localización antes de evaluar el daño y abre
 una elección explícita con todas las localizaciones del defensor. Conserva por
 separado `rolledLocationId` y la localización finalmente elegida. La interfaz
@@ -1101,13 +1105,17 @@ original y su propietario. La extracción recupera ese ejemplar sin duplicarlo
 (o lo transfiere si lo extrae otro actor). Quitar el efecto libera la retención,
 sin reparar ni equipar el arma.
 
-Apuntar usa `rangedAim` de esquema 2 en el Actor, con combate, combatiente,
+Apuntar usa `rangedAim` de esquema 3 en el Actor, con combate, combatiente,
 arma, modo, blanco, asalto de declaración y asalto de disponibilidad. `aim.js`
 concentra elegibilidad y caducidad; `aim-runtime.js` valida la petición en el
-coordinador, consume todos los PA, persiste el estado y avanza turno. Las
+coordinador, consume 1 PA por acción, persiste el estado y avanza turno. Las
 peticiones repetidas no vuelven a pagar ni a avanzar. Solo se declara en el
 turno propio y fuera de interrupciones, sin gasto previo de PA y con el máximo
-efectivo disponible. El coste se presenta como «Todos los PA».
+efectivo disponible al empezar. Continuar exige elegir Apuntar en cada turno
+propio, con el mismo arma, modo y blanco. El coste es 1 PA por acción; los PA
+restantes permiten defenderse y cancelar el apuntado. Solo completar todas las
+acciones concede el beneficio; pasar sin apuntar o cerrar un asalto con PA
+pendientes cancela la preparación. El esquema anterior se descarta sin reembolso.
 
 El hook `preUpdateActor` registra el gasto efectivo por combate/asalto en
 `actionPointSpending`: ataques, defensas, otras reacciones y deducciones directas.
