@@ -36,6 +36,17 @@ alcance cerrado debe trasladarse a [`roadmap.md`](roadmap.md).
 - Realizar la revisión estética final del menú de situación táctica cuando sus
   controles, permisos y operaciones estén estabilizados.
 
+## Hoja de arma
+
+- Permitir eliminar manualmente estados del arma desde el desplegable de estados
+  de Configuración para corregir situaciones en las que falle la lógica automática.
+  La hoja ya explica los estados activos y permite editar «Inutilizada»; queda
+  añadir la retirada de los demás estados desde ese desplegable. La corrección
+  debe limpiar también los indicadores y efectos relacionados, de modo que el
+  arma no conserve bloqueos incoherentes ni referencias de combate obsoletas.
+  Es una herramienta de corrección manual, complementaria a las acciones
+  habituales de liberación, extracción y recuperación.
+
 ## Armaduras y morfologías
 
 - Revisar si las piezas anatómicas humanas —yelmos, petos, faldares, brazales y

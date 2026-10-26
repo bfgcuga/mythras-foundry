@@ -1415,6 +1415,11 @@ Cambiar estas opciones vuelve a renderizar las hojas abiertas, incluidas las de
 tokens. Son reglas de presentación de estas hojas, sin modificar la distribución
 de datos de documentos de Foundry ni las reglas de permisos de Items.
 
+La revisión de las hojas de Item se considera cerrada. Por decisión del usuario,
+se mantienen sus permisos actuales y por ahora no se añaden restricciones para
+los jugadores. No se extiende automáticamente a Items la matriz de visibilidad
+de las hojas de Actor; no hay una ampliación de permisos de Items acordada.
+
 `gallery-sheet.js` comparte la gestión de `system.gallery` entre los dos tipos
 de Actor y vuelve a comprobar propiedad antes de guardar. El PNJ usa el mismo
 esquema de imágenes `{src, title}`, con una lista vacía inicial; no se reconstruyen
