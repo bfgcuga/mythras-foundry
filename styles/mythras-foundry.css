@@ -3496,7 +3496,7 @@
 .mythras-foundry .weapon-consultation .weapon-trait-add,
 .mythras-foundry .weapon-consultation [data-action="delete-weapon-trait"] { display: none; }
 .mythras-foundry .weapon-consultation .weapon-consultation-value { display: block; min-height: 1.75rem; padding: 0.3rem; }
-.mythras-foundry .weapon-mode-fields label { border-bottom: 1px solid var(--mythras-border); }
+
 .mythras-foundry .weapon-item-sheet input,
 .mythras-foundry .weapon-item-sheet select,
 .mythras-foundry .weapon-item-sheet textarea { border-radius: 2px; }
@@ -3509,3 +3509,22 @@
   .mythras-foundry .weapon-mode-inline { grid-template-columns: minmax(0, 1fr) minmax(9rem, 0.4fr); }
   .mythras-foundry .weapon-mode-fields { grid-column: 1 / -1; }
 }
+
+.mythras-foundry .weapon-mode-fields label > span:first-child,
+.mythras-foundry .weapon-mode-effect-field > span:first-child,
+.mythras-foundry .weapon-mode-trait-field > span:first-child {
+  background: rgb(80 80 80 / 12%);
+  padding: 0.35rem 0.25rem;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mythras-foundry .weapon-mode-fields label { gap: 0; }
+.mythras-foundry .weapon-mode-fields .weapon-consultation-value { text-align: center; font-weight: normal; }
+.mythras-foundry .weapon-general-fields label:has(.weapon-era-select) { grid-template-columns: auto minmax(12rem, 18rem); }
+.mythras-foundry .weapon-active-states,
+.mythras-foundry .weapon-state-help { flex-basis: 100%; }
+.mythras-foundry .weapon-active-states:empty { display: none; }
+.mythras-foundry .weapon-status-editor .weapon-active-states p,
+.mythras-foundry .weapon-status-editor .weapon-state-help p { margin: 0.4rem 0; }

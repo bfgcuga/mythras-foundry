@@ -107,7 +107,8 @@ test("la consulta del arma presenta textos de selectores y permite activar edici
   const { MythrasItemSheet } = await import("../scripts/sheets/item-sheet.js");
   document.body.innerHTML = render(template, { isWeapon: true, editable: true,
     item: { system: { era: "A-I", inoperable: true, lodged: true, thrown: true } },
-    weaponDurabilityLabel: "Sin daños", weaponPinned: true,
+    weaponActiveStates: ["Empalada en un rival: no está disponible."],
+    weaponEraChoices: [{ value: "A-I", label: "Antigüedad–Era industrial" }],
     weaponModes: [{ weaponType: "melee", isMelee: true, damage: "1d8" }],
     weaponTypeChoices: [{ value: "melee", label: "Cuerpo a cuerpo" }] });
   const sheet = new MythrasItemSheet({ document: { type: "weapon" } });
@@ -119,8 +120,20 @@ test("la consulta del arma presenta textos de selectores y permite activar edici
   assert.equal(panel.querySelector("select").nextElementSibling.textContent, "Cuerpo a cuerpo");
   assert.equal(panel.querySelector("input").nextElementSibling.textContent, "—");
   panel.querySelector('[data-action="toggle-weapon-edit"]').click();
-  assert.equal(sheet._weaponEditing, true);
+  assert.equal(sheet._weaponEditing.modes, true);
+  assert.equal(sheet._weaponEditing.instance, undefined);
+  assert.ok(document.querySelector('[data-weapon-tab-content="instance"]').classList.contains("weapon-consultation"));
+  assert.ok(document.querySelector(".weapon-state-help"));
+  assert.equal(document.querySelector(".weapon-state-help").open, false);
   assert.ok(document.querySelector('[name="system.inoperable"]').checked);
+  const era = document.querySelector('select[name="system.era"]');
+  assert.equal(era.value, "A-I");
+  assert.equal(era.nextElementSibling.textContent, "Antigüedad–Era industrial");
+  assert.match(document.querySelector(".weapon-active-states").textContent, /Empalada/);
+  const configuration = document.querySelector('[data-weapon-tab-content="instance"]');
+  assert.equal(configuration.querySelector('[name="system.inoperable"]').nextElementSibling.textContent, "Sí");
+  configuration.querySelector('[data-action="toggle-weapon-edit"]').click();
+  assert.equal(sheet._weaponEditing.instance, true);
   for (const name of ["thrown", "lodged"]) {
     assert.equal(document.querySelector(`.weapon-status-editor [name="system.${name}"]`), null);
   }

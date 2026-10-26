@@ -191,7 +191,7 @@
           <label><span>{{localize "MYTHRASF.Weapon.Encumbrance"}}</span><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}"></label>
           <label><span>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</span><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}"></label>
           <label><span>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</span><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}"></label>
-          <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><input name="system.era" value="{{item.system.era}}"><small class="weapon-era-help">{{localize "MYTHRASF.Weapon.EraHelp"}}</small></label>
+          <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><select class="weapon-era-select" name="system.era">{{selectOptions weaponEraChoices selected=item.system.era labelAttr="label" valueAttr="value"}}</select></label>
           <label class="weapon-source-field"><span>{{localize "MYTHRASF.Background.Source"}}</span><input name="system.source" value="{{item.system.source}}"></label>
         </div>
         <label class="weapon-description-field"><span>{{localize "MYTHRASF.Item.Description"}}</span><textarea name="system.description">{{item.system.description}}</textarea></label>
@@ -260,13 +260,18 @@
     </section>
 
     {{#unless creationMode}}<section class="weapon-tab-panel" data-weapon-tab-content="instance">
+      {{#if editable}}<button type="button" class="weapon-edit-toggle" data-action="toggle-weapon-edit">{{localize "MYTHRASF.Edit"}}</button>{{/if}}
       <fieldset class="weapon-status-editor"><legend>{{localize "MYTHRASF.Weapon.OperationalState"}}</legend>
         <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.inoperable" {{checked item.system.inoperable}}>{{localize "MYTHRASF.Weapon.Inoperable"}}</label>
-        <label>{{localize "MYTHRASF.Weapon.Condition"}} <output class="sheet-field-readonly">{{weaponDurabilityLabel}}</output></label>
-        <label>{{localize "MYTHRASF.Ranged.Inventory.Thrown"}} <input type="checkbox" class="sheet-state-box" disabled {{checked item.system.thrown}}></label>
-        <label>{{localize "MYTHRASF.Weapon.Lodged"}} <input type="checkbox" class="sheet-state-box" disabled {{checked item.system.lodged}}></label>
-        <label>{{localize "MYTHRASF.Status.WeaponPinned"}} <input type="checkbox" class="sheet-state-box" disabled {{checked weaponPinned}}></label>
-        <p>{{localize "MYTHRASF.Weapon.StateHelp"}}</p>
+        <div class="weapon-active-states">{{#each weaponActiveStates}}<p>{{this}}</p>{{/each}}</div>
+        <details class="weapon-advanced-fields weapon-state-help"><summary>{{localize "MYTHRASF.Weapon.PossibleStates"}}</summary>
+          <p>{{localize "MYTHRASF.Weapon.State.inoperable"}}</p>
+          <p>{{localize "MYTHRASF.Weapon.State.lodged"}}</p>
+          <p>{{localize "MYTHRASF.Weapon.State.thrown"}}</p>
+          <p>{{localize "MYTHRASF.Weapon.State.pinned"}}</p>
+          <p>{{localize "MYTHRASF.Weapon.State.broken"}}</p>
+          <p>{{localize "MYTHRASF.Weapon.State.damaged"}}</p>
+        </details>
       </fieldset>
       <fieldset class="weapon-copy-editor"><legend>{{localize "MYTHRASF.Weapon.CopyValues"}}</legend>
         <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">

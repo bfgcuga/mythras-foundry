@@ -255,6 +255,24 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           .map((candidate) => ({ value: candidate.id, label: candidate.name })) : [],
       isWeapon: this.item.type === "weapon",
       weaponModes: preparedWeaponModes,
+      weaponEraChoices: [...new Set(["", "Todas", "P", "A", "M", "R", "I", "A-M", "A-R", "A-I", "M-I", this.item.system.era])].map(value => ({
+        value, label: ({ "": "—", Todas: game.i18n.localize("MYTHRASF.Armor.Era.all"),
+          P: game.i18n.localize("MYTHRASF.Weapon.EraChoice.primitive"),
+          A: game.i18n.localize("MYTHRASF.Weapon.EraChoice.ancient"),
+          M: game.i18n.localize("MYTHRASF.Weapon.EraChoice.medieval"),
+          R: game.i18n.localize("MYTHRASF.Weapon.EraChoice.renaissance"),
+          I: game.i18n.localize("MYTHRASF.Weapon.EraChoice.industrial"),
+          "A-M": game.i18n.localize("MYTHRASF.Armor.Era.ancient-medieval"),
+          "A-R": game.i18n.localize("MYTHRASF.Armor.Era.ancient-renaissance"),
+          "A-I": game.i18n.localize("MYTHRASF.Weapon.EraChoice.ancient-industrial"),
+          "M-I": game.i18n.localize("MYTHRASF.Armor.Era.medieval-industrial") })[value] ?? value
+      })),
+      weaponActiveStates: this.item.type === "weapon" ? [
+        this.item.system.inoperable && "inoperable", this.item.system.lodged && "lodged",
+        this.item.system.thrown && "thrown", weaponIsPinned(this.item) && "pinned",
+        weaponDurabilityState(this.item) === "broken" && "broken",
+        weaponDurabilityState(this.item) === "damaged" && "damaged"
+      ].filter(Boolean).map(key => game.i18n.localize(`MYTHRASF.Weapon.State.${key}`)) : [],
       weaponPinned: this.item.type === "weapon" && weaponIsPinned(this.item),
       weaponDurabilityLabel: this.item.type === "weapon" ? game.i18n.localize(`MYTHRASF.Weapon.Durability.${["intact", "indestructible"].includes(weaponDurabilityState(this.item)) ? "unharmed" : weaponDurabilityState(this.item)}`) : "",
       weaponBroken: this.item.type === "weapon" && !weaponCanEquip(this.item),
@@ -396,19 +414,24 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ?.addEventListener("click", () => this.#viewItemImage());
 
     if (this.item.type === "weapon") {
-      for (const panel of this.element.querySelectorAll('[data-weapon-tab-content="characteristics"], [data-weapon-tab-content="modes"]')) {
-        const editing = Boolean(this.creationMode || this._weaponEditing);
+      for (const panel of this.element.querySelectorAll('[data-weapon-tab-content]')) {
+        const editing = Boolean(this.isEditable && (this.creationMode || this._weaponEditing?.[panel.dataset.weaponTabContent]));
         panel.classList.toggle("weapon-consultation", !editing);
         for (const field of panel.querySelectorAll("input, select, textarea")) {
           const output = document.createElement("span");
           output.className = "sheet-field-readonly weapon-consultation-value";
-          output.textContent = field.tagName === "SELECT" ? field.selectedOptions[0]?.textContent ?? "—" : field.value || "—";
+          output.textContent = field.type === "checkbox" ? game.i18n.localize(field.checked ? "MYTHRASF.Weapon.Yes" : "MYTHRASF.Weapon.No") : field.tagName === "SELECT" ? field.selectedOptions[0]?.textContent ?? "—" : field.value || "—";
           field.after(output);
         }
       }
       this.element.querySelectorAll('[data-action="toggle-weapon-edit"]').forEach((button) => {
-        button.textContent = game.i18n.localize(this._weaponEditing ? "MYTHRASF.EditMode.Finish" : "MYTHRASF.Edit");
-        button.addEventListener("click", () => { this._weaponEditing = !this._weaponEditing; this.render(); });
+        button.textContent = game.i18n.localize(this._weaponEditing?.[button.closest("[data-weapon-tab-content]").dataset.weaponTabContent] ? "MYTHRASF.EditMode.Finish" : "MYTHRASF.Edit");
+        button.addEventListener("click", () => {
+          const tab = button.closest("[data-weapon-tab-content]").dataset.weaponTabContent;
+          this._weaponEditing ??= {};
+          this._weaponEditing[tab] = !this._weaponEditing[tab];
+          this.render();
+        });
       });
     }
     this._activeWeaponTab ??= "characteristics";

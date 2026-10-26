@@ -641,4 +641,4 @@ Los iconos activos tienen fondo negro opaco y contornos adaptados para verse
 a tamaño pequeño. Las imágenes anteriores se conservan como obsoletas en
 `assets/icons/statuses/obsolete/colored-background/`.
 
-La hoja de arma abre Características y Modos de uso en consulta, con un botón para activar la edición. Configuración permite corregir la inutilización y consultar conservación, lanzamiento, empalamiento e inmovilización; los estados ligados a combate se resuelven mediante sus acciones habituales. Época continúa como texto libre y muestra una guía de los intervalos del catálogo.
+La hoja de arma abre todas sus pestañas en consulta, con edición independiente por pestaña. Época ofrece un selector descriptivo que conserva los códigos del catálogo y los valores personalizados existentes. Los modos distinguen encabezados con fondo gris suave y valores sin subrayado. Configuración permite corregir la inutilización, explica los estados activos y reúne la ayuda de estados posibles en un desplegable cerrado; los estados ligados a combate se resuelven mediante sus acciones habituales.
