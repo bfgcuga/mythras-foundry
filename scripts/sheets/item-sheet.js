@@ -20,6 +20,8 @@ import { TRAIT_TYPES, mergeTraitReferences, removeTraitReference, traitReference
 import { canonicalCombatEffectStage, COMBAT_EFFECT_ROLL_RESTRICTIONS,
   COMBAT_EFFECT_RULE_KEYS, COMBAT_EFFECT_STAGES,
   COMBAT_EFFECT_WEAPON_RESTRICTIONS } from "../rules/combat-effects.js";
+import { weaponIsPinned } from "../rules/weapon-pinning.js";
+import { weaponDurabilityState } from "../rules/weapon-durability.js";
 import { weaponCanEquip } from "../rules/weapon-durability.js";
 import { hitLocationDisplayName, hitLocationNameEditUpdate } from "../rules/hit-locations.js";
 
@@ -253,6 +255,8 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           .map((candidate) => ({ value: candidate.id, label: candidate.name })) : [],
       isWeapon: this.item.type === "weapon",
       weaponModes: preparedWeaponModes,
+      weaponPinned: this.item.type === "weapon" && weaponIsPinned(this.item),
+      weaponDurabilityLabel: this.item.type === "weapon" ? game.i18n.localize(`MYTHRASF.Weapon.Durability.${["intact", "indestructible"].includes(weaponDurabilityState(this.item)) ? "unharmed" : weaponDurabilityState(this.item)}`) : "",
       weaponBroken: this.item.type === "weapon" && !weaponCanEquip(this.item),
       weaponTraitReferences,
       isArmor: this.item.type === "armor",
@@ -380,7 +384,7 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (this.item.type === "weapon" && !this._weaponDefaultSizeApplied) {
       this._weaponDefaultSizeApplied = true;
-      this.setPosition({ width: 960, height: 560 });
+      this.setPosition({ width: 1100, height: 640 });
     }
 
     if (this.item.type === "combatEffect" && !this._combatEffectDefaultSizeApplied) {
@@ -391,6 +395,22 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     this.element.querySelector("[data-action='view-item-image']")
       ?.addEventListener("click", () => this.#viewItemImage());
 
+    if (this.item.type === "weapon") {
+      for (const panel of this.element.querySelectorAll('[data-weapon-tab-content="characteristics"], [data-weapon-tab-content="modes"]')) {
+        const editing = Boolean(this.creationMode || this._weaponEditing);
+        panel.classList.toggle("weapon-consultation", !editing);
+        for (const field of panel.querySelectorAll("input, select, textarea")) {
+          const output = document.createElement("span");
+          output.className = "sheet-field-readonly weapon-consultation-value";
+          output.textContent = field.tagName === "SELECT" ? field.selectedOptions[0]?.textContent ?? "—" : field.value || "—";
+          field.after(output);
+        }
+      }
+      this.element.querySelectorAll('[data-action="toggle-weapon-edit"]').forEach((button) => {
+        button.textContent = game.i18n.localize(this._weaponEditing ? "MYTHRASF.EditMode.Finish" : "MYTHRASF.Edit");
+        button.addEventListener("click", () => { this._weaponEditing = !this._weaponEditing; this.render(); });
+      });
+    }
     this._activeWeaponTab ??= "characteristics";
     this.element.classList.toggle("item-creation-mode", Boolean(this.creationMode));
     this.element.querySelectorAll("[data-weapon-tab]").forEach((button) =>

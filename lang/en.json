@@ -1,4 +1,10 @@
 {
+  "MYTHRASF.Weapon.Condition": "Condition",
+  "MYTHRASF.Weapon.OperationalState": "Operational state",
+  "MYTHRASF.Weapon.Lodged": "Lodged in an opponent",
+  "MYTHRASF.Weapon.StateHelp": "Thrown, lodged and pinned states are shown here and resolved through combat actions or inventory recovery. Clear Inoperable when repairing the weapon.",
+  "MYTHRASF.Weapon.EraHelp": "Free-form era. A: Ancient; M: Medieval; R: Renaissance; I: Industrial. A hyphen indicates a range (A–I: Ancient to Industrial).",
+
   "MYTHRASF.Item.Repair": "Repair item",
   "MYTHRASF.Item.RepairPrompt": "You are about to repair “{item}”, restoring its durability and removing its disabled mark, if present. Repair is not free: consult the Game Master to agree on requirements, time and cost.",
   "MYTHRASF.Item.RepairConditions": "I confirm that the conditions for repairing this item have been met after consulting the Game Master.",

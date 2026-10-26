@@ -1,4 +1,10 @@
 {
+  "MYTHRASF.Weapon.Condition": "Conservación",
+  "MYTHRASF.Weapon.OperationalState": "Estado operativo",
+  "MYTHRASF.Weapon.Lodged": "Empalada en un rival",
+  "MYTHRASF.Weapon.StateHelp": "Los estados de lanzamiento, empalamiento e inmovilización se consultan aquí y se resuelven mediante sus acciones de combate o recuperación del inventario. Inutilizada puede corregirse al reparar el arma.",
+  "MYTHRASF.Weapon.EraHelp": "Época libre. A: Antigüedad; M: Medievo; R: Renacimiento; I: era industrial. El guion indica un intervalo (A–I: Antigüedad a era industrial).",
+
   "MYTHRASF.Item.Repair": "Reparar objeto",
   "MYTHRASF.Item.RepairPrompt": "Se va a reparar «{item}», restaurando su durabilidad y retirando la marca Inutilizada, si la tiene. La reparación no es gratis: consulta al director de juego para acordar los requisitos, tiempo y coste.",
   "MYTHRASF.Item.RepairConditions": "Confirmo que se han cumplido las condiciones para reparar este objeto, tras consultar al director de juego.",

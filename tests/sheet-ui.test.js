@@ -100,3 +100,28 @@ test('la celda de recarga muestra progreso y munición con abreviaturas y etique
   assert.ok([...cell.children].every(element => element.title && element.getAttribute('aria-label')));
   assert.doesNotMatch(cell.textContent, /Flechas|Total|Cargada|Disponible|99|Â/);
 });
+
+
+test("la consulta del arma presenta textos de selectores y permite activar edición", async t => {
+  const { document } = installHost(t);
+  const { MythrasItemSheet } = await import("../scripts/sheets/item-sheet.js");
+  document.body.innerHTML = render(template, { isWeapon: true, editable: true,
+    item: { system: { era: "A-I", inoperable: true, lodged: true, thrown: true } },
+    weaponDurabilityLabel: "Sin daños", weaponPinned: true,
+    weaponModes: [{ weaponType: "melee", isMelee: true, damage: "1d8" }],
+    weaponTypeChoices: [{ value: "melee", label: "Cuerpo a cuerpo" }] });
+  const sheet = new MythrasItemSheet({ document: { type: "weapon" } });
+  sheet.item = { type: "weapon" };
+  sheet.setPosition = () => {};
+  sheet._onRender({}, {});
+  const panel = document.querySelector('[data-weapon-tab-content="modes"]');
+  assert.ok(panel.classList.contains("weapon-consultation"));
+  assert.equal(panel.querySelector("select").nextElementSibling.textContent, "Cuerpo a cuerpo");
+  assert.equal(panel.querySelector("input").nextElementSibling.textContent, "—");
+  panel.querySelector('[data-action="toggle-weapon-edit"]').click();
+  assert.equal(sheet._weaponEditing, true);
+  assert.ok(document.querySelector('[name="system.inoperable"]').checked);
+  for (const name of ["thrown", "lodged"]) {
+    assert.equal(document.querySelector(`.weapon-status-editor [name="system.${name}"]`), null);
+  }
+});

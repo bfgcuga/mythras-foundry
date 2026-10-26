@@ -640,3 +640,5 @@ Cegado mantiene la referencia de ceguera especial de Foundry.
 Los iconos activos tienen fondo negro opaco y contornos adaptados para verse
 a tamaño pequeño. Las imágenes anteriores se conservan como obsoletas en
 `assets/icons/statuses/obsolete/colored-background/`.
+
+La hoja de arma abre Características y Modos de uso en consulta, con un botón para activar la edición. Configuración permite corregir la inutilización y consultar conservación, lanzamiento, empalamiento e inmovilización; los estados ligados a combate se resuelven mediante sus acciones habituales. Época continúa como texto libre y muestra una guía de los intervalos del catálogo.

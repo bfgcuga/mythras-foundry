@@ -184,13 +184,14 @@
     </nav>
 
     <section class="weapon-tab-panel active" data-weapon-tab-content="characteristics">
+      {{#if editable}}{{#unless creationMode}}<button type="button" class="weapon-edit-toggle" data-action="toggle-weapon-edit">{{localize "MYTHRASF.Edit"}}</button>{{/unless}}{{/if}}
       <fieldset class="weapon-characteristics-editor"><legend>{{localize "MYTHRASF.Weapon.Characteristics"}}</legend>
         <div class="weapon-general-fields">
           <label class="weapon-cost-field"><span>{{localize "MYTHRASF.Item.Value"}}</span><input type="number" min="0" step="any" name="system.value" value="{{item.system.value}}"><select name="system.currency" aria-label="{{localize "MYTHRASF.Currency.Label"}}">{{selectOptions currencyChoices selected=item.system.currency labelAttr="label" valueAttr="value"}}</select></label>
           <label><span>{{localize "MYTHRASF.Weapon.Encumbrance"}}</span><input type="number" min="0" step="any" name="system.encumbrance" value="{{item.system.encumbrance}}"></label>
           <label><span>{{localize "MYTHRASF.Weapon.ArmorPoints"}}</span><input type="number" min="0" name="system.armorPoints" value="{{item.system.armorPoints}}"></label>
           <label><span>{{localize "MYTHRASF.Weapon.MaxHitPoints"}}</span><input type="number" min="0" name="system.maxHitPoints" value="{{item.system.maxHitPoints}}"></label>
-          <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><input name="system.era" value="{{item.system.era}}"></label>
+          <label><span>{{localize "MYTHRASF.Weapon.Era"}}</span><input name="system.era" value="{{item.system.era}}"><small class="weapon-era-help">{{localize "MYTHRASF.Weapon.EraHelp"}}</small></label>
           <label class="weapon-source-field"><span>{{localize "MYTHRASF.Background.Source"}}</span><input name="system.source" value="{{item.system.source}}"></label>
         </div>
         <label class="weapon-description-field"><span>{{localize "MYTHRASF.Item.Description"}}</span><textarea name="system.description">{{item.system.description}}</textarea></label>
@@ -204,6 +205,7 @@
     </section>
 
     <section class="weapon-tab-panel" data-weapon-tab-content="modes">
+      {{#if editable}}{{#unless creationMode}}<button type="button" class="weapon-edit-toggle" data-action="toggle-weapon-edit">{{localize "MYTHRASF.Edit"}}</button>{{/unless}}{{/if}}
       <fieldset class="weapon-modes-editor"><legend>{{localize "MYTHRASF.Weapon.Modes"}}</legend>
       <div class="weapon-modes-toolbar"><button type="button" class="sheet-add-button" data-action="add-weapon-mode" aria-label="{{localize "MYTHRASF.Add"}}" title="{{localize "MYTHRASF.Add"}}"><i class="fas fa-plus" aria-hidden="true"></i></button></div>
       {{#each weaponModes as |mode|}}<article class="weapon-mode-card">
@@ -222,8 +224,8 @@
           <label><span>{{localize "MYTHRASF.Ranged.Inventory.UseLabel"}}</span><select name="system.modes.{{@index}}.ammoUse">{{selectOptions ../ammunitionUseChoices selected=mode.ammoUse labelAttr="label" valueAttr="value"}}</select></label>
           <label><span>{{localize "MYTHRASF.Ranged.Inventory.Type"}}</span><input name="system.modes.{{@index}}.ammoType" value="{{mode.ammoType}}" title="{{localize 'MYTHRASF.Ranged.Inventory.TypeHint'}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.Capacity"}}</span><input type="number" min="1" name="system.modes.{{@index}}.ammoCapacity" value="{{mode.ammoCapacity}}"></label>
-          <span>{{localize "MYTHRASF.Ranged.Loaded"}}: {{mode.ammoLoaded}}</span>
-          {{#if mode.inventoryAmmo.tracking}}<span>{{mode.inventoryAmmo.name}} — {{localize "MYTHRASF.Ranged.Inventory.Total"}}: {{mode.inventoryAmmo.total}}, {{localize "MYTHRASF.Ranged.Inventory.Available"}}: {{mode.inventoryAmmo.available}}</span>{{/if}}
+          <span class="weapon-ammo-summary">{{localize "MYTHRASF.Ranged.Loaded"}}: {{mode.ammoLoaded}}</span>
+          {{#if mode.inventoryAmmo.tracking}}<span class="weapon-ammo-summary">{{mode.inventoryAmmo.name}} — {{localize "MYTHRASF.Ranged.Inventory.Total"}}: {{mode.inventoryAmmo.total}}, {{localize "MYTHRASF.Ranged.Inventory.Available"}}: {{mode.inventoryAmmo.available}}</span>{{/if}}
           <label class="weapon-short-field"><span>{{localize "MYTHRASF.Weapon.CrewMinimum"}}</span><input type="number" min="0" name="system.modes.{{@index}}.crewMinimum" value="{{mode.crewMinimum}}"></label>
           <label class="weapon-short-field"><span>{{localize "MYTHRASF.Weapon.CrewMaximum"}}</span><input type="number" min="0" name="system.modes.{{@index}}.crewMaximum" value="{{mode.crewMaximum}}"></label>
         </div>{{else}}{{#if mode.isRanged}}<div class="weapon-mode-fields weapon-mode-fields-ranged">
@@ -241,8 +243,8 @@
           <label><span>{{localize "MYTHRASF.Ranged.Inventory.UseLabel"}}</span><select name="system.modes.{{@index}}.ammoUse">{{selectOptions ../ammunitionUseChoices selected=mode.ammoUse labelAttr="label" valueAttr="value"}}</select></label>
           <label><span>{{localize "MYTHRASF.Ranged.Inventory.Type"}}</span><input name="system.modes.{{@index}}.ammoType" value="{{mode.ammoType}}" title="{{localize 'MYTHRASF.Ranged.Inventory.TypeHint'}}"></label>
           <label><span>{{localize "MYTHRASF.Ranged.Capacity"}}</span><input type="number" min="1" name="system.modes.{{@index}}.ammoCapacity" value="{{mode.ammoCapacity}}"></label>
-          <span>{{localize "MYTHRASF.Ranged.Loaded"}}: {{mode.ammoLoaded}}</span>
-          {{#if mode.inventoryAmmo.tracking}}<span>{{mode.inventoryAmmo.name}} — {{localize "MYTHRASF.Ranged.Inventory.Total"}}: {{mode.inventoryAmmo.total}}, {{localize "MYTHRASF.Ranged.Inventory.Available"}}: {{mode.inventoryAmmo.available}}</span>{{/if}}
+          <span class="weapon-ammo-summary">{{localize "MYTHRASF.Ranged.Loaded"}}: {{mode.ammoLoaded}}</span>
+          {{#if mode.inventoryAmmo.tracking}}<span class="weapon-ammo-summary">{{mode.inventoryAmmo.name}} — {{localize "MYTHRASF.Ranged.Inventory.Total"}}: {{mode.inventoryAmmo.total}}, {{localize "MYTHRASF.Ranged.Inventory.Available"}}: {{mode.inventoryAmmo.available}}</span>{{/if}}
         </div>{{else}}<div class="weapon-mode-fields weapon-mode-fields-melee">
           <label><span>{{localize "MYTHRASF.Weapon.TypeLabel"}}</span><select data-weapon-mode-type name="system.modes.{{@index}}.weaponType">{{selectOptions ../weaponTypeChoices selected=mode.weaponType labelAttr="label" valueAttr="value"}}</select></label>
           <label class="weapon-short-field"><span>{{localize "MYTHRASF.Weapon.HandsRequired"}}</span><input type="number" min="0" max="2" name="system.modes.{{@index}}.handsRequired" value="{{mode.handsRequired}}"></label>
@@ -258,6 +260,14 @@
     </section>
 
     {{#unless creationMode}}<section class="weapon-tab-panel" data-weapon-tab-content="instance">
+      <fieldset class="weapon-status-editor"><legend>{{localize "MYTHRASF.Weapon.OperationalState"}}</legend>
+        <label class="checkbox"><input type="checkbox" class="sheet-state-box" name="system.inoperable" {{checked item.system.inoperable}}>{{localize "MYTHRASF.Weapon.Inoperable"}}</label>
+        <label>{{localize "MYTHRASF.Weapon.Condition"}} <output class="sheet-field-readonly">{{weaponDurabilityLabel}}</output></label>
+        <label>{{localize "MYTHRASF.Ranged.Inventory.Thrown"}} <input type="checkbox" class="sheet-state-box" disabled {{checked item.system.thrown}}></label>
+        <label>{{localize "MYTHRASF.Weapon.Lodged"}} <input type="checkbox" class="sheet-state-box" disabled {{checked item.system.lodged}}></label>
+        <label>{{localize "MYTHRASF.Status.WeaponPinned"}} <input type="checkbox" class="sheet-state-box" disabled {{checked weaponPinned}}></label>
+        <p>{{localize "MYTHRASF.Weapon.StateHelp"}}</p>
+      </fieldset>
       <fieldset class="weapon-copy-editor"><legend>{{localize "MYTHRASF.Weapon.CopyValues"}}</legend>
         <label>{{localize "MYTHRASF.Item.Quantity"}}</label><input type="number" min="0" name="system.quantity" value="{{item.system.quantity}}">
         <label>{{localize "MYTHRASF.Weapon.CurrentHitPoints"}}</label><input type="number" min="0" name="system.currentHitPoints" value="{{item.system.currentHitPoints}}">
