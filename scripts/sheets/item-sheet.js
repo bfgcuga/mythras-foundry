@@ -418,9 +418,13 @@ export class MythrasItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         const editing = Boolean(this.isEditable && (this.creationMode || this._weaponEditing?.[panel.dataset.weaponTabContent]));
         panel.classList.toggle("weapon-consultation", !editing);
         for (const field of panel.querySelectorAll("input, select, textarea")) {
+          if (field.type === "checkbox") {
+            field.disabled ||= !editing;
+            continue;
+          }
           const output = document.createElement("span");
           output.className = "sheet-field-readonly weapon-consultation-value";
-          output.textContent = field.type === "checkbox" ? game.i18n.localize(field.checked ? "MYTHRASF.Weapon.Yes" : "MYTHRASF.Weapon.No") : field.tagName === "SELECT" ? field.selectedOptions[0]?.textContent ?? "—" : field.value || "—";
+          output.textContent = field.tagName === "SELECT" ? field.selectedOptions[0]?.textContent ?? "—" : field.value || "—";
           field.after(output);
         }
       }

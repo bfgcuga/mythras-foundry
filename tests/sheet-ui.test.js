@@ -114,6 +114,7 @@ test("la consulta del arma presenta textos de selectores y permite activar edici
   const sheet = new MythrasItemSheet({ document: { type: "weapon" } });
   sheet.item = { type: "weapon" };
   sheet.setPosition = () => {};
+  const editableMarkup = document.body.innerHTML;
   sheet._onRender({}, {});
   const panel = document.querySelector('[data-weapon-tab-content="modes"]');
   assert.ok(panel.classList.contains("weapon-consultation"));
@@ -131,9 +132,17 @@ test("la consulta del arma presenta textos de selectores y permite activar edici
   assert.equal(era.nextElementSibling.textContent, "Antigüedad–Era industrial");
   assert.match(document.querySelector(".weapon-active-states").textContent, /Empalada/);
   const configuration = document.querySelector('[data-weapon-tab-content="instance"]');
-  assert.equal(configuration.querySelector('[name="system.inoperable"]').nextElementSibling.textContent, "Sí");
+  const inoperable = configuration.querySelector('[name="system.inoperable"]');
+  assert.equal(inoperable.disabled, true);
+  assert.equal(inoperable.nextElementSibling, null);
+  assert.doesNotMatch(inoperable.closest("label").textContent, /Sí|No/);
   configuration.querySelector('[data-action="toggle-weapon-edit"]').click();
   assert.equal(sheet._weaponEditing.instance, true);
+  document.body.innerHTML = editableMarkup;
+  sheet._onRender({}, {});
+  assert.equal(document.querySelector('[name="system.inoperable"]').disabled, false);
+  assert.equal(document.querySelector('[name="system.inoperable"]').checked, true);
+  assert.equal(document.querySelector('[data-weapon-tab-content="instance"]').classList.contains("weapon-consultation"), false);
   for (const name of ["thrown", "lodged"]) {
     assert.equal(document.querySelector(`.weapon-status-editor [name="system.${name}"]`), null);
   }
